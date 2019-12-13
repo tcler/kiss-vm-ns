@@ -1,0 +1,1379 @@
+#!/bin/bash
+# author: yin-jianhong@163.com
+# test pass on RHEL-7/CentOS-7, RHEL-8/CentOS-8 and Fedora-29/30/31
+
+LANG=C
+PATH=~/bin:$PATH 
+
+P=${0##*/}
+Distro=
+Location=
+Imageurl=
+VM_OS_VARIANT=
+OVERWRITE=no
+KSPath=
+ksauto=
+MacvtapMode=bridge
+VMName=
+InstallType=import
+ImagePath=~/myimages
+VMSHOME=~/VMs
+RuntimeTmp=/tmp/vm-$$
+INTERACT=yes
+vmprefix=$(whoami)
+[[ -n "$SUDO_USER" ]] && vmprefix=${SUDO_USER}-sudo
+Intranet=yes
+baseDownloadUrl=http://download.devel.redhat.com/qa/rhts/lookaside/bkr-client-improved
+VIRT_READY=unkown
+MSIZE=1024
+DSIZE=20
+baudrate=115200
+
+Cleanup() {
+	cd ~
+	#echo "{DEBUG} Removing $RuntimeTmp"
+	rm -rf $RuntimeTmp
+	exit
+}
+trap Cleanup EXIT #SIGINT SIGQUIT SIGTERM
+#-------------------------------------------------------------------------------
+
+vmname_gen() {
+	local distro=$1
+	local cname=$2
+	local name=${Distro//./}
+	name=${name,,}
+	[[ -n "$cname" ]] && name=${cname}
+	name=${vmprefix}-${name}
+	echo -n $name
+}
+
+_vmdelete() {
+	local _vmname=$1
+	[[ -z "$_vmname" ]] && {
+		return 1
+	}
+
+	egrep -q "^$_vmname$" <(virsh list --name --all) || {
+		echo -e "{WARN} VM '$_vmname' does not exist"
+		return 1
+	}
+
+	[[ "$_vmname" != ${vmprefix}-* ]] && {
+		echo -e "{WARN} VM '$_vmname' was not created by current user"
+		return 1
+	}
+
+	local _image=$(virsh dumpxml --domain $_vmname | sed -n "/source file=.*qcow/{s|^.*='||; s|'/>$||; p; q}")
+	local _vmdir=$(dirname $_image)
+
+	echo -e "{INFO} => dist removing VM $_vmname .."
+	virsh destroy $_vmname 2>/dev/null
+	sleep 1
+	virsh undefine $_vmname --remove-all-storage
+	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
+		echo -e "{INFO} removing VM folder $_vmdir ..."
+		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2}
+		rmdir $_vmdir 2>/dev/null
+		rmdir ${_vmdir%/*} 2>/dev/null
+	fi
+	return 0
+}
+
+vmdialogchecklist() {
+	local cmdinfo=$1
+	local resfile=$2
+	local all=$3
+	local vmlist=$(virsh list --name ${all:+--all})
+	vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
+	local vmList=$(echo "$vmlist" | sed -e /^$/d -e 's/.*/"&" "" 1/')
+	[[ -z "${vmList}" ]] && {
+		echo -e "{WARN} there is not any VM in your host .." >&2
+		return 1;
+	}
+	which dialog &>/dev/null || yum install -y dialog &>/dev/null
+	dialog --backtitle "$cmdinfo" --separate-output --checklist "${cmdinfo}: please select vms you want " 30 120 28 $vmList 2>$resfile; rc=$?
+	printf '\33[H\33[2J'
+	return $rc
+}
+vmdialogradiolist() {
+	local cmdinfo=$1
+	local resfile=$2
+	local all=$3
+	local vmlist=$(virsh list --name ${all:+--all})
+	vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
+	local vmList=$(echo "$vmlist" | sed -e /^$/d -e 's/.*/"&" "" 1/')
+	[[ -z "${vmList}" ]] && {
+		echo -e "{WARN} there is not any VM in your host .." >&2
+		return 1;
+	}
+	which dialog &>/dev/null || yum install -y dialog &>/dev/null
+	dialog --backtitle "$cmdinfo" --radiolist "${cmdinfo}: please select vm you want " 30 60 28 $vmList 2>$resfile; rc=$?
+	printf '\33[H\33[2J'
+	return $rc
+}
+
+vmdelete() {
+	[[ $# = 0 ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogchecklist vm-delete $resf all && rmList=$(< $resf)
+		[[ -z "$rmList" ]] && { return; }
+		eval set $rmList
+	}
+	for vm; do _vmdelete $vm; done
+}
+
+vmifaddr() {
+	local _vmname=$1
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-ifaddr $resf && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+
+	local addrs=
+	#addrs=$(getent hosts "$_vmname"|awk '{print $1}'|tac)
+	addrs=$(virsh domifaddr "$_vmname" | awk '$3=="ipv4" {print gensub("/.*","",1,$4)}')
+	[[ -n "$addrs" ]] && echo "$addrs"
+}
+
+vmvncport() {
+	local _vmname=$1
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-vncport $resf all && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+
+	local port=$(virsh dumpxml "$_vmname" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}")
+	[[ -n "${port}" ]] && echo ${HOSTNAME}:${port}
+}
+
+vmedit() {
+	local _vmname=$1
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-edit $resf all && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+
+	virsh edit "$_vmname"
+}
+
+port_available() {
+	nc $1 $2 </dev/null &>/dev/null
+}
+
+vmreboot() {
+	[[ "$1" = /w ]] && {
+		shift
+		local WAIT=yes
+	}
+
+	local _vmname=$1
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-reboot $resf all && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+
+	virsh destroy "$_vmname"
+	virsh start "$_vmname"
+	[[ "$WAIT" = yes ]] && {
+		echo -e "{INFO} waiting restart finish ..."
+		until port_available ${_vmname} 22; do sleep 1; done
+	}
+}
+
+vmstop() {
+	local _vmname=$1
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-shutdown $resf && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+
+	virsh destroy "$_vmname"
+}
+
+vmstart() {
+	local _vmname=$1
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-start $resf all && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+
+	virsh start "$_vmname"
+}
+
+vmlogin() {
+	local console=
+	[[ "$1" = /c ]] && {
+		console=yes
+		shift
+	}
+
+	local _vmname=$1
+	shift
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-login $resf && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+
+	[[ "${EXEC}" = yes && $# = 0 ]] && set "exit 0";
+
+	[[ "$console" = yes ]] && {
+		if [[ "$EXEC" = yes ]]; then
+			:
+		else
+			virsh console "$_vmname"
+			return $?
+		fi
+	}
+
+	#sometimes there's bug in libnss. get more than one addr but some one
+	#of them does not exist. use nc detect and ignore it/them
+	addrs=$(vmifaddr "$_vmname")
+	[[ -z "$addrs" ]] && {
+		echo -e "{WARN} can not get ip info of $_vmname, try login with console ..."
+		virsh console "$_vmname"
+		return $?
+	}
+
+	echo "$*" >$RuntimeTmp/sshcmd
+	for addr in $addrs; do
+		nc $addr 22 </dev/null &>/dev/null || {
+			echo -e "{WARN} port $addr:22 is not available"
+			continue
+		}
+		ssh root@$addr "exit 0" || {
+			echo -e "{WARN} ssh root@$addr is not available, try login with console ..."
+			virsh console "$_vmname"
+			return $?
+		}
+		expect <(cat <<-EOF
+		set timeout 120
+		set sshcmd [exec cat $RuntimeTmp/sshcmd]
+		log_user 0
+		spawn ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr \$sshcmd
+		log_user 1
+		if {\$argc == 0} {
+			expect {
+			"password:" { send "redhat\r"; exp_continue }
+			"*# " { send "\r"; interact }
+			}
+		} else {
+			expect {
+			"password:" { send "redhat\r"; exp_continue }
+			eof
+			}
+		}
+		foreach {pid spawnid os_error_flag value} [wait] break
+		exit \$value
+		EOF
+		) "$@"
+		return
+	done
+}
+vmexec() { EXEC=yes vmlogin "$@"; }
+vmlist() { virsh list --all; }
+netcreate() {
+	local netname=
+	local brname=
+	local subnet=
+
+	[[ $# = 0 ]] && { virsh net-list; return; }
+	Usage() {
+		cat <<-U
+		Example:
+		  vm net netname=net10 brname=virbr10 subnet=10  #subnet range: [1-121,123-254]
+		U
+	}
+	for opt; do [[ "$opt" =~ ^(netname|brname|subnet)=.* ]] || continue; eval "$opt"; done
+	[[ -z "$netname" || -z "$brname" || -z "$subnet" ]] && { Usage; return 1; }
+
+	virsh net-info -- "$netname" &>/dev/null && {
+		echo "{WARN} Virt network $netname has been there."
+		return
+	}
+
+	virsh net-define --file <(
+		cat <<-NET
+		<network>
+		  <name>$netname</name>
+		  <bridge name="$brname" />
+		  <forward mode="nat" >
+		    <nat>
+		      <port start='1024' end='65535'/>
+		    </nat>
+		  </forward>
+		  <ip address="192.168.${subnet}.1" netmask="255.255.255.0" >
+		    <dhcp>
+		      <range start="192.168.${subnet}.2" end="192.168.${subnet}.254"/>
+		    </dhcp>
+		  </ip>
+		</network>
+		NET
+	)
+	virsh net-start $netname
+	virsh net-autostart $netname
+}
+netinfo() {
+	for net; do
+		virsh net-info -- $net || continue
+		virsh net-dumpxml -- $net
+	done
+}
+netdelete() {
+	for net; do
+		virsh net-destroy -- $net
+		virsh net-undefine -- $net
+	done
+}
+#-------------------------------------------------------------------------------
+
+enable_libvirt() {
+	local pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat libguestfs-tools-c libvirt-nss dialog qemu-img"
+	local sudouser=${SUDO_USER:-$(whoami)}
+	eval sudouserhome=~$sudouser
+	[[ -d $sudouserhome/.config/vm ]] && return 0
+
+	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt start ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	echo -e "{INFO} checking libvirtd service and related packages ..."
+	rpm -q $pkglist || {
+		echo -e "{*INFO*} you have not install all dependencies package, trying sudo yum install ..."
+		grep -q '^VERSION=.7' /etc/os-release &&
+			sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+		sudo yum install -y $pkglist
+	}
+
+	#echo -e "{INFO} configure libvirt-nss ..."
+	grep -q '^hosts:.*libvirt libvirt_guest' /etc/nsswitch.conf || {
+		echo -e "{*INFO*} you have not configure /etc/nsswitch.conf, trying sudo sed ..."
+		sudo sed -ri '/^hosts:/s/files /&libvirt libvirt_guest /' /etc/nsswitch.conf
+	}
+
+	echo -e "{INFO} checking if ${sudouser} has joined group libvirt ..."
+	[[ $(id -u) != 0 ]] && id -Gn | egrep -q -w libvirt || {
+		echo -e "{*INFO*} run: sudo usermod -a -G libvirt $sudouser ..."
+		sudo usermod -a -G libvirt $sudouser
+	}
+
+	virtdconf=/etc/libvirt/libvirtd.conf
+	echo -e "{INFO} checking value of 'unix_sock_group' and 'unix_sock_rw_perms' in $virtdconf ..."
+	ls $virtdconf &>/dev/null || sudo chmod +x /etc/libvirt
+	awk '/^unix_sock_group = "libvirt"/{c++} /^unix_sock_rw_perms = "0770"/{c++} END {rc=1; if(c==2) rc=0; exit rc}' $virtdconf || {
+		echo -e "{*INFO*} confiure $virtdconf ..."
+		sudo -- sh -c "
+			sed -ri -e '/#unix_sock_group = \"libvirt\"/s/^#//' -e '/#unix_sock_rw_perms = \"0770\"/s/^#//' $virtdconf
+			egrep -e ^unix_sock_group -e ^unix_sock_rw_perms $virtdconf
+			systemctl restart libvirtd && systemctl restart virtlogd
+		"
+	}
+
+	pvirtconf=$sudouserhome/.config/libvirt/libvirt.conf
+	virsh net-info default &>/dev/null && grep -q -w default <(virsh net-list --name) || {
+		#export LIBVIRT_DEFAULT_URI=qemu:///system
+		echo 'uri_default = "qemu:///system"' >>$pvirtconf
+	}
+
+: <<'COMM'
+	qemuconf=/etc/libvirt/qemu.conf
+	eval echo -e "{INFO} checking if qemu can read image in ~$sudouser ..."
+	sudo egrep -q '^#(user|group) =' "$qemuconf" && {
+		sudo sed -i '/^#(user|group) =/s/^#//' "$qemuconf"
+	}
+COMM
+
+	eval setfacl -mu:qemu:rx $sudouserhome
+
+	#first time
+	[[ $(id -u) != 0 ]] && {
+		id -Gn | egrep -q -w libvirt || {
+			echo -e "{WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
+			exit 1
+		}
+	}
+
+	mkdir -p $sudouserhome/.config/vm
+	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	printf '\33[H\33[2J'
+}
+
+is_available_url() {
+	local _url=$1
+	curl --connect-timeout 8 -m 16 --output /dev/null --silent --head --fail $_url &>/dev/null
+}
+is_intranet() {
+	local iurl=http://download.devel.redhat.com
+	is_available_url $iurl 
+}
+
+# functions that work in Intranet
+install_distro_compose() {
+	which distro-compose &>/dev/null || {
+		_url=$baseDownloadUrl/utils/distro-compose
+		mkdir -p ~/bin && curl -s -o ~/bin/distro-compose -C - -L $_url
+		chmod +x ~/bin/distro-compose
+	}
+}
+fetch_distro_list() {
+	install_distro_compose
+	distro-compose --distrolist
+}
+fetch_distro_trees() {
+	local distro=$1
+	local arch=$2
+	local dtrees=
+
+	#dtrees=$(bkr distro-trees-list --name "$distro" --arch "$arch"|egrep '(released|compose)')
+	install_distro_compose
+	dtrees=$(distro-compose -d "$distro" --distrotrees|egrep "(released|compose).*${arch}")
+
+	[[ -z "$dtrees" ]] &&
+		dtrees=$(distro-compose -d "$distro" --distrotrees|egrep "(Everything).*${arch}")
+	echo "$dtrees"
+}
+distro2location() {
+	local distro=$1
+	local variant=${2:-Server}
+	local arch=$(arch)
+
+	distrotrees=$(fetch_distro_trees $distro $arch)
+	urls=$(echo "$distrotrees" | awk '$3 ~ /https?:.*'"(${variant}|BaseOS|Everything)"'/{print $3}' | sort -u)
+
+	which fastesturl.sh &>/dev/null || {
+		_url=$baseDownloadUrl/utils/fastesturl.sh
+		mkdir -p ~/bin && curl -s -o ~/bin/fastesturl.sh -C - -L $_url
+		chmod +x ~/bin/fastesturl.sh
+	}
+	fastesturl.sh $urls
+}
+getimageurls() {
+	local parenturl=$1
+	local suffix_pattern=$2
+	local rc=1
+
+	local imagenames=$(curl -L -s ${parenturl} | sed -nr '/.*"([^"]+\.'"${suffix_pattern}"')".*/{s//\1/;p}')
+	for imagename in $imagenames; do
+		if [[ -n "${imagename}" ]]; then
+			[[ "${imagename}" = *Atomic* ]] && continue
+			echo ${parenturl%/}/${imagename}
+			rc=0
+		fi
+	done
+	return $rc
+}
+
+distro2repos() {
+	local distro=$1
+	local url=$2
+	local Repos=()
+
+	shopt -s nocasematch
+	case $distro in
+	RHEL-5*|RHEL5*)
+		{ read; read os arch verytag verxosv _; } < <(tac -s ' ' <<<"${url//\// }")
+		debug_url=${url/\/os/\/debug}
+		osv=${verxosv#RHEL-5-}
+		Repos+=(
+			Server:${url}/Server
+			Cluster:${url}/Cluster
+			ClusterStorage:${url}/ClusterStorage
+			Client:${url}/Client
+			Workstation:${url}/Workstation
+
+			${osv}-debuginfo:${debug_url}
+		)
+		;;
+
+#RHEL-6-EXTRAS
+#CDN
+#https://cdn.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
+#Internal
+#http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
+#RHEL-7-EXTRAS
+#CDN
+#https://cdn.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
+#Internal
+#http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
+
+#RHEL-6-EXTRAS
+#CDN
+#http://cdn.stage.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
+#Internal
+#http://pulp.dist.stage.ext.phx2.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
+#RHEL-7-EXTRAS
+#CDN
+#http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
+#Internal
+#http://pulp.dist.stage.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
+
+	RHEL-6*|RHEL6*|centos6*|centos-6*)
+		{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
+		debug_url=${url/\/os/\/debug}
+		Repos+=(
+			${osv}:${url}
+			${osv}-SAP:${url/$osv/${osv}-SAP}
+			${osv}-SAPHAHA:${url/$osv/${osv}-SAPHAHA}
+
+			${osv}-debuginfo:${debug_url}
+			${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
+			${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
+			extras:http://cdn.stage.redhat.com/content/dist/rhel/server/6/6Server/$(arch)/extras/os
+			cdn_os:http://cdn.stage.redhat.com/content/dist/rhel/server/6/6Server/$(arch)/os
+		)
+		;;
+	RHEL-7*|RHEL7*|centos7*|centos-7*)
+		{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
+		debug_url=${url/\/os/\/debug\/tree}
+		Repos+=(
+			${osv}:${url}
+			${osv}-optional:${url/$osv/${osv}-optional}
+			${osv}-NFV:${url/$osv/${osv}-NFV}
+			${osv}-RT:${url/$osv/${osv}-RT}
+			${osv}-SAP:${url/$osv/${osv}-SAP}
+			${osv}-SAPHAHA:${url/$osv/${osv}-SAPHAHA}
+
+			${osv}-debuginfo:${debug_url}
+			${osv}-optional-debuginfo:${debug_url/$osv/${osv}-optional}
+			${osv}-NFV-debuginfo:${debug_url/$osv/${osv}-NFV}
+			${osv}-RT-debuginfo:${debug_url/$osv/${osv}-RT}
+			${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
+			${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
+			extras:http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/$(arch)/extras/os
+			cdn_os:http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/$(arch)/os
+		)
+		;;
+	RHEL-8*|RHEL8*)
+		{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
+		debug_url=${url/\/os/\/debug\/tree}
+		read dtype distro < <(awk -F/+ '{ for (i=3;i<NF;i++) { if ($(i+1) ~ /RHEL-/) { print($i, $(i+1)); break }}}' <<<"$url")
+		Repos+=(
+			BaseOS:${url}
+			AppStream:${url/BaseOS/AppStream}
+			CRB:${url/BaseOS/CRB}
+			HighAvailability:${url/BaseOS/HighAvailability}
+			NFV:${url/BaseOS/NFV}
+			ResilientStorage:${url/BaseOS/ResilientStorage}
+			RT:${url/BaseOS/RT}
+			SAP:${url/BaseOS/SAP}
+			SAPHANA:${url/BaseOS/SAPHANA}
+
+			BaseOS-debuginfo:${debug_url}
+			AppStream-debuginfo:${debug_url/BaseOS/AppStream}
+			CRB-debuginfo:${debug_url/BaseOS/CRB}
+			HighAvailability-debuginfo:${debug_url/BaseOS/HighAvailability}
+			NFV-debuginfo:${debug_url/BaseOS/NFV}
+			ResilientStorage-debuginfo:${debug_url/BaseOS/ResilientStorage}
+			RT-debuginfo:${debug_url/BaseOS/RT}
+			SAP-debuginfo:${debug_url/BaseOS/SAP}
+			SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
+			Buildroot:http://download.devel.redhat.com/$dtype/latest-BUILDROOT-8-RHEL-8/compose/Buildroot/$arch/os
+		)
+		;;
+	esac
+	shopt -u nocasematch
+
+	for repo in "${Repos[@]}"; do
+		read _name _url <<<"${repo/:/ }"
+		is_available_url $_url &&
+			echo "$repo"
+	done
+}
+
+Usage() {
+	cat <<-'EOF'
+	Usage:
+	    vm [subcmd] <-d distroname> [OPTIONs] ...
+
+	Options:
+	    -h, --help     #Display this help.
+	    --prepare      #check/install/configure libvirt and other dependent packages
+	    -I             #create VM by import existing disk image, auto search url according distro name
+	                    `-> just could be used in Intranet
+	    -i <url/path>  #create VM by import existing disk image, value can be url or local path
+	    -L             #create VM by using location, auto search url according distro name
+	                    `-> just could be used in Intranet
+	    -l <url>       #create VM by using location
+	    --ks <file>    #kickstart file, will auto generate according distro name if omitting
+	    -n|--vmname <name>
+	                   #VM name, will auto generate according distro name if omitting
+	    -f|--force     #over write existing VM with same name
+	    -p|-pkginstall <pkgs>
+	                   #pkgs in default system repo, install by yum or apt-get
+	    -b|-brewinstall <args>
+	                   #pkgs in brew system or specified by url, install by internal brewinstall.sh
+	                    `-> just could be used in Intranet
+	    -g|-genimage   #generate VM image, after install shutdown VM and generate new qcow2.xz file
+	    --rm           #like --rm option of docker/podman, remove VM after quit from console
+	    --nocloud|--nocloud-init
+	                   #don't create cloud-init iso for the image that is not cloud image
+	    --osv <variant>
+	                   #OS_VARIANT, optional. virt-install will attempt to auto detect this value
+	                   # you can get [-osv variant] info by using:
+	                   $ osinfo-query os  #RHEL-7 and later
+	                   $ virt-install --os-variant list  #RHEL-6
+	    --nointeract   #exit from virsh console after install finish
+	    --saveimage [path]
+	                   #save image in path if install with import mode
+	    --cpus <N>     #number of virtual cpus, default 4
+	    --msize <size> #memory size, default 2048
+	    --dsize <size> #disk size, default 16
+	    --net <$name>  #join libvirt net $name
+	    --netmacvtap [source NIC]
+	                   #attach a macvtap interface
+	    --macvtapmode <vepa|bridge>
+	                   #macvtap mode
+	    -r|--ready     #virt config is ready, don't have to run enable_libvirt function
+	    --xdisk        #add 2 extra disk for test
+	    --nvdimm       #add 2 nvdimm device(2048+2M) //need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+	    --nosshkey     #don't inject sshkey
+
+	EOF
+	[[ "$Intranet" = yes ]] && cat <<-EOF
+	Example Intranet:
+	    $P # will enter a TUI show you all available distros that could auto generate source url
+	    $P RHEL-6.10 -L
+	    $P RHEL-7.7
+	    $P RHEL-8.1.0 -f -p "vim wget git"
+	    $P RHEL-8.1.0 -L -brewinstall 23822847  # brew scratch build id
+	    $P RHEL-8.1.0 -L -brewinstall kernel-4.18.0-147.8.el8  # brew build name
+	    $P RHEL-8.1.0 -L -brewinstall "lstk -debug"            # latest brew build release debug kernel
+	    $P RHEL-8.2.0-20191024.n.0 -g -b "upk -debug"          # latest brew build upstream debug kernel
+
+	EOF
+	cat <<-EOF
+	Example Internet:
+	    $P centos-5 -l http://vault.centos.org/5.11/os/x86_64/
+	    $P centos-6 -l http://mirror.centos.org/centos/6.10/os/x86_64/
+	    $P centos-7 -l http://mirror.centos.org/centos/7/os/x86_64/
+	    $P centos-8 -l http://mirror.centos.org/centos/8/BaseOS/x86_64/os/
+	    $P centos-8 -l http://mirror.centos.org/centos/8/BaseOS/x86_64/os/ -brewinstall ftp://url/path/x.rpm
+	    $P centos-7 -i https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2.xz -pkginstall "vim git wget"
+	    $P debian-10 -i https://cdimage.debian.org/cdimage/openstack/10.1.5-20191015/debian-10.1.5-20191015-openstack-amd64.qcow2
+
+	Example from local image:
+	    $P rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
+	    $P debian-10 -i /mnt/vm-images/debian-10.1.5-20191015-openstack-amd64.qcow2
+
+	Example [subcmd]:
+	    vm list              #list all VMs       //you can use ls,li,lis* instead list
+	    vm login [/c] [VM]   #login VM           //you can use l,lo,log* instead login
+	    vm delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
+	    vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
+	    vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
+	    vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
+	    vm exec "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
+	    vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
+	    vm stop [VM]         #stop/shutdonw VM   //nil
+	    vm start [VM]        #stop/shutdonw VM   //nil
+
+	    vm net               #list all virtual network
+	    vm net netname=testnet brname=virbrN subnet=100  #create virtual network 'testnet'
+	    vm netinfo testnet   #show detail info of virtual network 'testnet'
+	    vm netdel testnet    #delete virtual network 'testnet'
+	EOF
+}
+
+# command line parse
+_at=`getopt -o hd:Ll:fn:gb:p:Ii:r \
+	--long help \
+	--long prepare \
+	--long ks: \
+	--long rm \
+	--long osv: \
+	--long os-variant: \
+	--long force \
+	--long vmname: \
+	--long genimage \
+	--long xzopt: \
+	--long brewinstall: \
+	--long pkginstall: \
+	--long geturl \
+	--long getvmname \
+	--long nocloud-init --long nocloud \
+	--long cpus: \
+	--long msize: \
+	--long dsize: \
+	--long net: \
+	--long netmacvtap:: \
+	--long macvtapmode: \
+	--long nointeract \
+	--long saveimage:: --long sa:: \
+	--long ready \
+	--long xdisk \
+	--long nvdimm \
+	--long nosshkey \
+    -a -n "$0" -- "$@"`
+eval set -- "$_at"
+while true; do
+	case "$1" in
+	-h|--help) Usage; shift 1; exit 0;;
+	--prepare) ONLY_PREPARE=yes; shift 1;;
+	-d)        Distro=$2; shift 2;;
+	-l)        InstallType=location; Location=$2; shift 2;;
+	-L)        InstallType=location; shift 1;;
+	-i)        InstallType=import; Imageurl=${2}; shift 2;;
+	-I)        InstallType=import; shift 1;;
+	--ks)      KSPath=$2; shift 2;;
+	--rm)      RM=yes; shift 1;;
+	--xzopt)          XZ="$2"; shift 2;;
+	-f|--force)       OVERWRITE="yes"; shift 1;;
+	-n|--vmname)      VMName="$2"; shift 2;;
+	-g|--genimage)    GenerateImage=yes; shift 1;;
+	--geturl)         OnlyGetUrl=yes; shift 1;;
+	--getvmname)      OnlyGetVMName=yes; shift 1;;
+	-b|--brewinstall) BPKGS="$2"; shift 2;;
+	-p|--pkginstall)  PKGS="$2"; shift 2;;
+	--osv|--os-variant) VM_OS_VARIANT="$2"; shift 2;;
+	--nocloud*)      NO_CLOUD_INIT="yes"; shift 1;;
+	--dsize)         DSIZE="$2"; shift 2;;
+	--msize)         MSIZE="$2"; shift 2;;
+	--cpus)          VCPUN="$2"; shift 2;;
+	--nointeract)    INTERACT="no"; shift 1;;
+	--net)           NETWORK_OPTS+=" --network=network=$2,model=virtio"; shift 2;;
+	--netmacvtap)
+		srcif=${2:-$(get_default_if)}
+		NETWORK_OPTS+=" --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=virtio"; shift 2;;
+	--macvtapmode)   MacvtapMode="$2"; shift 2;;
+	--saveimage|--sa)
+		SAVE_IMAGE="yes"
+		SaveImagePath=${2:-$ImagePath/download}
+		mkdir -p ${SaveImagePath}
+		shift 2
+		;;
+	-r|--ready)      VIRT_READY=yes; shift 1;;
+	--xdisk)         EXTRA_DISKS=yes; shift 1;;
+	--nvdimm)        NVDIMM=yes; shift 1;;
+	--nosshkey)      NO_SSHKEY=yes; shift 1;;
+	--) shift; break;;
+	esac
+done
+
+# __main__
+if egrep -wo '(vmx|svm)' /proc/cpuinfo -q; then
+	[[ "$VIRT_READY" != yes ]] && {
+		if [[ -t 1 ]]; then
+			enable_libvirt &>/dev/tty
+		else
+			echo -e "{WARN} there's not /dev/tty file redirect enable_libvirt msg to stderr"
+			enable_libvirt >&2
+		fi
+		[[ "$ONLY_PREPARE" = yes ]] && exit
+	}
+else
+	echo -e "{WARN} current machine doesn't support Virtualization, show help info with\n  $PROG -h"
+	exit 1
+fi
+
+mkdir -p $RuntimeTmp
+
+# sub-command
+[[ $P = vmc || $P = vm ]] || true && {
+	subcmd=$1
+	case "$subcmd" in
+	create|creat) shift;;
+	r|rm|d|de|del*) shift; [[ "$1" = -d ]] && shift; vmdelete "$@"; exit $?;;
+	l|lo|log*) shift; [[ "$1" = -d ]] && shift; vmlogin "$@"; exit $?;;
+	e|ex|ex*) shift; [[ "$1" = -d ]] && shift; vmexec "$@"; exit $?;;
+	ls|li|lis|list) shift; [[ "$1" = -d ]] && shift; vmlist "$@"; exit $?;;
+	i|if|if*) shift; [[ "$1" = -d ]] && shift; vmifaddr "$@"; exit $?;;
+	v|v*) shift; [[ "$1" = -d ]] && shift; vmvncport "$@"; exit $?;;
+	ed|ed*) shift; [[ "$1" = -d ]] && shift; vmedit "$@"; exit $?;;
+	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
+	stop|sto*) shift; [[ "$1" = -d ]] && shift; vmstop "$@"; exit $?;;
+	start|sta*) shift; [[ "$1" = -d ]] && shift; vmstart "$@"; exit $?;;
+	net|netcreate) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
+	netinfo) shift; [[ "$1" = -d ]] && shift; netinfo "$@"; exit $?;;
+	netdel|netdelete) shift; [[ "$1" = -d ]] && shift; netdelete "$@"; exit $?;;
+	esac
+}
+
+declare -A distroInfo
+distroInfo[CentOS-8-stream]="nil http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/"
+distroInfo[CentOS-8]="nil http://mirror.centos.org/centos/8/BaseOS/x86_64/os/"
+distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2.xz http://mirror.centos.org/centos/7/os/x86_64/"
+distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz http://mirror.centos.org/centos/6/os/x86_64/"
+# https://ord.mirror.rackspace.com/fedora/releases/$version/Cloud/
+distroInfo[fedora-31]="https://ord.mirror.rackspace.com/fedora/releases/31/Cloud/x86_64/images/"
+distroInfo[fedora-30]="https://ord.mirror.rackspace.com/fedora/releases/30/Cloud/x86_64/images/"
+distroInfo[fedora-29]="https://ord.mirror.rackspace.com/fedora/releases/29/Cloud/x86_64/images/"
+# https://cdimage.debian.org/cdimage/openstack/testing/
+# https://cdimage.debian.org/cdimage/openstack/$latestVersion/
+# https://cdimage.debian.org/cdimage/openstack/archive/$olderVersion/
+distroInfo[debian-testing]="https://cdimage.debian.org/cdimage/openstack/testing/debian-testing-openstack-amd64.qcow2"
+distroInfo[debian-10.1.5]="https://cdimage.debian.org/cdimage/openstack/10.1.5-20191015/debian-10.1.5-20191015-openstack-amd64.qcow2"
+distroInfo[debian-10.1.4]="https://cdimage.debian.org/cdimage/openstack/archive/10.1.4-20191009/debian-10.1.4-20191009-openstack-amd64.qcow2"
+distroInfo[debian-9.11.4]="https://cdimage.debian.org/cdimage/openstack/9.11.4-20191015/debian-9.11.4-20191015-openstack-amd64.qcow2 nil"
+distroInfo[debian-9.11.3]="https://cdimage.debian.org/cdimage/openstack/archive/9.11.3-20191003/debian-9.11.3-20191003-openstack-amd64.qcow2"
+distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2"
+
+is_intranet || {
+	Intranet=no
+	baseDownloadUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
+}
+
+# Phase-0 get distro name
+[[ -z "$Distro" ]] && Distro=$1
+[[ -z "$Distro" ]] && {
+	if [[ -z "$Location" && -z "$Imageurl" ]]; then
+		which dialog &>/dev/null || yum install -y dialog &>/dev/null
+		distropatternOut=$RuntimeTmp/distroPatternOut
+		distropatternIn=$RuntimeTmp/distroPatternIn
+		distrolist=$RuntimeTmp/distroList
+		dialogres=$RuntimeTmp/dialogRes
+		touch $distropatternOut $distropatternIn
+
+		echo -e "CentOS\nfedora\ndebian\nopenSUSE" >>$distropatternOut
+		for dname in "${!distroInfo[@]}"; do echo "$dname"; done >>$distrolist
+
+		[[ "$Intranet" = yes ]] && {
+			echo -e "Fedora\nRHEL-8\nRHEL-7\nRHEL-6\nRHEL5" >>$distropatternIn
+			fetch_distro_list >>$distrolist
+		}
+
+		familys=$(sed -e 's/.*/"&" "" 1/' $distropatternIn $distropatternOut)
+		dialog --backtitle "$0" --radiolist "please selet distro family/pattern:" 16 40 12 $familys 2>$dialogres || { Usage; exit 0; }
+		pattern=$(head -n1 $dialogres|sed 's/"//g')
+		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|egrep "$pattern")
+		[[ "$Intranet" = yes ]] && grep -F "$pattern" $distropatternIn && {
+			dialog --title "If include nightly build" \
+				--backtitle "Do you want nightly build distros?" \
+				--yesno "Do you want nightly build distros?" 7 60
+			[[ $? = 1 ]] && dList=$(echo "$dList"|grep -v '\.n\.[0-9]"')
+		}
+		dialog --backtitle "$0" --radiolist "please select distro:" 30 60 28 $dList 2>$dialogres || { Usage; exit 0; }
+		Distro=$(head -n1 $dialogres|sed 's/"//g')
+		printf '\33[H\33[2J'
+	else
+		Usage
+		echo -e "\n{WARN} ^^^ a distro name is necessary!\n"
+		exit 1
+	fi
+}
+[[ -z "$Distro" ]] && {
+	echo -e "{WARN} you have to select a distro name or specified it by adding command line parameter:\n"
+	Usage
+	exit 1
+}
+
+[[ "$OnlyGetVMName" = yes ]] && {
+	vmname_gen $Distro $VMName
+	exit $?
+}
+
+[[ -z "$OnlyGetUrl" ]] && {
+	# check if VM exist
+	vmname=$(vmname_gen $Distro $VMName)
+	virsh desc $vmname &>/dev/null && {
+		if [[ "${OVERWRITE}" = "yes" ]]; then
+			echo "{INFO} VM $vmname has been there, remove it ..."
+			_vmdelete $vmname
+		else
+			echo "{INFO} VM $vmname has been there, if you want overwrite please use --force option"
+			exit
+		fi
+	}
+	vmhostname=$vmname
+	[[ "$GenerateImage" = yes ]] && vmhostname=${vmname#${vmprefix}-}
+
+	VMpath=$VMSHOME/$Distro/$vmname
+	mkdir -p $VMpath
+}
+
+# Phase-1: get distro's Location or Image url
+[[ -n "${distroInfo[$Distro]}" ]] && {
+	echo -e "{INFO} ${distroInfo[$Distro]}"
+	read Imageurl Location <<<"${distroInfo[$Distro]}"
+}
+
+if [[ "$InstallType" = import ]]; then
+	if [[ -z "$Imageurl" ]]; then
+		echo "{INFO} searching private image url of $Distro ..." >&2
+		baseurl=http://download.eng.bos.redhat.com/qa/rhts/lookaside/distro-vm-images
+		baseurl=http://download.devel.redhat.com/qa/rhts/lookaside/distro-vm-images
+		imageLocation=${baseurl}/$Distro
+		read Imageurl _ < <(getimageurls ${imageLocation} "(qcow2|qcow2.xz)")
+
+		if [[ -z "$Imageurl" ]]; then
+			echo "{INFO} getting fastest location of $Distro ..." >&2
+			Location=$(distro2location $Distro)
+			[[ -z "$Location" ]] && {
+				echo "{WARN} can not find location info of '$Distro'" >&2
+				exit 1
+			}
+			echo -e " -> $Location"
+			echo "{INFO} getting image url according location url ^^^ ..." >&2
+			imageLocation=${Location/\/os\//\/images\/}
+			[[ $Distro = Fedora-* ]] &&
+				imageLocation=$(echo "$imageLocation" | sed -r 's;/[Ss]erver|Everything/;/Cloud/;')
+			is_available_url $imageLocation ||
+				imageLocation=${imageLocation/Cloud/CloudImages}
+			read Imageurl _ < <(getimageurls $imageLocation "(qcow2|qcow2.xz)")
+			if [[ $? != 0 ]]; then
+				echo "{INFO} can not find image info of '$Distro', switching to Location mode" >&2
+				InstallType=location
+				Imageurl=
+			fi
+		fi
+	else
+		if [[ ! -f $Imageurl ]] && ! is_available_url $Imageurl; then
+			echo "{INFO} image url $Imageurl is not available, switching to Location mode" >&2
+			InstallType=location
+			Imageurl=
+		fi
+	fi
+
+	egrep -q '(qcow2|qcow2.xz)' <<<"$Imageurl" || {
+		read Imageurl _ < <(getimageurls ${Imageurl} '(qcow2|qcow2.xz)')
+	}
+
+	[[ -n "$Imageurl" ]] &&
+		echo -e "image url: $Imageurl"
+fi
+
+if [[ "$InstallType" = location ]]; then
+	if [[ -z "$Location" ]]; then
+		echo "{INFO} getting fastest location of $Distro ..." >&2
+		Location=$(distro2location $Distro)
+		[[ -z "$Location" ]] && {
+			echo "{WARN} can not find distro location. please check if '$Distro' is valid distro" >&2
+			exit 1
+		}
+	fi
+	MSIZE=2048
+
+	[[ -n "$Location" ]] &&
+		echo -e "location url: $Location"
+fi
+
+[[ -n "$OnlyGetUrl" ]] && { exit; }
+
+echo "{INFO} guess/verify os-variant ..."
+[[ -z "$VM_OS_VARIANT" ]] && {
+	VM_OS_VARIANT=${Distro/-/}
+	VM_OS_VARIANT=${VM_OS_VARIANT%%-*}
+	VM_OS_VARIANT=${VM_OS_VARIANT,,}
+}
+osvariants=$(virt-install --os-variant list 2>/dev/null) ||
+	osvariants=$(osinfo-query os 2>/dev/null)
+[[ -n "$osvariants" ]] && {
+	grep -q "^ $VM_OS_VARIANT " <<<"$osvariants" || VM_OS_VARIANT=${VM_OS_VARIANT/.*/-unknown}
+	grep -q "^ $VM_OS_VARIANT " <<<"$osvariants" || VM_OS_VARIANT=${VM_OS_VARIANT/[0-9]*/-unknown}
+	if grep -q "^ $VM_OS_VARIANT " <<<"$osvariants"; then
+		OS_VARIANT_OPT=--os-variant=$VM_OS_VARIANT
+	fi
+}
+
+is_bridge() {
+	local ifname=$1
+	[[ -z "$ifname" ]] && return 1
+	ip -d a s $ifname | grep -qw bridge
+}
+get_default_if() {
+	local notbr=$1
+	local iface=
+
+	iface=$(ip route get 1 | awk '/^[0-9]/{print $5}')
+	if [[ -n "$notbr" ]] && is_bridge $iface; then
+		# ls /sys/class/net/$iface/brif
+		if command -v brctl; then
+			brctl show $iface | awk 'NR==2 {print $4}'
+		else
+			ip link show type bridge_slave | awk -F'[ :]+' '/master '$iface' state UP/{print $2}' | head -n1
+		fi
+		return 0
+	fi
+	echo $iface
+}
+
+# Phase-2: start create VM
+# prepare ssh pub key
+[[ -f ~/.ssh/id_rsa && -f ~/.ssh/id_rsa.pub ]] || {
+	echo -e 'y\n' | ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
+}
+# prepare network option
+[[ -z "$NETWORK_OPTS" ]] && {
+	srcif=$(get_default_if)
+	NETWORK_OPTS="--network=network=default,model=virtio --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=virtio"
+}
+
+if [[ "$EXTRA_DISKS" = yes ]]; then
+	qemu-img create -f qcow2 $VMpath/ext4.qcow2 10G
+	qemu-img create -f qcow2 $VMpath/xfs.qcow2 10G
+	DISK_OPTS="--disk path=$VMpath/ext4.qcow2,bus=scsi --disk path=$VMpath/xfs.qcow2,bus=scsi"
+fi
+
+if [[ "$NVDIMM" = yes ]]; then
+	nvdimmf0=$VMpath/nvdimm-0.dev
+	nvdimmf1=$VMpath/nvdimm-1.dev
+	truncate -s 2050M $nvdimmf0
+	truncate -s 2050M $nvdimmf1
+	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=32768,hotplugmemoryslots=2 --cpu cell0.cpus=0,cell0.memory=$((MSIZE*1024)) --memdev nvdimm,source_path=$nvdimmf0,target_size=2048,target_node=0,target_label_size=2 --memdev nvdimm,source_path=$nvdimmf1,target_size=2048,target_node=0,target_label_size=2"
+else
+	MEM_OPTS="--memory=${MSIZE}"
+fi
+
+if [[ "$InstallType" = location ]]; then
+	[[ -z "$KSPath" ]] && {
+		echo "{INFO} generating kickstart file for $Distro ..."
+		ksauto=$RuntimeTmp/ks-$VM_OS_VARIANT-$$.cfg
+		postscript=$RuntimeTmp/postscript.ks
+		KSPath=$ksauto
+		REPO_OPTS=$(distro2repos $Distro $Location | sed 's/^/--repo /')
+		which ks-generator.sh &>/dev/null || {
+			_url=$baseDownloadUrl/utils/ks-generator.sh
+			mkdir -p ~/bin && curl -s -o ~/bin/ks-generator.sh -C - -L $_url
+			chmod +x ~/bin/ks-generator.sh
+		}
+
+		cat <<-END >>$postscript
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] configure hostname ..."
+		test -f /etc/hostname && echo ${vmhostname} >/etc/hostname || echo HOSTNAME=${vmhostname} >>/etc/sysconfig/network
+
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install pkgs ${PKGS} ..."
+		yum install -y "${PKGS}" 2>/dev/null
+
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install ..."
+		wget -O /usr/bin/brewinstall.sh -N -q $baseDownloadUrl/utils/brewinstall.sh --no-check-certificate
+		chmod +x /usr/bin/brewinstall.sh
+		brewinstall.sh $BPKGS
+
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] kdump-setup ..."
+		wget -O /usr/bin/kdump-setup.sh -N -q $baseDownloadUrl/utils/kdump-setup.sh --no-check-certificate
+		chmod +x /usr/bin/kdump-setup.sh
+		kdump-setup.sh
+		END
+		[[ "$GenerateImage" = yes ]] && {
+			cat <<-END >>$postscript
+			echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] install cloud-init ..."
+			yum install -y cloud-init
+			END
+		}
+		sed -i 's/enabled = 1/enabled = 0/' /etc/yum.repo.d/cdn_os.repo
+		if [[ "$NO_SSHKEY" = yes ]]; then
+			ks-generator.sh -d $Distro -url $Location $REPO_OPTS --post $postscript >$KSPath
+		else
+			ks-generator.sh -d $Distro -url $Location $REPO_OPTS --post $postscript --sshkeyf ~/.ssh/id_rsa.pub >$KSPath
+		fi
+	}
+
+	echo -e "{INFO} creating VM by using location:\n ->  $Location"
+	echo $Location >$VMpath/url
+
+	[[ "$GenerateImage" = yes ]] && {
+		sed -i '/^reboot$/s//poweroff/' ${KSPath}
+		NOREBOOT=--noreboot
+	}
+	ksfile=${KSPath##*/}
+	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
+	nohup virt-install --connect=qemu:///system --hvm --accelerate \
+	  --name $vmname \
+	  --location $Location \
+	  $OS_VARIANT_OPT \
+	  --vcpus ${VCPUN:-4} \
+	  $MEM_OPTS \
+	  --disk path=$VMpath/${vmname}.qcow2,bus=virtio \
+	  $DISK_OPTS \
+	  $NETWORK_OPTS \
+	  --initrd-inject $KSPath \
+	  --extra-args="ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 rd.driver.pre=loop" \
+	  --noautoconsole \
+	  --vnc --vnclisten 0.0.0.0 $NOREBOOT &>$VMpath/nohup.log &
+	Installpid=$!
+
+	while true; do test -f $VMpath/nohup.log && break; done
+	expect -c "spawn tail -f $VMpath/nohup.log
+		expect {
+			{* to complete the installation process.} { exit }
+			{*\r} { exp_continue }
+		}
+	"
+
+	trap - SIGINT
+	for ((i=0; i<8; i++)); do
+		#clear -x
+		printf '\33[H\33[2J'
+		INTERACT=$INTERACT expect -c '
+			set intc 0
+			set timeout -1
+			spawn virsh console '"$vmname"'
+			trap {
+				send_user "You pressed Ctrl+C [incr intc]/8\n"
+				if {$intc >= 8} {
+					interact
+				}
+			} SIGINT
+			expect {
+				"error: Disconnected from qemu:///system due to end of file*" {
+					send "\r"
+					puts $expect_out(buffer)
+					exit 5
+				}
+				"error: internal error: character device console0 is not using a PTY" {
+					send "\r"
+					puts $expect_out(buffer)
+					exit 7
+				}
+				"Unsupported Hardware Detected" {
+					send "\r"
+					exp_continue
+				}
+				"Which would you like to install through" {
+					# see: [RHEL 6.1] Anaconda requires user interaction in case of kickstart network activation failing
+					send "\r"
+					interact
+				}
+
+				"reboot: Power down" { exit 0 }
+				"Power down" { exit 0 }
+
+				"reboot: Restarting system" { send "\r"; exit 1 }
+				"Restarting system" { send "\r"; exit 1 }
+
+				"error: The domain is not running" { send "\r"; exit 127 }
+
+				"reboot: System halted" { send_user "\r\rsomething is wrong! cancel installation ..\r\r"; exit 255 }
+				"System halted" { send_user "\r\rsomething is wrong! cancel installation ..\r\r"; exit 255 }
+
+				"An unknown error has occurred" { exit 255 }
+				"error: Domain not found:" { exit 255 }
+
+				"* login:" { send "root\r" }
+			}
+			expect "Password:" {
+				send "redhat\r"
+				send "\r\r\r\r\r\r"
+				send "# your are in console, Ctr + ] to exit \r"
+				send "\r\r\r\r\r\r"
+			}
+
+			if {$env(INTERACT) == "no"} { exit 0 }
+			interact
+		'
+		ReturnCode=$?
+		[[ $ReturnCode = 0 || $ReturnCode = 255 ]] && break
+		[[ $ReturnCode = 127 ]] && { virsh start $vmname 2>&1 | sed 's/error: //'; continue; }
+		sleep 1
+	done
+	echo -e "\n{INFO} Quit from expect -c 'spawn virsh console $vmname'"
+
+	[[ $ReturnCode = 255 ]] && {
+		echo -e "\n{INFO} something is wrong(please check screen log), will clean all tmp files ..."
+		RM=yes
+		GenerateImage=
+	}
+
+elif [[ "$InstallType" = import ]]; then
+	[[ -f $Imageurl ]] && Imageurl=file://$(readlink -f ${Imageurl})
+	imagefilename=${Imageurl##*/}
+	imagefile=$VMpath/$imagefilename
+
+	echo "{INFO} downloading cloud image file of $Distro to $imagefile ..."
+	[[ $Imageurl = file://$imagefile ]] || {
+		if [[ -n "$SAVE_IMAGE" ]]; then
+			curl -C - -L $Imageurl -o ${SaveImagePath}/${imagefilename}
+			cp ${SaveImagePath}/${imagefilename} $imagefile
+		else
+			curl -C - -L $Imageurl -o $imagefile
+		fi
+	}
+	[[ -f ${imagefile} ]] || exit 1
+
+	[[ $imagefile = *.xz ]] && {
+		echo "{INFO} decompress $imagefile ..."
+		xz -d $imagefile
+		imagefile=${imagefile%.xz}
+		[[ -f ${imagefile} ]] || exit 1
+	}
+
+	[[ "$NO_CLOUD_INIT" != yes ]] && {
+		echo -e "{INFO} creating cloud-init iso"
+		which cloud-init-iso-gen.sh &>/dev/null || {
+			_url=$baseDownloadUrl/utils/cloud-init-iso-gen.sh
+			mkdir -p ~/bin && curl -s -o ~/bin/cloud-init-iso-gen.sh -C - -L $_url
+			chmod +x ~/bin/cloud-init-iso-gen.sh
+		}
+		cloudinitiso=$VMpath/$vmname-cloud-init.iso
+		[[ -n "$Location" ]] && {
+			REPO_OPTS=$(distro2repos $Distro $Location | sed -e '/cdn_os:/d' -e 's/^/--repo /')
+		}
+		if [[ "$NO_SSHKEY" = yes ]]; then
+			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS
+		else
+			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS \
+				--sshkeyf ~/.ssh/id_rsa.pub
+		fi
+		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom"
+	}
+
+	echo -e "{INFO} creating VM by import $imagefile"
+	echo $Imageurl >$VMpath/url
+
+	_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
+	[[ "$_size" -lt $((DSIZE*1024*1024*1024)) ]] && {
+		echo -e "{INFO} resize $imagefile to ${DSIZE}G"
+		qemu-img resize ${imagefile} ${DSIZE}G
+	}
+	nohup virt-install --connect=qemu:///system --hvm --accelerate \
+	  --name $vmname \
+	  --vcpus ${VCPUN:-4} \
+	  $MEM_OPTS \
+	  --disk path=${imagefile},bus=virtio \
+	  $DISK_OPTS \
+	  $CLOUD_INIT_OPT \
+	  $NETWORK_OPTS \
+	  --import \
+	  --noautoconsole \
+	  --vnc --vnclisten 0.0.0.0 $OS_VARIANT_OPT &>$VMpath/nohup.log &
+	Installpid=$!
+
+	while true; do test -f $VMpath/nohup.log && break; done
+	expect -c "spawn tail -f $VMpath/nohup.log
+		expect {
+			{*Domain creation completed.} { exit }
+			{*\r} { exp_continue }
+		}
+	"
+
+	trap - SIGINT
+	for ((i=0; i<8; i++)); do
+		INTERACT=$INTERACT SHUTDOWN=$GenerateImage expect -c '
+			set intc 0
+			set timeout -1
+			spawn virsh console '"$vmname"'
+			trap {
+				send_user "You pressed Ctrl+C [incr intc]/8\n"
+				if {$intc >= 8} {
+					interact
+				}
+			} SIGINT
+			expect {
+				"error: failed to get domain" {
+					send "\r"
+					puts $expect_out(buffer)
+					exit 6
+				}
+				"error: internal error: character device console0 is not using a PTY" {
+					send "\r"
+					puts $expect_out(buffer)
+					exit 7
+				}
+				"* login:" { send "root\r" }
+			}
+			expect "Password:" {
+				send "redhat\r"
+				send "\r\r\r\r\r\r"
+				if {$env(SHUTDOWN) == "yes"} {
+					send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
+					send "\r\n"
+					"Restarting system" { exit 0 }
+				}
+
+				send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
+				send "\r\n"
+				expect {
+					"or cloud-init done ~~~~~~~~d" {send "\r\r# Now you can take over the keyboard\r\r"}
+					"* login:" {
+						send "root\r"
+						expect "Password:" {
+							send "redhat\r"
+							send "\r\r# Now you can take over the keyboard\r\r"
+						}
+					}
+				}
+				send "# and your are in console, Ctr + ] to exit \r"
+				send "\r\r"
+			}
+
+			if {$env(INTERACT) == "no"} { exit 0 }
+			interact
+		' && break
+		test -d /proc/$Installpid || break
+		sleep 1
+	done
+	unset Installpid
+	echo -e "\n{INFO} Quit from expect -c 'spawn virsh console $vmname'"
+fi
+
+if ! virsh desc $vmname &>/dev/null; then
+	echo -e "\n{ERROR} virt-install fail"
+	rm -rf $VMpath && rmdir {$VMpath%/*} 2>/dev/null
+	exit 1
+fi
+
+if [[ "$GenerateImage" = yes ]]; then
+	mkdir -p $ImagePath/$Distro
+	image=$(virsh dumpxml --domain $vmname | sed -n "/source file=/{s|^.*='||; s|'/>$||; p}")
+	imgfilename=$(sed "s;.*/${vmprefix}-;;" <<<"${image}")
+	newimage=$ImagePath/$Distro/${imgfilename}
+
+	echo -e "\n{INFO} force shutdown $vmname ..."
+	virsh destroy $vmname 2>/dev/null
+
+	if ! true; then
+		echo -e "\n{INFO} copy image $image to ${newimage} ..."
+		cp ${image} ${newimage}
+	else
+		echo -e "\n{INFO} virt-sparsify image $image to ${newimage} ..."
+		LIBGUESTFS_BACKEND=direct virt-sparsify --check-tmpdir fail ${image} ${newimage} || {
+			cp ${image} ${newimage}
+			LIBGUESTFS_BACKEND=direct virt-sparsify --in-place ${newimage}
+		}
+		ls -lh ${image}
+		ls -lh ${newimage}
+	fi
+
+	echo -e "\n{INFO} virt-sysprep ..."
+	ls -lh ${newimage}
+	LIBGUESTFS_BACKEND=direct virt-sysprep -a ${newimage}
+	ls -lh ${newimage}
+
+	echo -e "\n{INFO} xz compress image ..."
+	time xz -z -f -T 0 ${XZ:--9} ${newimage}
+	ls -lh ${newimage}.xz
+
+	echo -e "\n{INFO} remove temporary VM $vmname ..."
+	_vmdelete $vmname
+	exit 0
+fi
+
+if [[ "$RM" = yes ]]; then
+	_vmdelete $vmname
+	exit 0
+fi
+
+if [[ ! -f ~/.ssh/config ]]; then
+	cat <<-EOF > ~/.ssh/config
+	Host 192.168.*.*
+	   StrictHostKeyChecking no
+	   UserKnownHostsFile=/dev/null
+	   LogLevel ERROR
+	EOF
+	chmod 600 ~/.ssh/config
+fi
+
+: <<\COMM
+echo -e "\n{INFO} attach test disk ext4.qcow2 and xfs.qcow2:"
+qemu-img create -f qcow2 $VMpath/ext4.qcow2 10G
+qemu-img create -f qcow2 $VMpath/xfs.qcow2 10G
+virsh attach-disk $vmname --subdriver qcow2 --persistent $VMpath/ext4.qcow2 vdb #--current --targetbus usb
+virsh attach-disk $vmname --subdriver qcow2 --persistent $VMpath/xfs.qcow2 vdc #--current --targetbus usb
+#virsh detach-disk $vmname --persistent vdb
+#virsh detach-disk $vmname --persistent vdc
+
+echo -e "  $ virsh console $vmname"
+echo -e "  $ ssh foo@$vmname  #password: redhat"
+read addr < <(vmifaddr $vmname)
+[[ -n "$addr" ]] && {
+	echo -e "  $ ssh foo@$addr  #password: redhat"
+}
+COMM
+
+echo -e "\n{INFO} you can try login $vmname again by using:"
+echo -e "  $ vm login $vmname          #from host"
+echo -e "  $ vncviewer $(vmvncport $vmname)    #from remote"
+exit 0
