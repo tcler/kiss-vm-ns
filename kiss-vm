@@ -23,11 +23,12 @@ INTERACT=yes
 vmprefix=$(whoami)
 [[ -n "$SUDO_USER" ]] && vmprefix=${SUDO_USER}-sudo
 Intranet=yes
-baseDownloadUrl=http://download.devel.redhat.com/qa/rhts/lookaside/bkr-client-improved
 VIRT_READY=unkown
 MSIZE=1024
 DSIZE=20
 baudrate=115200
+baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
+bkrClientImprovedUrl=http://download.devel.redhat.com/qa/rhts/lookaside/bkr-client-improved
 
 Cleanup() {
 	cd ~
@@ -414,7 +415,7 @@ is_intranet() {
 # functions that work in Intranet
 install_distro_compose() {
 	which distro-compose &>/dev/null || {
-		_url=$baseDownloadUrl/utils/distro-compose
+		_url=$bkrClientImprovedUrl/utils/distro-compose
 		mkdir -p ~/bin && curl -s -o ~/bin/distro-compose -C - -L $_url
 		chmod +x ~/bin/distro-compose
 	}
@@ -445,7 +446,7 @@ distro2location() {
 	urls=$(echo "$distrotrees" | awk '$3 ~ /https?:.*'"(${variant}|BaseOS|Everything)"'/{print $3}' | sort -u)
 
 	which fastesturl.sh &>/dev/null || {
-		_url=$baseDownloadUrl/utils/fastesturl.sh
+		_url=$baseUrl/utils/fastesturl.sh
 		mkdir -p ~/bin && curl -s -o ~/bin/fastesturl.sh -C - -L $_url
 		chmod +x ~/bin/fastesturl.sh
 	}
@@ -813,7 +814,8 @@ distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud
 
 is_intranet || {
 	Intranet=no
-	baseDownloadUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
+	baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
+	bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
 }
 
 # Phase-0 get distro name
@@ -1025,7 +1027,7 @@ if [[ "$InstallType" = location ]]; then
 		KSPath=$ksauto
 		REPO_OPTS=$(distro2repos $Distro $Location | sed 's/^/--repo /')
 		which ks-generator.sh &>/dev/null || {
-			_url=$baseDownloadUrl/utils/ks-generator.sh
+			_url=$baseUrl/utils/ks-generator.sh
 			mkdir -p ~/bin && curl -s -o ~/bin/ks-generator.sh -C - -L $_url
 			chmod +x ~/bin/ks-generator.sh
 		}
@@ -1038,12 +1040,12 @@ if [[ "$InstallType" = location ]]; then
 		yum install -y "${PKGS}" 2>/dev/null
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install ..."
-		wget -O /usr/bin/brewinstall.sh -N -q $baseDownloadUrl/utils/brewinstall.sh --no-check-certificate
+		wget -O /usr/bin/brewinstall.sh -N -q $bkrClientImprovedUrl/utils/brewinstall.sh --no-check-certificate
 		chmod +x /usr/bin/brewinstall.sh
 		brewinstall.sh $BPKGS
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] kdump-setup ..."
-		wget -O /usr/bin/kdump-setup.sh -N -q $baseDownloadUrl/utils/kdump-setup.sh --no-check-certificate
+		wget -O /usr/bin/kdump-setup.sh -N -q $baseUrl/utils/kdump-setup.sh --no-check-certificate
 		chmod +x /usr/bin/kdump-setup.sh
 		kdump-setup.sh
 		END
@@ -1193,7 +1195,7 @@ elif [[ "$InstallType" = import ]]; then
 	[[ "$NO_CLOUD_INIT" != yes ]] && {
 		echo -e "{INFO} creating cloud-init iso"
 		which cloud-init-iso-gen.sh &>/dev/null || {
-			_url=$baseDownloadUrl/utils/cloud-init-iso-gen.sh
+			_url=$baseUrl/utils/cloud-init-iso-gen.sh
 			mkdir -p ~/bin && curl -s -o ~/bin/cloud-init-iso-gen.sh -C - -L $_url
 			chmod +x ~/bin/cloud-init-iso-gen.sh
 		}
