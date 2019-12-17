@@ -1047,11 +1047,15 @@ if [[ "$InstallType" = location ]]; then
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install pkgs ${PKGS} ..."
 		yum install -y "${PKGS}" 2>/dev/null
 
+		END
+		[[ $Intranet = yes ]] && cat <<-END >>$postscript
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install ..."
 		wget -O /usr/bin/brewinstall.sh -N -q $bkrClientImprovedUrl/utils/brewinstall.sh --no-check-certificate
 		chmod +x /usr/bin/brewinstall.sh
 		brewinstall.sh $BPKGS
 
+		END
+		cat <<-END >>$postscript
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] kdump-setup ..."
 		wget -O /usr/bin/kdump-setup.sh -N -q $baseUrl/utils/kdump-setup.sh --no-check-certificate
 		chmod +x /usr/bin/kdump-setup.sh
