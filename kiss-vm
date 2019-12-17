@@ -817,7 +817,8 @@ distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud
 is_intranet || {
 	Intranet=no
 	baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
-	bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
+	#bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
+	bkrClientImprovedUrl=
 }
 
 # Phase-0 get distro name
