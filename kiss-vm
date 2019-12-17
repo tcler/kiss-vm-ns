@@ -27,7 +27,7 @@ VIRT_READY=unkown
 MSIZE=1024
 DSIZE=20
 baudrate=115200
-baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
+baseUrl=http://download.devel.redhat.com/qa/rhts/lookaside/kiss-vm-ns
 bkrClientImprovedUrl=http://download.devel.redhat.com/qa/rhts/lookaside/bkr-client-improved
 
 Cleanup() {
