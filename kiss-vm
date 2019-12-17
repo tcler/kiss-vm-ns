@@ -413,177 +413,179 @@ is_intranet() {
 }
 
 # functions that work in Intranet
-install_distro_compose() {
-	which distro-compose &>/dev/null || {
-		_url=$bkrClientImprovedUrl/utils/distro-compose
-		mkdir -p ~/bin && curl -s -o ~/bin/distro-compose -C - -L $_url
-		chmod +x ~/bin/distro-compose
+if [[ $Intranet = yes ]]; then
+	install_distro_compose() {
+		which distro-compose &>/dev/null || {
+			_url=$bkrClientImprovedUrl/utils/distro-compose
+			mkdir -p ~/bin && curl -s -o ~/bin/distro-compose -C - -L $_url
+			chmod +x ~/bin/distro-compose
+		}
 	}
-}
-fetch_distro_list() {
-	install_distro_compose
-	distro-compose --distrolist
-}
-fetch_distro_trees() {
-	local distro=$1
-	local arch=$2
-	local dtrees=
-
-	#dtrees=$(bkr distro-trees-list --name "$distro" --arch "$arch"|egrep '(released|compose)')
-	install_distro_compose
-	dtrees=$(distro-compose -d "$distro" --distrotrees|egrep "(released|compose).*${arch}")
-
-	[[ -z "$dtrees" ]] &&
-		dtrees=$(distro-compose -d "$distro" --distrotrees|egrep "(Everything).*${arch}")
-	echo "$dtrees"
-}
-distro2location() {
-	local distro=$1
-	local variant=${2:-Server}
-	local arch=$(arch)
-
-	distrotrees=$(fetch_distro_trees $distro $arch)
-	urls=$(echo "$distrotrees" | awk '$3 ~ /https?:.*'"(${variant}|BaseOS|Everything)"'/{print $3}' | sort -u)
-
-	which fastesturl.sh &>/dev/null || {
-		_url=$baseUrl/utils/fastesturl.sh
-		mkdir -p ~/bin && curl -s -o ~/bin/fastesturl.sh -C - -L $_url
-		chmod +x ~/bin/fastesturl.sh
+	fetch_distro_list() {
+		install_distro_compose
+		distro-compose --distrolist
 	}
-	fastesturl.sh $urls
-}
-getimageurls() {
-	local parenturl=$1
-	local suffix_pattern=$2
-	local rc=1
+	fetch_distro_trees() {
+		local distro=$1
+		local arch=$2
+		local dtrees=
 
-	local imagenames=$(curl -L -s ${parenturl} | sed -nr '/.*"([^"]+\.'"${suffix_pattern}"')".*/{s//\1/;p}')
-	for imagename in $imagenames; do
-		if [[ -n "${imagename}" ]]; then
-			[[ "${imagename}" = *Atomic* ]] && continue
-			echo ${parenturl%/}/${imagename}
-			rc=0
-		fi
-	done
-	return $rc
-}
+		#dtrees=$(bkr distro-trees-list --name "$distro" --arch "$arch"|egrep '(released|compose)')
+		install_distro_compose
+		dtrees=$(distro-compose -d "$distro" --distrotrees|egrep "(released|compose).*${arch}")
 
-distro2repos() {
-	local distro=$1
-	local url=$2
-	local Repos=()
+		[[ -z "$dtrees" ]] &&
+			dtrees=$(distro-compose -d "$distro" --distrotrees|egrep "(Everything).*${arch}")
+		echo "$dtrees"
+	}
+	distro2location() {
+		local distro=$1
+		local variant=${2:-Server}
+		local arch=$(arch)
 
-	shopt -s nocasematch
-	case $distro in
-	RHEL-5*|RHEL5*)
-		{ read; read os arch verytag verxosv _; } < <(tac -s ' ' <<<"${url//\// }")
-		debug_url=${url/\/os/\/debug}
-		osv=${verxosv#RHEL-5-}
-		Repos+=(
-			Server:${url}/Server
-			Cluster:${url}/Cluster
-			ClusterStorage:${url}/ClusterStorage
-			Client:${url}/Client
-			Workstation:${url}/Workstation
+		distrotrees=$(fetch_distro_trees $distro $arch)
+		urls=$(echo "$distrotrees" | awk '$3 ~ /https?:.*'"(${variant}|BaseOS|Everything)"'/{print $3}' | sort -u)
 
-			${osv}-debuginfo:${debug_url}
-		)
-		;;
+		which fastesturl.sh &>/dev/null || {
+			_url=$baseUrl/utils/fastesturl.sh
+			mkdir -p ~/bin && curl -s -o ~/bin/fastesturl.sh -C - -L $_url
+			chmod +x ~/bin/fastesturl.sh
+		}
+		fastesturl.sh $urls
+	}
+	getimageurls() {
+		local parenturl=$1
+		local suffix_pattern=$2
+		local rc=1
 
-#RHEL-6-EXTRAS
-#CDN
-#https://cdn.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
-#Internal
-#http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
-#RHEL-7-EXTRAS
-#CDN
-#https://cdn.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
-#Internal
-#http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
+		local imagenames=$(curl -L -s ${parenturl} | sed -nr '/.*"([^"]+\.'"${suffix_pattern}"')".*/{s//\1/;p}')
+		for imagename in $imagenames; do
+			if [[ -n "${imagename}" ]]; then
+				[[ "${imagename}" = *Atomic* ]] && continue
+				echo ${parenturl%/}/${imagename}
+				rc=0
+			fi
+		done
+		return $rc
+	}
 
-#RHEL-6-EXTRAS
-#CDN
-#http://cdn.stage.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
-#Internal
-#http://pulp.dist.stage.ext.phx2.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
-#RHEL-7-EXTRAS
-#CDN
-#http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
-#Internal
-#http://pulp.dist.stage.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
+	distro2repos() {
+		local distro=$1
+		local url=$2
+		local Repos=()
 
-	RHEL-6*|RHEL6*|centos6*|centos-6*)
-		{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
-		debug_url=${url/\/os/\/debug}
-		Repos+=(
-			${osv}:${url}
-			${osv}-SAP:${url/$osv/${osv}-SAP}
-			${osv}-SAPHAHA:${url/$osv/${osv}-SAPHAHA}
+		shopt -s nocasematch
+		case $distro in
+		RHEL-5*|RHEL5*)
+			{ read; read os arch verytag verxosv _; } < <(tac -s ' ' <<<"${url//\// }")
+			debug_url=${url/\/os/\/debug}
+			osv=${verxosv#RHEL-5-}
+			Repos+=(
+				Server:${url}/Server
+				Cluster:${url}/Cluster
+				ClusterStorage:${url}/ClusterStorage
+				Client:${url}/Client
+				Workstation:${url}/Workstation
 
-			${osv}-debuginfo:${debug_url}
-			${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
-			${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-			extras:http://cdn.stage.redhat.com/content/dist/rhel/server/6/6Server/$(arch)/extras/os
-			cdn_os:http://cdn.stage.redhat.com/content/dist/rhel/server/6/6Server/$(arch)/os
-		)
-		;;
-	RHEL-7*|RHEL7*|centos7*|centos-7*)
-		{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
-		debug_url=${url/\/os/\/debug\/tree}
-		Repos+=(
-			${osv}:${url}
-			${osv}-optional:${url/$osv/${osv}-optional}
-			${osv}-NFV:${url/$osv/${osv}-NFV}
-			${osv}-RT:${url/$osv/${osv}-RT}
-			${osv}-SAP:${url/$osv/${osv}-SAP}
-			${osv}-SAPHAHA:${url/$osv/${osv}-SAPHAHA}
+				${osv}-debuginfo:${debug_url}
+			)
+			;;
 
-			${osv}-debuginfo:${debug_url}
-			${osv}-optional-debuginfo:${debug_url/$osv/${osv}-optional}
-			${osv}-NFV-debuginfo:${debug_url/$osv/${osv}-NFV}
-			${osv}-RT-debuginfo:${debug_url/$osv/${osv}-RT}
-			${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
-			${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-			extras:http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/$(arch)/extras/os
-			cdn_os:http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/$(arch)/os
-		)
-		;;
-	RHEL-8*|RHEL8*)
-		{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
-		debug_url=${url/\/os/\/debug\/tree}
-		read dtype distro < <(awk -F/+ '{ for (i=3;i<NF;i++) { if ($(i+1) ~ /RHEL-/) { print($i, $(i+1)); break }}}' <<<"$url")
-		Repos+=(
-			BaseOS:${url}
-			AppStream:${url/BaseOS/AppStream}
-			CRB:${url/BaseOS/CRB}
-			HighAvailability:${url/BaseOS/HighAvailability}
-			NFV:${url/BaseOS/NFV}
-			ResilientStorage:${url/BaseOS/ResilientStorage}
-			RT:${url/BaseOS/RT}
-			SAP:${url/BaseOS/SAP}
-			SAPHANA:${url/BaseOS/SAPHANA}
+	#RHEL-6-EXTRAS
+	#CDN
+	#https://cdn.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
+	#Internal
+	#http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
+	#RHEL-7-EXTRAS
+	#CDN
+	#https://cdn.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
+	#Internal
+	#http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
 
-			BaseOS-debuginfo:${debug_url}
-			AppStream-debuginfo:${debug_url/BaseOS/AppStream}
-			CRB-debuginfo:${debug_url/BaseOS/CRB}
-			HighAvailability-debuginfo:${debug_url/BaseOS/HighAvailability}
-			NFV-debuginfo:${debug_url/BaseOS/NFV}
-			ResilientStorage-debuginfo:${debug_url/BaseOS/ResilientStorage}
-			RT-debuginfo:${debug_url/BaseOS/RT}
-			SAP-debuginfo:${debug_url/BaseOS/SAP}
-			SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
-			Buildroot:http://download.devel.redhat.com/$dtype/latest-BUILDROOT-8-RHEL-8/compose/Buildroot/$arch/os
-		)
-		;;
-	esac
-	shopt -u nocasematch
+	#RHEL-6-EXTRAS
+	#CDN
+	#http://cdn.stage.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
+	#Internal
+	#http://pulp.dist.stage.ext.phx2.redhat.com/content/dist/rhel/server/6/6Server/x86_64/extras/
+	#RHEL-7-EXTRAS
+	#CDN
+	#http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
+	#Internal
+	#http://pulp.dist.stage.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/
 
-	for repo in "${Repos[@]}"; do
-		read _name _url <<<"${repo/:/ }"
-		is_available_url $_url &&
-			echo "$repo"
-	done
-}
+		RHEL-6*|RHEL6*|centos6*|centos-6*)
+			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
+			debug_url=${url/\/os/\/debug}
+			Repos+=(
+				${osv}:${url}
+				${osv}-SAP:${url/$osv/${osv}-SAP}
+				${osv}-SAPHAHA:${url/$osv/${osv}-SAPHAHA}
+
+				${osv}-debuginfo:${debug_url}
+				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
+				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
+				extras:http://cdn.stage.redhat.com/content/dist/rhel/server/6/6Server/$(arch)/extras/os
+				cdn_os:http://cdn.stage.redhat.com/content/dist/rhel/server/6/6Server/$(arch)/os
+			)
+			;;
+		RHEL-7*|RHEL7*|centos7*|centos-7*)
+			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
+			debug_url=${url/\/os/\/debug\/tree}
+			Repos+=(
+				${osv}:${url}
+				${osv}-optional:${url/$osv/${osv}-optional}
+				${osv}-NFV:${url/$osv/${osv}-NFV}
+				${osv}-RT:${url/$osv/${osv}-RT}
+				${osv}-SAP:${url/$osv/${osv}-SAP}
+				${osv}-SAPHAHA:${url/$osv/${osv}-SAPHAHA}
+
+				${osv}-debuginfo:${debug_url}
+				${osv}-optional-debuginfo:${debug_url/$osv/${osv}-optional}
+				${osv}-NFV-debuginfo:${debug_url/$osv/${osv}-NFV}
+				${osv}-RT-debuginfo:${debug_url/$osv/${osv}-RT}
+				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
+				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
+				extras:http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/$(arch)/extras/os
+				cdn_os:http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/$(arch)/os
+			)
+			;;
+		RHEL-8*|RHEL8*)
+			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
+			debug_url=${url/\/os/\/debug\/tree}
+			read dtype distro < <(awk -F/+ '{ for (i=3;i<NF;i++) { if ($(i+1) ~ /RHEL-/) { print($i, $(i+1)); break }}}' <<<"$url")
+			Repos+=(
+				BaseOS:${url}
+				AppStream:${url/BaseOS/AppStream}
+				CRB:${url/BaseOS/CRB}
+				HighAvailability:${url/BaseOS/HighAvailability}
+				NFV:${url/BaseOS/NFV}
+				ResilientStorage:${url/BaseOS/ResilientStorage}
+				RT:${url/BaseOS/RT}
+				SAP:${url/BaseOS/SAP}
+				SAPHANA:${url/BaseOS/SAPHANA}
+
+				BaseOS-debuginfo:${debug_url}
+				AppStream-debuginfo:${debug_url/BaseOS/AppStream}
+				CRB-debuginfo:${debug_url/BaseOS/CRB}
+				HighAvailability-debuginfo:${debug_url/BaseOS/HighAvailability}
+				NFV-debuginfo:${debug_url/BaseOS/NFV}
+				ResilientStorage-debuginfo:${debug_url/BaseOS/ResilientStorage}
+				RT-debuginfo:${debug_url/BaseOS/RT}
+				SAP-debuginfo:${debug_url/BaseOS/SAP}
+				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
+				Buildroot:http://download.devel.redhat.com/$dtype/latest-BUILDROOT-8-RHEL-8/compose/Buildroot/$arch/os
+			)
+			;;
+		esac
+		shopt -u nocasematch
+
+		for repo in "${Repos[@]}"; do
+			read _name _url <<<"${repo/:/ }"
+			is_available_url $_url &&
+				echo "$repo"
+		done
+	}
+fi
 
 Usage() {
 	cat <<-'EOF'
@@ -893,7 +895,13 @@ is_intranet || {
 }
 
 if [[ "$InstallType" = import ]]; then
-	if [[ -z "$Imageurl" ]]; then
+	if [[ -n "$Imageurl" ]]; then
+		if [[ ! -f $Imageurl ]] && ! is_available_url $Imageurl; then
+			echo "{INFO} image url $Imageurl is not available, switching to Location mode" >&2
+			InstallType=location
+			Imageurl=
+		fi
+	elif [[ $Intranet = yes ]]; then
 		echo "{INFO} searching private image url of $Distro ..." >&2
 		baseurl=http://download.eng.bos.redhat.com/qa/rhts/lookaside/distro-vm-images
 		baseurl=http://download.devel.redhat.com/qa/rhts/lookaside/distro-vm-images
@@ -916,17 +924,14 @@ if [[ "$InstallType" = import ]]; then
 				imageLocation=${imageLocation/Cloud/CloudImages}
 			read Imageurl _ < <(getimageurls $imageLocation "(qcow2|qcow2.xz)")
 			if [[ $? != 0 ]]; then
-				echo "{INFO} can not find image info of '$Distro', switching to Location mode" >&2
+				echo "{INFO} can not find imageUrl of '$Distro' in database, switching to Location mode" >&2
 				InstallType=location
 				Imageurl=
 			fi
 		fi
 	else
-		if [[ ! -f $Imageurl ]] && ! is_available_url $Imageurl; then
-			echo "{INFO} image url $Imageurl is not available, switching to Location mode" >&2
-			InstallType=location
-			Imageurl=
-		fi
+		echo "{WARN} can not find imageUrl of '$Distro' in database." >&2
+		exit 1
 	fi
 
 	egrep -q '(qcow2|qcow2.xz)' <<<"$Imageurl" || {
@@ -938,14 +943,16 @@ if [[ "$InstallType" = import ]]; then
 fi
 
 if [[ "$InstallType" = location ]]; then
-	if [[ -z "$Location" ]]; then
+	if [[ $Intranet = yes && -z "$Location" ]]; then
 		echo "{INFO} getting fastest location of $Distro ..." >&2
 		Location=$(distro2location $Distro)
-		[[ -z "$Location" ]] && {
-			echo "{WARN} can not find distro location. please check if '$Distro' is valid distro" >&2
-			exit 1
-		}
 	fi
+
+	if [[ -z "$Location" ]]; then
+		echo "{WARN} can not find distro location. please check if '$Distro' is valid distro" >&2
+		exit 1
+	fi
+
 	MSIZE=2048
 
 	[[ -n "$Location" ]] &&
@@ -1055,7 +1062,7 @@ if [[ "$InstallType" = location ]]; then
 			yum install -y cloud-init
 			END
 		}
-		sed -i 's/enabled = 1/enabled = 0/' /etc/yum.repo.d/cdn_os.repo
+		test -f /etc/yum.repo.d/cdn_os.repo && sed -i 's/enabled = 1/enabled = 0/' /etc/yum.repo.d/cdn_os.repo
 		if [[ "$NO_SSHKEY" = yes ]]; then
 			ks-generator.sh -d $Distro -url $Location $REPO_OPTS --post $postscript >$KSPath
 		else
@@ -1200,7 +1207,7 @@ elif [[ "$InstallType" = import ]]; then
 			chmod +x ~/bin/cloud-init-iso-gen.sh
 		}
 		cloudinitiso=$VMpath/$vmname-cloud-init.iso
-		[[ -n "$Location" ]] && {
+		[[ $Intranet = yes && -n "$Location" ]] && {
 			REPO_OPTS=$(distro2repos $Distro $Location | sed -e '/cdn_os:/d' -e 's/^/--repo /')
 		}
 		if [[ "$NO_SSHKEY" = yes ]]; then
