@@ -769,7 +769,7 @@ if egrep -wo '(vmx|svm)' /proc/cpuinfo -q; then
 		if [[ -t 1 ]]; then
 			enable_libvirt &>/dev/tty
 		else
-			echo -e "{WARN} there's not /dev/tty file redirect enable_libvirt msg to stderr"
+			echo -e "{WARN} there's not /dev/tty file redirect enable_libvirt msg to stderr" >&2
 			enable_libvirt >&2
 		fi
 		[[ "$ONLY_PREPARE" = yes ]] && exit
