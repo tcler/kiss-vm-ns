@@ -71,7 +71,7 @@ _vmdelete() {
 	echo -e "{INFO} => dist removing VM $_vmname .."
 	virsh destroy $_vmname 2>/dev/null
 	sleep 1
-	virsh undefine $_vmname --remove-all-storage
+	virsh undefine --remove-all-storage $_vmname
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "{INFO} removing VM folder $_vmdir ..."
 		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2}
