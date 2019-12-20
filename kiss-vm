@@ -223,7 +223,11 @@ vmlogin() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 
-	[[ "${EXEC}" = yes && $# = 0 ]] && set "exit 0";
+	[[ "${EXEC}" = yes ]] && {
+		[[ $# = 0 ]] && set "exit 0";
+		[[ "$VERBOSE" = yes ]] &&
+			echo "- [root@$_vmname] # $*" | GREP_COLORS='ms=01;36' grep --color .
+	}
 
 	[[ "$console" = yes ]] && {
 		if [[ "$EXEC" = yes ]]; then
@@ -634,6 +638,7 @@ Usage() {
 	    --xdisk        #add 2 extra disk for test
 	    --nvdimm       #add 2 nvdimm device(2048+2M) //need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
 	    --nosshkey     #don't inject sshkey
+	    -v|--verbose   #don't inject sshkey
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -682,7 +687,7 @@ Usage() {
 }
 
 # command line parse
-_at=`getopt -o hd:Ll:fn:gb:p:Ii:r \
+_at=`getopt -o hd:Ll:fn:gb:p:Ii:rv \
 	--long help \
 	--long prepare \
 	--long ks: \
@@ -710,6 +715,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:r \
 	--long xdisk \
 	--long nvdimm \
 	--long nosshkey \
+	--long verbose \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -752,6 +758,7 @@ while true; do
 	--xdisk)         EXTRA_DISKS=yes; shift 1;;
 	--nvdimm)        NVDIMM=yes; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
+	-v|--verbose)    VERBOSE=yes; shift 1;;
 	--) shift; break;;
 	esac
 done
