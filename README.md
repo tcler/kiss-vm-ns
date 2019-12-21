@@ -2,6 +2,8 @@
 
 ![kiss-vm](https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/Images/kiss-vm.gif)
 
+example: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/multipath/multipath-vm.sh
+
 ```
 [me@ws kiss-vm-ns]$ vm -h
 Usage:
