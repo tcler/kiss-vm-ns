@@ -226,7 +226,7 @@ vmlogin() {
 	[[ "${EXEC}" = yes ]] && {
 		[[ $# = 0 ]] && set "exit 0";
 		[[ "$VERBOSE" = yes ]] &&
-			echo "- [root@$_vmname] # $*" | GREP_COLORS='ms=01;36' grep --color .
+			echo "- [root@$_vmname] # $*" | GREP_COLORS='ms=01;36' grep --color . >&2
 	}
 
 	[[ "$console" = yes ]] && {
