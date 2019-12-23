@@ -128,6 +128,7 @@ chroot_install() {
 	local releasever
 	local rootfs=$1; shift
 
+	rm -rf $rootfs/etc/yum.repos.d
 	if which dnf &>/dev/null; then
 		releasever=$(rpm -q --qf "%{version}" -f /etc/os-release)
 		read repo < <(LANG=C dnf whatprovides bash|awk '$1 == "Repo" && $3 != "@System" {print $3}')
