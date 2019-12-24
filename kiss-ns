@@ -39,12 +39,12 @@ Usage() {
 	Examples create ns by using mini fs tree + host /usr:
 	  # same as example ns1, but use a it's own fs tree instead reuse host os tree
 	  #  so you can do anything in this ns, and don't worry about any impact on the host
-	  $0 jj nsmini bash   # create a mini rootfs template
+	  $0 jj nsmini bash   # create rootfs template nsmini
 	  $0 -n ns0 --veth-ip 192.168.0.1,192.168.0.2 --noboot -robind=/usr --clone nsmini
 	  $0 -n ns1 --veth-ip 192.168.1.1,192.168.1.2 --macvlan-ip 192.168.254.11 -bind=/usr --clone nsmini
 
 	Examples create ns by using absolute own fs tree:
-	  $0 jj nsbase iproute iputils nfs-utils firewalld   # create a base rootfs template
+	  $0 jj nsbase iproute iputils nfs-utils --clone nsmini   # create rootfs template nsbase
 	  $0 -n ns2 --veth-ip 192.168.2.1,192.168.2.2 --macvlan-ip 192.168.254.12,192.168.253.12 --clone nsbase
 	  $0 -n ns3 --veth-ip 192.168.3.1,192.168.3.2 --macvlan-ip 192.168.254.13,192.168.253.13 --clone nsbase
 
