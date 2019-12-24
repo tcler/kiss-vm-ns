@@ -147,6 +147,10 @@ nsjinja() {
 	local ns=$1
 	local rootdir=$NSHome/$ns
 	shift
+	if [[ -n "$CLONE" && -d "$NSHome/$CLONE" && ! -d $rootdir ]]; then
+		mkdir -p $rootdir
+		rsync -a --info=progress2 $NSHome/$CLONE/  $rootdir/.
+	fi
 	chroot_install $rootdir "$@"
 }
 
@@ -230,7 +234,7 @@ del*|del|de|d) switchroot; shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 
-	echo -e "{Info} remove ns $NS ..."
+	echo -e "\n{Info} remove ns $NS ..."
 	macvlan4ns=${NS}.
 	echo -e "- {Info} remove macvlan ifs in ns ..."
 	for dev in $(nsexec $NS ip a s | awk -F'[: @]+' -v pre=mv-${macvlan4ns} '/^[0-9]+:/ {if ($2 ~ "^" pre "[0-9]*$") print $2}'); do
