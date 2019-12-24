@@ -343,7 +343,7 @@ enable_libvirt() {
 	local pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat libguestfs-tools-c libvirt-nss dialog qemu-img"
 	local sudouser=${SUDO_USER:-$(whoami)}
 	eval sudouserhome=~$sudouser
-	[[ -d $sudouserhome/.config/vm ]] && return 0
+	[[ -d $sudouserhome/.config/kiss-vm ]] && return 0
 
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt start ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
@@ -402,7 +402,7 @@ COMM
 		}
 	}
 
-	mkdir -p $sudouserhome/.config/vm
+	mkdir -p $sudouserhome/.config/kiss-vm
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	printf '\33[H\33[2J'
 }
