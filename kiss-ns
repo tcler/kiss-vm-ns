@@ -229,15 +229,23 @@ ps) shift
 del*|del|de|d) switchroot; shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
+
+	echo -e "{Info} remove ns $NS ..."
 	macvlan4ns=${NS}.
+	echo -e "- {Info} remove macvlan ifs in ns ..."
 	for dev in $(nsexec $NS ip a s | awk -F'[: @]+' -v pre=mv-${macvlan4ns} '/^[0-9]+:/ {if ($2 ~ "^" pre "[0-9]*$") print $2}'); do
 		nsexec $NS ip link del "$dev"
 	done
+
+	echo -e "- {Info} systemd-run poweroff ..."
 	systemd-run -M $NS "poweroff"
 	ns_pstree $NS | awk 'NF > 4 {print $(NF-3)}' | xargs kill 2>/dev/null
 	sleep 1
 	ns_pstree $NS | awk 'NF > 4 {print $(NF-3)}' | xargs kill -9 2>/dev/null
+
+	echo -e "- {Info} remove veth ifs @host ..."
 	ip link del ve-$NS 2>/dev/null
+	echo -e "- {Info} remove macvlan ifs @host ..."
 	for dev in $(ip a s | awk -F'[: @]+' -v pre=${macvlan4ns} '/^[0-9]+:/ {if ($2 ~ "^" pre "[0-9]*$") print $2}'); do
 		ip link del "$dev"
 	done
