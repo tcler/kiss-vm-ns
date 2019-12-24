@@ -56,24 +56,24 @@ _vmdelete() {
 	}
 
 	egrep -q "^$_vmname$" <(virsh list --name --all) || {
-		echo -e "{WARN} VM '$_vmname' does not exist"
+		echo -e "{VM:WARN} VM '$_vmname' does not exist"
 		return 1
 	}
 
 	[[ "$_vmname" != ${vmprefix}-* ]] && {
-		echo -e "{WARN} VM '$_vmname' was not created by current user"
+		echo -e "{VM:WARN} VM '$_vmname' was not created by current user"
 		return 1
 	}
 
 	local _image=$(virsh dumpxml --domain $_vmname | sed -n "/source file=.*qcow/{s|^.*='||; s|'/>$||; p; q}")
 	local _vmdir=$(dirname $_image)
 
-	echo -e "{INFO} => dist removing VM $_vmname .."
+	echo -e "{VM:INFO} => dist removing VM $_vmname .."
 	virsh destroy $_vmname 2>/dev/null
 	sleep 1
 	virsh undefine --remove-all-storage $_vmname
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
-		echo -e "{INFO} removing VM folder $_vmdir ..."
+		echo -e "{VM:INFO} removing VM folder $_vmdir ..."
 		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2}
 		rmdir $_vmdir 2>/dev/null
 		rmdir ${_vmdir%/*} 2>/dev/null
@@ -89,7 +89,7 @@ vmdialogchecklist() {
 	vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
 	local vmList=$(echo "$vmlist" | sed -e /^$/d -e 's/.*/"&" "" 1/')
 	[[ -z "${vmList}" ]] && {
-		echo -e "{WARN} there is not any VM in your host .." >&2
+		echo -e "{VM:WARN} there is not any VM in your host .." >&2
 		return 1;
 	}
 	which dialog &>/dev/null || yum install -y dialog &>/dev/null
@@ -105,7 +105,7 @@ vmdialogradiolist() {
 	vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
 	local vmList=$(echo "$vmlist" | sed -e /^$/d -e 's/.*/"&" "" 1/')
 	[[ -z "${vmList}" ]] && {
-		echo -e "{WARN} there is not any VM in your host .." >&2
+		echo -e "{VM:WARN} there is not any VM in your host .." >&2
 		return 1;
 	}
 	which dialog &>/dev/null || yum install -y dialog &>/dev/null
@@ -181,7 +181,7 @@ vmreboot() {
 	virsh destroy "$_vmname"
 	virsh start "$_vmname"
 	[[ "$WAIT" = yes ]] && {
-		echo -e "{INFO} waiting restart finish ..."
+		echo -e "{VM:INFO} waiting restart finish ..."
 		until port_available ${_vmname} 22; do sleep 1; done
 	}
 }
@@ -242,7 +242,7 @@ vmlogin() {
 	#of them does not exist. use nc detect and ignore it/them
 	addrs=$(vmifaddr "$_vmname")
 	[[ -z "$addrs" ]] && {
-		echo -e "{WARN} can not get ip info of $_vmname, try login with console ..."
+		echo -e "{VM:WARN} can not get ip info of $_vmname, try login with console ..."
 		virsh console "$_vmname"
 		return $?
 	}
@@ -250,11 +250,11 @@ vmlogin() {
 	echo "$*" >$RuntimeTmp/sshcmd
 	for addr in $addrs; do
 		nc $addr 22 </dev/null &>/dev/null || {
-			echo -e "{WARN} port $addr:22 is not available"
+			echo -e "{VM:WARN} port $addr:22 is not available"
 			continue
 		}
 		ssh root@$addr "exit 0" || {
-			echo -e "{WARN} ssh root@$addr is not available, try login with console ..."
+			echo -e "{VM:WARN} ssh root@$addr is not available, try login with console ..."
 			virsh console "$_vmname"
 			return $?
 		}
@@ -300,7 +300,7 @@ netcreate() {
 	[[ -z "$netname" || -z "$brname" || -z "$subnet" ]] && { Usage; return 1; }
 
 	virsh net-info -- "$netname" &>/dev/null && {
-		echo "{WARN} Virt network $netname has been there."
+		echo "{VM:WARN} Virt network $netname has been there."
 		return
 	}
 
@@ -346,7 +346,7 @@ enable_libvirt() {
 	[[ -d $sudouserhome/.config/vm ]] && return 0
 
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt start ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	echo -e "{INFO} checking libvirtd service and related packages ..."
+	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
 	rpm -q $pkglist || {
 		echo -e "{*INFO*} you have not install all dependencies package, trying sudo yum install ..."
 		grep -q '^VERSION=.7' /etc/os-release &&
@@ -354,20 +354,20 @@ enable_libvirt() {
 		sudo yum install -y $pkglist
 	}
 
-	#echo -e "{INFO} configure libvirt-nss ..."
+	#echo -e "{VM:INFO} configure libvirt-nss ..."
 	grep -q '^hosts:.*libvirt libvirt_guest' /etc/nsswitch.conf || {
 		echo -e "{*INFO*} you have not configure /etc/nsswitch.conf, trying sudo sed ..."
 		sudo sed -ri '/^hosts:/s/files /&libvirt libvirt_guest /' /etc/nsswitch.conf
 	}
 
-	echo -e "{INFO} checking if ${sudouser} has joined group libvirt ..."
+	echo -e "{VM:INFO} checking if ${sudouser} has joined group libvirt ..."
 	[[ $(id -u) != 0 ]] && id -Gn | egrep -q -w libvirt || {
 		echo -e "{*INFO*} run: sudo usermod -a -G libvirt $sudouser ..."
 		sudo usermod -a -G libvirt $sudouser
 	}
 
 	virtdconf=/etc/libvirt/libvirtd.conf
-	echo -e "{INFO} checking value of 'unix_sock_group' and 'unix_sock_rw_perms' in $virtdconf ..."
+	echo -e "{VM:INFO} checking value of 'unix_sock_group' and 'unix_sock_rw_perms' in $virtdconf ..."
 	ls $virtdconf &>/dev/null || sudo chmod +x /etc/libvirt
 	awk '/^unix_sock_group = "libvirt"/{c++} /^unix_sock_rw_perms = "0770"/{c++} END {rc=1; if(c==2) rc=0; exit rc}' $virtdconf || {
 		echo -e "{*INFO*} confiure $virtdconf ..."
@@ -386,7 +386,7 @@ enable_libvirt() {
 
 : <<'COMM'
 	qemuconf=/etc/libvirt/qemu.conf
-	eval echo -e "{INFO} checking if qemu can read image in ~$sudouser ..."
+	eval echo -e "{VM:INFO} checking if qemu can read image in ~$sudouser ..."
 	sudo egrep -q '^#(user|group) =' "$qemuconf" && {
 		sudo sed -i '/^#(user|group) =/s/^#//' "$qemuconf"
 	}
@@ -397,7 +397,7 @@ COMM
 	#first time
 	[[ $(id -u) != 0 ]] && {
 		id -Gn | egrep -q -w libvirt || {
-			echo -e "{WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
+			echo -e "{VM:WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
 			exit 1
 		}
 	}
@@ -769,13 +769,13 @@ if egrep -wo '(vmx|svm)' /proc/cpuinfo -q; then
 		if [[ -t 1 ]]; then
 			enable_libvirt &>/dev/tty
 		else
-			echo -e "{WARN} there's not /dev/tty file redirect enable_libvirt msg to stderr" >&2
+			echo -e "{VM:WARN} there's not /dev/tty file redirect enable_libvirt msg to stderr" >&2
 			enable_libvirt >&2
 		fi
 		[[ "$ONLY_PREPARE" = yes ]] && exit
 	}
 else
-	echo -e "{WARN} current machine doesn't support Virtualization, show help info with\n  $PROG -h"
+	echo -e "{VM:WARN} current machine doesn't support Virtualization, show help info with\n  $PROG -h"
 	exit 1
 fi
 
@@ -862,12 +862,12 @@ is_intranet || {
 		printf '\33[H\33[2J'
 	else
 		Usage
-		echo -e "\n{WARN} ^^^ a distro name is necessary!\n"
+		echo -e "\n{VM:WARN} ^^^ a distro name is necessary!\n"
 		exit 1
 	fi
 }
 [[ -z "$Distro" ]] && {
-	echo -e "{WARN} you have to select a distro name or specified it by adding command line parameter:\n"
+	echo -e "{VM:WARN} you have to select a distro name or specified it by adding command line parameter:\n"
 	Usage
 	exit 1
 }
@@ -882,10 +882,10 @@ is_intranet || {
 	vmname=$(vmname_gen $Distro $VMName)
 	virsh desc $vmname &>/dev/null && {
 		if [[ "${OVERWRITE}" = "yes" ]]; then
-			echo "{INFO} VM $vmname has been there, remove it ..."
+			echo "{VM:INFO} VM $vmname has been there, remove it ..."
 			_vmdelete $vmname
 		else
-			echo "{INFO} VM $vmname has been there, if you want overwrite please use --force option"
+			echo "{VM:INFO} VM $vmname has been there, if you want overwrite please use --force option"
 			exit
 		fi
 	}
@@ -898,33 +898,33 @@ is_intranet || {
 
 # Phase-1: get distro's Location or Image url
 [[ -n "${distroInfo[$Distro]}" ]] && {
-	echo -e "{INFO} ${distroInfo[$Distro]}"
+	echo -e "{VM:INFO} ${distroInfo[$Distro]}"
 	read Imageurl Location <<<"${distroInfo[$Distro]}"
 }
 
 if [[ "$InstallType" = import ]]; then
 	if [[ -n "$Imageurl" ]]; then
 		if [[ ! -f $Imageurl ]] && ! is_available_url $Imageurl; then
-			echo "{INFO} image url $Imageurl is not available, switching to Location mode" >&2
+			echo "{VM:INFO} image url $Imageurl is not available, switching to Location mode" >&2
 			InstallType=location
 			Imageurl=
 		fi
 	elif [[ $Intranet = yes ]]; then
-		echo "{INFO} searching private image url of $Distro ..." >&2
+		echo "{VM:INFO} searching private image url of $Distro ..." >&2
 		baseurl=http://download.eng.bos.redhat.com/qa/rhts/lookaside/distro-vm-images
 		baseurl=http://download.devel.redhat.com/qa/rhts/lookaside/distro-vm-images
 		imageLocation=${baseurl}/$Distro
 		read Imageurl _ < <(getimageurls ${imageLocation} "(qcow2|qcow2.xz)")
 
 		if [[ -z "$Imageurl" ]]; then
-			echo "{INFO} getting fastest location of $Distro ..." >&2
+			echo "{VM:INFO} getting fastest location of $Distro ..." >&2
 			Location=$(distro2location $Distro)
 			[[ -z "$Location" ]] && {
-				echo "{WARN} can not find location info of '$Distro'" >&2
+				echo "{VM:WARN} can not find location info of '$Distro'" >&2
 				exit 1
 			}
 			echo -e " -> $Location"
-			echo "{INFO} getting image url according location url ^^^ ..." >&2
+			echo "{VM:INFO} getting image url according location url ^^^ ..." >&2
 			imageLocation=${Location/\/os\//\/images\/}
 			[[ $Distro = Fedora-* ]] &&
 				imageLocation=$(echo "$imageLocation" | sed -r 's;/[Ss]erver|Everything/;/Cloud/;')
@@ -932,13 +932,13 @@ if [[ "$InstallType" = import ]]; then
 				imageLocation=${imageLocation/Cloud/CloudImages}
 			read Imageurl _ < <(getimageurls $imageLocation "(qcow2|qcow2.xz)")
 			if [[ $? != 0 ]]; then
-				echo "{INFO} can not find imageUrl of '$Distro' in database, switching to Location mode" >&2
+				echo "{VM:INFO} can not find imageUrl of '$Distro' in database, switching to Location mode" >&2
 				InstallType=location
 				Imageurl=
 			fi
 		fi
 	else
-		echo "{WARN} can not find imageUrl of '$Distro' in database." >&2
+		echo "{VM:WARN} can not find imageUrl of '$Distro' in database." >&2
 		exit 1
 	fi
 
@@ -952,12 +952,12 @@ fi
 
 if [[ "$InstallType" = location ]]; then
 	if [[ $Intranet = yes && -z "$Location" ]]; then
-		echo "{INFO} getting fastest location of $Distro ..." >&2
+		echo "{VM:INFO} getting fastest location of $Distro ..." >&2
 		Location=$(distro2location $Distro)
 	fi
 
 	if [[ -z "$Location" ]]; then
-		echo "{WARN} can not find distro location. please check if '$Distro' is valid distro" >&2
+		echo "{VM:WARN} can not find distro location. please check if '$Distro' is valid distro" >&2
 		exit 1
 	fi
 
@@ -969,7 +969,7 @@ fi
 
 [[ -n "$OnlyGetUrl" ]] && { exit; }
 
-echo "{INFO} guess/verify os-variant ..."
+echo "{VM:INFO} guess/verify os-variant ..."
 [[ -z "$VM_OS_VARIANT" ]] && {
 	VM_OS_VARIANT=${Distro/-/}
 	VM_OS_VARIANT=${VM_OS_VARIANT%%-*}
@@ -1036,7 +1036,7 @@ fi
 
 if [[ "$InstallType" = location ]]; then
 	[[ -z "$KSPath" ]] && {
-		echo "{INFO} generating kickstart file for $Distro ..."
+		echo "{VM:INFO} generating kickstart file for $Distro ..."
 		ksauto=$RuntimeTmp/ks-$VM_OS_VARIANT-$$.cfg
 		postscript=$RuntimeTmp/postscript.ks
 		KSPath=$ksauto
@@ -1082,7 +1082,7 @@ if [[ "$InstallType" = location ]]; then
 		fi
 	}
 
-	echo -e "{INFO} creating VM by using location:\n ->  $Location"
+	echo -e "{VM:INFO} creating VM by using location:\n ->  $Location"
 	echo $Location >$VMpath/url
 
 	[[ "$GenerateImage" = yes ]] && {
@@ -1180,10 +1180,10 @@ if [[ "$InstallType" = location ]]; then
 		[[ $ReturnCode = 127 ]] && { virsh start $vmname 2>&1 | sed 's/error: //'; continue; }
 		sleep 1
 	done
-	echo -e "\n{INFO} Quit from expect -c 'spawn virsh console $vmname'"
+	echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
 
 	[[ $ReturnCode = 255 ]] && {
-		echo -e "\n{INFO} something is wrong(please check screen log), will clean all tmp files ..."
+		echo -e "\n{VM:INFO} something is wrong(please check screen log), will clean all tmp files ..."
 		RM=yes
 		GenerateImage=
 	}
@@ -1193,7 +1193,7 @@ elif [[ "$InstallType" = import ]]; then
 	imagefilename=${Imageurl##*/}
 	imagefile=$VMpath/$imagefilename
 
-	echo "{INFO} downloading cloud image file of $Distro to $imagefile ..."
+	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
 	[[ $Imageurl = file://$imagefile ]] || {
 		if [[ -n "$SAVE_IMAGE" ]]; then
 			curl -C - -L $Imageurl -o ${SaveImagePath}/${imagefilename}
@@ -1205,14 +1205,14 @@ elif [[ "$InstallType" = import ]]; then
 	[[ -f ${imagefile} ]] || exit 1
 
 	[[ $imagefile = *.xz ]] && {
-		echo "{INFO} decompress $imagefile ..."
+		echo "{VM:INFO} decompress $imagefile ..."
 		xz -d $imagefile
 		imagefile=${imagefile%.xz}
 		[[ -f ${imagefile} ]] || exit 1
 	}
 
 	[[ "$NO_CLOUD_INIT" != yes ]] && {
-		echo -e "{INFO} creating cloud-init iso"
+		echo -e "{VM:INFO} creating cloud-init iso"
 		which cloud-init-iso-gen.sh &>/dev/null || {
 			_url=$baseUrl/utils/cloud-init-iso-gen.sh
 			mkdir -p ~/bin && curl -s -o ~/bin/cloud-init-iso-gen.sh -C - -L $_url
@@ -1231,12 +1231,12 @@ elif [[ "$InstallType" = import ]]; then
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom"
 	}
 
-	echo -e "{INFO} creating VM by import $imagefile"
+	echo -e "{VM:INFO} creating VM by import $imagefile"
 	echo $Imageurl >$VMpath/url
 
 	_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
 	[[ "$_size" -lt $((DSIZE*1024*1024*1024)) ]] && {
-		echo -e "{INFO} resize $imagefile to ${DSIZE}G"
+		echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
 		qemu-img resize ${imagefile} ${DSIZE}G
 	}
 	nohup virt-install --connect=qemu:///system --hvm --accelerate \
@@ -1289,12 +1289,12 @@ elif [[ "$InstallType" = import ]]; then
 				send "redhat\r"
 				send "\r\r\r\r\r\r"
 				if {$env(SHUTDOWN) == "yes"} {
-					send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
+					send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
 					send "\r\n"
 					"Restarting system" { exit 0 }
 				}
 
-				send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
+				send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
 				send "\r\n"
 				expect {
 					"or cloud-init done ~~~~~~~~d" {send "\r\r# Now you can take over the keyboard\r\r"}
@@ -1317,11 +1317,11 @@ elif [[ "$InstallType" = import ]]; then
 		sleep 1
 	done
 	unset Installpid
-	echo -e "\n{INFO} Quit from expect -c 'spawn virsh console $vmname'"
+	echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
 fi
 
 if ! virsh desc $vmname &>/dev/null; then
-	echo -e "\n{ERROR} virt-install fail"
+	echo -e "\n{VM:ERR} virt-install fail"
 	rm -rf $VMpath && rmdir {$VMpath%/*} 2>/dev/null
 	exit 1
 fi
@@ -1332,14 +1332,14 @@ if [[ "$GenerateImage" = yes ]]; then
 	imgfilename=$(sed "s;.*/${vmprefix}-;;" <<<"${image}")
 	newimage=$ImagePath/$Distro/${imgfilename}
 
-	echo -e "\n{INFO} force shutdown $vmname ..."
+	echo -e "\n{VM:INFO} force shutdown $vmname ..."
 	virsh destroy $vmname 2>/dev/null
 
 	if ! true; then
-		echo -e "\n{INFO} copy image $image to ${newimage} ..."
+		echo -e "\n{VM:INFO} copy image $image to ${newimage} ..."
 		cp ${image} ${newimage}
 	else
-		echo -e "\n{INFO} virt-sparsify image $image to ${newimage} ..."
+		echo -e "\n{VM:INFO} virt-sparsify image $image to ${newimage} ..."
 		LIBGUESTFS_BACKEND=direct virt-sparsify --check-tmpdir fail ${image} ${newimage} || {
 			cp ${image} ${newimage}
 			LIBGUESTFS_BACKEND=direct virt-sparsify --in-place ${newimage}
@@ -1348,16 +1348,16 @@ if [[ "$GenerateImage" = yes ]]; then
 		ls -lh ${newimage}
 	fi
 
-	echo -e "\n{INFO} virt-sysprep ..."
+	echo -e "\n{VM:INFO} virt-sysprep ..."
 	ls -lh ${newimage}
 	LIBGUESTFS_BACKEND=direct virt-sysprep -a ${newimage}
 	ls -lh ${newimage}
 
-	echo -e "\n{INFO} xz compress image ..."
+	echo -e "\n{VM:INFO} xz compress image ..."
 	time xz -z -f -T 0 ${XZ:--9} ${newimage}
 	ls -lh ${newimage}.xz
 
-	echo -e "\n{INFO} remove temporary VM $vmname ..."
+	echo -e "\n{VM:INFO} remove temporary VM $vmname ..."
 	_vmdelete $vmname
 	exit 0
 fi
@@ -1378,7 +1378,7 @@ if [[ ! -f ~/.ssh/config ]]; then
 fi
 
 : <<\COMM
-echo -e "\n{INFO} attach test disk ext4.qcow2 and xfs.qcow2:"
+echo -e "\n{VM:INFO} attach test disk ext4.qcow2 and xfs.qcow2:"
 qemu-img create -f qcow2 $VMpath/ext4.qcow2 10G
 qemu-img create -f qcow2 $VMpath/xfs.qcow2 10G
 virsh attach-disk $vmname --subdriver qcow2 --persistent $VMpath/ext4.qcow2 vdb #--current --targetbus usb
@@ -1394,7 +1394,7 @@ read addr < <(vmifaddr $vmname)
 }
 COMM
 
-echo -e "\n{INFO} you can try login $vmname again by using:"
+echo -e "\n{VM:INFO} you can try login $vmname again by using:"
 echo -e "  $ vm login $vmname          #from host"
 echo -e "  $ vncviewer $(vmvncport $vmname)    #from remote"
 exit 0
