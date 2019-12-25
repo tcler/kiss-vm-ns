@@ -1,7 +1,7 @@
 #!/bin/bash
 # author: yin-jianhong@163.com
-# version: v0.2
-# dependency: systemd-nspawn
+# version: v0.9
+# dependency: systemd-nspawn tmux
 # used to create light container/ns for nfs/cifs test on RHEL/CentOS 7 or later
 
 LANG=C
