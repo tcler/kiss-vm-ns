@@ -73,6 +73,7 @@ is_valid_ip() {
     local  ip=$1
     local  stat=1
 
+    ip=${ip%/*}
     if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
         ip=(${ip//./ })
         [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
@@ -122,6 +123,12 @@ nsexec() {
 
 getDefaultNic() {
 	ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'
+}
+
+xaddr() {
+	local addr=$1
+	[[ "$addr" = */[0-9] ]] || addr+=/24
+	echo $addr
 }
 
 chroot_install() {
@@ -342,14 +349,14 @@ if [[ -n "$HOST_VETH_IP" && -n "$NS_VETH_IP" ]]; then
 	is_valid_ip $NS_VETH_IP || { NS_VETH_IP=; echo -e "\n{NS:WARN} '$NS_VETH_IP' is not a valid address"|grep --color=always . >&2; }
 
 	echo -e "\n{NS:INFO} setup veth host side $hostvethif $HOST_VETH_IP"
-	ip addr add $HOST_VETH_IP/24 dev $hostvethif
+	ip addr add $(xaddr $HOST_VETH_IP) dev $hostvethif
 	ip link set dev $hostvethif up
 	ip a s $hostvethif
 
 	vifidx=$(ip a s $hostvethif|sed -nr -e '/.*@if([0-9]+): .*/{s//\1/;p}')
 	nsvethif=$(_nsexec "$InitPid" ip a s | awk -F[@:\ ]+ '/^'$vifidx':/{print $2}')
 	echo -e "\n{NS:INFO} setup veth ns side $nsvethif $NS_VETH_IP"
-	_nsexec "$InitPid" ip addr add $NS_VETH_IP/24 dev $nsvethif
+	_nsexec "$InitPid" ip addr add $(xaddr $NS_VETH_IP) dev $nsvethif
 	_nsexec "$InitPid" ip link set dev $nsvethif up
 	_nsexec "$InitPid" ip a s $nsvethif
 
@@ -374,7 +381,7 @@ for addr in $NS_MACVLAN_IPS; do
 	nsifname=mv-${macvlan4ns}$((loop++))
 	echo -e "\n{NS:INFO} setup macvlan if $nsifname $addr"
 	_nsexec "$InitPid" ip link set dev $nsifname up
-	_nsexec "$InitPid" ip addr add $addr/24 dev $nsifname
+	_nsexec "$InitPid" ip addr add $(xaddr $addr) dev $nsifname
 	_nsexec "$InitPid" ip a s $nsifname
 done
 
@@ -382,7 +389,7 @@ HOST_MACVLAN_IP=192.168.254.254
 echo -e "\n{NS:INFO} setup default macvlan host side $macvlan4host $HOST_MACVLAN_IP"
 ip link show $macvlan4host &>/dev/null ||
 	ip link add link $(getDefaultNic) name $macvlan4host type macvlan mode bridge
-ip addr add $HOST_MACVLAN_IP/24 dev $macvlan4host
+ip addr add $(xaddr $HOST_MACVLAN_IP) dev $macvlan4host
 ip link set dev $macvlan4host up
 ip a s $macvlan4host
 
