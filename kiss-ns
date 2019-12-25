@@ -127,7 +127,7 @@ getDefaultNic() {
 
 xaddr() {
 	local addr=$1
-	[[ "$addr" = */[0-9] ]] || addr+=/24
+	[[ "$addr" =~ .*/[1-9]+$ ]] || addr+=/24
 	echo $addr
 }
 
