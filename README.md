@@ -114,7 +114,7 @@ Example [subcmd]:
     vm exec "$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
     vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
     vm stop [VM]         #stop/shutdonw VM   //nil
-    vm start [VM]        #stop/shutdonw VM   //nil
+    vm start [VM]        #start VM           //nil
 
     vm net               #list all virtual network
     vm net netname=testnet brname=virbrN subnet=100  #create virtual network 'testnet'
