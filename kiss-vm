@@ -639,6 +639,7 @@ Usage() {
 	    --nvdimm       #add 2 nvdimm device(2048+2M) //need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
 	    --nosshkey     #don't inject sshkey
 	    -v|--verbose   #don't inject sshkey
+	    --xml          #just generate xml
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -716,6 +717,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rv \
 	--long nvdimm \
 	--long nosshkey \
 	--long verbose \
+	--long xml \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -759,6 +761,7 @@ while true; do
 	--nvdimm)        NVDIMM=yes; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
+	--xml)           XML=--print-xml; shift 1;;
 	--) shift; break;;
 	esac
 done
@@ -1091,7 +1094,7 @@ if [[ "$InstallType" = location ]]; then
 	}
 	ksfile=${KSPath##*/}
 	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
-	nohup virt-install --connect=qemu:///system --hvm --accelerate \
+	nohup virt-install --connect=qemu:///system --hvm --accelerate $XML \
 	  --name $vmname \
 	  --location $Location \
 	  $OS_VARIANT_OPT \
@@ -1111,8 +1114,13 @@ if [[ "$InstallType" = location ]]; then
 		expect {
 			{* to complete the installation process.} { exit }
 			{*\r} { exp_continue }
+			{</domain>} { exit }
 		}
 	"
+	[[ -n "$XML" ]] && {
+		virsh domxml-to-native qemu-argv $VMpath/nohup.log
+		exit
+	}
 
 	trap - SIGINT
 	for ((i=0; i<8; i++)); do
@@ -1239,7 +1247,7 @@ elif [[ "$InstallType" = import ]]; then
 		echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
 		qemu-img resize ${imagefile} ${DSIZE}G
 	}
-	nohup virt-install --connect=qemu:///system --hvm --accelerate \
+	nohup virt-install --connect=qemu:///system --hvm --accelerate $XML \
 	  --name $vmname \
 	  --vcpus ${VCPUN:-4} \
 	  $MEM_OPTS \
@@ -1257,8 +1265,13 @@ elif [[ "$InstallType" = import ]]; then
 		expect {
 			{*Domain creation completed.} { exit }
 			{*\r} { exp_continue }
+			{</domain>} { exit }
 		}
 	"
+	[[ -n "$XML" ]] && {
+		virsh domxml-to-native qemu-argv $VMpath/nohup.log
+		exit
+	}
 
 	trap - SIGINT
 	for ((i=0; i<8; i++)); do
