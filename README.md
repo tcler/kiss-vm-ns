@@ -1,22 +1,29 @@
 # Summary
 
-本项目提供了三个傻瓜化的脚本 vm, ns, netns ; 旨在简化测试和开发人员配置和使用 VM/Container/Netns 的难度，
+本项目提供了三个傻瓜化的脚本 vm, ns, netns ; 旨在简化测试和开发人员配置和使用 VM/Container/netns 的步骤，
 从而更加聚焦业务功能的验证和测试。
 
 ```
 vm:
     功能: 快速创建、登陆、重启、删除 libvirt 虚拟机(VMs)，以及构建虚拟网络(Virtual lab);
     用途: 自动化测试 网络协议、网络文件系统、本地文件系统、nvdimm 等模块功能（硬件无关的功能都可以）
+      vm create $distro1 [opther options]
+      vm exec $vmname1 -- command line
 
 ns:
     功能: 快速创建基于 systemd-nspawn 的容器(Container)网络
     用途: 自动化测试 网络协议、网络文件系统 功能
+      ns create $ns [other options]
+      ns exec $ns -- command line
 
 netns:
     功能: 快速创建基于 ip-netns 的 network namespace 网络拓扑
     用途: 自动化测试 网络协议、以及部分网络文件系统 功能
+      netns create $netns [other options]
+      netns exec $netns -- command line
 ```
 
+# More details
 ## kiss-vm
 
 ![kiss-vm](https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/Images/kiss-vm.gif)
