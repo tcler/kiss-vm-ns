@@ -640,6 +640,7 @@ Usage() {
 	    --nosshkey     #don't inject sshkey
 	    -v|--verbose   #don't inject sshkey
 	    --xml          #just generate xml
+	    --qemu-opts    #qemu options that has not been supported by libvirt
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -718,6 +719,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rv \
 	--long nosshkey \
 	--long verbose \
 	--long xml \
+	--long qemu-opts: \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -762,6 +764,7 @@ while true; do
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	--xml)           XML=--print-xml; shift 1;;
+	--qemu-opts)     QEMU_OPTS="$2"; XML=--print-xml; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -1118,8 +1121,12 @@ if [[ "$InstallType" = location ]]; then
 		}
 	"
 	[[ -n "$XML" ]] && {
-		virsh domxml-to-native qemu-argv $VMpath/nohup.log
-		exit
+		virsh domxml-to-native qemu-argv $VMpath/nohup.log | tee $VMpath/qemu-argv
+		if [[ -z "$QEMU_OPTS" ]]; then
+			exit
+		else
+			eval $(< $VMpath/qemu-argv) $QEMU_OPTS &
+		fi
 	}
 
 	trap - SIGINT
@@ -1269,8 +1276,12 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	"
 	[[ -n "$XML" ]] && {
-		virsh domxml-to-native qemu-argv $VMpath/nohup.log
-		exit
+		virsh domxml-to-native qemu-argv $VMpath/nohup.log | tee $VMpath/qemu-argv
+		if [[ -z "$QEMU_OPTS" ]]; then
+			exit
+		else
+			eval $(< $VMpath/qemu-argv) $QEMU_OPTS &
+		fi
 	}
 
 	trap - SIGINT
