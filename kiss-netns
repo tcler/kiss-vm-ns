@@ -1,0 +1,247 @@
+#!/bin/bash
+# author: yin-jianhong@163.com
+# dependency: iproute2
+# used to create netns and add ifs into it
+
+LANG=C
+AT=("$@")
+
+Usage() {
+	cat <<-EOF
+	Usage:
+	  $0 <-n nsname> [options] [create | exec -- cmdline | del | attach if addr | detach if]
+
+	  $0 veth ve0.a-host,ve0.b-ns0   #create veth pair
+	  $0 macvlan ifname              #create macvlan if
+	  $0 addr \$if \$address           #set address to if
+
+	  $0 attach \$ns \$if [addr]       #attach new if to ns
+	  $0 detach \$ns \$if              #detach if from ns
+
+	  $0 ls
+
+	Options:
+	  -h, --help           ; show this help info
+	  -v                   ; verbose mode
+	  --veth {vif1/ip1[,vif2/ip2,...]} ; veth "ifname/address" pairs
+	  --macvlan-ip {ip1[,ip2...]}      ; ip address[es] for ns macvlan if[s]
+
+	Examples:
+	  $0 veth ve0.a-host,ve0.b-ns0
+	  $0 addr ve0.a-host 192.168.0.1
+	  $0 create ns0 -veth=ve0.b-ns0/192.168.0.2 -macvlan-ip=192.168.100.2
+	  $0 -v exec ns0 -- ping -c 4 192.168.0.1
+	  curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | bash
+	  $0 -v exec ns0 -- showmount -e 192.168.0.1
+	  $0 -v exec ns0 -- mkdir -p /mnt/ns0/nfs
+	  $0 -v exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
+	  $0 -v exec ns0 -- mount -t nfs4
+	  $0 -v exec ns0 -- ls /mnt/ns0/nfs/*
+	  $0 -v exec ns0 -- umount /mnt/ns0/nfs
+	  $0 -v exec ns0 -- rm -rf /mnt/ns0
+
+	EOF
+}
+
+is_valid_ip() {
+    local  ip=$1
+    local  stat=1
+
+    ip=${ip%/*}
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        ip=(${ip//./ })
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        stat=$?
+    fi
+    return $stat
+}
+
+getDefaultNic() {
+	ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'
+}
+
+ns_init_pid() {
+	local ns=$1
+	local initpid
+
+	initpid=$(tmux list-sessions -F '#{session_name} #{pane_pid}' | awk -v ns=$ns '$1 == ns {print $2}')
+	[[ -z "$initpid" ]] && return 1
+	echo $initpid
+}
+
+_nsexec() {
+	local initpid=$1
+	shift
+	nsenter --target "$initpid" --mount --uts --ipc --net --pid -- bash -c "$*"
+}
+
+nsexec() {
+	local ns=$1
+	shift
+	local initpid=$(ns_init_pid $ns)
+	[[ "$nsverbose" = yes ]] && echo "- [NETNS:$ns] # $@" | GREP_COLORS='ms=01;36' grep --color . >&2
+	_nsexec "$initpid" "$@"
+}
+
+nsdelete() {
+	local ns=$1
+	shift
+
+	echo -e "\n{NETNS:INFO} remove ns $ns ..."
+
+	macvlan4ns=${ns}.
+	echo -e "- {NETNS:INFO} remove ifs in ns ..."
+	for dev in $(nsexec $ns ip a s | awk -F'[: @]+' '/^[0-9]+:/ {if ($2 != "lo") print $2}'); do
+		nsexec $ns ip link del "$dev"
+	done
+	nsexec $ns ip a s
+
+	echo -e "- {NETNS:INFO} exit init bash fixme ..."
+	tmux send-keys -t "$ns" C-z " exit; exit" Enter
+
+	echo -e "- {NETNS:INFO} remove netns ..."
+	ip netns del $ns 2>/dev/null
+}
+
+xaddr() {
+	local addr=$1
+	[[ "$addr" =~ .*/[1-9]+$ ]] || addr+=/24
+	echo $addr
+}
+
+attachif () {
+	local ns=$1
+	local if=$2
+	local addr=$3
+
+	ip link set $if netns $ns
+	nsexec $ns ip link set dev $if up
+
+	[[ -n "$addr" ]] && nsexec $ns ip addr add $(xaddr $addr) dev $if
+}
+
+detachif () {
+	local ns=$1
+	local if=$2
+	ip netns exec $ns ip link set $if netns 1
+}
+
+addveth() {
+	for pair; do
+		read end0 end1 _ <<<"${pair//,/ }"
+		if [[ -n "$end0" && -n "$end1" ]]; then
+			ip link add $end0 type veth peer name $end1
+		else
+			echo -e "- {NETNS:ERR} veth need two if-names ..."
+		fi
+	done
+}
+addmacvlan() {
+	local baseif=$(getDefaultNic)
+
+	for mv; do
+		ip link add link $baseif name ${mv} type macvlan mode bridge
+	done
+}
+
+addr() {
+	local if=$1
+	local addr=$2
+
+	ip link set dev $if up
+	ip addr add $(xaddr $addr) dev $if
+}
+
+# command line parse
+_at=`getopt -o hn:v \
+	--long help \
+	--long veth: \
+	--long macvlan-ip: \
+    -a -n "$0" -- "$@"`
+eval set -- "$_at"
+while true; do
+	case "$1" in
+	-h|--help) Usage; shift 1; exit 0;;
+	-n) NS="$2"; shift 2;;
+	-v) nsverbose=yes; shift 1;;
+	--veth) VETH_IFS+=(${2//,/ }); shift 2;;
+	--macvlan-ip) NS_MACVLAN_IPS="${2//,/ }"; shift 2;;
+	--) shift; break;;
+	esac
+done
+
+# __prepare__
+which tmux &>/dev/null || dep+=\ tmux
+[[ -n "$dep" ]] && {
+	echo -e "{NS:INFO} install dependences ..."
+	sudo yum install -y $dep >&2
+}
+
+# __main__
+subcmd=$1
+case $subcmd in
+exec|exe|ex|e) shift
+	[[ -z "$NS" ]] && { NS=$1; shift; }
+	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
+	nsexec $NS "$@"
+	exit $?;;
+del*|del|de|d) shift
+	[[ -z "$NS" ]] && { NS=$1; shift; }
+	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
+	nsdelete $NS
+	exit $?;;
+ls) shift
+	ip netns
+	exit $?;;
+veth|addveth) shift
+	addveth "$@"
+	exit $?;;
+macvlan|addmacvlan) shift
+	addmacvlan "$@"
+	exit $?;;
+addr) shift
+	addr "$@"
+	exit $?;;
+attach) shift
+	[[ -z "$NS" ]] && { NS=$1; shift; }
+	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
+	attachif "$@"
+	exit $?;;
+detach) shift
+	[[ -z "$NS" ]] && { NS=$1; shift; }
+	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
+	detachif "$@"
+	exit $?;;
+creat*) shift
+	[[ -z "$NS" ]] && { NS=$1; shift; }
+	;;
+esac
+
+[[ -z "$NS" ]] && { Usage >&2; exit 1; }
+
+#remove existed one
+nsdelete $NS
+
+echo -e "\n{NETNS:INFO} creating NETNS $NS ..."
+ip netns add $NS
+tmux new -s $NS -d "ip netns exec $NS /bin/bash"
+InitPid=$(ns_init_pid $NS)
+
+echo -e "\n{NETNS:INFO} creating and attach macvlan ifs to NS ..."
+loop=0
+macvlan4ns=mv-${NS}.
+for addr in $NS_MACVLAN_IPS; do
+	is_valid_ip "$addr" || { echo -e "\n{NETNS:WARN} '$addr' is not a valid address"|grep --color=always . >&2; continue; }
+	ifname=${macvlan4ns}$((loop++))
+	addmacvlan ${ifname}
+	attachif $NS $ifname $addr
+	nsexec "$NS" ip a s $ifname
+done
+
+echo -e "\n{NETNS:INFO} attach veth ifs to NS ..."
+for vif in $VETH_IFS; do
+	read ifname ifaddr <<<"${vif/[\/:]/ }"
+	attachif $NS $ifname $ifaddr
+	nsexec "$NS" ip a s $ifname
+done
