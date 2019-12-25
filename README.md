@@ -1,4 +1,23 @@
-# kiss-vm
+# Summary
+
+本项目提供了三个傻瓜化的脚本 vm, ns, netns ; 旨在简化测试和开发人员配置和使用 VM/Container/Netns 的难度，
+从而更加聚焦业务功能的验证和测试。
+
+```
+vm:
+    功能: 快速创建、登陆、重启、删除 libvirt 虚拟机(VMs)，以及构建虚拟网络(Virtual lab);
+    用途: 自动化测试 网络协议、网络文件系统、本地文件系统、nvdimm 等模块功能（硬件无关的功能都可以）
+
+ns:
+    功能: 快速创建基于 systemd-nspawn 的容器(Container)网络
+    用途: 自动化测试 网络协议、网络文件系统 功能
+
+netns:
+    功能: 快速创建基于 ip-netns 的 network namespace 网络拓扑
+    用途: 自动化测试 网络协议、以及部分网络文件系统 功能
+```
+
+## kiss-vm
 
 ![kiss-vm](https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/Images/kiss-vm.gif)
 
@@ -93,7 +112,7 @@ Example [subcmd]:
     vm netdel testnet    #delete virtual network 'testnet'
 ```
 
-# kiss-ns
+## kiss-ns
 
 example: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/labelled-nfs/labelled-nfs.sh
 
@@ -148,4 +167,42 @@ Examples sub-command:
   /usr/local/bin/ns exec ns2 -- mount 192.168.2.1:/ /mnt/nfs   # exec command in ns2
   /usr/local/bin/ns exec ns2 -- showmount -e 192.168.254.254     # exec command in ns2
   /usr/local/bin/ns exec ns2 -- mount 192.168.254.254:/ /mnt/nfs # exec command in ns2
+```
+
+## kiss-netns
+
+```
+[me@ws kiss-vm-ns]$ netns
+Usage:
+  /usr/local/bin/netns <-n nsname> [options] [create | exec -- cmdline | del | attach if addr | detach if]
+
+  /usr/local/bin/netns veth ve0.a-host,ve0.b-ns0   #create veth pair
+  /usr/local/bin/netns macvlan ifname              #create macvlan if
+  /usr/local/bin/netns addr $if $address           #set address to if
+
+  /usr/local/bin/netns attach $ns $if [addr]       #attach new if to ns
+  /usr/local/bin/netns detach $ns $if              #detach if from ns
+
+  /usr/local/bin/netns ls
+
+Options:
+  -h, --help           ; show this help info
+  -v                   ; verbose mode
+  --veth {vif1/ip1[,vif2/ip2,...]} ; veth "ifname/address" pairs
+  --macvlan-ip {ip1[,ip2...]}      ; ip address[es] for ns macvlan if[s]
+
+Examples:
+  /usr/local/bin/netns veth ve0.a-host,ve0.b-ns0
+  /usr/local/bin/netns addr ve0.a-host 192.168.0.1
+  /usr/local/bin/netns create ns0 -veth=ve0.b-ns0/192.168.0.2 -macvlan-ip=192.168.100.2
+  /usr/local/bin/netns -v exec ns0 -- ping -c 4 192.168.0.1
+  curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | bash
+  /usr/local/bin/netns -v exec ns0 -- showmount -e 192.168.0.1
+  /usr/local/bin/netns -v exec ns0 -- mkdir -p /mnt/ns0/nfs
+  /usr/local/bin/netns -v exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
+  /usr/local/bin/netns -v exec ns0 -- mount -t nfs4
+  /usr/local/bin/netns -v exec ns0 -- ls /mnt/ns0/nfs/*
+  /usr/local/bin/netns -v exec ns0 -- umount /mnt/ns0/nfs
+  /usr/local/bin/netns -v exec ns0 -- rm -rf /mnt/ns0
+
 ```
