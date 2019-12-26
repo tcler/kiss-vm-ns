@@ -638,7 +638,7 @@ Usage() {
 	    --xdisk        #add 2 extra disk for test
 	    --nvdimm       #add 2 nvdimm device(2048+2M) //need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
 	    --nosshkey     #don't inject sshkey
-	    -v|--verbose   #don't inject sshkey
+	    -v|--verbose   #verbose mode
 	    --xml          #just generate xml
 	    --qemu-opts    #Pass-through qemu options
 	    --qemu-env     #Pass-through qemu env[s]

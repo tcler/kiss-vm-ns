@@ -10,8 +10,9 @@ Thereby focusing more on the verification and testing of business functions.
 vm:
     功能: 快速创建、登陆、重启、删除 libvirt 虚拟机(VMs)，以及构建虚拟网络(Virtual lab);
     用途: 自动化测试 网络协议、网络文件系统、本地文件系统、nvdimm 等模块功能（硬件无关的功能都可以）
-        vm create $distro1 [other options]
-        vm exec $vmname1 -- command line
+        vm create $distro [other options]
+        vmname=$(vm -getvmname $distro)
+        vm exec $vmname -- command line
 
 ns:
     功能: 快速创建基于 systemd-nspawn 的容器(Container)网络
@@ -80,6 +81,10 @@ Options:
     --xdisk        #add 2 extra disk for test
     --nvdimm       #add 2 nvdimm device(2048+2M) //need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
     --nosshkey     #don't inject sshkey
+    -v|--verbose   #verbose mode
+    --xml          #just generate xml
+    --qemu-opts    #Pass-through qemu options
+    --qemu-env     #Pass-through qemu env[s]
 
 Example Intranet:
     vm # will enter a TUI show you all available distros that could auto generate source url
