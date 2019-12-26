@@ -640,7 +640,8 @@ Usage() {
 	    --nosshkey     #don't inject sshkey
 	    -v|--verbose   #don't inject sshkey
 	    --xml          #just generate xml
-	    --qemu-opts    #qemu options that has not been supported by libvirt
+	    --qemu-opts    #Pass-through qemu options
+	    --qemu-env     #Pass-through qemu env[s]
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -720,6 +721,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rv \
 	--long verbose \
 	--long xml \
 	--long qemu-opts: \
+	--long qemu-env: \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -764,7 +766,8 @@ while true; do
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	--xml)           XML=--print-xml; shift 1;;
-	--qemu-opts)     QEMU_OPTS="$2"; XML=--print-xml; shift 2;;
+	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
+	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -1097,7 +1100,7 @@ if [[ "$InstallType" = location ]]; then
 	}
 	ksfile=${KSPath##*/}
 	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
-	nohup virt-install --connect=qemu:///system --hvm --accelerate $XML \
+	nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  --name $vmname \
 	  --location $Location \
 	  $OS_VARIANT_OPT \
@@ -1123,13 +1126,7 @@ if [[ "$InstallType" = location ]]; then
 	[[ -n "$XML" ]] && {
 		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
-		if [[ -z "$QEMU_OPTS" ]]; then
-			exit
-		else
-			sed -i "s|</domain>|  <qemu:commandline>\n    <qemu:arg value='$QEMU_OPTS'/>\n    <qemu:env name='QEMU_ENV' value='VAL'/>\n  </qemu:commandline>\n&|" $VMpath/vm.xml
-			cat $VMpath/vm.xml
-			virsh create $VMpath/vm.xml
-		fi
+		exit
 	}
 
 	trap - SIGINT
@@ -1257,7 +1254,7 @@ elif [[ "$InstallType" = import ]]; then
 		echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
 		qemu-img resize ${imagefile} ${DSIZE}G
 	}
-	nohup virt-install --connect=qemu:///system --hvm --accelerate $XML \
+	nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  --name $vmname \
 	  --vcpus ${VCPUN:-4} \
 	  $MEM_OPTS \
@@ -1281,13 +1278,7 @@ elif [[ "$InstallType" = import ]]; then
 	[[ -n "$XML" ]] && {
 		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
-		if [[ -z "$QEMU_OPTS" ]]; then
-			exit
-		else
-			sed -i "s|</domain>|  <qemu:commandline>\n    <qemu:arg value='$QEMU_OPTS'/>\n    <qemu:env name='QEMU_ENV' value='VAL'/>\n  </qemu:commandline>\n&|" $VMpath/vm.xml
-			cat $VMpath/vm.xml
-			virsh create $VMpath/vm.xml
-		fi
+		exit
 	}
 
 	trap - SIGINT
