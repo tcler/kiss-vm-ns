@@ -74,7 +74,7 @@ _vmdelete() {
 	virsh undefine --remove-all-storage $_vmname
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "{VM:INFO} removing VM folder $_vmdir ..."
-		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2}
+		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv}
 		rmdir $_vmdir 2>/dev/null
 		rmdir ${_vmdir%/*} 2>/dev/null
 	fi
@@ -1121,11 +1121,14 @@ if [[ "$InstallType" = location ]]; then
 		}
 	"
 	[[ -n "$XML" ]] && {
-		virsh domxml-to-native qemu-argv $VMpath/nohup.log | tee $VMpath/qemu-argv
+		cp $VMpath/nohup.log $VMpath/vm.xml
+		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		if [[ -z "$QEMU_OPTS" ]]; then
 			exit
 		else
-			eval $(< $VMpath/qemu-argv) $QEMU_OPTS &
+			sed -i "s|</domain>|  <qemu:commandline>\n    <qemu:arg value='$QEMU_OPTS'/>\n    <qemu:env name='QEMU_ENV' value='VAL'/>\n  </qemu:commandline>\n&|" $VMpath/vm.xml
+			cat $VMpath/vm.xml
+			virsh create $VMpath/vm.xml
 		fi
 	}
 
@@ -1276,11 +1279,14 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	"
 	[[ -n "$XML" ]] && {
-		virsh domxml-to-native qemu-argv $VMpath/nohup.log | tee $VMpath/qemu-argv
+		cp $VMpath/nohup.log $VMpath/vm.xml
+		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		if [[ -z "$QEMU_OPTS" ]]; then
 			exit
 		else
-			eval $(< $VMpath/qemu-argv) $QEMU_OPTS &
+			sed -i "s|</domain>|  <qemu:commandline>\n    <qemu:arg value='$QEMU_OPTS'/>\n    <qemu:env name='QEMU_ENV' value='VAL'/>\n  </qemu:commandline>\n&|" $VMpath/vm.xml
+			cat $VMpath/vm.xml
+			virsh create $VMpath/vm.xml
 		fi
 	}
 
