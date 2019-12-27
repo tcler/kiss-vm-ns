@@ -290,7 +290,7 @@ del*|del|de|d) switchroot; shift
 
 	echo -e "\n{NS:INFO} remove ns $NS ..."
 
-	echo -e "- {NS:INFO} umount all fs on $NS ..."
+	echo -e "- {NS:INFO} umount all networking fs on $NS ..."
 	nsexec $NS umount -a -t nfs,nfs4,cifs
 
 	macvlan4ns=${NS}.
