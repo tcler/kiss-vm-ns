@@ -288,6 +288,11 @@ del*|del|de|d) switchroot; shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 
+	echo -e "\n{NS:INFO} umount all fs on $NS ..."
+	nsexec $NS umount -a -t nfs4
+	nsexec $NS umount -a -t nfs
+	nsexec $NS umount -a -t cifs
+
 	echo -e "\n{NS:INFO} remove ns $NS ..."
 	macvlan4ns=${NS}.
 	echo -e "- {NS:INFO} remove macvlan ifs in ns ..."
@@ -297,9 +302,9 @@ del*|del|de|d) switchroot; shift
 
 	echo -e "- {NS:INFO} systemd-run poweroff ..."
 	systemd-run -M $NS "poweroff"
-	ns_pstree $NS | awk 'NF > 4 {print $(NF-3)}' | xargs kill 2>/dev/null
+	ns_pstree $NS | awk 'NF > 4 {print $(NF-3)}' |tac| xargs kill 2>/dev/null
 	sleep 1
-	ns_pstree $NS | awk 'NF > 4 {print $(NF-3)}' | xargs kill -9 2>/dev/null
+	ns_pstree $NS | awk 'NF > 4 {print $(NF-3)}' |tac| xargs kill -9 2>/dev/null
 
 	echo -e "- {NS:INFO} remove veth ifs @host ..."
 	ip link del ve-$NS 2>/dev/null
