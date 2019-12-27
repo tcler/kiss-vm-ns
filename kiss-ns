@@ -342,7 +342,6 @@ machinectl -l
 ns_pstree $NS
 
 # post setup
-macvlan4host=macvlan-host
 hostvethif=ve-$NS
 if [[ -n "$HOST_VETH_IP" && -n "$NS_VETH_IP" ]]; then
 	is_valid_ip $HOST_VETH_IP || { HOST_VETH_IP=; echo -e "\n{NS:WARN} '$HOST_VETH_IP' is not a valid address"|grep --color=always . >&2; }
@@ -384,14 +383,6 @@ for addr in $NS_MACVLAN_IPS; do
 	_nsexec "$InitPid" ip addr add $(xaddr $addr) dev $nsifname
 	_nsexec "$InitPid" ip a s $nsifname
 done
-
-HOST_MACVLAN_IP=192.168.254.254
-echo -e "\n{NS:INFO} setup default macvlan host side $macvlan4host $HOST_MACVLAN_IP"
-ip link show $macvlan4host &>/dev/null ||
-	ip link add link $(getDefaultNic) name $macvlan4host type macvlan mode bridge
-ip addr add $(xaddr $HOST_MACVLAN_IP) dev $macvlan4host
-ip link set dev $macvlan4host up
-ip a s $macvlan4host
 
 [[ -n "$HOST_VETH_IP" && -n "$NS_VETH_IP" ]] && {
 	echo -e "\n{NS:INFO} ping veth nic $NS_VETH_IP ($hostvethif -> $nsvethif)"
