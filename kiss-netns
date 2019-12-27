@@ -58,10 +58,6 @@ is_valid_ip() {
     return $stat
 }
 
-getDefaultNic() {
-	ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'
-}
-
 ns_init_pid() {
 	local ns=$1
 	local initpid
@@ -129,24 +125,53 @@ detachif () {
 }
 
 addveth() {
+	local fname=${FUNCNAME[0]}
+	Usage() { echo -e "Usage:\n  $fname vename.x,vename.y [vename2.x,vename2.y ...]"; }
+
+	if [[ "${#}" = 0 ]]; then
+		Usage >&2
+		return 1
+	fi
+
 	for pair; do
 		read end0 end1 _ <<<"${pair//,/ }"
 		if [[ -n "$end0" && -n "$end1" ]]; then
 			ip link add $end0 type veth peer name $end1
 		else
-			echo -e "- {NETNS:ERR} veth need two if-names ..."
+			Usage >&2
 		fi
 	done
 }
 addmacvlan() {
-	local baseif=$(getDefaultNic)
+	local fname=${FUNCNAME[0]}
+	Usage() { echo -e "Usage:\n  $fname [-if=baseif] [-mode={bridge|vepa|private|passthru}] mv1 [mv2 ...]"; }
+	get_default_if() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
 
-	for mv; do
-		ip link add link $baseif name ${mv} type macvlan mode bridge
+	local baseif=$(get_defaultn_if)
+	local mode=bridge
+
+	# parse options
+	local mvs=()
+	for arg; do
+		case "$arg" in
+		-if=*)   baseif=${arg/*=};;
+		-mode=*) mode=${arg/*=/};;
+		-*)      echo "{WARN} unkown option '${arg}'" >&2;;
+		*)       mvs+=($arg);;
+		esac
+	done
+
+	if [[ "${#mvs[@]}" = 0 ]]; then
+		Usage >&2
+		return 1
+	fi
+
+	for mv in $mvs; do
+		ip link add link $baseif name ${mv} type macvlan mode $mode
 	done
 }
 
-addr() {
+addrup() {
 	local if=$1
 	local addr=$2
 
@@ -201,8 +226,8 @@ veth|addveth) shift
 macvlan|addmacvlan) shift
 	addmacvlan "$@"
 	exit $?;;
-addr) shift
-	addr "$@"
+addr|addrup) shift
+	addrup "$@"
 	exit $?;;
 attach) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
