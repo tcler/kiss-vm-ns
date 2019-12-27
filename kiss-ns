@@ -363,9 +363,6 @@ else
 		\cp /etc/{passwd,group,shadow,resolv.conf} $NSdir/etc/.
 	fi
 	MachineOpt="-D $NSdir"
-	{ declare -f addmacvlan; echo 'addmacvlan "$@"'; } >$NSdir/bin/addmacvlan
-	{ declare -f addressup; echo 'addressup "$@"'; } >$NSdir/bin/addressup
-	chmod +x $NSdir/bin/{addmacvlan,addressup}
 fi
 
 NETWORK_VETH_OPT=
@@ -392,6 +389,11 @@ for ((i=0; i<4; i++)); do InitPid=$(ns_init_pid $NSdir) && break; sleep 1; done
 echo -e "\n{NS:INFO} NS info"
 machinectl -l
 ns_pstree $NS
+
+# generate utils addmacvlan addressup
+{ declare -f addmacvlan; echo 'addmacvlan "$@"'; } >$NSdir/bin/addmacvlan
+{ declare -f addressup; echo 'addressup "$@"'; } >$NSdir/bin/addressup
+chmod +x $NSdir/bin/{addmacvlan,addressup}
 
 # post setup
 hostvethif=ve-$NS
