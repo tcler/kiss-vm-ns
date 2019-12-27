@@ -170,10 +170,15 @@ addmacvlan() {
 		ip link add link $baseif name ${mv} type macvlan mode $mode
 	done
 }
-
-addrup() {
+addressup() {
 	local if=$1
 	local addr=$2
+
+	xaddr() {
+		local addr=$1
+		[[ "$addr" =~ .*/[1-9]+$ ]] || addr+=/24
+		echo $addr
+	}
 
 	ip link set dev $if up
 	ip addr add $(xaddr $addr) dev $if
@@ -227,7 +232,7 @@ macvlan|addmacvlan) shift
 	addmacvlan "$@"
 	exit $?;;
 addr|addrup) shift
-	addrup "$@"
+	addressup "$@"
 	exit $?;;
 attach) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
