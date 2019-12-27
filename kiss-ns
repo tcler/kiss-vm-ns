@@ -288,12 +288,11 @@ del*|del|de|d) switchroot; shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 
-	echo -e "\n{NS:INFO} umount all fs on $NS ..."
-	nsexec $NS umount -a -t nfs4
-	nsexec $NS umount -a -t nfs
-	nsexec $NS umount -a -t cifs
-
 	echo -e "\n{NS:INFO} remove ns $NS ..."
+
+	echo -e "- {NS:INFO} umount all fs on $NS ..."
+	nsexec $NS umount -a -t nfs,nfs4,cifs
+
 	macvlan4ns=${NS}.
 	echo -e "- {NS:INFO} remove macvlan ifs in ns ..."
 	for dev in $(nsexec $NS ip a s | awk -F'[: @]+' -v pre=mv-${macvlan4ns} '/^[0-9]+:/ {if ($2 ~ "^" pre "[0-9]*$") print $2}'); do
