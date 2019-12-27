@@ -167,16 +167,19 @@ Examples create ns by using absolute own fs tree:
 
 Examples sub-command:
   /usr/local/bin/ns ls                                # list all ns
-  /usr/local/bin/ns ps ns2                            # show ps tree of ns2
-  /usr/local/bin/ns del ns2                           # delete/remove ns2 but keep rootdir
-  /usr/local/bin/ns delete ns2                        # delete/remove ns2 and it's rootdir
+  /usr/local/bin/ns ps ns3                            # show ps tree of ns3
+  /usr/local/bin/ns del ns3                           # delete/remove ns3 but keep rootdir
+  /usr/local/bin/ns delete ns3                        # delete/remove ns3 and it's rootdir
   /usr/local/bin/ns install ns2 cifs-utils            # install cifs-utils in ns2
 
   /usr/local/bin/ns exec ns2 ip addr show             # exec command in ns2
   /usr/local/bin/ns exec ns2 -- ls -l /               # exec command in ns2
 
-  systemctl start nfs-server
-  exportfs -o ro,no_root_squash "*:/usr/share"
+  sudo systemctl start nfs-server
+  sudo exportfs -o ro,no_root_squash "*:/usr/share"
+  sudo addmacvlan macvlan-host
+  sudo addressup macvaln-host 192.168.254.254
+  sudo firewall-cmd --add-service=nfs --add-service=mountd --add-service=rpc-bind
   /usr/local/bin/ns exec ns2 -- mkdir -p /mnt/nfs              # exec command in ns2
   /usr/local/bin/ns exec ns2 -- showmount -e 192.168.2.1       # exec command in ns2
   /usr/local/bin/ns exec ns2 -- mount 192.168.2.1:/ /mnt/nfs   # exec command in ns2

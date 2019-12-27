@@ -232,7 +232,7 @@ veth|addveth) shift
 macvlan|addmacvlan) shift
 	addmacvlan "$@"
 	exit $?;;
-addr|addrup) shift
+addr|addrup|addressup) shift
 	addressup "$@"
 	exit $?;;
 attach) shift
