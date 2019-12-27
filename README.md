@@ -11,7 +11,7 @@ vm:
     功能: 快速创建、登陆、重启、删除 libvirt 虚拟机(VMs)，以及构建虚拟网络(Virtual lab);
     用途: 自动化测试 网络协议、网络文件系统、本地文件系统、nvdimm 等模块功能（硬件无关的功能都可以）
         vm create $distro [other options]
-        vmname=$(vm -getvmname $distro)
+        vmname=$(vm -r -getvmname $distro)
         vm exec $vmname -- command line
 
 ns:
@@ -51,6 +51,9 @@ Options:
     --ks <file>    #kickstart file, will auto generate according distro name if omitting
     -n|--vmname <name>
                    #VM name, will auto generate according distro name if omitting
+    --getvmname    #get *final* vmname. e.g:
+                     vm -r --getvmname centos-8 -n nfsserv
+                     vmname=$(vm -r --getvmname centos-8 -n nfsserv)
     -f|--force     #over write existing VM with same name
     -p|-pkginstall <pkgs>
                    #pkgs in default system repo, install by yum or apt-get
