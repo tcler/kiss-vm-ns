@@ -1,0 +1,24 @@
+#!/bin/bash
+
+addressup() {
+	local fname=${FUNCNAME[0]}
+	Usage() { echo -e "Usage:\n  $fname <ifname> <address>"; }
+
+	local if=$1
+	local addr=$2
+
+	if [[ "${#}" = 0 ]]; then
+		Usage >&2
+		return 1
+	fi
+
+	xaddr() {
+		local addr=$1
+		[[ "$addr" =~ .*/[1-9]+$ ]] || addr+=/24
+		echo $addr
+	}
+
+	ip link set dev $if up
+	ip addr add $(xaddr $addr) dev $if
+}
+addressup "$@"
