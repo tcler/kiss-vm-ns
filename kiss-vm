@@ -27,6 +27,8 @@ VIRT_READY=unkown
 MSIZE=1024
 DSIZE=20
 baudrate=115200
+QEMU_OPTS=--qemu-commandline=
+QEMU_ENV=()
 baseUrl=http://download.devel.redhat.com/qa/rhts/lookaside/kiss-vm-ns
 bkrClientImprovedUrl=http://download.devel.redhat.com/qa/rhts/lookaside/bkr-client-improved
 
