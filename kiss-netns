@@ -101,16 +101,17 @@ nsdelete() {
 	ip netns del $ns 2>/dev/null
 }
 
-xaddr() {
-	local addr=$1
-	[[ "$addr" =~ .*/[1-9]+$ ]] || addr+=/24
-	echo $addr
-}
 
 attachif () {
 	local ns=$1
 	local if=$2
 	local addr=$3
+
+	xaddr() {
+		local addr=$1
+		[[ "$addr" =~ .*/[1-9]+$ ]] || addr+=/24
+		echo $addr
+	}
 
 	ip link set $if netns $ns
 	nsexec $ns ip link set dev $if up
