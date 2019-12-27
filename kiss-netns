@@ -148,7 +148,7 @@ addmacvlan() {
 	Usage() { echo -e "Usage:\n  $fname [-if=baseif] [-mode={bridge|vepa|private|passthru}] mv1 [mv2 ...]"; }
 	get_default_if() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
 
-	local baseif=$(get_defaultn_if)
+	local baseif=$(get_default_if)
 	local mode=bridge
 
 	# parse options
