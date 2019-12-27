@@ -335,6 +335,7 @@ netinfo() {
 	done
 }
 netdelete() {
+	echo -e "\n{VM:INFO} => delete virtual net: $@ .."
 	for net; do
 		virsh net-destroy -- $net
 		virsh net-undefine -- $net
