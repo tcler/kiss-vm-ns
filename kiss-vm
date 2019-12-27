@@ -70,7 +70,7 @@ _vmdelete() {
 	local _image=$(virsh dumpxml --domain $_vmname | sed -n "/source file=.*qcow/{s|^.*='||; s|'/>$||; p; q}")
 	local _vmdir=$(dirname $_image)
 
-	echo -e "{VM:INFO} => dist removing VM $_vmname .."
+	echo -e "\n{VM:INFO} => dist removing VM $_vmname .."
 	virsh destroy $_vmname 2>/dev/null
 	sleep 1
 	virsh undefine --remove-all-storage $_vmname
