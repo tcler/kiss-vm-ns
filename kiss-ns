@@ -390,10 +390,10 @@ echo -e "\n{NS:INFO} NS info"
 machinectl -l
 ns_pstree $NS
 
-# generate utils addmacvlan addressup
-{ declare -f addmacvlan; echo 'addmacvlan "$@"'; } >$NSdir/bin/addmacvlan
+# generate utils addressup
 { declare -f addressup; echo 'addressup "$@"'; } >$NSdir/bin/addressup
-chmod +x $NSdir/bin/{addmacvlan,addressup}
+chmod +x $NSdir/bin/addressup
+which addressup &>/dev/null || cp $NSdir/bin/addressup /usr/bin/.
 
 # post setup
 hostvethif=ve-$NS
