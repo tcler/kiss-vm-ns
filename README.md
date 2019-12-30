@@ -138,8 +138,8 @@ example: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/n
 ```
 [me@ws kiss-vm-ns]$ ns -h
 Usage:
-  /usr/local/bin/ns <-n nsname> [options] [exec -- cmdline | ps | del | install pkgs | {jj|jinja} pkgs ]
-  /usr/local/bin/ns ls
+  ns <-n nsname> [options] [exec -- cmdline | ps | del | install pkgs | {jj|jinja} pkgs ]
+  ns ls
 
 Options:
   -h, --help           ; show this help info
@@ -159,35 +159,35 @@ Options:
 Examples create ns by using mini fs tree + host /usr:
   # same as example ns1, but use a it's own fs tree instead reuse host os tree
   #  so you can do anything in this ns, and don't worry about any impact on the host
-  /usr/local/bin/ns jj nsmini bash   # create a mini rootfs template
-  /usr/local/bin/ns -n ns0 --veth-ip 192.168.0.1,192.168.0.2 --noboot -robind=/usr --clone nsmini
-  /usr/local/bin/ns -n ns1 --veth-ip 192.168.1.1,192.168.1.2 --macvlan-ip 192.168.254.11 -bind=/usr --clone nsmini
+  ns jj nsmini bash   # create a mini rootfs template
+  ns -n ns0 --veth-ip 192.168.0.1,192.168.0.2 --noboot -robind=/usr --clone nsmini
+  ns -n ns1 --veth-ip 192.168.1.1,192.168.1.2 --macvlan-ip 192.168.254.11 -bind=/usr --clone nsmini
 
 Examples create ns by using absolute own fs tree:
-  /usr/local/bin/ns jj nsbase iproute iputils nfs-utils firewalld   # create a base rootfs template
-  /usr/local/bin/ns -n ns2 --veth-ip 192.168.2.1,192.168.2.2 --macvlan-ip 192.168.254.12,192.168.253.12 --clone nsbase
-  /usr/local/bin/ns -n ns3 --veth-ip 192.168.3.1,192.168.3.2 --macvlan-ip 192.168.254.13,192.168.253.13 --clone nsbase
+  ns jj nsbase iproute iputils nfs-utils firewalld   # create a base rootfs template
+  ns -n ns2 --veth-ip 192.168.2.1,192.168.2.2 --macvlan-ip 192.168.254.12,192.168.253.12 --clone nsbase
+  ns -n ns3 --veth-ip 192.168.3.1,192.168.3.2 --macvlan-ip 192.168.254.13,192.168.253.13 --clone nsbase
 
 Examples sub-command:
-  /usr/local/bin/ns ls                                # list all ns
-  /usr/local/bin/ns ps ns3                            # show ps tree of ns3
-  /usr/local/bin/ns del ns3                           # delete/remove ns3 but keep rootdir
-  /usr/local/bin/ns delete ns3                        # delete/remove ns3 and it's rootdir
-  /usr/local/bin/ns install ns2 cifs-utils            # install cifs-utils in ns2
+  ns ls                                # list all ns
+  ns ps ns3                            # show ps tree of ns3
+  ns del ns3                           # delete/remove ns3 but keep rootdir
+  ns delete ns3                        # delete/remove ns3 and it's rootdir
+  ns install ns2 cifs-utils            # install cifs-utils in ns2
 
-  /usr/local/bin/ns exec ns2 ip addr show             # exec command in ns2
-  /usr/local/bin/ns exec ns2 -- ls -l /               # exec command in ns2
+  ns exec ns2 ip addr show             # exec command in ns2
+  ns exec ns2 -- ls -l /               # exec command in ns2
 
   sudo systemctl start nfs-server
   sudo exportfs -o ro,no_root_squash "*:/usr/share"
   sudo addmacvlan macvlan-host
   sudo addressup macvaln-host 192.168.254.254
   sudo firewall-cmd --add-service=nfs --add-service=mountd --add-service=rpc-bind
-  /usr/local/bin/ns exec ns2 -- mkdir -p /mnt/nfs              # exec command in ns2
-  /usr/local/bin/ns exec ns2 -- showmount -e 192.168.2.1       # exec command in ns2
-  /usr/local/bin/ns exec ns2 -- mount 192.168.2.1:/ /mnt/nfs   # exec command in ns2
-  /usr/local/bin/ns exec ns2 -- showmount -e 192.168.254.254     # exec command in ns2
-  /usr/local/bin/ns exec ns2 -- mount 192.168.254.254:/ /mnt/nfs # exec command in ns2
+  ns exec ns2 -- mkdir -p /mnt/nfs              # exec command in ns2
+  ns exec ns2 -- showmount -e 192.168.2.1       # exec command in ns2
+  ns exec ns2 -- mount 192.168.2.1:/ /mnt/nfs   # exec command in ns2
+  ns exec ns2 -- showmount -e 192.168.254.254     # exec command in ns2
+  ns exec ns2 -- mount 192.168.254.254:/ /mnt/nfs # exec command in ns2
 ```
 
 ## kiss-netns

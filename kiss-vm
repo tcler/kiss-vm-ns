@@ -5,7 +5,8 @@
 LANG=C
 PATH=~/bin:$PATH 
 
-P=${0##*/}
+P=$0
+[[ $0 = /* ]] && P=${0##*/}
 Distro=
 Location=
 Imageurl=
