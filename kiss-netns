@@ -21,8 +21,8 @@ Usage() {
 	  $P veth ve0.a-host,ve0.b-ns0   #create veth pair
 	  $P macvlan ifname              #create macvlan if
 
-	  $P addrup \$if \$address         #set address to if
-	  $P attach \$ns \$if [addr]       #attach new if to ns
+	  $P addrup \$if \$address         #set address and up if
+	  $P attach \$ns \$if [\$addr]      #attach new if to ns, [and setup address and up]
 	  $P detach \$ns \$if              #detach if from ns
 
 	Options:

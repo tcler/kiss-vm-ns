@@ -204,8 +204,8 @@ Usage:
   netns veth ve0.a-host,ve0.b-ns0   #create veth pair
   netns macvlan ifname              #create macvlan if
 
-  netns addrup $if $address         #set address to if
-  netns attach $ns $if [addr]       #attach new if to ns
+  netns addrup $if $address         #set address and up if
+  netns attach $ns $if [$addr]      #attach new if to ns, [and setup address and up]
   netns detach $ns $if              #detach if from ns
 
 Options:
