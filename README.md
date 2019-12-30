@@ -195,35 +195,37 @@ Examples sub-command:
 ```
 [me@ws kiss-vm-ns]$ netns
 Usage:
-  /usr/local/bin/netns <-n nsname> [options] [create | exec -- cmdline | del | attach if addr | detach if]
+  netns <$nsname,$vethX,$addr---$nsname,$vethX_peer,$addr | $nsname,$macvlan_ifname,$addr[,baseif=$if,mode=$mode]>
+  # ^^^^^^ nsname 'host' means default network namespace
+  netns exec $nsname -- cmdline
+  netns del $nsname
+  netns ls
 
-  /usr/local/bin/netns veth ve0.a-host,ve0.b-ns0   #create veth pair
-  /usr/local/bin/netns macvlan ifname              #create macvlan if
-  /usr/local/bin/netns addr $if $address           #set address to if
+  netns veth ve0.a-host,ve0.b-ns0   #create veth pair
+  netns macvlan ifname              #create macvlan if
 
-  /usr/local/bin/netns attach $ns $if [addr]       #attach new if to ns
-  /usr/local/bin/netns detach $ns $if              #detach if from ns
-
-  /usr/local/bin/netns ls
+  netns addrup $if $address         #set address to if
+  netns attach $ns $if [addr]       #attach new if to ns
+  netns detach $ns $if              #detach if from ns
 
 Options:
   -h, --help           ; show this help info
   -v                   ; verbose mode
-  --veth {vif1/ip1[,vif2/ip2,...]} ; veth "ifname/address" pairs
-  --macvlan-ip {ip1[,ip2...]}      ; ip address[es] for ns macvlan if[s]
+  -n <arg>             ; ns name
 
 Examples:
-  /usr/local/bin/netns veth ve0.a-host,ve0.b-ns0
-  /usr/local/bin/netns addr ve0.a-host 192.168.0.1
-  /usr/local/bin/netns create ns0 -veth=ve0.b-ns0/192.168.0.2 -macvlan-ip=192.168.100.2
-  /usr/local/bin/netns -v exec ns0 -- ping -c 4 192.168.0.1
+  netns host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  ns0,mv-ns0,192.168.100.2  host,mv-host0,192.168.100.1
+  # ^^^^^^ nsname 'host' means default network namespace
+  netns -v exec ns0 -- ping -c 4 192.168.0.1
   curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | bash
-  /usr/local/bin/netns -v exec ns0 -- showmount -e 192.168.0.1
-  /usr/local/bin/netns -v exec ns0 -- mkdir -p /mnt/ns0/nfs
-  /usr/local/bin/netns -v exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
-  /usr/local/bin/netns -v exec ns0 -- mount -t nfs4
-  /usr/local/bin/netns -v exec ns0 -- ls /mnt/ns0/nfs/*
-  /usr/local/bin/netns -v exec ns0 -- umount /mnt/ns0/nfs
-  /usr/local/bin/netns -v exec ns0 -- rm -rf /mnt/ns0
+  netns -v exec ns0 -- showmount -e 192.168.0.1
+  netns -v exec ns0 -- mkdir -p /mnt/ns0/nfs
+  netns -v exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
+  netns -v exec ns0 -- mount -t nfs4
+  netns -v exec ns0 -- ls /mnt/ns0/nfs/*
+  netns -v exec ns0 -- umount /mnt/ns0/nfs
+  netns -v exec ns0 -- rm -rf /mnt/ns0
+  netns del ns0
+  ip link delete dev mv-host0
 
 ```
