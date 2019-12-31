@@ -556,6 +556,7 @@ if [[ $Intranet = yes ]]; then
 				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
 				extras:http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/$(arch)/extras/os
 				cdn_os:http://cdn.stage.redhat.com/content/dist/rhel/server/7/7Server/$(arch)/os
+				beaker-harness:https://download.devel.redhat.com/beakerrepos/harness/RedHatEnterpriseLinux7
 			)
 			;;
 		RHEL-8*|RHEL8*)
@@ -583,6 +584,7 @@ if [[ $Intranet = yes ]]; then
 				SAP-debuginfo:${debug_url/BaseOS/SAP}
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
 				Buildroot:http://download.devel.redhat.com/$dtype/latest-BUILDROOT-8-RHEL-8/compose/Buildroot/$arch/os
+				beaker-harness:https://download.devel.redhat.com/beakerrepos/harness/RedHatEnterpriseLinux8
 			)
 			;;
 		esac
