@@ -9,6 +9,13 @@ P=$0
 [[ $0 = /* ]] && P=${0##*/}
 AT=("$@")
 
+switchroot() {
+	[[ $(id -u) != 0 ]] && {
+		echo -e "{NETNS:WARN} $P need root permission, try:\n  sudo $P ${AT[@]}" | grep --color=always . >&2
+		exec sudo $P "${AT[@]}"
+	}
+}
+
 Usage() {
 	cat <<-EOF
 	Usage:
@@ -201,6 +208,7 @@ while true; do
 	esac
 done
 
+switchroot
 # __prepare__
 which tmux &>/dev/null || dep+=\ tmux
 [[ -n "$dep" ]] && {
@@ -259,12 +267,14 @@ declare -A NS_IFS
 echo -e "\n{NETNS:INFO} parse parameters ..."
 for topo; do
 	# ns that connected to/by veth: host,veth0.x,192.168.0.1---ns0,veth0.y,192.168.0.2
-	if [[ "$topo" =~ [^,]+,[^,]+,[^,]+---*[^,]+,[^,]+,[^,]+ ]]; then
-		topo=$(echo "$topo"|sed 's/---*/,/')
-		read nsL vethL addrL nsR vethR addrR _ <<<"${topo//,/ }"
-		VethList+=($vethL,$vethR)
-		NS_IFS[$nsL]+=" $vethL,$addrL"
-		NS_IFS[$nsR]+=" $vethR,$addrR"
+	if [[ "$topo" =~ [^,]+,[^,]+,[^,]+---+[^,]+,[^,]+,[^,]+ ]]; then
+		topo=$(echo "$topo"|sed -r 's/---+/ /')
+		read nodeX nodeY _ <<<"${topo}"
+		read nsX vethX addrX _ <<<"${nodeX//,/ }"
+		read nsY vethY addrY _ <<<"${nodeY//,/ }"
+		VethList+=($vethX,$vethY)
+		NS_IFS[$nsX]+=" $vethX,$addrX"
+		NS_IFS[$nsY]+=" $vethY,$addrY"
 	# ns that connected to macvlan
 	elif [[ "$topo" =~ [^,]+,[^,]+,[^,]+(,(baseif|mode)=.*)* ]]; then
 		read ns mvname addr env <<<"${topo//,/ }"
