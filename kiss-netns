@@ -19,7 +19,7 @@ switchroot() {
 Usage() {
 	cat <<-EOF
 	Usage:
-	  $P <\$nsname,\$vethX,\$addr---\$nsname,\$vethX_peer,\$addr | \$nsname,\$vlan_ifname,\$addr[?baseif=\$if,mode=\$mode,]>
+	  $P <\$nsname,\$vethX,\$addr---\$nsname,\$vethX_peer,\$addr | \$nsname,\$vlan_ifname[,\$addr][?baseif=\$if,mode=\$mode,]>
 	  # ^^^^^^ nsname 'host' means default network namespace
 	  $P exec \$nsname -- cmdline
 	  $P del \$nsname
@@ -276,7 +276,7 @@ for topo; do
 		NS_IFS[$nsX]+=" $vethX,$addrX"
 		NS_IFS[$nsY]+=" $vethY,$addrY"
 	# ns that connected to macvlan
-	elif [[ "$topo" =~ [^,]+,[^,]+,[^,]+(\?((baseif|mode|type)=.*)(,((baseif|mode|type)=.*))*)? ]]; then
+	elif [[ "$topo" =~ [^,]+,[^,]+(,[^,]+)?(\?((baseif|mode|type)=.*)(,((baseif|mode|type)=.*))*)? ]]; then
 		read ifinfo env _ <<<"${topo/\?/ }"
 		read ns ifname addr _ <<<"${ifinfo//,/ }"
 		NS_IFS[$ns]+=" $ifname,$addr"
