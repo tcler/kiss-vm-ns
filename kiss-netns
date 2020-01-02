@@ -19,14 +19,15 @@ switchroot() {
 Usage() {
 	cat <<-EOF
 	Usage:
-	  $P <\$nsname,\$vethX,\$addr---\$nsname,\$vethX_peer,\$addr | \$nsname,\$vnic_name[,\$addr][?updev=\$if,mode=\$mode,]>
+	  $P <\$nsname,\$vethX,\$addr---\$nsname,\$vethX_peer,\$addr | \$nsname,\$vnic_name[,\$addr][?updev=\$if,mode=\$mode,type=\$type]>
 	  # ^^^^^^ nsname 'host' means default network namespace
 	  $P exec \$nsname -- cmdline
 	  $P del \$nsname
 	  $P ls
 
 	  $P veth ve0.a-host,ve0.b-ns0   #create veth pair
-	  $P macvlan ifname              #create macvlan if
+	  $P macvlan ifname              #create macvlan if; [updev=updev] [mode={bridge|vepa|private|passthru}]
+	  $P ipvlan ifname               #create ipvlan if; [updev=updev] [mode={l2|l3}]
 
 	  $P addrup \$if \$address         #set address and up if
 	  $P attach \$ns \$if [\$addr]      #attach new if to ns, [and setup address and up]
@@ -165,8 +166,8 @@ addmacvlan() {
 	local mvs=()
 	for arg; do
 		case "$arg" in
-		-updev=*) val=${arg/*=}; [[ -n "$val" ]] && updev="$val";;
-		-mode=*)  val=${arg/*=/}; [[ -n "$val" ]] && mode="$val";;
+		updev=*|-updev=*) val=${arg#*=}; [[ -n "$val" ]] && updev="$val";;
+		mode=*|-mode=*)  val=${arg#*=}; [[ -n "$val" ]] && mode="$val";;
 		-*)       echo "{WARN} unkown option '${arg}'" >&2;;
 		*)        mvs+=($arg);;
 		esac
@@ -193,8 +194,8 @@ addipvlan() {
 	local ivs=()
 	for arg; do
 		case "$arg" in
-		-updev=*) val=${arg/*=}; [[ -n "$val" ]] && updev="$val";;
-		-mode=*)  val=${arg/*=/}; [[ -n "$val" ]] && mode="$val";;
+		updev=*|-updev=*) val=${arg#*=}; [[ -n "$val" ]] && updev="$val";;
+		mode=*|-mode=*)  val=${arg#*=}; [[ -n "$val" ]] && mode="$val";;
 		-*)       echo "{WARN} unkown option '${arg}'" >&2;;
 		*)        ivs+=($arg);;
 		esac
@@ -221,6 +222,11 @@ addressup() {
 
 	ip link set dev $if up
 	ip addr add $(xaddr $addr) dev $if
+}
+delif() {
+	for if; do
+		ip link delete dev $if
+	done
 }
 
 # command line parse
@@ -267,6 +273,9 @@ veth|addveth) shift
 macvlan|addmacvlan) shift
 	addmacvlan "$@"
 	exit $?;;
+ipvlan|addipvlan) shift
+	addipvlan "$@"
+	exit $?;;
 addr|addrup|addressup) shift
 	addressup "$@"
 	exit $?;;
@@ -279,6 +288,9 @@ detach) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 	detachif "$@"
+	exit $?;;
+delif) shift
+	delif "$@"
 	exit $?;;
 creat*) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }

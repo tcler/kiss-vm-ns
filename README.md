@@ -195,14 +195,15 @@ Examples sub-command:
 ```
 [me@ws kiss-vm-ns]$ netns
 Usage:
-  netns <$nsname,$vethX,$addr---$nsname,$vethX_peer,$addr | $nsname,$vnic_name[,$addr][?updev=$if,mode=$mode,]>
+  netns <$nsname,$vethX,$addr---$nsname,$vethX_peer,$addr | $nsname,$vnic_name[,$addr][?updev=$if,mode=$mode,type=$type]>
   # ^^^^^^ nsname 'host' means default network namespace
   netns exec $nsname -- cmdline
   netns del $nsname
   netns ls
 
   netns veth ve0.a-host,ve0.b-ns0   #create veth pair
-  netns macvlan ifname              #create macvlan if
+  netns macvlan ifname              #create macvlan if; options: [updev=updev] [mode={bridge|vepa|private|passthru}]
+  netns ipvlan ifname               #create ipvlan if; options: [updev=updev] [mode={l2|l3}]
 
   netns addrup $if $address         #set address and up if
   netns attach $ns $if [$addr]      #attach new if to ns, [and setup address and up]
