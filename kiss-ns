@@ -86,8 +86,8 @@ addmacvlan() {
 	local mvs=()
 	for arg; do
 		case "$arg" in
-		-updev=*) val=${arg/*=}; [[ -n "$val" ]] && updev="$val";;
-		-mode=*)  val=${arg/*=/}; [[ -n "$val" ]] && mode="$val";;
+		updev=*|-updev=*) val=${arg#*=}; [[ -n "$val" ]] && updev="$val";;
+		mode=*|-mode=*)  val=${arg#*=}; [[ -n "$val" ]] && mode="$val";;
 		-*)       echo "{WARN} unkown option '${arg}'" >&2;;
 		*)        mvs+=($arg);;
 		esac
