@@ -11,7 +11,7 @@ AT=("$@")
 
 switchroot() {
 	[[ $(id -u) != 0 ]] && {
-		echo -e "{NETNS:WARN} $P need root permission, try:\n  sudo $P ${AT[@]}" | grep --color=always . >&2
+		echo -e "{NETNS:WARN} $P need root permission, switch to:\n  sudo $P ${AT[@]}" | GREP_COLORS='ms=1;30' grep --color=always . >&2
 		exec sudo $P "${AT[@]}"
 	}
 }
@@ -39,11 +39,17 @@ Usage() {
 	  -n <arg>             ; ns name
 
 	Examples:
-	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  ns0,mv-ns0,192.168.100.2  host,mv-host0,192.168.100.1
+	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1?type=ipvlan ns0,iv-ns0,192.168.99.2?type=ipvlan
+	  $P del ns0
+	  $P delif iv-host0
+
+	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  host,mv-host0,192.168.100.1 ns0,mv-ns0,192.168.100.2
 	  # ^^^^^^ nsname 'host' means default network namespace
 	  $P -v exec ns0 -- ping -c 2 192.168.0.1
 	  $P -v exec ns0 -- ping -c 2 192.168.100.1
-	  curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
+	  #curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
+	  sudo systemctl start nfs-server
+	  exportfs -o ro,no_root_squash "*:/usr/share"
 	  $P -v exec ns0 -- showmount -e 192.168.0.1
 	  $P -v exec ns0 -- mkdir -p /mnt/ns0/nfs
 	  $P -v exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
@@ -259,7 +265,10 @@ exec|exe|ex|e) shift
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 	nsexec $NS "$@"
 	exit $?;;
-del*|del|de|d) shift
+delif) shift
+	delif "$@"
+	exit $?;;
+del*|de|d) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 	nsdelete $NS "$@"
@@ -289,9 +298,6 @@ detach) shift
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 	detachif "$@"
 	exit $?;;
-delif) shift
-	delif "$@"
-	exit $?;;
 creat*) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	;;
@@ -308,7 +314,7 @@ declare -A NS_IFS
 echo -e "\n{NETNS:INFO} parse parameters ..."
 for topo; do
 	# ns that connected to/by veth: host,veth0.x,192.168.0.1---ns0,veth0.y,192.168.0.2
-	if [[ "$topo" =~ [^,]+,[^,]+,[^,]+---+[^,]+,[^,]+,[^,]+ ]]; then
+	if [[ "$topo" =~ ^[^,]+,[^,]+,[^,]+---+[^,]+,[^,]+,[^,]+$ ]]; then
 		topo=$(echo "$topo"|sed -r 's/---+/ /')
 		read nodeX nodeY _ <<<"${topo}"
 		read nsX vethX addrX _ <<<"${nodeX//,/ }"
@@ -317,12 +323,13 @@ for topo; do
 		NS_IFS[$nsX]+=" $vethX,$addrX"
 		NS_IFS[$nsY]+=" $vethY,$addrY"
 	# ns that connected to macvlan
-	elif [[ "$topo" =~ [^,]+,[^,]+(,[^,]+)?(\?((updev|mode|type)=.*)(,((updev|mode|type)=.*))*)? ]]; then
+	elif [[ "$topo" =~ ^[^,]+,[^,]+(,[0-9.]+)?(\?((updev|mode|type)=.*)(,((updev|mode|type)=.*))*)?$ ]]; then
 		read ifinfo env _ <<<"${topo/\?/ }"
 		read ns ifname addr _ <<<"${ifinfo//,/ }"
 		NS_IFS[$ns]+=" $ifname,$addr"
 		VNICList+=($ifname,${env})
 	else
+		echo -e "{NETNS:ERR} invalid format '\E[1;31m$topo\E[0m', see Usage:"
 		Usage >&2
 		exit 1
 	fi
