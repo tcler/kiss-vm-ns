@@ -49,7 +49,7 @@ Usage() {
 	  $P -v exec ns0 -- ping -c 2 192.168.100.1
 	  #curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
 	  sudo systemctl start nfs-server
-	  exportfs -o ro,no_root_squash "*:/usr/share"
+	  sudo exportfs -o ro,no_root_squash "*:/usr/share"
 	  $P -v exec ns0 -- showmount -e 192.168.0.1
 	  $P -v exec ns0 -- mkdir -p /mnt/ns0/nfs
 	  $P -v exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
