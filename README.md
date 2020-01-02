@@ -195,7 +195,7 @@ Examples sub-command:
 ```
 [me@ws kiss-vm-ns]$ netns
 Usage:
-  netns <$nsname,$vethX,$addr---$nsname,$vethX_peer,$addr | $nsname,$macvlan_ifname,$addr[,baseif=$if,mode=$mode]>
+  netns <$nsname,$vethX,$addr---$nsname,$vethX_peer,$addr | $nsname,$vnic_name[,$addr][?updev=$if,mode=$mode,]>
   # ^^^^^^ nsname 'host' means default network namespace
   netns exec $nsname -- cmdline
   netns del $nsname
@@ -217,6 +217,7 @@ Examples:
   netns host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  ns0,mv-ns0,192.168.100.2  host,mv-host0,192.168.100.1
   # ^^^^^^ nsname 'host' means default network namespace
   netns -v exec ns0 -- ping -c 4 192.168.0.1
+  netns -v exec ns0 -- ping -c 4 192.168.100.1
   curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
   netns -v exec ns0 -- showmount -e 192.168.0.1
   netns -v exec ns0 -- mkdir -p /mnt/ns0/nfs
