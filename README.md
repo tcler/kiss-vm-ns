@@ -134,7 +134,6 @@ Example [subcmd]:
 
 example: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/labelled-nfs/labelled-nfs.sh
 
-
 ```
 [me@ws kiss-vm-ns]$ ns -h
 Usage:
@@ -191,6 +190,8 @@ Examples sub-command:
 ```
 
 ## kiss-netns
+
+example: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/nfs-stress/nfs-stress.sh#L46
 
 ```
 [me@ws kiss-vm-ns]$ netns
