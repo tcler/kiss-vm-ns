@@ -32,6 +32,7 @@ QEMU_OPTS=--qemu-commandline=
 QEMU_ENV=()
 baseUrl=http://download.devel.redhat.com/qa/rhts/lookaside/kiss-vm-ns
 bkrClientImprovedUrl=http://download.devel.redhat.com/qa/rhts/lookaside/bkr-client-improved
+VCPUS=4
 
 Cleanup() {
 	cd ~
@@ -342,6 +343,38 @@ netdelete() {
 		virsh net-undefine -- $net
 	done
 }
+
+vercmp() {
+	usage() {
+		echo "usage: vercmp  <ver1> < =  | '>' | '<' | '>=' | '<=' >  <ver2>" >&2
+		echo "       vercmp  <ver1> < eq | gt  | lt  |  ge  |  le  >  <ver2>" >&2
+		echo "       vercmp  <ver1> < match >  <'pattern'>" >&2
+	}
+
+	[ $# != 3 ] && {
+		usage
+		return 1
+	}
+	vl=$1
+	cmpType=$2
+	vr=$3
+	res=1
+
+	[ "$vl" = "$vr" ] && eq=1
+	vmax=$(echo -e "$vl\n$vr" | sort -V | tail -n 1)
+
+	case "$cmpType" in
+	=|eq) [ "$eq" = 1 ] && res=0;;
+	\>|gt) [ "$eq" != 1 -a "$vl" = "$vmax" ] && res=0;;
+	\<|lt) [ "$eq" != 1 -a "$vr" = "$vmax" ] && res=0;;
+	\>=|ge) [ "$vl" = "$vmax" ] && res=0;;
+	\<=|le) [ "$vr" = "$vmax" ] && res=0;;
+	*) echo "$vl" | egrep -q "$vr"; res=$?;;
+	esac
+
+	return $res
+}
+
 #-------------------------------------------------------------------------------
 
 enable_libvirt() {
@@ -757,7 +790,7 @@ while true; do
 	--nocloud*)      NO_CLOUD_INIT="yes"; shift 1;;
 	--dsize)         DSIZE="$2"; shift 2;;
 	--msize)         MSIZE="$2"; shift 2;;
-	--cpus)          VCPUN="$2"; shift 2;;
+	--cpus)          VCPUS="$2"; shift 2;;
 	--nointeract)    INTERACT="no"; shift 1;;
 	--net)           NETWORK_OPTS+=" --network=network=$2,model=virtio"; shift 2;;
 	--netmacvtap)
@@ -1043,12 +1076,14 @@ if [[ "$EXTRA_DISKS" = yes ]]; then
 	DISK_OPTS="--disk path=$VMpath/ext4.qcow2,bus=scsi --disk path=$VMpath/xfs.qcow2,bus=scsi"
 fi
 
+qemukvm=$(rpm -qf /usr/libexec/qemu-kvm)
+vercmp $qemukvm ge qemu-kvm-2.6 && NVDIMM=yes || NVDIMM=no
 if [[ "$NVDIMM" = yes ]]; then
 	nvdimmf0=$VMpath/nvdimm-0.dev
 	nvdimmf1=$VMpath/nvdimm-1.dev
 	truncate -s 2050M $nvdimmf0
 	truncate -s 2050M $nvdimmf1
-	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=32768,hotplugmemoryslots=2 --cpu cell0.cpus=0,cell0.memory=$((MSIZE*1024)) --memdev nvdimm,source_path=$nvdimmf0,target_size=2048,target_node=0,target_label_size=2 --memdev nvdimm,source_path=$nvdimmf1,target_size=2048,target_node=0,target_label_size=2"
+	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=32768,hotplugmemoryslots=2 --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024)) --memdev nvdimm,source_path=$nvdimmf0,target_size=2048,target_node=0,target_label_size=2 --memdev nvdimm,source_path=$nvdimmf1,target_size=2048,target_node=0,target_label_size=2"
 else
 	MEM_OPTS="--memory=${MSIZE}"
 fi
@@ -1126,7 +1161,7 @@ if [[ "$InstallType" = location ]]; then
 	  --name $vmname \
 	  --location $Location \
 	  $OS_VARIANT_OPT \
-	  --vcpus ${VCPUN:-4} \
+	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
 	  --disk path=$VMpath/${vmname}.qcow2,bus=virtio \
 	  $DISK_OPTS \
@@ -1278,7 +1313,7 @@ elif [[ "$InstallType" = import ]]; then
 	}
 	nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  --name $vmname \
-	  --vcpus ${VCPUN:-4} \
+	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
 	  --disk path=${imagefile},bus=virtio \
 	  $DISK_OPTS \
