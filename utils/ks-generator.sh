@@ -57,22 +57,18 @@ RHEL-5*|RHEL5*|centos5*|centos-5*)
 	NetCommand="network --device=eth0 --bootproto=dhcp"
 	KeyCommand="key --skip"
 	Bootloader='bootloader --location=mbr --append="console=ttyS0,9600 rhgb quiet"'
-	EPEL=http://archive.fedoraproject.org/pub/archive/epel/epel-release-latest-5.noarch.rpm
 	;;
 RHEL-6*|RHEL6*|centos6*|centos-6*)
 	Packages="-iwl* @base @cifs-file-server @nfs-file-server redhat-lsb-core vim-enhanced git iproute screen wget"
 
 	NetCommand="network --device=eth0 --bootproto=dhcp"
 	KeyCommand="key --skip"
-	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
 	;;
 RHEL-7*|RHEL7*|centos7*|centos-7*)
 	Packages="-iwl* @base @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
-	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 	;;
 RHEL-8*|RHEL8*|centos8*|centos-8*|Fedora-*)
 	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
-	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 	;;
 esac
 shopt -u nocasematch
@@ -161,11 +157,6 @@ echo "[$USER@${HOSTNAME} ${HOME} $(pwd)] fix CentOS-5 repo ..."
 ver=$(LANG=C rpm -q --qf %{version} centos-release)
 [[ "$ver" = 5* ]] && sed -i -e 's;mirror.centos.org/centos;vault.centos.org;' -e 's/^mirror/#&/' -e 's/^#base/base/' /etc/yum.repos.d/*
 [[ "$ver" = 5 ]] && sed -i -e 's;\$releasever;5.11;' /etc/yum.repos.d/*
-KSF
-cat <<KSF
-echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install $EPEL ..."
-wget $EPEL --no-check-certificate
-rpm -ivh --force ${EPEL##*/}
 KSF
 
 [[ -n "$sshkeyf" ]] && {
