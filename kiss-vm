@@ -679,7 +679,7 @@ Usage() {
 	                   #macvtap mode
 	    -r|--ready     #virt config is ready, don't have to run enable_libvirt function
 	    --xdisk        #add 2 extra disk for test
-	    --nvdimm       #add 2 nvdimm device(2048+2M) //need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+	    --nvdimm=<arg> #arg format 511+1 (targetSize+labelSize) //need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
 	    --nosshkey     #don't inject sshkey
 	    -v|--verbose   #verbose mode
 	    --xml          #just generate xml
@@ -759,7 +759,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rv \
 	--long saveimage:: --long sa:: \
 	--long ready \
 	--long xdisk \
-	--long nvdimm \
+	--long nvdimm:: \
 	--long nosshkey \
 	--long verbose \
 	--long xml \
@@ -805,7 +805,7 @@ while true; do
 		;;
 	-r|--ready)      VIRT_READY=yes; shift 1;;
 	--xdisk)         EXTRA_DISKS=yes; shift 1;;
-	--nvdimm)        NVDIMM=yes; shift 1;;
+	--nvdimm)        NVDIMM_SIZE=$2; shift 2;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	--xml)           XML=--print-xml; shift 1;;
@@ -1081,9 +1081,13 @@ vercmp $qemukvm ge qemu-kvm-2.6 && NVDIMM=yes || NVDIMM=no
 if [[ "$NVDIMM" = yes ]]; then
 	nvdimmf0=$VMpath/nvdimm-0.dev
 	nvdimmf1=$VMpath/nvdimm-1.dev
-	truncate -s 2050M $nvdimmf0
-	truncate -s 2050M $nvdimmf1
-	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=32768,hotplugmemoryslots=2 --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024)) --memdev nvdimm,source_path=$nvdimmf0,target_size=2048,target_node=0,target_label_size=2 --memdev nvdimm,source_path=$nvdimmf1,target_size=2048,target_node=0,target_label_size=2"
+	read targetSize labelSize <<<"${NVDIMM_SIZE/+/ }"
+	targetSize=${targetSize:-511}
+	labelSize=${labelSize:-1}
+	totalSize=$((targetSize+labelSize))
+	truncate -s ${totalSize}M $nvdimmf0
+	truncate -s ${totalSize}M $nvdimmf1
+	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=32768,hotplugmemoryslots=2 --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024)) --memdev nvdimm,source_path=$nvdimmf0,target_size=${targetSize},target_node=0,target_label_size=${labelSize} --memdev nvdimm,source_path=$nvdimmf1,target_size=${targetSize},target_node=0,target_label_size=${labelSize}"
 else
 	MEM_OPTS="--memory=${MSIZE}"
 fi
