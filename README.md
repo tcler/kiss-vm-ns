@@ -207,8 +207,8 @@ Usage:
   netns ls
 
   netns veth ve0.a-host,ve0.b-ns0   #create veth pair
-  netns macvlan ifname              #create macvlan if; options: [updev=updev] [mode={bridge|vepa|private|passthru}]
-  netns ipvlan ifname               #create ipvlan if; options: [updev=updev] [mode={l2|l3}]
+  netns macvlan ifname              #create macvlan if; [updev=updev] [mode={bridge|vepa|private|passthru}]
+  netns ipvlan ifname               #create ipvlan if; [updev=updev] [mode={l2|l3}]
 
   netns addrup $if $address         #set address and up if
   netns attach $ns $if [$addr]      #attach new if to ns, [and setup address and up]
@@ -220,11 +220,17 @@ Options:
   -n <arg>             ; ns name
 
 Examples:
-  netns host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  ns0,mv-ns0,192.168.100.2  host,mv-host0,192.168.100.1
+  netns host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1 ns0,iv-ns0,192.168.99.2
+  netns del ns0
+  netns delif iv-host0
+
+  netns host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  host,mv-host0,192.168.100.1 ns0,mv-ns0,192.168.100.2
   # ^^^^^^ nsname 'host' means default network namespace
-  netns -v exec ns0 -- ping -c 4 192.168.0.1
-  netns -v exec ns0 -- ping -c 4 192.168.100.1
-  curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
+  netns -v exec ns0 -- ping -c 2 192.168.0.1
+  netns -v exec ns0 -- ping -c 2 192.168.100.1
+  #curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
+  sudo systemctl start nfs-server
+  sudo exportfs -o ro,no_root_squash "*:/usr/share"
   netns -v exec ns0 -- showmount -e 192.168.0.1
   netns -v exec ns0 -- mkdir -p /mnt/ns0/nfs
   netns -v exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
@@ -233,6 +239,6 @@ Examples:
   netns -v exec ns0 -- umount /mnt/ns0/nfs
   netns -v exec ns0 -- rm -rf /mnt/ns0
   netns del ns0
-  ip link delete dev mv-host0
+  sudo ip link delete dev mv-host0
 
 ```

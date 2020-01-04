@@ -39,7 +39,7 @@ Usage() {
 	  -n <arg>             ; ns name
 
 	Examples:
-	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1?iftype=ipvlan ns0,iv-ns0,192.168.99.2?iftype=ipvlan
+	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1 ns0,iv-ns0,192.168.99.2
 	  $P del ns0
 	  $P delif iv-host0
 
@@ -253,7 +253,7 @@ switchroot
 # __prepare__
 which tmux &>/dev/null || dep+=\ tmux
 [[ -n "$dep" ]] && {
-	echo -e "{NS:INFO} install dependences ..."
+	echo -e "{NETNS:INFO} install dependences ..."
 	sudo yum install -y $dep >&2
 }
 
