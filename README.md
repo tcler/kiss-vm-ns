@@ -82,7 +82,10 @@ Options:
                    #macvtap mode
     -r|--ready     #virt config is ready, don't have to run enable_libvirt function
     --xdisk        #add 2 extra disk for test
-    --nvdimm       #add 2 nvdimm device(2048+2M) //need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+    --nvdimm <nvdimm list>
+                   #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
+                   #e.g: --nvdimm="511+1 511+1" -> two nvdimm device
+                   #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
     --nosshkey     #don't inject sshkey
     -v|--verbose   #verbose mode
     --xml          #just generate xml
@@ -97,7 +100,8 @@ Example Intranet:
     vm RHEL-8.1.0 -L -brewinstall 23822847  # brew scratch build id
     vm RHEL-8.1.0 -L -brewinstall kernel-4.18.0-147.8.el8  # brew build name
     vm RHEL-8.1.0 -L -brewinstall "lstk -debug"            # latest brew build release debug kernel
-    vm RHEL-8.2.0-20191024.n.0 -g -b "upk -debug"          # latest brew build upstream debug kernel
+    vm RHEL-8.2.0    -brewinstall "upk -debug"             # latest brew build upstream debug kernel
+    vm RHEL-8.2.0 --nvdimm "1024+1 1024+1"                 # install VM with two nvdimm device
 
 Example Internet:
     vm centos-5 -l http://vault.centos.org/5.11/os/x86_64/

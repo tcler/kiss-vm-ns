@@ -699,7 +699,8 @@ Usage() {
 	    $P RHEL-8.1.0 -L -brewinstall 23822847  # brew scratch build id
 	    $P RHEL-8.1.0 -L -brewinstall kernel-4.18.0-147.8.el8  # brew build name
 	    $P RHEL-8.1.0 -L -brewinstall "lstk -debug"            # latest brew build release debug kernel
-	    $P RHEL-8.2.0-20191024.n.0 -g -b "upk -debug"          # latest brew build upstream debug kernel
+	    $P RHEL-8.2.0    -brewinstall "upk -debug"             # latest brew build upstream debug kernel
+	    $P RHEL-8.2.0 --nvdimm "1024+1 1024+1"                 # install VM with two nvdimm device
 
 	EOF
 	cat <<-EOF
