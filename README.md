@@ -195,7 +195,8 @@ Examples sub-command:
 
 ## kiss-netns
 
-example: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/nfs-stress/nfs-stress.sh#L46
+example1: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/nfs-stress/nfs-stress.sh#L85
+example2: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/multipath/multipath-netns.sh#L23
 
 ```
 [me@ws kiss-vm-ns]$ netns
