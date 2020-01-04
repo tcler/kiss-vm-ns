@@ -23,7 +23,7 @@ ns:
 netns:
     功能: 快速创建基于 ip-netns 的 network namespace 网络拓扑
     用途: 自动化测试 网络协议、以及部分网络文件系统 功能
-        netns host,$vethX,$addr---$netns0,$vethX_peer,$addr  $netns0,$macvlan_ifname,$addr[,baseif=$if,mode=$mode]
+        netns host,$vethX,$addr---$netns0,$vethX_peer,$addr  $netns0,$vnic_ifname[,$addr][?updev=$if,mode=$mode]
         netns exec $netns -- command line
 ```
 
