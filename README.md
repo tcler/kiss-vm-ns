@@ -200,7 +200,7 @@ example: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/n
 ```
 [me@ws kiss-vm-ns]$ netns
 Usage:
-  netns <$nsname,$vethX,$addr---$nsname,$vethX_peer,$addr | $nsname,$vnic_name[,$addr][?updev=$if,mode=$mode,type=$type]>
+  netns <$nsname,$vethX,$addr---$nsname,$vethX_peer,$addr | $nsname,$vnic_name[,$addr][?updev=$if,mode=$mode,iftype=$iftype]>
   # ^^^^^^ nsname 'host' means default network namespace
   netns exec $nsname -- cmdline
   netns del $nsname

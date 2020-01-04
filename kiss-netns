@@ -19,7 +19,7 @@ switchroot() {
 Usage() {
 	cat <<-EOF
 	Usage:
-	  $P <\$nsname,\$vethX,\$addr---\$nsname,\$vethX_peer,\$addr | \$nsname,\$vnic_name[,\$addr][?updev=\$if,mode=\$mode,type=\$type]>
+	  $P <\$nsname,\$vethX,\$addr---\$nsname,\$vethX_peer,\$addr | \$nsname,\$vnic_name[,\$addr][?updev=\$if,mode=\$mode,iftype=\$iftype]>
 	  # ^^^^^^ nsname 'host' means default network namespace
 	  $P exec \$nsname -- cmdline
 	  $P del \$nsname
@@ -39,7 +39,7 @@ Usage() {
 	  -n <arg>             ; ns name
 
 	Examples:
-	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1?type=ipvlan ns0,iv-ns0,192.168.99.2?type=ipvlan
+	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1?iftype=ipvlan ns0,iv-ns0,192.168.99.2?iftype=ipvlan
 	  $P del ns0
 	  $P delif iv-host0
 
@@ -335,7 +335,7 @@ for topo; do
 	fi
 done
 
-# creating all NS
+# creating all NetNS
 for NS in "${!NS_IFS[@]}"; do
 	[[ "$NS" = host ]] && continue
 
@@ -353,17 +353,25 @@ done
 
 # creating other VNICs
 for vnicinfo in "${VNICList[@]}"; do
-	type=
+	iftype=
 	updev=
 	mode=
 
 	read vif env <<<"${vnicinfo/,/ }"
 	eval ${env//,/ }
 
-	if [[ -z "$type" || "$type" = macvlan ]]; then
+	if [[ -z "$iftype" ]]; then
+		case $vif in
+		mv-*) iftype=macvlan;;
+		iv-*) iftype=ipvlan;;
+		*) iftype=macvlan;;
+		esac
+	fi
+
+	if [[ "$iftype" = macvlan ]]; then
 		echo -e "{NETNS:INFO} creating macvlan $vif ${env//,/ } ..."
 		addmacvlan $vif -updev=$updev -mode=$mode
-	elif [[ "$type" = ipvlan ]]; then
+	elif [[ "$iftype" = ipvlan ]]; then
 		echo -e "{NETNS:INFO} creating iplan $vif ${env//,/ } ..."
 		addipvlan $vif -updev=$updev -mode=$mode
 	else
@@ -371,7 +379,7 @@ for vnicinfo in "${VNICList[@]}"; do
 	fi
 done
 
-# attach ifs to NS
+# attach ifs to NetNS
 for NS in "${!NS_IFS[@]}"; do
 	for IFLIST in ${NS_IFS[$NS]}; do
 		read ifname addr _ <<<"${IFLIST/,/ }"
