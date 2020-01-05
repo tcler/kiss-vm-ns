@@ -84,7 +84,9 @@ Options:
     --xdisk        #add 2 extra disk for test
     --nvdimm <nvdimm list>
                    #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
-                   #e.g: --nvdimm="511+1 511+1" -> two nvdimm device
+                   #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
+                   #e.g: --nvdimm="511 1023" -> two nvdimm device
+                   #               ^^^^^^^^ default labelSize is 1, if omitting
                    #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
     --nosshkey     #don't inject sshkey
     -v|--verbose   #verbose mode
@@ -101,7 +103,7 @@ Example Intranet:
     vm RHEL-8.1.0 -L -brewinstall kernel-4.18.0-147.8.el8  # brew build name
     vm RHEL-8.1.0 -L -brewinstall "lstk -debug"            # latest brew build release debug kernel
     vm RHEL-8.2.0    -brewinstall "upk -debug"             # latest brew build upstream debug kernel
-    vm RHEL-8.2.0 --nvdimm "1024+1 1024+1"                 # install VM with two nvdimm device
+    vm RHEL-8.2.0 --nvdimm "511 1022+2"                    # install VM with two nvdimm device
 
 Example Internet:
     vm centos-5 -l http://vault.centos.org/5.11/os/x86_64/
