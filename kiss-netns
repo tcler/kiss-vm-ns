@@ -101,23 +101,23 @@ nsexec() {
 }
 
 nsdelete() {
-	for ns; do
-		echo -e "\n{NETNS:INFO} remove ns $ns ..."
+	for netns; do
+		echo -e "\n{NETNS:INFO} delete/destroy netns $netns ..."
 
 		echo -e "- {NETNS:INFO} umount all networking fs ..."
-		nsexec $ns umount -a -t nfs,nfs4,cifs
+		nsexec $netns umount -a -t nfs,nfs4,cifs
 
-		echo -e "- {NETNS:INFO} remove ifs in ns ..."
-		for dev in $(nsexec $ns ip a s | awk -F'[: @]+' '/^[0-9]+:/ {if ($2 != "lo") print $2}'); do
-			nsexec $ns ip link del "$dev"
+		echo -e "- {NETNS:INFO} remove ifs in netns $netns ..."
+		for dev in $(nsexec $netns ip a s | awk -F'[: @]+' '/^[0-9]+:/ {if ($2 != "lo") print $2}'); do
+			nsexec $netns ip link del "$dev"
 		done
-		nsexec $ns ip a s
+		nsexec $netns ip a s
 
 		echo -e "- {NETNS:INFO} exit init bash ..."
-		tmux send-keys -t "$ns" C-z " exit; exit" Enter
+		tmux send-keys -t "$netns" C-z " exit; exit" Enter
 
-		echo -e "- {NETNS:INFO} remove netns ..."
-		ip netns del $ns 2>/dev/null
+		echo -e "- {NETNS:INFO} remove netns $netns ..."
+		ip netns del $netns 2>/dev/null
 	done
 }
 
