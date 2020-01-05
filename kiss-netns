@@ -110,6 +110,9 @@ nsdelete() {
 		done
 		nsexec $ns ip a s
 
+		echo -e "- {NETNS:INFO} umount all networking fs ..."
+		nsexec $ns umount -a -t nfs,nfs4,cifs
+
 		echo -e "- {NETNS:INFO} exit init bash ..."
 		tmux send-keys -t "$ns" C-z " exit; exit" Enter
 
