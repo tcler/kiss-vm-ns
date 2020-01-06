@@ -197,15 +197,43 @@ Examples sub-command:
 
 ## kiss-netns
 
-example1: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/nfs-stress/nfs-stress.sh#L85
-
+example1: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/nfs-stress/nfs-stress.sh#L85  
 example2: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/multipath/multipath-netns.sh#L23
 
 ```
 [me@ws kiss-vm-ns]$ netns
 Usage:
   netns <$nsname,$vethX,$addr---$nsname,$vethX_peer,$addr | $nsname,$vnic_name[,$addr][?updev=$if,mode=$mode,iftype=$iftype]>
-  # ^^^^^^ nsname 'host' means default network namespace
+  # ^^^^^^ nsname 'host' means default network namespace, br-* means it's a bridge //[convention over configuration]
+
+  # +--------+                            +--------+
+  # | ns0    [veth0.X]------------[veth0.Y] host   |
+  # +--------+                            +--------+
+  # netns ns0,veth0.X,192.168.1.2---host,veth0.Y,192.168.1.1
+
+  # +--------+                            +--------+
+  # | ns0    [veth1.X]------------[veth1.Y] ns1    |
+  # +--------+                            +--------+
+  # netns ns0,veth1.X,192.168.2.2---ns1,veth1.Y,192.168.2.1
+
+  # +--------+                    +------+                    +--------+
+  # | ns0    [veth3.X]----[veth3.Y] br-0 [veth4.X]----[veth4.Y] ns1    |
+  # +--------+                    +------+                    +--------+
+  # netns ns0,veth3.X,192.168.3.2---br-0,veth3.Y  br-0,veth4.X---ns1,veth4.Y,192.168.3.1
+
+  # +--------+                            +--------+
+  # |        [veth5.X]------------[veth5.Y]        |
+  # | ns0    |                            | ns1    |
+  # |        [mv-ns0]              [mv-ns1]        |
+  # +--------+    \                  /    +--------+
+  #                \                /
+  #               +------------------+
+  #               | mv-ns0  | mv-ns1 |
+  #               +------------------|
+  #               |       eth0       |
+  #               +------------------+
+  # netns ns0,veth5.X,192.168.4.2---host,veth5.Y,192.168.4.1  ns0,mv-ns0,192.168.5.10  ns1,mv-ns1,192.168.5.11
+
   netns exec $nsname -- cmdline
   netns del $nsname
   netns ls
