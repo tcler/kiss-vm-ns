@@ -32,7 +32,7 @@ netns:
 
 ![kiss-vm](https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/Images/kiss-vm.gif)
 
-example: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/multipath/multipath-vm.sh
+example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/multipath/multipath-vm.sh
 
 ```
 [me@ws kiss-vm-ns]$ vm -h
@@ -138,7 +138,7 @@ Example [subcmd]:
 
 ## kiss-ns
 
-example: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/labelled-nfs/labelled-nfs.sh
+example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/labelled-nfs/labelled-nfs.sh
 
 ```
 [me@ws kiss-vm-ns]$ ns -h
@@ -197,8 +197,8 @@ Examples sub-command:
 
 ## kiss-netns
 
-example1: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/nfs-stress/nfs-stress.sh#L85  
-example2: https://github.com/tcler/linux-network-filesystems/blob/master/drafts/nfs/testcases/multipath/multipath-netns.sh#L23
+example1: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/nfs-stress/nfs-stress.sh#L85  
+example2: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/multipath/multipath-netns.sh#L23
 
 ```
 [me@ws kiss-vm-ns]$ netns
