@@ -30,13 +30,13 @@ Usage() {
 	  $P ipvlan ifname               #create ipvlan if; [updev=updev] [mode={l2|l3}]
 
 	  $P addrup \$if \$address         #set address and up if
-	  $P attach \$ns \$if [\$addr]      #attach new if to ns, [and setup address and up]
-	  $P detach \$ns \$if              #detach if from ns
+	  $P addif2netns \$ns \$if [\$addr] #add new if to netns, [and setup address and up]
+	  $P detach \$ns \$if              #detach if from netns
 
 	Options:
 	  -h, --help           ; show this help info
 	  -v                   ; verbose mode
-	  -n <arg>             ; ns name
+	  -n <arg>             ; netns name
 
 	Examples:
 	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1 ns0,iv-ns0,192.168.99.2
@@ -121,8 +121,7 @@ nsdelete() {
 	done
 }
 
-
-attachif () {
+addif2netns () {
 	local ns=$1
 	local if=$2
 	local addr=$3
@@ -137,6 +136,14 @@ attachif () {
 	nsexec $ns ip link set dev $if up
 
 	[[ -n "$addr" ]] && nsexec $ns ip addr add $(xaddr $addr) dev $if
+}
+
+addif2bridge () {
+	local brname=$1
+	local if=$2
+
+	ip link set dev $if master $brname
+	ip link set dev $if up
 }
 
 detachif () {
@@ -219,6 +226,20 @@ addipvlan() {
 		ip link add link $updev name ${iv} type ipvlan mode $mode
 	done
 }
+addbr() {
+	local fname=${FUNCNAME[0]}
+	Usage() { echo -e "Usage:\n  $fname br-name1 [br-name2 ...]"; }
+
+	if [[ "${#}" = 0 ]]; then
+		Usage >&2
+		return 1
+	fi
+
+	for brname; do
+		ip link add $brname type bridge
+		ip link set dev $brname up
+	done
+}
 addressup() {
 	local if=$1
 	local addr=$2
@@ -279,22 +300,22 @@ del*|de|d) shift
 ls) shift
 	ip netns
 	exit $?;;
-veth|addveth) shift
+addveth|veth) shift
 	addveth "$@"
 	exit $?;;
-macvlan|addmacvlan) shift
+addmacvlan|macvlan) shift
 	addmacvlan "$@"
 	exit $?;;
-ipvlan|addipvlan) shift
+addipvlan|ipvlan) shift
 	addipvlan "$@"
 	exit $?;;
-addr|addrup|addressup) shift
+addressup|addrup|addr) shift
 	addressup "$@"
 	exit $?;;
-attach) shift
+addif2netns|attach) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
-	attachif "$@"
+	addif2netns "$@"
 	exit $?;;
 detach) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
@@ -317,7 +338,7 @@ declare -A NS_IFS
 echo -e "\n{NETNS:INFO} parse parameters ..."
 for topo; do
 	# ns that connected to/by veth: host,veth0.x,192.168.0.1---ns0,veth0.y,192.168.0.2
-	if [[ "$topo" =~ ^[^,]+,[^,]+,[^,]+---+[^,]+,[^,]+,[^,]+$ ]]; then
+	if [[ "$topo" =~ ^[^,]+,[^,]+(,[^,]+)?---+[^,]+,[^,]+(,[^,]+)?$ ]]; then
 		topo=$(echo "$topo"|sed -r 's/---+/ /')
 		read nodeX nodeY _ <<<"${topo}"
 		read nsX vethX addrX _ <<<"${nodeX//,/ }"
@@ -342,9 +363,14 @@ done
 for NS in "${!NS_IFS[@]}"; do
 	[[ "$NS" = host ]] && continue
 
-	echo -e "{NETNS:INFO} creating NS $NS ..."
-	ip netns add "$NS"
-	tmux new -s "$NS" -d "ip netns exec \"$NS\" /bin/bash"
+	if [[ "$NS" = br-* ]]; then
+		echo -e "{NETNS:INFO} creating brige $NS ..."
+		addbr $NS
+	else
+		echo -e "{NETNS:INFO} creating NS $NS ..."
+		ip netns add "$NS"
+		tmux new -s "$NS" -d "ip netns exec \"$NS\" /bin/bash"
+	fi
 done
 
 # creating all veth ifs
@@ -382,15 +408,17 @@ for vnicinfo in "${VNICList[@]}"; do
 	fi
 done
 
-# attach ifs to NetNS
+# add ifs to NetNS or bridge ...
 for NS in "${!NS_IFS[@]}"; do
 	for IFLIST in ${NS_IFS[$NS]}; do
 		read ifname addr _ <<<"${IFLIST/,/ }"
-		echo -e "{NETNS:INFO} attach $ifname to ns($NS) and set ip address($addr) ..."
+		echo -e "{NETNS:INFO} add $ifname to netns/br($NS) and/or set ip address($addr) ..."
 		if [[ "$NS" = host ]]; then
 			addressup $ifname $addr
+		elif [[ "$NS" = br-* ]]; then
+			addif2bridge "$NS" $ifname
 		else
-			attachif "$NS" $ifname $addr
+			addif2netns "$NS" $ifname $addr
 		fi
 	done
 done
