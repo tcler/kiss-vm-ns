@@ -38,11 +38,7 @@ Usage() {
 	  -v                   ; verbose mode
 	  -n <arg>             ; netns name
 
-	Examples:
-	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1 ns0,iv-ns0,192.168.99.2
-	  $P del ns0
-	  $P delif iv-host0
-
+	Examples: host connect ns0 with both veth and macvlan
 	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  host,mv-host0,192.168.100.1 ns0,mv-ns0,192.168.100.2
 	  # ^^^^^^ nsname 'host' means default network namespace
 	  $P -v exec ns0 -- ping -c 2 192.168.0.1
@@ -58,7 +54,18 @@ Usage() {
 	  $P -v exec ns0 -- umount /mnt/ns0/nfs
 	  $P -v exec ns0 -- rm -rf /mnt/ns0
 	  $P del ns0
-	  sudo ip link delete dev mv-host0
+	  $P delif mv-host0
+
+	Examples: host connect ns0 with both veth and ipvlan
+	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1 ns0,iv-ns0,192.168.99.2
+	  $P -v exec ns0 -- ping -c 2 192.168.99.1
+	  $P del ns0
+	  $P delif iv-host0
+
+	Examples: host connect ns0 with veth and bridge br-0
+	  $P host,veth0.X,192.168.66.1---br-0,veth0.Y  br-0,veth1.Y---ns0,veth1.X,192.168.66.2
+	  $P -v exec ns0 -- ping -c 2 192.168.66.1
+	  $P del ns0 br-0
 
 	EOF
 }
@@ -132,6 +139,14 @@ brdelete() {
 
 		echo -e "- {NETNS:INFO} remove bridge $br ..."
 		ip link delete dev $br
+	done
+}
+nsdelete() {
+	for ns; do
+		case "$ns" in
+		br-*) brdelete "$ns";;
+		*)    netnsdelete "$ns";;
+		esac
 	done
 }
 
@@ -309,10 +324,7 @@ delif) shift
 del*|de|d) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
-	case "$NS" in
-	br-*) brdelete $NS "$@";;
-	*) netnsdelete $NS "$@";;
-	esac
+	nsdelete $NS "$@"
 	exit $?;;
 ls) shift
 	ip netns
