@@ -77,7 +77,7 @@ is_valid_ip() {
     return $stat
 }
 
-ns_init_pid() {
+netns_init_pid() {
 	local ns=$1
 	local initpid
 
@@ -86,38 +86,52 @@ ns_init_pid() {
 	echo $initpid
 }
 
-_nsexec() {
+_netnsexec() {
 	local initpid=$1
 	shift
 	nsenter --target "$initpid" --mount --uts --ipc --net --pid -- bash -c "$*"
 }
 
-nsexec() {
+netnsexec() {
 	local ns=$1
 	shift
-	local initpid=$(ns_init_pid $ns)
+	local initpid=$(netns_init_pid $ns)
 	[[ "$nsverbose" = yes ]] && echo "- [NETNS:$ns] # $@" | GREP_COLORS='ms=01;36' grep --color . >&2
-	_nsexec "$initpid" "$@"
+	_netnsexec "$initpid" "$@"
 }
 
-nsdelete() {
+netnsdelete() {
 	for netns; do
 		echo -e "\n{NETNS:INFO} delete/destroy netns $netns ..."
 
 		echo -e "- {NETNS:INFO} umount all networking fs ..."
-		nsexec $netns umount -a -t nfs,nfs4,cifs
+		netnsexec $netns umount -a -t nfs,nfs4,cifs
 
 		echo -e "- {NETNS:INFO} remove ifs in netns $netns ..."
-		for dev in $(nsexec $netns ip a s | awk -F'[: @]+' '/^[0-9]+:/ {if ($2 != "lo") print $2}'); do
-			nsexec $netns ip link del "$dev"
+		for dev in $(netnsexec $netns ip a s | awk -F'[: @]+' '/^[0-9]+:/ {if ($2 != "lo") print $2}'); do
+			netnsexec $netns ip link del "$dev"
 		done
-		nsexec $netns ip a s
+		netnsexec $netns ip a s
 
 		echo -e "- {NETNS:INFO} exit init bash ..."
 		tmux send-keys -t "$netns" C-z " exit; exit" Enter
 
 		echo -e "- {NETNS:INFO} remove netns $netns ..."
 		ip netns del $netns 2>/dev/null
+	done
+}
+brdelete() {
+	for br; do
+		echo -e "\n{NETNS:INFO} delete/destroy bridge $br ..."
+
+		echo -e "- {NETNS:INFO} remove ifs in bridge $br ..."
+		for dev in $(bridge link show | awk -F'[ :@]+' "/master $br/"'{print $2}'); do
+			ip link delete dev "$dev"
+		done
+		bridge link show | awk -F'[ :@]+' "/master $br/"'{print $2}'
+
+		echo -e "- {NETNS:INFO} remove bridge $br ..."
+		ip link delete dev $br
 	done
 }
 
@@ -133,9 +147,9 @@ addif2netns () {
 	}
 
 	ip link set $if netns $ns
-	nsexec $ns ip link set dev $if up
+	netnsexec $ns ip link set dev $if up
 
-	[[ -n "$addr" ]] && nsexec $ns ip addr add $(xaddr $addr) dev $if
+	[[ -n "$addr" ]] && netnsexec $ns ip addr add $(xaddr $addr) dev $if
 }
 
 addif2bridge () {
@@ -287,7 +301,7 @@ case $subcmd in
 exec|exe|ex|e) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
-	nsexec $NS "$@"
+	netnsexec $NS "$@"
 	exit $?;;
 delif) shift
 	delif "$@"
@@ -295,7 +309,10 @@ delif) shift
 del*|de|d) shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
-	nsdelete $NS "$@"
+	case "$NS" in
+	br-*) brdelete $NS "$@";;
+	*) netnsdelete $NS "$@";;
+	esac
 	exit $?;;
 ls) shift
 	ip netns
