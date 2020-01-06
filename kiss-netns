@@ -142,12 +142,18 @@ brdelete() {
 	done
 }
 nsdelete() {
+	local netnsList=()
+	local brList=()
+
 	for ns; do
 		case "$ns" in
-		br-*) brdelete "$ns";;
-		*)    netnsdelete "$ns";;
+		br-*) brList+=("$ns");;
+		*) netnsList+=("$ns");;
 		esac
 	done
+
+	netnsdelete "${netnsList[@]}"
+	brdelete "${brList[@]}"
 }
 
 addif2netns () {
