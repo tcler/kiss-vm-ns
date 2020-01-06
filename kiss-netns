@@ -445,6 +445,18 @@ for veth in "${VethList[@]}"; do
 done
 
 # creating other VNICs
+get_default_if() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
+is_bridge() {
+	local ifname=$1
+	[[ -z "$ifname" ]] && return 1
+	ip -d a s $ifname | grep -qw bridge
+}
+Upperdev=$(get_default_if)
+if is_bridge $Upperdev; then
+	Upperdev=kis-netns-dummy
+	ip link add $Upperdev type dummy 2>/dev/null
+	ip link set $Upperdev up
+fi
 for vnicinfo in "${VNICList[@]}"; do
 	iftype=
 	updev=
@@ -459,6 +471,9 @@ for vnicinfo in "${VNICList[@]}"; do
 		iv-*) iftype=ipvlan;;
 		*) iftype=macvlan;;
 		esac
+	fi
+	if [[ -z "$updev" ]]; then
+		updev=$Upperdev
 	fi
 
 	if [[ "$iftype" = macvlan ]]; then
