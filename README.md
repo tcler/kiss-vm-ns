@@ -214,19 +214,15 @@ Usage:
   netns ipvlan ifname               #create ipvlan if; [updev=updev] [mode={l2|l3}]
 
   netns addrup $if $address         #set address and up if
-  netns attach $ns $if [$addr]      #attach new if to ns, [and setup address and up]
-  netns detach $ns $if              #detach if from ns
+  netns addif2netns $ns $if [$addr] #add new if to netns, [and setup address and up]
+  netns detach $ns $if              #detach if from netns
 
 Options:
   -h, --help           ; show this help info
   -v                   ; verbose mode
-  -n <arg>             ; ns name
+  -n <arg>             ; netns name
 
-Examples:
-  netns host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1 ns0,iv-ns0,192.168.99.2
-  netns del ns0
-  netns delif iv-host0
-
+Examples: host connect ns0 with both veth and macvlan
   netns host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  host,mv-host0,192.168.100.1 ns0,mv-ns0,192.168.100.2
   # ^^^^^^ nsname 'host' means default network namespace
   netns -v exec ns0 -- ping -c 2 192.168.0.1
@@ -242,6 +238,17 @@ Examples:
   netns -v exec ns0 -- umount /mnt/ns0/nfs
   netns -v exec ns0 -- rm -rf /mnt/ns0
   netns del ns0
-  sudo ip link delete dev mv-host0
+  netns delif mv-host0
+
+Examples: host connect ns0 with both veth and ipvlan
+  netns host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1 ns0,iv-ns0,192.168.99.2
+  netns -v exec ns0 -- ping -c 2 192.168.99.1
+  netns del ns0
+  netns delif iv-host0
+
+Examples: host connect ns0 with veth and bridge br-0
+  netns host,veth0.X,192.168.66.1---br-0,veth0.Y  br-0,veth1.Y---ns0,veth1.X,192.168.66.2
+  netns -v exec ns0 -- ping -c 2 192.168.66.1
+  netns del ns0 br-0
 
 ```
