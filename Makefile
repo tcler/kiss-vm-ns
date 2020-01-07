@@ -1,6 +1,6 @@
 #export PATH:=${PATH}:/usr/local/bin:~/bin
 
-_bin=/usr/local/bin
+_bin=/usr/bin
 completion_path=/usr/share/bash-completion/completions
 
 install: _isroot
