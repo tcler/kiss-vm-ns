@@ -930,6 +930,10 @@ is_intranet || {
 	exit 1
 }
 
+[[ "$Distro" = *%* ]] && {
+	Distro=$(fetch_distro_list | grep "${Distro//%/.*}" | head -1)
+}
+
 [[ "$OnlyGetVMName" = yes ]] && {
 	vmname_gen $Distro $VMName
 	exit $?
