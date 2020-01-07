@@ -931,7 +931,8 @@ is_intranet || {
 }
 
 [[ "$Distro" = *%* ]] && {
-	Distro=$(fetch_distro_list | grep "${Distro//%/.*}" | head -1)
+	dpattern=${Distro//./\\.}
+	Distro=$(fetch_distro_list | grep "${dpattern//%/.*}" | head -1)
 }
 
 [[ "$OnlyGetVMName" = yes ]] && {
