@@ -233,7 +233,7 @@ Usage:
   #               +------------------|
   #               |       eth0       |
   #               +------------------+
-  # netns ns0,veth5.X,192.168.4.2---host,veth5.Y,192.168.4.1  ns0,mv-ns0,192.168.5.10  ns1,mv-ns1,192.168.5.11
+  # netns ns0,veth5.X,192.168.4.2---ns1,veth5.Y,192.168.4.1  ns0,mv-ns0,192.168.5.10  ns1,mv-ns1,192.168.5.11
 
   netns exec $nsname -- cmdline
   netns del $nsname
