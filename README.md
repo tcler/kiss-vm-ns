@@ -204,7 +204,8 @@ example2: https://github.com/tcler/linux-network-filesystems/blob/master/testcas
 [me@ws kiss-vm-ns]$ netns
 Usage:
   netns <$nsname,$vethX,$addr---$nsname,$vethX_peer,$addr | $nsname,$vnic_name[,$addr][?updev=$if,mode=$mode,iftype=$iftype]>
-  # ^^^^^^ nsname 'host' means default network namespace, br-* means it's a bridge //[convention over configuration]
+  # ^^^ nsname 'host' means default network namespace, br-* means it's a bridge //[convention over configuration]
+  # ^^^ vnic_name 'iv-*' means ipvlan nic, 'mv-*' and others means macvlan nic //[convention over configuration]
 
   # +--------+                            +--------+
   # | ns0    [veth0.X]------------[veth0.Y] host   |
@@ -253,7 +254,6 @@ Options:
 
 Examples: host connect ns0 with both veth and macvlan
   netns host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  host,mv-host0,192.168.100.1 ns0,mv-ns0,192.168.100.2
-  # ^^^^^^ nsname 'host' means default network namespace
   netns -v exec ns0 -- ping -c 2 192.168.0.1
   netns -v exec ns0 -- ping -c 2 192.168.100.1
   #curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
