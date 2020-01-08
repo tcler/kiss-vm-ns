@@ -938,7 +938,9 @@ fi
 [[ "$Distro" = *[%*?]* ]] && {
 	dpattern=${Distro//./\\.}
 	dpattern=${dpattern//\?/.}
-	Distro=$(fetch_distro_list | grep -i "^${dpattern//[%*]/.*}$" | head -1)
+	dpattern=${dpattern//[%*]/.*}
+	_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | head -1)
+	[[ -n "$_distro" ]] && Distro="$_distro"
 }
 
 [[ "$OnlyGetVMName" = yes ]] && {
