@@ -695,14 +695,17 @@ Usage() {
 	[[ "$Intranet" = yes ]] && cat <<-EOF
 	Example Intranet:
 	    $P # will enter a TUI show you all available distros that could auto generate source url
-	    $P RHEL-6.10 -L
-	    $P RHEL-7.7
-	    $P RHEL-8.1.0 -f -p "vim wget git"
-	    $P RHEL-8.1.0 -L -brewinstall 23822847  # brew scratch build id
-	    $P RHEL-8.1.0 -L -brewinstall kernel-4.18.0-147.8.el8  # brew build name
-	    $P RHEL-8.1.0 -L -brewinstall "lstk -debug"            # latest brew build release debug kernel
-	    $P RHEL-8.2.0    -brewinstall "upk -debug"             # latest brew build upstream debug kernel
-	    $P RHEL-8.2.0 --nvdimm "511 1022+2"                    # install VM with two nvdimm device
+	    $P RHEL-7.7                           # install RHEL-7.7 from cloud-image(by default)
+	    $P RHEL-6.10 -L                       # install RHEL-6.10 from Location(by -L option)
+
+	    $P RHEL-8.1.0 -f -p "vim wget git"    # -f force install VM and ship pkgs: vim wget git
+	    $P RHEL-8.1.0 -brewinstall 23822847   # ship brew scratch build pkg (by task id)
+	    $P RHEL-8.1.0 -brewinstall kernel-4.18.0-147.8.el8  # ship brew build pkg (by build name)
+	    $P RHEL-8.1.0 -brewinstall "lstk -debug"            # ship latest brew build release debug kernel
+	    $P RHEL-8.1.0 -brewinstall "upk -debug"             # ship latest brew build upstream debug kernel
+	    $P RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
+	    $P rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
+	    $P rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
 
 	EOF
 	cat <<-EOF
