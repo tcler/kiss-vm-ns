@@ -849,7 +849,7 @@ fi
 	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 	vendor=${kmodule#kvm_}
 
-	sudo cat <<-EOF >/etc/modprobe.d/kvm-nested.conf
+	cat <<-EOF | sudo tee /etc/modprobe.d/kvm-nested.conf >/dev/null
 	options kvm-$vendor nested=1
 	options kvm-$vendor enable_shadow_vmcs=1
 	options kvm-$vendor enable_apicv=1
