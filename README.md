@@ -96,14 +96,17 @@ Options:
 
 Example Intranet:
     vm # will enter a TUI show you all available distros that could auto generate source url
-    vm RHEL-6.10 -L
-    vm RHEL-7.7
-    vm RHEL-8.1.0 -f -p "vim wget git"
-    vm RHEL-8.1.0 -L -brewinstall 23822847  # brew scratch build id
-    vm RHEL-8.1.0 -L -brewinstall kernel-4.18.0-147.8.el8  # brew build name
-    vm RHEL-8.1.0 -L -brewinstall "lstk -debug"            # latest brew build release debug kernel
-    vm RHEL-8.2.0    -brewinstall "upk -debug"             # latest brew build upstream debug kernel
-    vm RHEL-8.2.0 --nvdimm "511 1022+2"                    # install VM with two nvdimm device
+    vm RHEL-7.7                           # install RHEL-7.7 from cloud-image(by default)
+    vm RHEL-6.10 -L                       # install RHEL-6.10 from Location(by -L option)
+
+    vm RHEL-8.1.0 -f -p "vim wget git"    # -f force install VM and ship pkgs: vim wget git
+    vm RHEL-8.1.0 -brewinstall 23822847   # ship brew scratch build pkg (by task id)
+    vm RHEL-8.1.0 -brewinstall kernel-4.18.0-147.8.el8  # ship brew build pkg (by build name)
+    vm RHEL-8.1.0 -brewinstall "lstk -debug"            # ship latest brew build release debug kernel
+    vm RHEL-8.1.0 -brewinstall "upk -debug"             # ship latest brew build upstream debug kernel
+    vm RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
+    vm rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
+    vm rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
 
 Example Internet:
     vm centos-5 -l http://vault.centos.org/5.11/os/x86_64/
