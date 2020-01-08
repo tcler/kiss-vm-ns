@@ -708,7 +708,7 @@ Usage() {
 	    $P rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
 	    $P rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
 
-	    $P rhel-8.2% -qemu-opts=-cpu=host,vmx=on            # enable vmx if nested kvm is enabled on host
+	    $P rhel-8.2% -qemu-opts="-cpu host,+vmx"            # enable vmx if nested kvm is enabled on host
 
 	EOF
 	cat <<-EOF
