@@ -690,6 +690,7 @@ Usage() {
 	    --xml          #just generate xml
 	    --qemu-opts    #Pass-through qemu options
 	    --qemu-env     #Pass-through qemu env[s]
+	    --enable-nested-vm  #enable nested on host
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -706,6 +707,8 @@ Usage() {
 	    $P RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
 	    $P rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
 	    $P rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
+
+	    $P rhel-8.2% -qemu-opts=-cpu=host,vmx=on            # enable vmx if nested kvm is enabled on host
 
 	EOF
 	cat <<-EOF
@@ -774,6 +777,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rv \
 	--long xml \
 	--long qemu-opts: \
 	--long qemu-env: \
+	--long enable-nested-vm \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -820,6 +824,7 @@ while true; do
 	--xml)           XML=--print-xml; shift 1;;
 	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
+	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	--) shift; break;;
 	esac
 done
@@ -839,6 +844,28 @@ else
 	echo -e "{VM:WARN} current machine doesn't support Virtualization, show help info with\n  $PROG -h"
 	exit 1
 fi
+
+[[ "$ENABLE_NESTED" = yes ]] && {
+	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
+	vendor=${kmodule#kvm_}
+
+	sudo cat <<-EOF >/etc/modprobe.d/kvm-nested.conf
+	options kvm-$vendor nested=1
+	options kvm-$vendor enable_shadow_vmcs=1
+	options kvm-$vendor enable_apicv=1
+	options kvm-$vendor ept=1
+	EOF
+
+	if [[ $(< /sys/module/$kmodule/parameters/nested) != [Yy1] ]]; then
+		modprobe -r $kmodule || {
+			echo -e "{VM:WARN} stop tasks are using module $kmodule, and try again"
+			exit 1
+		}
+		modprobe $kmodule
+	fi
+	cat /sys/module/$kmodule/parameters/nested
+	exit
+}
 
 mkdir -p $RuntimeTmp
 
