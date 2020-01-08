@@ -258,7 +258,7 @@ vmlogin() {
 			echo -e "{VM:WARN} port $addr:22 is not available"
 			continue
 		}
-		ssh root@$addr "exit 0" || {
+		ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr "exit 0" || {
 			echo -e "{VM:WARN} ssh root@$addr is not available, try login with console ..."
 			virsh console "$_vmname"
 			return $?
