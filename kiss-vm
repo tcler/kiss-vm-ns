@@ -930,6 +930,11 @@ is_intranet || {
 	exit 1
 }
 
+if egrep --color=always "[][~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$Distro"; then
+	echo -e "{VM:WARN} ^^^ invalid character[s] in distro name: '$Distro'"
+	exit 1
+fi
+
 [[ "$Distro" = *[%*?]* ]] && {
 	dpattern=${Distro//./\\.}
 	dpattern=${dpattern//\?/.}
