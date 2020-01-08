@@ -1098,7 +1098,7 @@ if [[ "$EXTRA_DISKS" = yes ]]; then
 	DISK_OPTS="--disk path=$VMpath/ext4.qcow2,bus=scsi --disk path=$VMpath/xfs.qcow2,bus=scsi"
 fi
 
-qemukvm=$(rpm -qf /usr/libexec/qemu-kvm)
+qemukvm=$(rpm -q qemu-kvm)
 vercmp $qemukvm ge qemu-kvm-2.6 && NVDIMM=yes || NVDIMM=no
 if [[ "$NVDIMM" = yes ]]; then
 	NVDIMM_LIST=${NVDIMM_LIST:-511+1}
