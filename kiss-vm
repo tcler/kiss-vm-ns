@@ -1130,9 +1130,10 @@ qemukvm=$(rpm -q qemu-kvm)
 vercmp $qemukvm ge qemu-kvm-2.6 && NVDIMM=yes || NVDIMM=no
 if [[ "$NVDIMM" = yes ]]; then
 	NVDIMM_LIST=${NVDIMM_LIST:-511+1}
+	hpmemMax=$((1024*512))   #units Mi
 	memSlots=4
 	nvdimmdevs=($NVDIMM_LIST)
-	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=32768,hotplugmemoryslots=$memSlots --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024))"
+	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=$hpmemMax,hotplugmemoryslots=$memSlots --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024))"
 
 	for ((i=0; i<${#nvdimmdevs[@]}; i++)); do
 		[[ $i -ge $memSlots ]] && break
