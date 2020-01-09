@@ -4,7 +4,7 @@ _bin=/usr/bin
 completion_path=/usr/share/bash-completion/completions
 
 install: _isroot
-	git pull --rebase; :
+	[[ -n "$${SUDO_USER}" ]] && su $${SUDO_USER} bash -c 'git pull --rebase' || git pull --rebase; :
 	cp -af utils/* $(_bin)/.
 	cp -af kiss-vm $(_bin)/vm
 	cp -af kiss-ns $(_bin)/ns
