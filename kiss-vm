@@ -79,7 +79,7 @@ _vmdelete() {
 	virsh undefine --remove-all-storage $_vmname
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "- {VM:INFO} removing VM folder $_vmdir ..."
-		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv}
+		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
 		rm -f $_vmdir/nvdimm-*.dev
 		rmdir $_vmdir 2>/dev/null
 		rmdir ${_vmdir%/*} 2>/dev/null
@@ -212,6 +212,53 @@ vmstart() {
 	}
 
 	virsh start "$_vmname"
+}
+
+vmclone() {
+	[[ "$1" = /a ]] && {
+		shift
+		local APPEND=yes
+	}
+
+	is_invalid_vmname() {
+		local nvmname=$1
+		egrep --color=always "[][~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$nvmname"
+	}
+
+	local dstname=$1
+	local srcname=$2
+	[[ -z "$srcname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-clone $resf all && srcname=$(sed 's/"//g' $resf)
+		[[ -z "$srcname" ]] && {
+			return;
+		}
+	}
+	if [[ -z "$dstname" ]]; then
+		dstname=${srcname}-clone-$$
+	else
+		#verify invalid charactors
+		[[ "$APPEND" = yes ]] && dstname=${srcname}-${dstname}
+	fi
+	is_invalid_vmname "$dstname" && return 1
+
+	#get src vm path
+	local image=$(virsh dumpxml --domain ${srcname} | sed -n "/source file=/{s|^.*='||; s|'/>$||; p}")
+	local srcpath=${image%/*}
+	[[ ! -f ${srcpath}/.kiss-vm || ${srcpath##*/} != ${srcname} ]] && {
+		echo -e "{VM:WARN} seems $srcname was not created by kiss-vm, can not use vm-clone; please use virt-clone instead ..."
+		return 1
+	}
+
+	virsh suspend "$srcname"
+
+	# do clone
+	local dstpath=${srcpath%/*}/$dstname
+	mkdir -p $dstpath
+	virt-clone --original ${srcname} --name ${dstname} --file $dstpath/vm.qcow2
+	virt-sysprep -d ${dstname} --hostname $dstname --enable user-account,ssh-hostkeys,net-hostname,net-hwaddr,machine-id --remove-user-accounts bar --run 'ls'
+
+	virsh resume "$srcname"
 }
 
 vmlogin() {
@@ -740,6 +787,7 @@ Usage() {
 	    vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
 	    vm stop [VM]         #stop/shutdonw VM   //nil
 	    vm start [VM]        #start VM           //nil
+	    vm clone [VM]        #clone VM           //nil
 
 	    vm net               #list all virtual network
 	    vm net netname=testnet brname=virbrN subnet=100  #create virtual network 'testnet'
@@ -888,6 +936,7 @@ mkdir -p $RuntimeTmp
 	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
 	stop|sto*) shift; [[ "$1" = -d ]] && shift; vmstop "$@"; exit $?;;
 	start|sta*) shift; [[ "$1" = -d ]] && shift; vmstart "$@"; exit $?;;
+	clone) shift; [[ "$1" = -d ]] && shift; vmclone "$@"; exit $?;;
 	net|netcreate) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
 	netinfo) shift; [[ "$1" = -d ]] && shift; netinfo "$@"; exit $?;;
 	netdel|netdelete) shift; [[ "$1" = -d ]] && shift; netdelete "$@"; exit $?;;
@@ -1213,6 +1262,7 @@ if [[ "$InstallType" = location ]]; then
 	}
 
 	echo -e "{VM:INFO} creating VM by using location:\n ->  $Location"
+	touch $VMpath/.kiss-vm
 	echo $Location >$VMpath/url
 
 	[[ "$GenerateImage" = yes ]] && {
@@ -1370,6 +1420,7 @@ elif [[ "$InstallType" = import ]]; then
 	}
 
 	echo -e "{VM:INFO} creating VM by import $imagefile"
+	touch $VMpath/.kiss-vm
 	echo $Imageurl >$VMpath/url
 
 	_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
