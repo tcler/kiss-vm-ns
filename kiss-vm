@@ -259,11 +259,14 @@ vmlogin() {
 			echo -e "{VM:WARN} port $addr:22 is not available"
 			continue
 		}
-		ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr "exit 0" || {
-			echo -e "{VM:WARN} ssh root@$addr is not available, try login with console ..."
-			virsh console "$_vmname"
-			return $?
-		}
+		ssh -n -o Batchmode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr &>$RuntimeTmp/sshtest
+		if [[ $? != 0 ]]; then
+			grep -q -w password $RuntimeTmp/sshtest || {
+				echo -e "{VM:WARN} ssh root@$addr is not available, try login with console ..."
+				virsh console "$_vmname"
+				return $?
+			}
+		fi
 		expect <(cat <<-EOF
 		set timeout 120
 		set sshcmd [exec cat $RuntimeTmp/sshcmd]
