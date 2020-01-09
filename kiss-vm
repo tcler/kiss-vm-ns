@@ -38,6 +38,7 @@ Cleanup() {
 	cd ~
 	#echo "{DEBUG} Removing $RuntimeTmp"
 	rm -rf $RuntimeTmp
+	[[ -n "$VMpath" ]] && { rmdir "$VMpath" && rmdir "${VMpath%/*}"; }
 	exit
 }
 trap Cleanup EXIT #SIGINT SIGQUIT SIGTERM
