@@ -243,7 +243,7 @@ vmclone() {
 	is_invalid_vmname "$dstname" && return 1
 
 	#get src vm path
-	local image=$(virsh dumpxml --domain ${srcname} | sed -n "/source file=/{s|^.*='||; s|'/>$||; p}")
+	read image < <(virsh dumpxml --domain ${srcname} | sed -n "/source file=/{s|^.*='||; s|'/>$||; p}")
 	local srcpath=${image%/*}
 	[[ ! -f ${srcpath}/.kiss-vm || ${srcpath##*/} != ${srcname} ]] && {
 		echo -e "{VM:WARN} seems $srcname was not created by kiss-vm, can not use vm-clone; please use virt-clone instead ..."
@@ -1523,7 +1523,7 @@ fi
 
 if [[ "$GenerateImage" = yes ]]; then
 	mkdir -p $ImagePath/$Distro
-	image=$(virsh dumpxml --domain $vmname | sed -n "/source file=/{s|^.*='||; s|'/>$||; p}")
+	read image < <(virsh dumpxml --domain $vmname | sed -n "/source file=/{s|^.*='||; s|'/>$||; p}")
 	imgfilename=$(sed "s;.*/${vmprefix}-;;" <<<"${image}")
 	newimage=$ImagePath/$Distro/${imgfilename}
 
