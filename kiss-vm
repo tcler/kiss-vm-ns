@@ -1243,6 +1243,7 @@ if [[ "$InstallType" = location ]]; then
 	[[ -n "$XML" ]] && {
 		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
+		rm -f $VMpath/*
 		exit
 	}
 
