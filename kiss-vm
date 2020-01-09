@@ -1339,6 +1339,7 @@ elif [[ "$InstallType" = import ]]; then
 	[[ $imagefile = *.xz ]] && {
 		echo "{VM:INFO} decompress $imagefile ..."
 		xz -d $imagefile
+		rm -f $imagefile
 		imagefile=${imagefile%.xz}
 		[[ -f ${imagefile} ]] || exit 1
 	}
