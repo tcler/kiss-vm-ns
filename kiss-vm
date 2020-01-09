@@ -1514,6 +1514,11 @@ elif [[ "$InstallType" = import ]]; then
 	done
 	unset Installpid
 	echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
+
+	[[ -f "$cloudinitiso" ]] && {
+		echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
+		virsh change-media $vmname $cloudinitiso --eject
+	}
 fi
 
 if ! virsh desc $vmname &>/dev/null; then
