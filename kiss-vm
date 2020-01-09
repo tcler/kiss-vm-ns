@@ -256,7 +256,8 @@ vmclone() {
 	local dstpath=${srcpath%/*}/$dstname
 	mkdir -p $dstpath
 	virt-clone --original ${srcname} --name ${dstname} --file $dstpath/vm.qcow2
-	virt-sysprep -d ${dstname} --hostname $dstname --enable user-account,ssh-hostkeys,net-hostname,net-hwaddr,machine-id --remove-user-accounts bar --run 'ls'
+	#fix me: Permission denied, why new image owner is root?
+	LIBGUESTFS_BACKEND=direct virt-sysprep -d ${dstname} --hostname $dstname --enable user-account,ssh-hostkeys,net-hostname,net-hwaddr,machine-id --remove-user-accounts bar --run 'ls'
 
 	virsh resume "$srcname"
 }
