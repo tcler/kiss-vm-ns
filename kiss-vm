@@ -1487,7 +1487,7 @@ elif [[ "$InstallType" = import ]]; then
 				if {$env(SHUTDOWN) == "yes"} {
 					send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
 					send "\r\n"
-					"Restarting system" { exit 0 }
+					expect "Restarting system" { exit 0 }
 				}
 
 				send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
