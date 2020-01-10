@@ -1530,11 +1530,13 @@ fi
 if [[ "$GenerateImage" = yes ]]; then
 	mkdir -p $ImagePath/$Distro
 	read image < <(virsh dumpxml --domain $vmname | sed -n "/source file=/{s|^.*='||; s|'/>$||; p}")
-	imgfilename=$(sed "s;.*/${vmprefix}-;;" <<<"${image}")
+	imgfilename=${image##*/}
+	imgfilename=${imgfilename#${vmprefix}-}
 	newimage=$ImagePath/$Distro/${imgfilename}
 
 	echo -e "\n{VM:INFO} force shutdown $vmname ..."
 	virsh destroy $vmname 2>/dev/null
+	ls -lh ${image}
 
 	if ! true; then
 		echo -e "\n{VM:INFO} copy image $image to ${newimage} ..."
@@ -1542,6 +1544,7 @@ if [[ "$GenerateImage" = yes ]]; then
 	else
 		echo -e "\n{VM:INFO} virt-sparsify image $image to ${newimage} ..."
 		LIBGUESTFS_BACKEND=direct virt-sparsify --check-tmpdir fail ${image} ${newimage} || {
+			ls -lh ${image}
 			cp ${image} ${newimage}
 			LIBGUESTFS_BACKEND=direct virt-sparsify --in-place ${newimage}
 		}
