@@ -453,7 +453,7 @@ is_bridge() {
 }
 Upperdev=$(get_default_if)
 if is_bridge $Upperdev; then
-	Upperdev=kis-netns-dummy
+	Upperdev=kss-netns-dummy
 	ip link add $Upperdev type dummy 2>/dev/null
 	ip link set $Upperdev up
 fi
