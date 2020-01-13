@@ -778,7 +778,7 @@ Usage() {
 	    $P openSUSE-leap-15.2
 
 	    $P --enable-nested-vm  #enable nested on host, need sudo
-	    $P CentOS-8-stream -enable-kvm -msize=\$((8*1024)) -dsize=120  # enable vmx/svm on guest
+	    $P CentOS-7 -enable-kvm -msize=\$((8*1024)) -dsize=120  # enable vmx/svm on guest
 
 	Example from local image:
 	    $P rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
