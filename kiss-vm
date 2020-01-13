@@ -743,6 +743,7 @@ Usage() {
 	    --qemu-opts    #Pass-through qemu options
 	    --qemu-env     #Pass-through qemu env[s]
 	    --enable-nested-vm  #enable nested on host
+	    --enable-kvm   #enable kvm on guest, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -760,22 +761,29 @@ Usage() {
 	    $P rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
 	    $P rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
 
-	    $P rhel-8.2% -qemu-opts="-cpu host,+vmx" -msize=\$((6*1024)) -dsize=80  # enable vmx on guest
+	    $P --enable-nested-vm  #enable nested on host, need sudo
+	    $P rhel-8.2% -enable-kvm -msize=\$((8*1024)) -dsize=120  # enable vmx/svm on guest
 
 	EOF
 	cat <<-EOF
 	Example Internet:
+	    $P # will enter a TUI show you all available distros that could auto generate source url
+	    $P CentOS-8-stream -b ftp://url/path/x.rpm
+	    $P CentOS-8 -p "jimtcl vim git make gcc"
+	    $P CentOS-7 -p "vim git wget make gcc"
+	    $P CentOS-6
+	    $P fedora-31
 	    $P centos-5 -l http://vault.centos.org/5.11/os/x86_64/
-	    $P centos-6 -l http://mirror.centos.org/centos/6.10/os/x86_64/
-	    $P centos-7 -l http://mirror.centos.org/centos/7/os/x86_64/
-	    $P centos-8 -l http://mirror.centos.org/centos/8/BaseOS/x86_64/os/
-	    $P centos-8 -l http://mirror.centos.org/centos/8/BaseOS/x86_64/os/ -brewinstall ftp://url/path/x.rpm
-	    $P centos-7 -i https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2.xz -pkginstall "vim git wget"
 	    $P debian-10 -i https://cdimage.debian.org/cdimage/openstack/10.1.5-20191015/debian-10.1.5-20191015-openstack-amd64.qcow2
+	    $P openSUSE-leap-15.2
+
+	    $P --enable-nested-vm  #enable nested on host, need sudo
+	    $P CentOS-8-stream -enable-kvm -msize=\$((8*1024)) -dsize=120  # enable vmx/svm on guest
 
 	Example from local image:
 	    $P rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
 	    $P debian-10 -i /mnt/vm-images/debian-10.1.5-20191015-openstack-amd64.qcow2
+	    $P openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
 
 	Example [subcmd]:
 	    vm list              #list all VMs       //you can use ls,li,lis* instead list
@@ -830,6 +838,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rv \
 	--long qemu-opts: \
 	--long qemu-env: \
 	--long enable-nested-vm \
+	--long enable-kvm \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -877,6 +886,7 @@ while true; do
 	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
+	--enable-kvm)    ENABLE_KVM=yes; shift 1;;
 	--) shift; break;;
 	esac
 done
@@ -901,12 +911,15 @@ fi
 	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 	vendor=${kmodule#kvm_}
 
-	cat <<-EOF | sudo tee /etc/modprobe.d/kvm-nested.conf >/dev/null
-	options kvm-$vendor nested=1
+	{
+	echo "options kvm-$vendor nested=1"
+
+	[[ "$vendor" = intel ]] && cat <<-EOF
 	options kvm-$vendor enable_shadow_vmcs=1
 	options kvm-$vendor enable_apicv=1
 	options kvm-$vendor ept=1
 	EOF
+	} | sudo tee /etc/modprobe.d/kvm-nested.conf >/dev/null
 
 	if [[ $(< /sys/module/$kmodule/parameters/nested) != [Yy1] ]]; then
 		modprobe -r $kmodule || {
@@ -917,6 +930,14 @@ fi
 	fi
 	cat /sys/module/$kmodule/parameters/nested
 	exit
+}
+[[ "$ENABLE_KVM" = yes ]] && {
+	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
+	vendor=${kmodule#kvm_}
+	case $vendor in
+	intel) QEMU_OPTS+=" -cpu host,+vmx";;
+	amd) QEMU_OPTS+=" -cpu host,+svm";;
+	esac
 }
 
 mkdir -p $RuntimeTmp
