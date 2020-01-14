@@ -452,8 +452,11 @@ enable_libvirt() {
 
 	echo -e "{VM:INFO} checking if ${sudouser} has joined group libvirt ..."
 	[[ $(id -u) != 0 ]] && id -Gn | egrep -q -w libvirt || {
-		echo -e "{*INFO*} run: sudo usermod -a -G libvirt $sudouser ..."
-		sudo usermod -a -G libvirt $sudouser
+		getent group libvirt|egrep -q -w $sudouser || {
+			echo -e "{*INFO*} run: sudo usermod -a -G libvirt $sudouser ..."
+			#sudo gpasswd -a $sudouser libvirt
+			sudo usermod -a -G libvirt $sudouser
+		}
 	}
 
 	virtdconf=/etc/libvirt/libvirtd.conf
@@ -488,6 +491,7 @@ COMM
 	[[ $(id -u) != 0 ]] && {
 		id -Gn | egrep -q -w libvirt || {
 			echo -e "{VM:WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
+			echo -e "{VM:WARN} or run 'newgrp libvirt' or 'su - $sudouser' ..."
 			exit 1
 		}
 	}
