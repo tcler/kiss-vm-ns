@@ -491,7 +491,7 @@ COMM
 	[[ $(id -u) != 0 ]] && {
 		id -Gn | egrep -q -w libvirt || {
 			echo -e "{VM:WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
-			echo -e "{VM:WARN} or run 'newgrp libvirt' or 'su - $sudouser' ..."
+			echo -e "{VM:WARN} or run:  newgrp libvirt  #without re-login"
 			exit 1
 		}
 	}
