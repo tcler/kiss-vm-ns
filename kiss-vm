@@ -743,7 +743,7 @@ Usage() {
 	    --qemu-opts    #Pass-through qemu options
 	    --qemu-env     #Pass-through qemu env[s]
 	    --enable-nested-vm  #enable nested on host
-	    --enable-kvm   #enable kvm on guest, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
+	    --enable-cpuv  #enable CPU Virtualization on guest, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -762,7 +762,7 @@ Usage() {
 	    $P rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
 
 	    $P --enable-nested-vm  #enable nested on host, need sudo
-	    $P rhel-8.2% -enable-kvm -msize=\$((8*1024)) -dsize=120  # enable vmx/svm on guest
+	    $P rhel-8.2% -enable-cpuv -msize=\$((8*1024)) -dsize=120  # enable vmx/svm on guest
 
 	EOF
 	cat <<-EOF
@@ -778,7 +778,7 @@ Usage() {
 	    $P openSUSE-leap-15.2
 
 	    $P --enable-nested-vm  #enable nested on host, need sudo
-	    $P CentOS-7 -enable-kvm -msize=\$((8*1024)) -dsize=120  # enable vmx/svm on guest
+	    $P CentOS-7 -enable-cpuv -msize=\$((8*1024)) -dsize=120  # enable vmx/svm on guest
 
 	Example from local image:
 	    $P rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
@@ -838,7 +838,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rv \
 	--long qemu-opts: \
 	--long qemu-env: \
 	--long enable-nested-vm \
-	--long enable-kvm \
+	--long enable-cpuv --long enable-cpu-virtualization \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -886,7 +886,7 @@ while true; do
 	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
-	--enable-kvm)    ENABLE_KVM=yes; shift 1;;
+	--enable-cpuv|--enable-cpu-virtualization) ENABLE_KVM=yes; shift 1;;
 	--) shift; break;;
 	esac
 done
