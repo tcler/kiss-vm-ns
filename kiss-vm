@@ -489,11 +489,15 @@ COMM
 
 	#first time
 	[[ $(id -u) != 0 ]] && {
-		id -Gn | egrep -q -w libvirt || {
+		if ! id -Gn | egrep -q -w libvirt; then
 			echo -e "{VM:WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
-			echo -e "{VM:WARN} or run:  newgrp libvirt  #without re-login"
+			#echo -e "{VM:WARN} or run:  newgrp libvirt  #without re-login"
+			grep -q "newgrp libvirt" $sudouserhome/.bashrc ||
+				echo "if ! id -Gn | grep -q -w libvirt; then newgrp libvirt; exit; fi #kiss-vm" >> $sudouserhome/.bashrc
 			exit 1
-		}
+		else
+			sed -i "/newgrp libvirt; exit; *#kiss-vm$/d" $sudouserhome/.bashrc
+		fi
 	}
 
 	mkdir -p $sudouserhome/.config/kiss-vm
