@@ -451,12 +451,15 @@ enable_libvirt() {
 	}
 
 	echo -e "{VM:INFO} checking if ${sudouser} has joined group libvirt ..."
-	[[ $(id -u) != 0 ]] && id -Gn | egrep -q -w libvirt || {
-		getent group libvirt|egrep -q -w $sudouser || {
-			echo -e "{*INFO*} run: sudo usermod -a -G libvirt $sudouser ..."
-			#sudo gpasswd -a $sudouser libvirt
-			sudo usermod -a -G libvirt $sudouser
-		}
+	[[ $(id -u) != 0 ]] && {
+		if ! id -Gn | egrep -q -w libvirt; then
+			if getent group libvirt|egrep -q -w $sudouser; then
+				: #do nothing
+			else
+				echo -e "{*INFO*} run: sudo usermod -a -G libvirt $sudouser ..."
+				sudo usermod -a -G libvirt $sudouser  #or sudo gpasswd -a $sudouser libvirt
+			fi
+		fi
 	}
 
 	virtdconf=/etc/libvirt/libvirtd.conf
@@ -490,10 +493,14 @@ COMM
 	#first time
 	[[ $(id -u) != 0 ]] && {
 		if ! id -Gn | egrep -q -w libvirt; then
-			echo -e "{VM:WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
-			#echo -e "{VM:WARN} or run:  newgrp libvirt  #without re-login"
-			grep -q "newgrp libvirt" $sudouserhome/.bashrc ||
-				echo "if ! id -Gn | grep -q -w libvirt; then newgrp libvirt; exit; fi #kiss-vm" >> $sudouserhome/.bashrc
+			if getent group libvirt|egrep -q -w $sudouser; then
+				echo -e "{VM:WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
+				#echo -e "{VM:WARN} or run:  newgrp libvirt  #without re-login"
+				grep -q "newgrp libvirt" $sudouserhome/.bashrc ||
+					echo "if ! id -Gn | grep -q -w libvirt; then newgrp libvirt; exit; fi #kiss-vm" >> $sudouserhome/.bashrc
+			else
+				echo -e "{VM:WARN} you have not joined group libvirt. please check the warning msg above ^^^"
+			fi
 			exit 1
 		else
 			sed -i "/newgrp libvirt; exit; *#kiss-vm$/d" $sudouserhome/.bashrc
