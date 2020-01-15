@@ -454,7 +454,7 @@ is_bridge() {
 Upperdev=$(get_default_if)
 if is_bridge $Upperdev; then
 	Upperdev=kss-netns-dummy
-	ip link add $Upperdev type dummy 2>/dev/null
+	ip link add name $Upperdev type dummy 2>/dev/null
 	ip link set $Upperdev up
 fi
 for vnicinfo in "${VNICList[@]}"; do
