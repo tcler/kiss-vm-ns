@@ -12,8 +12,8 @@ AT=("$@")
 
 switchroot() {
 	[[ $(id -u) != 0 ]] && {
-		echo -e "{NS:WARN} $0 need root permission, try:\n  sudo $0 ${AT[@]}" | grep --color=always . >&2
-		exec sudo $0 "${AT[@]}"
+		echo -e "{NS:WARN} $P need root permission, switch to:\n  sudo $P ${AT[@]}" | GREP_COLORS='ms=1;30' grep --color=always . >&2
+		exec sudo $P "${AT[@]}"
 	}
 }
 
