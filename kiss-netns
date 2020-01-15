@@ -117,7 +117,7 @@ netns_init_pid() {
 	local ns=$1
 	local initpid
 
-	initpid=$(tmux list-panes -a -F '#{session_name} #{pane_pid}' | awk -v ns="$ns" '$1 == ns {print $2}')
+	initpid=$(tmux -L netns:$ns list-panes -a -F '#{session_name} #{pane_pid}' | awk -v ns="$ns" '$1 == ns {print $2}')
 	[[ -z "$initpid" ]] && return 1
 	echo $initpid
 }
@@ -150,7 +150,7 @@ netnsdelete() {
 		netnsexec $netns ip a s
 
 		echo -e "- {NETNS:INFO} exit init bash ..."
-		tmux send-keys -t "$netns" C-z " exit; exit" Enter
+		tmux -L netns:$netns send-keys -t "$netns" C-z " exit; exit" Enter
 
 		echo -e "- {NETNS:INFO} remove netns $netns ..."
 		ip netns del $netns 2>/dev/null
@@ -433,7 +433,7 @@ for NS in "${!NS_IFS[@]}"; do
 	else
 		echo -e "{NETNS:INFO} creating NS $NS ..."
 		ip netns add "$NS"
-		tmux new -s "$NS" -d "ip netns exec \"$NS\" /bin/bash"
+		tmux -L netns:$NS new -s "$NS" -d "ip netns exec \"$NS\" /bin/bash"
 	fi
 done
 
