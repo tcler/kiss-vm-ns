@@ -1247,7 +1247,7 @@ RHEL-7*|RHEL7*|centos7*|centos-7*)
 RHEL-8*|RHEL8*|centos8*|centos-8*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm;;
 esac
-[[ -n "$EPEL" ]] && PKGS+=" $EPEL"
+[[ -n "$EPEL" ]] && PKGS="$EPEL $PKGS"
 
 if [[ "$InstallType" = location ]]; then
 	[[ -z "$KSPath" ]] && {
@@ -1267,7 +1267,7 @@ if [[ "$InstallType" = location ]]; then
 		test -f /etc/hostname && echo ${vmhostname} >/etc/hostname || echo HOSTNAME=${vmhostname} >>/etc/sysconfig/network
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install pkgs ${PKGS} ..."
-		yum install -y "${PKGS}" 2>/dev/null
+		yum install -y ${PKGS} 2>/dev/null
 
 		END
 		[[ $Intranet = yes ]] && cat <<-END >>$postscript
