@@ -396,6 +396,28 @@ esac
 	exit 1
 }
 
+ifexist() {
+	for if; do
+		ip link show $if &>/dev/null && { echo -e "${if}: if exist"; }
+	done
+}
+_netnsexist() {
+	for ns; do
+		[[ -f /var/run/netns/$ns ]] && { echo -e "${ns}: netns exist"; }
+	done
+}
+netnsexist() {
+	for ns; do
+		if [[ "$ns" = br-* ]]; then
+			ifexist $ns
+		else
+			_netnsexist $ns
+		fi
+	done
+}
+
+existCheck1=
+existCheck2=
 VethList=()
 VNICList=()
 declare -A NS_IFS
@@ -410,18 +432,32 @@ for topo; do
 		VethList+=($vethX,$vethY)
 		NS_IFS[$nsX]+=" $vethX,$addrX"
 		NS_IFS[$nsY]+=" $vethY,$addrY"
+
+		#check if ns or if have been there
+		existCheck1=$(netnsexist $nsX $nsY; ifexist $vethX $vethY)
 	# ns that connected to macvlan
 	elif [[ "$topo" =~ ^[^,]+,[^,]+(,[0-9.]+)?(\?((updev|mode|type)=.*)(,((updev|mode|type)=.*))*)?$ ]]; then
 		read ifinfo env _ <<<"${topo/\?/ }"
 		read ns ifname addr _ <<<"${ifinfo//,/ }"
 		NS_IFS[$ns]+=" $ifname,$addr"
 		VNICList+=($ifname,${env})
+
+		#check if ns or if have been there
+		existCheck2=$(netnsexist $ns; ifexist $ifname)
 	else
 		echo -e "{NETNS:ERR} invalid format '\E[1;31m$topo\E[0m', see Usage:"
 		Usage >&2
 		exit 1
 	fi
 done
+
+echo -e "\n{NETNS:INFO} check if ns or vnic has been there ..."
+[[ -n "$existCheck1" ]] && echo "$existCheck1"
+[[ -n "$existCheck2" ]] && echo "$existCheck2"
+{ echo "$existCheck1"; echo "$existCheck2"; } | grep -q exist$ && {
+	echo -e "{NETNS:ERR} ^^^ please clean old configure/env, and try again."
+	exit 1
+}
 
 # creating all NetNS
 for NS in "${!NS_IFS[@]}"; do
