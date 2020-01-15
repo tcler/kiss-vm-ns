@@ -1,0 +1,17 @@
+#!/bin/bash
+
+adddummy() {
+	local fname=${FUNCNAME[0]}
+	Usage() { echo -e "Usage:\n  $fname dummyif1 [dummyif2 ...]"; }
+
+	if [[ "${#}" = 0 ]]; then
+		Usage >&2
+		return 1
+	fi
+
+	for ifname; do
+		echo "{adddummy} add dummy if '$ifname' ..."
+		ip link add name $ifname type dummy && ip link set $ifname up
+	done
+}
+adddummy "$@"
