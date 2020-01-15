@@ -416,8 +416,7 @@ netnsexist() {
 	done
 }
 
-existCheck1=
-existCheck2=
+existCheck=
 VethList=()
 VNICList=()
 declare -A NS_IFS
@@ -434,7 +433,8 @@ for topo; do
 		NS_IFS[$nsY]+=" $vethY,$addrY"
 
 		#check if ns or if have been there
-		existCheck1=$(netnsexist $nsX $nsY; ifexist $vethX $vethY)
+		existinfo=$(netnsexist $nsX $nsY; ifexist $vethX $vethY)
+		[[ -n "$existinfo" ]] && existCheck+=${existinfo}$'\n'
 	# ns that connected to macvlan
 	elif [[ "$topo" =~ ^[^,]+,[^,]+(,[0-9.]+)?(\?((updev|mode|type)=.*)(,((updev|mode|type)=.*))*)?$ ]]; then
 		read ifinfo env _ <<<"${topo/\?/ }"
@@ -443,7 +443,8 @@ for topo; do
 		VNICList+=($ifname,${env})
 
 		#check if ns or if have been there
-		existCheck2=$(netnsexist $ns; ifexist $ifname)
+		existinfo=$(netnsexist $ns; ifexist $ifname)
+		[[ -n "$existinfo" ]] && existCheck+=${existinfo}$'\n'
 	else
 		echo -e "{NETNS:ERR} invalid format '\E[1;31m$topo\E[0m', see Usage:"
 		Usage >&2
@@ -452,9 +453,8 @@ for topo; do
 done
 
 echo -e "\n{NETNS:INFO} check if ns or vnic has been there ..."
-[[ -n "$existCheck1" ]] && echo "$existCheck1"
-[[ -n "$existCheck2" ]] && echo "$existCheck2"
-{ echo "$existCheck1"; echo "$existCheck2"; } | grep -q exist$ && {
+[[ -n "$existCheck" ]] && echo -n "$existCheck" | sort -k 2 | uniq
+echo "$existCheck" | grep -q exist$ && {
 	echo -e "{NETNS:ERR} ^^^ please clean old configure/env, and try again."
 	exit 1
 }
