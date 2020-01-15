@@ -131,10 +131,10 @@ is_valid_ip() {
 }
 
 ns_init_pid() {
-	local nsdir=$1
+	local ns=$1
 	local ppid initpid
 
-	ppid=$(pgrep -f "^systemd-nspawn .*(-D $nsdir|-M ${nsdir##*/})$") || return 1
+	ppid=$(tmux -L ns:$ns list-panes -a -F '#{session_name} #{pane_pid}' | awk -v ns="$ns" '$1 == ns {print $2}')
 	initpid=$(pgrep -f ^/usr/lib/systemd/systemd -P "$ppid") || {
 		initpid=$(pgrep -f ^-bash -P "$ppid") || {
 			return 1
@@ -145,12 +145,28 @@ ns_init_pid() {
 
 ns_pstree() {
 	local ns=$1
-	local nsdir=$NSHome/$ns
-	local tree=$(ps axf | sed -rn -e 's/^(( *[^ ]+){4} )(.*)$/\3 # \1/' -e "/^( ._ )?systemd-nspawn .*(${nsdir//\//\\/}|-M $ns)/,/^( ._ )?[^ ]/p" | sed -r '${/^( ._ )?[^ ]/d}')
-	[[ "$tree" = ' \_ '* ]] && {
-		tree=$(sed 's/^....//' <<<"$tree")
-	}
-	echo "$tree"
+
+	ps axf | awk -v nsname=$ns '
+		BEGIN {
+			prefixlen=0
+			gettmux=0
+			pattern="tmux -L ns:" nsname " .* systemd-nspawn .*$"
+		}
+		$0 ~ pattern {
+			gettmux=1
+			prefixlen=length(gensub(pattern, "", 1))
+			print $0
+			next
+		}
+		gettmux == 1 {
+			if (substr($0, prefixlen+1, 1) == " ") {
+				print $0
+			} else {
+				gettmux=2
+				exit
+			}
+		}
+	'
 }
 
 _nsexec() {
@@ -163,7 +179,7 @@ nsexec() {
 	local ns=$1
 	local nsdir=$NSHome/$ns
 	shift
-	local initpid=$(ns_init_pid $nsdir)
+	local initpid=$(ns_init_pid $ns)
 	[[ "$nsverbose" = yes ]] && echo "- [NS:$ns] # $@" | GREP_COLORS='ms=01;36' grep --color . >&2
 	_nsexec "$initpid" "$@"
 }
@@ -374,12 +390,12 @@ echo -e "\n{NS:INFO} [creating NS $NS]: $CMD"
 if [[ "$DEBUG" = yes ]]; then
 	$CMD
 else
-	tmux new -s $NS -d "$CMD"
+	tmux -L ns:$NS new -s $NS -d "$CMD"
 fi
 
 echo -e "\n{NS:INFO} waiting NS $NSdir start ..."
 sleep 1
-for ((i=0; i<4; i++)); do InitPid=$(ns_init_pid $NSdir) && break; sleep 1; done
+for ((i=0; i<4; i++)); do InitPid=$(ns_init_pid $NS) && break; sleep 1; done
 [[ -z "$InitPid" ]] && {
 	$CMD
 	echo -e "\n{NS:ERR} something is wrong, exit ."
