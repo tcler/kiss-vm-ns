@@ -319,9 +319,9 @@ del*|del|de|d) switchroot; shift
 
 	echo -e "- {NS:INFO} systemd-run -M $NS poweroff #..."
 	systemd-run -M $NS "poweroff"
-	ns_pstree $NS | awk 'NF > 4 {print $1}' |tac| xargs kill 2>/dev/null
+	ns_pstree $NS | awk 'NF > 4 {print $1}' |tac|sed '$d'| xargs kill 2>/dev/null
 	sleep 1
-	ns_pstree $NS | awk 'NF > 4 {print $1}' |tac| xargs kill -9 2>/dev/null
+	ns_pstree $NS | awk 'NF > 4 {print $1}' |tac|sed '$d'| xargs kill -9 2>/dev/null
 
 	echo -e "- {NS:INFO} remove veth ifs @host ..."
 	ip link del ve-$NS 2>/dev/null
