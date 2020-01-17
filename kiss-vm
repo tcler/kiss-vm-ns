@@ -776,59 +776,59 @@ Usage() {
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
 	Example Intranet:
-	    $P # will enter a TUI show you all available distros that could auto generate source url
-	    $P RHEL-7.7                           # install RHEL-7.7 from cloud-image(by default)
-	    $P RHEL-6.10 -L                       # install RHEL-6.10 from Location(by -L option)
+	  $P # will enter a TUI show you all available distros that could auto generate source url
+	  $P RHEL-7.7                           # install RHEL-7.7 from cloud-image(by default)
+	  $P RHEL-6.10 -L                       # install RHEL-6.10 from Location(by -L option)
 
-	    $P RHEL-8.1.0 -f -p "vim wget git"    # -f force install VM and ship pkgs: vim wget git
-	    $P RHEL-8.1.0 -brewinstall 23822847   # ship brew scratch build pkg (by task id)
-	    $P RHEL-8.1.0 -brewinstall kernel-4.18.0-147.8.el8  # ship brew build pkg (by build name)
-	    $P RHEL-8.1.0 -brewinstall "lstk -debug"            # ship latest brew build release debug kernel
-	    $P RHEL-8.1.0 -brewinstall "upk -debug"             # ship latest brew build upstream debug kernel
-	    $P RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
-	    $P rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
-	    $P rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
+	  $P RHEL-8.1.0 -f -p "vim wget git"    # -f force install VM and ship pkgs: vim wget git
+	  $P RHEL-8.1.0 -brewinstall 23822847   # ship brew scratch build pkg (by task id)
+	  $P RHEL-8.1.0 -brewinstall kernel-4.18.0-147.8.el8  # ship brew build pkg (by build name)
+	  $P RHEL-8.1.0 -brewinstall "lstk -debug"            # ship latest brew build release debug kernel
+	  $P RHEL-8.1.0 -brewinstall "upk -debug"             # ship latest brew build upstream debug kernel
+	  $P RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
+	  $P rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
+	  $P rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
 
-	    $P --enable-nested-vm  #enable nested on host, need sudo
-	    $P rhel-8.2% -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
+	  $P --enable-nested-vm  #enable nested on host, need sudo
+	  $P rhel-8.2% -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
 
 	EOF
 	cat <<-EOF
 	Example Internet:
-	    $P # will enter a TUI show you all available distros that could auto generate source url
-	    $P CentOS-8-stream -b ftp://url/path/x.rpm
-	    $P CentOS-8 -p "jimtcl vim git make gcc"
-	    $P CentOS-7 -p "vim git wget make gcc"
-	    $P CentOS-6
-	    $P fedora-31
-	    $P centos-5 -l http://vault.centos.org/5.11/os/x86_64/
-	    $P debian-10 -i https://cdimage.debian.org/cdimage/openstack/10.1.5-20191015/debian-10.1.5-20191015-openstack-amd64.qcow2
-	    $P openSUSE-leap-15.2
+	  $P # will enter a TUI show you all available distros that could auto generate source url
+	  $P CentOS-8-stream -b ftp://url/path/x.rpm
+	  $P CentOS-8 -p "jimtcl vim git make gcc"
+	  $P CentOS-7 -p "vim git wget make gcc"
+	  $P CentOS-6
+	  $P fedora-31
+	  $P centos-5 -l http://vault.centos.org/5.11/os/x86_64/
+	  $P debian-10 -i https://cdimage.debian.org/cdimage/openstack/10.1.5-20191015/debian-10.1.5-20191015-openstack-amd64.qcow2
+	  $P openSUSE-leap-15.2
 
-	    $P --enable-nested-vm  #enable nested on host, need sudo
-	    $P CentOS-7 -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
+	  $P --enable-nested-vm  #enable nested on host, need sudo
+	  $P CentOS-7 -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
 
 	Example from local image:
-	    $P rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
-	    $P debian-10 -i /mnt/vm-images/debian-10.1.5-20191015-openstack-amd64.qcow2
-	    $P openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
+	  $P rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
+	  $P debian-10 -i /mnt/vm-images/debian-10.1.5-20191015-openstack-amd64.qcow2
+	  $P openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
 
 	Example [subcmd]:
-	    vm list              #list all VMs       //you can use ls,li,lis* instead list
-	    vm login [/c] [VM]   #login VM           //you can use l,lo,log* instead login
-	    vm delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
-	    vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
-	    vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
-	    vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
-	    vm exec [-v] [-x] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
-	    vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
-	    vm stop [VM]         #stop/shutdonw VM   //nil
-	    vm start [VM]        #start VM           //nil
+	  vm list              #list all VMs       //you can use ls,li,lis* instead list
+	  vm login [/c] [VM]   #login VM           //you can use l,lo,log* instead login
+	  vm delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
+	  vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
+	  vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
+	  vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
+	  vm exec [-v] [-x] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
+	  vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
+	  vm stop [VM]         #stop/shutdonw VM   //nil
+	  vm start [VM]        #start VM           //nil
 
-	    vm net               #list all virtual network
-	    vm net netname=testnet brname=virbrN subnet=100  #create virtual network 'testnet'
-	    vm netinfo testnet   #show detail info of virtual network 'testnet'
-	    vm netdel testnet    #delete virtual network 'testnet'
+	  vm net               #list all virtual network
+	  vm net netname=testnet brname=virbrN subnet=100  #create virtual network 'testnet'
+	  vm netinfo testnet   #show detail info of virtual network 'testnet'
+	  vm netdel testnet    #delete virtual network 'testnet'
 	EOF
 }
 
