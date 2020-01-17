@@ -72,31 +72,32 @@ Usage() {
 
 	Examples: host connect ns0 with both veth and macvlan
 	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  host,mv-host0,192.168.100.1 ns0,mv-ns0,192.168.100.2
-	  $P -vx0 exec ns0 -- ping -c 2 192.168.0.1
-	  $P -vx0 exec ns0 -- ping -c 2 192.168.100.1
+	  $P -v -x exec ns0 -- ping -c 2 192.168.0.1
+	  $P -v -x exec ns0 -- ping -c 2 192.168.100.1
 	  #curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
 	  sudo systemctl start nfs-server
 	  sudo exportfs -o ro,no_root_squash "*:/usr/share"
-	  $P -vx0 exec ns0 -- showmount -e 192.168.0.1
-	  $P -vx0 exec ns0 -- mkdir -p /mnt/ns0/nfs
-	  $P -vx0 exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
-	  $P -vx0 exec ns0 -- mount -t nfs4
-	  $P -vx0 exec ns0 -- ls /mnt/ns0/nfs
-	  $P -vx0 exec ns0 -- umount /mnt/ns0/nfs
-	  $P -vx0 exec ns0 -- umount /mnt/ns0/nfs
-	  $P -vx0 exec ns0 -- rm -rf /mnt/ns0
+	  $P -v -x exec ns0 -- showmount -e 192.168.0.1
+	  $P -v -x exec ns0 -- mkdir -p /mnt/ns0/nfs
+	  $P -v -x exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
+	  $P -v -x exec ns0 -- mount -t nfs4
+	  $P -v    exec ns0 -- ls /mnt/ns0/nfs
+	  $P -v -x exec ns0 -- umount /mnt/ns0/nfs
+	  $P -v -x32 exec ns0 -- umount /mnt/ns0/nfs
+	  $P -v -x   exec ns0 -- umount /mnt/ns0/nfs  #just for show what does -x option work, when test fail
+	  $P -v    exec ns0 -- rm -rf /mnt/ns0
 	  $P del ns0
 	  $P delif mv-host0
 
 	Examples: host connect ns0 with both veth and ipvlan
 	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2   host,iv-host0,192.168.99.1 ns0,iv-ns0,192.168.99.2
-	  $P -vx0 exec ns0 -- ping -c 2 192.168.99.1
+	  $P -v -x exec ns0 -- ping -c 2 192.168.99.1
 	  $P del ns0
 	  $P delif iv-host0
 
 	Examples: host connect ns0 with veth and bridge br-0
 	  $P host,veth0.X,192.168.66.1---br-0,veth0.Y  br-0,veth1.Y---ns0,veth1.X,192.168.66.2
-	  $P -vx0 exec ns0 -- ping -c 2 192.168.66.1
+	  $P -v -x exec ns0 -- ping -c 2 192.168.66.1
 	  $P del ns0 br-0
 
 	EOF

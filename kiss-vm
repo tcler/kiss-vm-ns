@@ -819,7 +819,7 @@ Usage() {
 	    vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
 	    vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
 	    vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
-	    vm exec [-vx0] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
+	    vm exec [-v] [-x] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
 	    vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
 	    vm stop [VM]         #stop/shutdonw VM   //nil
 	    vm start [VM]        #start VM           //nil

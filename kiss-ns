@@ -58,19 +58,19 @@ Usage() {
 	  $P delete ns3                        # delete/remove ns3 and it's rootdir
 	  $P install ns2 cifs-utils            # install cifs-utils in ns2
 
-	  $P exec -vx ns2 ip addr show             # exec command in ns2
-	  $P exec -vx ns2 -- ls -l /               # exec command in ns2
+	  $P exec -v -x ns2 ip addr show             # exec command in ns2
+	  $P exec -v -x ns2 -- ls -l /               # exec command in ns2
 
 	  sudo systemctl start nfs-server
 	  sudo exportfs -o ro,no_root_squash "*:/usr/share"
 	  sudo addmacvlan macvlan-host
 	  sudo addressup macvlan-host 192.168.254.254
 	  sudo firewall-cmd --add-service=nfs --add-service=mountd --add-service=rpc-bind
-	  $P exec -vx ns2 -- mkdir -p /mnt/nfs              # exec command in ns2
-	  $P exec -vx ns2 -- showmount -e 192.168.2.1       # exec command in ns2
-	  $P exec -vx ns2 -- mount 192.168.2.1:/ /mnt/nfs   # exec command in ns2
-	  $P exec -vx ns2 -- showmount -e 192.168.254.254     # exec command in ns2
-	  $P exec -vx ns2 -- mount 192.168.254.254:/ /mnt/nfs # exec command in ns2
+	  $P exec -v -x ns2 -- mkdir -p /mnt/nfs                # exec command in ns2
+	  $P exec -v -x ns2 -- showmount -e 192.168.2.1         # exec command in ns2
+	  $P exec -v -x ns2 -- mount 192.168.2.1:/ /mnt/nfs     # exec command in ns2
+	  $P exec -v -x ns2 -- showmount -e 192.168.254.254     # exec command in ns2
+	  $P exec -v -x ns2 -- mount 192.168.254.254:/ /mnt/nfs # exec command in ns2
 
 	EOF
 }
