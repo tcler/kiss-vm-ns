@@ -140,9 +140,10 @@ netnsexec() {
 	_netnsexec "$initpid" "$@"
 	rc=$?
 
+	faillog() { echo -e "\033[41m{TEST:FAIL} $*\033[0m"; }
 	[[ -n "$expectedrc" ]] && {
 		[[ " ${expectedrc[@]} " != *" $rc "* ]] && {
-			echo -e "\033[41m{TEST:FAIL} return code: expect $expectedRC, but got $rc\033[0m"
+			faillog "return code: expect $expectedRC, but got $rc"
 		}
 	}
 
