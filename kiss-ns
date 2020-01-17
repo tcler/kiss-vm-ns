@@ -36,8 +36,8 @@ Usage() {
 	  --vol, --volatile {yes|no}  ; see systemd-nspawn --volatile. default is no
 	  --clone {ns}         ; clone from ns
 	  --noboot             ; no boot
-	  -x [arg]             ; expected return code of sub-command exec, if doesn't match output test fail msg
-	                       ; e.g: -x 0  or  -x 1,2,3  or  -x 1,10,100-200
+	  -x[arg]              ; expected return code of sub-command exec, if doesn't match output test fail msg
+	                       ; e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 
 	Examples create ns by using mini fs tree + host /usr:
 	  # same as example ns1, but use a it's own fs tree instead reuse host os tree
@@ -285,7 +285,7 @@ while true; do
 	--robind) BIND_OPTS+="--bind-ro=$2 "; shift 2;;
 	--volatile|--vol) VOLATILE_OPT="--volatile=$2"; shift 2;;
 	--clone) CLONE=$2; shift 2;;
-	-x) expectedRC=${2:-0}; expectedrc=$(expandrc $expectedRC); shift 2;;
+	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
 	--noboot) BOOT_OPT=; INIT_PKG="bash"; shift 1;;
 	--) shift; break;;
 	esac

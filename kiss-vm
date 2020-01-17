@@ -769,8 +769,8 @@ Usage() {
 	  --enable-nested-vm  #enable nested on host
 	  --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
 	                      #ref: https://www.linux-kvm.org/page/Nested_Guests
-	  -x [arg]            #expected return code of sub-command exec, if doesn't match output test fail msg
-	                      #e.g: -x 0  or  -x 1,2,3  or  -x 1,10,100-200
+	  -x[arg]             #expected return code of sub-command exec, if doesn't match output test fail msg
+	                      # e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -819,7 +819,7 @@ Usage() {
 	    vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
 	    vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
 	    vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
-	    vm exec [-vx] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
+	    vm exec [-vx0] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
 	    vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
 	    vm stop [VM]         #stop/shutdonw VM   //nil
 	    vm start [VM]        #start VM           //nil
@@ -927,7 +927,7 @@ while true; do
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	--enable-guest-hy*) ENABLE_L2VM=yes; shift 1;;
-	-x) expectedRC=${2:-0}; expectedrc=$(expandrc $expectedRC); shift 2;;
+	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
 	--) shift; break;;
 	esac
 done
