@@ -162,7 +162,6 @@ Options:
   --vol, --volatile {yes|no}  ; see systemd-nspawn --volatile. default is no
   --clone {ns}         ; clone from ns
   --noboot             ; no boot
-  -x                   ; see systemd-nspawn -x, need btrfs as rootfs
 
 Examples create ns by using mini fs tree + host /usr:
   # same as example ns1, but use a it's own fs tree instead reuse host os tree

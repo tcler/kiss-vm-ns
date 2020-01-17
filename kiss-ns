@@ -36,7 +36,8 @@ Usage() {
 	  --vol, --volatile {yes|no}  ; see systemd-nspawn --volatile. default is no
 	  --clone {ns}         ; clone from ns
 	  --noboot             ; no boot
-	  -x                   ; see systemd-nspawn -x, need btrfs as rootfs
+	  -x [arg]             ; expected return code of sub-command exec, if doesn't match output test fail msg
+	                       ; e.g: -x 0  or  -x 1,2,3  or  -x 1,10,100-200
 
 	Examples create ns by using mini fs tree + host /usr:
 	  # same as example ns1, but use a it's own fs tree instead reuse host os tree
@@ -57,19 +58,19 @@ Usage() {
 	  $P delete ns3                        # delete/remove ns3 and it's rootdir
 	  $P install ns2 cifs-utils            # install cifs-utils in ns2
 
-	  $P exec ns2 ip addr show             # exec command in ns2
-	  $P exec ns2 -- ls -l /               # exec command in ns2
+	  $P exec -vx ns2 ip addr show             # exec command in ns2
+	  $P exec -vx ns2 -- ls -l /               # exec command in ns2
 
 	  sudo systemctl start nfs-server
 	  sudo exportfs -o ro,no_root_squash "*:/usr/share"
 	  sudo addmacvlan macvlan-host
 	  sudo addressup macvlan-host 192.168.254.254
 	  sudo firewall-cmd --add-service=nfs --add-service=mountd --add-service=rpc-bind
-	  $P exec ns2 -- mkdir -p /mnt/nfs              # exec command in ns2
-	  $P exec ns2 -- showmount -e 192.168.2.1       # exec command in ns2
-	  $P exec ns2 -- mount 192.168.2.1:/ /mnt/nfs   # exec command in ns2
-	  $P exec ns2 -- showmount -e 192.168.254.254     # exec command in ns2
-	  $P exec ns2 -- mount 192.168.254.254:/ /mnt/nfs # exec command in ns2
+	  $P exec -vx ns2 -- mkdir -p /mnt/nfs              # exec command in ns2
+	  $P exec -vx ns2 -- showmount -e 192.168.2.1       # exec command in ns2
+	  $P exec -vx ns2 -- mount 192.168.2.1:/ /mnt/nfs   # exec command in ns2
+	  $P exec -vx ns2 -- showmount -e 192.168.254.254     # exec command in ns2
+	  $P exec -vx ns2 -- mount 192.168.254.254:/ /mnt/nfs # exec command in ns2
 
 	EOF
 }
@@ -182,6 +183,28 @@ nsexec() {
 	local initpid=$(ns_init_pid $ns)
 	[[ "$nsverbose" = yes ]] && echo "- [NS:$ns] # $@" | GREP_COLORS='ms=01;36' grep --color . >&2
 	_nsexec "$initpid" "$@"
+	rc=$?
+
+	[[ -n "$expectedrc" ]] && {
+		[[ " ${expectedrc[@]} " != *" $rc "* ]] && {
+			echo -e "\033[41m{TEST:FAIL} return code: expect $expectedRC, but got $rc\033[0m"
+		}
+	}
+
+	return $rc
+}
+
+expandrc() {
+	local rcrange=$1
+	local rclist=()
+	for rc in ${rcrange//,/ }; do
+		if [[ "$rc" =~ [0-9]+ ]]; then
+			rclist+=($rc)
+		elif [[ "$rc" =~ [0-9]+-[0-9]+ ]]; then
+			eval rclist+=({${rc/-/..}})
+		fi
+	done
+	echo -n ${rclist[@]}
 }
 
 getDefaultNic() {
@@ -238,7 +261,7 @@ InitPid=
 INIT_PKG=systemd
 
 # command line parse
-_at=`getopt -o hn:p:dxv \
+_at=`getopt -o hn:p:dvx:: \
 	--long help \
 	--long veth-ip: \
 	--long macvlan-ip: \
@@ -262,7 +285,7 @@ while true; do
 	--robind) BIND_OPTS+="--bind-ro=$2 "; shift 2;;
 	--volatile|--vol) VOLATILE_OPT="--volatile=$2"; shift 2;;
 	--clone) CLONE=$2; shift 2;;
-	-x) SHARE_SYSTEM=yes; shift 1;;
+	-x) expectedRC=${2:-0}; expectedrc=$(expandrc $expectedRC); shift 2;;
 	--noboot) BOOT_OPT=; INIT_PKG="bash"; shift 1;;
 	--) shift; break;;
 	esac
@@ -364,23 +387,19 @@ for addr in $NS_MACVLAN_IPS; do
 done
 
 mkdir -p $NSdir
-if [[ "$SHARE_SYSTEM" = yes ]]; then
-	MachineOpt="-x -D / -M $NS"
-else
-	echo -e "\n{NS:INFO} creating fs tree for NS $NSdir ..."
-	if [[ -n "$CLONE" && -d "$NSHome/$CLONE" ]]; then
-		rsync -a --info=progress2 $NSHome/$CLONE/  $NSdir/.
-		systemd-machine-id-setup --root $NSdir
-	fi
-	if rpm --root $NSdir -q $INIT_PKG; then
-		systemd-machine-id-setup --root $NSdir
-	else
-		chroot_install $NSdir $INIT_PKG $PKGS
-		\cp -rf /etc/yum.repos.d $NSdir/etc/.
-		\cp /etc/{passwd,group,shadow,resolv.conf} $NSdir/etc/.
-	fi
-	MachineOpt="-D $NSdir"
+echo -e "\n{NS:INFO} creating fs tree for NS $NSdir ..."
+if [[ -n "$CLONE" && -d "$NSHome/$CLONE" ]]; then
+	rsync -a --info=progress2 $NSHome/$CLONE/  $NSdir/.
+	systemd-machine-id-setup --root $NSdir
 fi
+if rpm --root $NSdir -q $INIT_PKG; then
+	systemd-machine-id-setup --root $NSdir
+else
+	chroot_install $NSdir $INIT_PKG $PKGS
+	\cp -rf /etc/yum.repos.d $NSdir/etc/.
+	\cp /etc/{passwd,group,shadow,resolv.conf} $NSdir/etc/.
+fi
+MachineOpt="-D $NSdir"
 
 NETWORK_VETH_OPT=
 [[ -n "$HOST_VETH_IP" && -n "$NS_VETH_IP" ]] && NETWORK_VETH_OPT=--network-veth

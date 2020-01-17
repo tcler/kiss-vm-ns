@@ -336,9 +336,18 @@ vmlogin() {
 		exit \$value
 		EOF
 		) "$@"
-		return
+		rc=$?
+
+		[[ -n "$expectedrc" ]] && {
+			[[ " ${expectedrc[@]} " != *" $rc "* ]] && {
+				echo -e "\033[41m{TEST:FAIL} return code: expect $expectedRC, but got $rc\033[0m"
+			}
+		}
+
+		return $rc
 	done
 }
+
 vmexec() { EXEC=yes vmlogin "$@"; }
 vmlist() { virsh list --all; }
 netcreate() {
@@ -701,65 +710,67 @@ fi
 Usage() {
 	cat <<-'EOF'
 	Usage:
-	    vm [subcmd] <-d distroname> [OPTIONs] ...
+	  vm [subcmd] <-d distroname> [OPTIONs] ...
 
 	Options:
-	    -h, --help     #Display this help.
-	    --prepare      #check/install/configure libvirt and other dependent packages
-	    -I             #create VM by import existing disk image, auto search url according distro name
-	                    `-> just could be used in Intranet
-	    -i <url/path>  #create VM by import existing disk image, value can be url or local path
-	    -L             #create VM by using location, auto search url according distro name
-	                    `-> just could be used in Intranet
-	    -l <url>       #create VM by using location
-	    --ks <file>    #kickstart file, will auto generate according distro name if omitting
-	    -n|--vmname <name>
-	                   #VM name suffix, will auto generate according distro name if omitting
-	    --getvmname    #get *final* vmname. e.g:
-	                     vm -r --getvmname centos-8 -n nfsserv
-	                     vmname=$(vm -r --getvmname centos-8 -n nfsserv)
-	    -f|--force     #over write existing VM with same name
-	    -p|-pkginstall <pkgs>
-	                   #pkgs in default system repo, install by yum or apt-get
-	    -b|-brewinstall <args>
-	                   #pkgs in brew system or specified by url, install by internal brewinstall.sh
-	                    `-> just could be used in Intranet
-	    -g|-genimage   #generate VM image, after install shutdown VM and generate new qcow2.xz file
-	    --rm           #like --rm option of docker/podman, remove VM after quit from console
-	    --nocloud|--nocloud-init
-	                   #don't create cloud-init iso for the image that is not cloud image
-	    --osv <variant>
-	                   #OS_VARIANT, optional. virt-install will attempt to auto detect this value
-	                   # you can get [-osv variant] info by using:
-	                   $ osinfo-query os  #RHEL-7 and later
-	                   $ virt-install --os-variant list  #RHEL-6
-	    --nointeract   #exit from virsh console after install finish
-	    --saveimage [path]
-	                   #save image in path if install with import mode
-	    --cpus <N>     #number of virtual cpus, default 4
-	    --msize <size> #memory size, default 2048
-	    --dsize <size> #disk size, default 16
-	    --net <$name>  #join libvirt net $name
-	    --netmacvtap [source NIC]
-	                   #attach a macvtap interface
-	    --macvtapmode <vepa|bridge>
-	                   #macvtap mode
-	    -r|--ready     #virt config is ready, don't have to run enable_libvirt function
-	    --xdisk        #add 2 extra disk for test
-	    --nvdimm <nvdimm list> 
-	                   #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
-	                   #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
-	                   #e.g: --nvdimm="511 1023" -> two nvdimm device
-	                   #               ^^^^^^^^ default labelSize is 1, if omitting
-	                   #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
-	    --nosshkey     #don't inject sshkey
-	    -v|--verbose   #verbose mode
-	    --xml          #just generate xml
-	    --qemu-opts    #Pass-through qemu options
-	    --qemu-env     #Pass-through qemu env[s]
-	    --enable-nested-vm  #enable nested on host
-	    --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
-	                        #ref: https://www.linux-kvm.org/page/Nested_Guests
+	  -h, --help     #Display this help.
+	  --prepare      #check/install/configure libvirt and other dependent packages
+	  -I             #create VM by import existing disk image, auto search url according distro name
+	                  `-> just could be used in Intranet
+	  -i <url/path>  #create VM by import existing disk image, value can be url or local path
+	  -L             #create VM by using location, auto search url according distro name
+	                  `-> just could be used in Intranet
+	  -l <url>       #create VM by using location
+	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
+	  -n|--vmname <name>
+	                 #VM name suffix, will auto generate according distro name if omitting
+	  --getvmname    #get *final* vmname. e.g:
+	                   vm -r --getvmname centos-8 -n nfsserv
+	                   vmname=$(vm -r --getvmname centos-8 -n nfsserv)
+	  -f|--force     #over write existing VM with same name
+	  -p|-pkginstall <pkgs>
+	                 #pkgs in default system repo, install by yum or apt-get
+	  -b|-brewinstall <args>
+	                 #pkgs in brew system or specified by url, install by internal brewinstall.sh
+	                  `-> just could be used in Intranet
+	  -g|-genimage   #generate VM image, after install shutdown VM and generate new qcow2.xz file
+	  --rm           #like --rm option of docker/podman, remove VM after quit from console
+	  --nocloud|--nocloud-init
+	                 #don't create cloud-init iso for the image that is not cloud image
+	  --osv <variant>
+	                 #OS_VARIANT, optional. virt-install will attempt to auto detect this value
+	                 # you can get [-osv variant] info by using:
+	                 $ osinfo-query os  #RHEL-7 and later
+	                 $ virt-install --os-variant list  #RHEL-6
+	  --nointeract   #exit from virsh console after install finish
+	  --saveimage [path]
+	                 #save image in path if install with import mode
+	  --cpus <N>     #number of virtual cpus, default 4
+	  --msize <size> #memory size, default 2048
+	  --dsize <size> #disk size, default 16
+	  --net <$name>  #join libvirt net $name
+	  --netmacvtap [source NIC]
+	                 #attach a macvtap interface
+	  --macvtapmode <vepa|bridge>
+	                 #macvtap mode
+	  -r|--ready     #virt config is ready, don't have to run enable_libvirt function
+	  --xdisk        #add 2 extra disk for test
+	  --nvdimm <nvdimm list> 
+	                 #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
+	                 #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
+	                 #e.g: --nvdimm="511 1023" -> two nvdimm device
+	                 #               ^^^^^^^^ default labelSize is 1, if omitting
+	                 #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+	  --nosshkey     #don't inject sshkey
+	  -v|--verbose   #verbose mode
+	  --xml          #just generate xml
+	  --qemu-opts    #Pass-through qemu options
+	  --qemu-env     #Pass-through qemu env[s]
+	  --enable-nested-vm  #enable nested on host
+	  --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
+	                      #ref: https://www.linux-kvm.org/page/Nested_Guests
+	  -x [arg]            #expected return code of sub-command exec, if doesn't match output test fail msg
+	                      #e.g: -x 0  or  -x 1,2,3  or  -x 1,10,100-200
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -808,7 +819,7 @@ Usage() {
 	    vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
 	    vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
 	    vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
-	    vm exec "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
+	    vm exec [-vx] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
 	    vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
 	    vm stop [VM]         #stop/shutdonw VM   //nil
 	    vm start [VM]        #start VM           //nil
@@ -820,8 +831,21 @@ Usage() {
 	EOF
 }
 
+expandrc() {
+	local rcrange=$1
+	local rclist=()
+	for rc in ${rcrange//,/ }; do
+		if [[ "$rc" =~ [0-9]+ ]]; then
+			rclist+=($rc)
+		elif [[ "$rc" =~ [0-9]+-[0-9]+ ]]; then
+			eval rclist+=({${rc/-/..}})
+		fi
+	done
+	echo -n ${rclist[@]}
+}
+
 # command line parse
-_at=`getopt -o hd:Ll:fn:gb:p:Ii:rv \
+_at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx:: \
 	--long help \
 	--long prepare \
 	--long ks: \
@@ -903,6 +927,7 @@ while true; do
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	--enable-guest-hy*) ENABLE_L2VM=yes; shift 1;;
+	-x) expectedRC=${2:-0}; expectedrc=$(expandrc $expectedRC); shift 2;;
 	--) shift; break;;
 	esac
 done
