@@ -181,7 +181,7 @@ nsexec() {
 	local nsdir=$NSHome/$ns
 	shift
 	local initpid=$(ns_init_pid $ns)
-	[[ "$VERBOSE" = yes ]] && echo "- [NS:$ns] # $@" | GREP_COLORS='ms=01;36' grep --color . >&2
+	[[ "$VERBOSE" = yes ]] && echo "[NS:$ns] > $@" | GREP_COLORS='ms=01;36' grep --color . >&2
 	_nsexec "$initpid" "$@"
 	rc=$?
 
