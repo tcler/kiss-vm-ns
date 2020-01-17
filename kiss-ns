@@ -181,7 +181,7 @@ nsexec() {
 	local nsdir=$NSHome/$ns
 	shift
 	local initpid=$(ns_init_pid $ns)
-	[[ "$nsverbose" = yes ]] && echo "- [NS:$ns] # $@" | GREP_COLORS='ms=01;36' grep --color . >&2
+	[[ "$VERBOSE" = yes ]] && echo "- [NS:$ns] # $@" | GREP_COLORS='ms=01;36' grep --color . >&2
 	_nsexec "$initpid" "$@"
 	rc=$?
 
@@ -329,7 +329,7 @@ while true; do
 	-n) NS="$2"; shift 2;;
 	-p) PKGS+="$2"; shift 2;;
 	-d) DEBUG=yes; shift 1;;
-	-v) nsverbose=yes; shift 1;;
+	-v) VERBOSE=yes; shift 1;;
 	--veth-ip) read HOST_VETH_IP NS_VETH_IP <<<"${2//,/ }"; shift 2;;
 	--macvlan-ip) NS_MACVLAN_IPS="${2//,/ }"; shift 2;;
 	--bind) BIND_OPTS+="--bind=$2 "; shift 2;;

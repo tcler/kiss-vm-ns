@@ -137,7 +137,7 @@ netnsexec() {
 	local ns=$1
 	shift
 	local initpid=$(netns_init_pid $ns)
-	[[ "$nsverbose" = yes ]] && echo "- [NETNS:$ns] # $@" | GREP_COLORS='ms=01;36' grep --color . >&2
+	[[ "$VERBOSE" = yes ]] && echo "- [NETNS:$ns] # $@" | GREP_COLORS='ms=01;36' grep --color . >&2
 	_netnsexec "$initpid" "$@"
 	rc=$?
 
@@ -360,7 +360,7 @@ while true; do
 	case "$1" in
 	-h|--help) Usage; shift 1; exit 0;;
 	-n) NS="$2"; shift 2;;
-	-v) nsverbose=yes; shift 1;;
+	-v) VERBOSE=yes; shift 1;;
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
 	--) shift; break;;
 	esac
