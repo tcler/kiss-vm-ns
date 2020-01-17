@@ -77,6 +77,7 @@ Usage() {
 	  #curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
 	  sudo systemctl start nfs-server
 	  sudo exportfs -o ro,no_root_squash "*:/usr/share"
+	  sudo firewall-cmd --add-service=nfs --add-service=mountd --add-service=rpc-bind
 	  $P -v -x exec ns0 -- showmount -e 192.168.0.1
 	  $P -v -x exec ns0 -- mkdir -p /mnt/ns0/nfs
 	  $P -v -x exec ns0 -- mount 192.168.0.1:/ /mnt/ns0/nfs
