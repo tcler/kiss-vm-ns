@@ -296,6 +296,10 @@ nsdelete() {
 	done
 }
 
+ns_list() {
+	machinectl -l | awk '$2 != "vm" && $2 != "machines"'
+}
+
 BOOT_OPT=-b
 NET_MACVLAN_OPTS=
 BIND_OPTS=
@@ -378,7 +382,7 @@ del*|del|de|d) switchroot; shift
 	nsdelete $NS "$@" $(test $subcmd = delete && echo /home)
 	exit $?;;
 ls) shift
-	machinectl -l | awk '$2 != "vm" && $2 != "machines"'
+	ns_list
 	exit $?;;
 creat*) shift
 	;;
@@ -443,7 +447,7 @@ for ((i=0; i<4; i++)); do InitPid=$(ns_init_pid $NS) && break; sleep 1; done
 }
 
 echo -e "\n{NS:INFO} NS info"
-machinectl -l
+ns_list
 ns_pstree $NS
 
 # generate utils addressup
