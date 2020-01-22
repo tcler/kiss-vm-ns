@@ -1229,6 +1229,7 @@ get_default_if() {
 }
 
 # Phase-2: start create VM
+CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
 # prepare ssh pub key
 [[ -f ~/.ssh/id_rsa && -f ~/.ssh/id_rsa.pub ]] || {
 	echo -e 'y\n' | ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
@@ -1346,7 +1347,7 @@ if [[ "$InstallType" = location ]]; then
 	  $MEM_OPTS \
 	  --disk path=$VMpath/${vmname}.qcow2,bus=virtio \
 	  $DISK_OPTS \
-	  $NETWORK_OPTS \
+	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --initrd-inject $KSPath \
 	  --extra-args="ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 rd.driver.pre=loop" \
 	  --noautoconsole \
@@ -1502,7 +1503,7 @@ elif [[ "$InstallType" = import ]]; then
 	  --disk path=${imagefile},bus=virtio \
 	  $DISK_OPTS \
 	  $CLOUD_INIT_OPT \
-	  $NETWORK_OPTS \
+	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --import \
 	  --noautoconsole \
 	  --vnc --vnclisten 0.0.0.0 $OS_VARIANT_OPT &>$VMpath/nohup.log &
