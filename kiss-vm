@@ -153,7 +153,10 @@ vmvncport() {
 	}
 
 	local port=$(virsh dumpxml "$_vmname" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}")
-	[[ -n "${port}" ]] && echo ${HOSTNAME}:${port}
+	[[ -n "${port}" ]] && {
+		echo ${HOSTNAME}:${port}
+		hostname -A | sed -r "s/ |$/:${port}\\n/g" | sort -ru
+	}
 }
 
 vmedit() {
