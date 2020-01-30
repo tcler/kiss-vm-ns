@@ -1232,7 +1232,6 @@ get_default_if() {
 }
 
 # Phase-2: start create VM
-CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
 # prepare ssh pub key
 [[ -f ~/.ssh/id_rsa && -f ~/.ssh/id_rsa.pub ]] || {
 	echo -e 'y\n' | ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
@@ -1249,8 +1248,13 @@ if [[ "$EXTRA_DISKS" = yes ]]; then
 	DISK_OPTS="--disk path=$VMpath/ext4.qcow2,bus=scsi --disk path=$VMpath/xfs.qcow2,bus=scsi"
 fi
 
+NVDIMM=no
+CONTROLLER_OPTS=
 qemukvm=$(rpm -q qemu-kvm)
-vercmp $qemukvm ge qemu-kvm-2.6 && NVDIMM=yes || NVDIMM=no
+vercmp $qemukvm ge qemu-kvm-2.6 && {
+	NVDIMM=yes
+	CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
+}
 if [[ "$NVDIMM" = yes ]]; then
 	NVDIMM_LIST=${NVDIMM_LIST:-511+1}
 	hpmemMax=$((1024*512))   #units Mi
