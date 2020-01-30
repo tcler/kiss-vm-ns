@@ -20,6 +20,12 @@ is_intranet() {
 	is_available_url $iurl
 }
 
+Usage() {
+	cat <<-EOF >&2
+	Usage: $0 <iso file path> [--hostname name] [--repo name:url [--repo name:url]] [-b|--brewinstall "pkg list"] [-p|--pkginstall "pkg list"] [--fips]
+	EOF
+}
+
 _at=`getopt -o hp:b:D \
 	--long help \
 	--long hostname: \
@@ -43,12 +49,6 @@ while true; do
 	--) shift; break;;
 	esac
 done
-
-Usage() {
-	cat <<-EOF >&2
-	Usage: $0 <iso file path> [--hostname name] [--repo name:url [--repo name:url]] [-b|--brewinstall "pkg list"] [-p|--pkginstall "pkg list"] [--fips]
-	EOF
-}
 
 isof=$1
 if [[ -z "$isof" ]]; then
