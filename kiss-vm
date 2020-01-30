@@ -1490,13 +1490,15 @@ elif [[ "$InstallType" = import ]]; then
 			chmod +x ~/bin/cloud-init-iso-gen.sh
 		}
 		cloudinitiso=$VMpath/$vmname-cloud-init.iso
+
+		[[ "$fips" = yes ]] && FIPS_OPT=--fips
 		[[ $Intranet = yes && -n "$Location" ]] && {
 			REPO_OPTS=$(distro2repos $Distro $Location | sed -e '/cdn_os:/d' -e 's/^/--repo /')
 		}
 		if [[ "$NO_SSHKEY" = yes ]]; then
-			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS
+			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS $FIPS_OPT
 		else
-			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS \
+			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS $FIPS_OPT \
 				--sshkeyf ~/.ssh/id_rsa.pub
 		fi
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom"
