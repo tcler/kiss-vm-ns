@@ -3,6 +3,7 @@
 
 #rpm -q crypto-policies 2>/dev/null || yum install -y crypto-policies
 yum install -y /usr/bin/fips-mode-setup
+yum install -y /usr/sbin/grubby
 
 ## rhel-8 or later
 if which fips-mode-setup; then
@@ -25,11 +26,10 @@ else
 	cat /proc/cpuinfo | grep aes
 	lsmod | grep aes && yum install -y dracut-fips-aesni
 
-
-
 	yum install dracut-fips -y
 	cp -p /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r).backup
 	dracut -f
+
 	sed 's/GRUB_CMDLINE_LINUX="/&fips=1 /' /etc/default/grub
 	grub2-mkconfig -o /boot/grub2/grub.cfg
 	grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg
