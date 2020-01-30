@@ -30,7 +30,7 @@ else
 	cp -p /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r).backup
 	dracut -f
 
-	sed 's/GRUB_CMDLINE_LINUX="/&fips=1 /' /etc/default/grub
+	sed -i 's/GRUB_CMDLINE_LINUX="/&fips=1 /' /etc/default/grub
 	grub2-mkconfig -o /boot/grub2/grub.cfg
 	grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg
 fi
