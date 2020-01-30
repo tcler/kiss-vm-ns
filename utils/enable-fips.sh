@@ -1,6 +1,8 @@
 #!/bin/bash
 # ref: https://www.thegeekdiary.com/how-to-make-centos-rhel-7-fips-140-2-compliant
 
+rpm -q crypto-policies 2>/dev/null || yum install -y crypto-policies
+
 ## rhel-8 or later
 if which fips-mode-setup; then
 	fips-mode-setup --enable
