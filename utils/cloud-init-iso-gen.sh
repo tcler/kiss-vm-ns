@@ -128,7 +128,7 @@ IntranetCMD
 $(
 [[ "$fips" = yes ]] && cat <<FIPS
   - which yum && curl -L -m 30 -o /usr/bin/enable-fips.sh "$baseUrl/utils/enable-fips.sh" &&
-    chmod +x /usr/bin/enable-fips.sh
+    chmod +x /usr/bin/enable-fips.sh && enable-fips.sh
 FIPS
 )
   - which yum && curl -L -m 30 -o /usr/bin/kdump-setup.sh "$baseUrl/utils/kdump-setup.sh" &&
