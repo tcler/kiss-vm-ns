@@ -766,6 +766,7 @@ Usage() {
 	                 #e.g: --nvdimm="511 1023" -> two nvdimm device
 	                 #               ^^^^^^^^ default labelSize is 1, if omitting
 	                 #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+	  --fips         #enable fips
 	  --nosshkey     #don't inject sshkey
 	  -v|--verbose   #verbose mode
 	  --xml          #just generate xml
@@ -877,6 +878,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx:: \
 	--long ready \
 	--long xdisk \
 	--long nvdimm: \
+	--long fips \
 	--long nosshkey \
 	--long verbose \
 	--long xml \
@@ -925,6 +927,7 @@ while true; do
 	-r|--ready)      VIRT_READY=yes; shift 1;;
 	--xdisk)         EXTRA_DISKS=yes; shift 1;;
 	--nvdimm)        NVDIMM_LIST=$2; shift 2;;
+	--fips)          fips=yes; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	--xml)           XML=--print-xml; shift 1;;
@@ -1307,6 +1310,14 @@ if [[ "$InstallType" = location ]]; then
 		wget -O /usr/bin/brewinstall.sh -N -q $bkrClientImprovedUrl/utils/brewinstall.sh --no-check-certificate
 		chmod +x /usr/bin/brewinstall.sh
 		brewinstall.sh $BPKGS
+
+		END
+
+		[[ "$fips" = yes ]] && cat <<-END >>$postscript
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] enable fips ..."
+		wget -O /usr/bin/enable-fips.sh -N -q $baseUrl/utils/enable-fips.sh --no-check-certificate
+		chmod +x /usr/bin/enable-fips.sh
+		enable-fips.sh
 
 		END
 		cat <<-END >>$postscript

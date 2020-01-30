@@ -27,6 +27,7 @@ _at=`getopt -o hp:b:D \
 	--long pkginstall: \
 	--long brewinstall: \
 	--long sshkeyf: \
+	--long fips \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -38,13 +39,14 @@ while true; do
 	-p|--pkginstall) PKGS="$2"; shift 2;;
 	-b|--brewinstall) BPKGS="$2"; shift 2;;
 	--sshkeyf) sshkeyf="$2"; shift 2;;
+	--fips) fips=yes; shift 1;;
 	--) shift; break;;
 	esac
 done
 
 Usage() {
 	cat <<-EOF >&2
-	Usage: $0 <iso file path> [--hostname name] [--repo name:url [--repo name:url]] [-b|--brewinstall "pkg list"] [-p|--pkginstall "pkg list"]
+	Usage: $0 <iso file path> [--hostname name] [--repo name:url [--repo name:url]] [-b|--brewinstall "pkg list"] [-p|--pkginstall "pkg list"] [--fips]
 	EOF
 }
 
@@ -122,6 +124,12 @@ $(
   - which yum && curl -L -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
     chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $BPKGS -noreboot
 IntranetCMD
+)
+$(
+[[ "$fips" = yes ]] && cat <<FIPS
+  - which yum && curl -L -m 30 -o /usr/bin/enable-fips.sh "$baseUrl/utils/enable-fips.sh" &&
+    chmod +x /usr/bin/enable-fips.sh
+FIPS
 )
   - which yum && curl -L -m 30 -o /usr/bin/kdump-setup.sh "$baseUrl/utils/kdump-setup.sh" &&
     chmod +x /usr/bin/kdump-setup.sh && kdump-setup.sh reboot
