@@ -1302,6 +1302,8 @@ if [[ "$InstallType" = location ]]; then
 		}
 
 		cat <<-END >>$postscript
+		test -f /etc/yum.repo.d/cdn_os.repo && sed -i 's/enabled = 1/enabled = 0/' /etc/yum.repo.d/cdn_os.repo
+
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] configure hostname ..."
 		test -f /etc/hostname && echo ${vmhostname} >/etc/hostname || echo HOSTNAME=${vmhostname} >>/etc/sysconfig/network
 
@@ -1332,11 +1334,12 @@ if [[ "$InstallType" = location ]]; then
 		END
 		[[ "$GenerateImage" = yes ]] && {
 			cat <<-END >>$postscript
+			test -f /etc/yum.repo.d/cdn_os.repo && sed -i 's/enabled = 0/enabled = 1/' /etc/yum.repo.d/cdn_os.repo
 			echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] install cloud-init ..."
 			yum install -y cloud-init
+			test -f /etc/yum.repo.d/cdn_os.repo && sed -i 's/enabled = 1/enabled = 0/' /etc/yum.repo.d/cdn_os.repo
 			END
 		}
-		test -f /etc/yum.repo.d/cdn_os.repo && sed -i 's/enabled = 1/enabled = 0/' /etc/yum.repo.d/cdn_os.repo
 		if [[ "$NO_SSHKEY" = yes ]]; then
 			ks-generator.sh -d $Distro -url $Location $REPO_OPTS --post $postscript >$KSPath
 		else
