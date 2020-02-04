@@ -117,10 +117,12 @@ RHEL-5*|RHEL5*|centos5*|centos-5*)
 	;;
 esac
 
+: <<\COMM
 for repo in "${Repos[@]}"; do
 	read name url <<<"${repo/:/ }"
 	echo "repo --name=$name --baseurl=$url"
 done
+COMM
 
 echo -e "\n%post"
 
