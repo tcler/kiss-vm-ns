@@ -1,4 +1,6 @@
 #!/bin/bash
+#ref1: https://tcler.github.io/2018/06/17/pxe-server/
+#ref2: http://www.iram.fr/~blanchet/tutorials/diskless-centos-7.pdf
 
 #---------------------------------------------------------------
 #install tftp server and configure pxe
@@ -81,7 +83,7 @@ label memtest
   menu label memtest
   kernel memtest86+
 EOF
-
+systemctl start tftp
 
 #---------------------------------------------------------------
 # install diskless vm
