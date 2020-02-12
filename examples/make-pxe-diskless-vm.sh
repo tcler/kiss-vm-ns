@@ -2,6 +2,8 @@
 #ref1: https://tcler.github.io/2018/06/17/pxe-server/
 #ref2: http://www.iram.fr/~blanchet/tutorials/diskless-centos-7.pdf
 
+distro=${1:-RHEL-7.7}
+
 #---------------------------------------------------------------
 #install tftp server and configure pxe
 sudo yum install -y syslinux tftp-server
@@ -21,8 +23,8 @@ vm net netname=pxenet brname=virpxebr0 subnet=$netaddr tftproot=/var/lib/tftpboo
 #create nfs root
 nfsroot=/home/nfsroot
 vm --prepare
-vm RHEL-7.7 -p nfs-utils --net pxenet --nointeract
-vmname=$(vm --getvmname RHEL-7.7)
+vm $distro -p nfs-utils --net pxenet --nointeract --force
+vmname=$(vm --getvmname $distro)
 vm exec $vmname -- "echo SELINUX=disabled >>/etc/sysconfig/selinux"
 vm reboot /w $vmname
 
@@ -89,4 +91,4 @@ sudo systemctl start tftp
 
 #---------------------------------------------------------------
 # install diskless vm
-vm RHEL-7.7-pxe --net pxenet --pxe --diskless
+vm ${distro}-pxe --net pxenet --pxe --diskless
