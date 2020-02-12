@@ -27,15 +27,16 @@ vm exec $vmname -- "echo SELINUX=disabled >>/etc/sysconfig/selinux"
 vm reboot /w $vmname
 
 cat >prepare-nfsroot.sh <<EOF
+#!/bin/bash
 mkdir $nfsroot
 yum -y groupinstall Base --installroot=$nfsroot --releasever=/
 rm -rf $nfsroot/etc/yum.repos.d
 yum -y install kernel nfs-utils --installroot=$nfsroot --releasever=/
 cp /etc/resolv.conf ${nfsroot}/etc/resolv.conf
-echo "none            /tmp            tmpfs   defaults        0 0 >>${nfsroot}/etc/fstab"
-echo "tmpfs           /dev/shm        tmpfs   defaults        0 0 >>${nfsroot}/etc/fstab"
-echo "sysfs           /sys            sysfs   defaults        0 0 >>${nfsroot}/etc/fstab"
-echo "proc            /proc           proc    defaults        0 0 >>${nfsroot}/etc/fstab"
+echo "none            /tmp            tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
+echo "tmpfs           /dev/shm        tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
+echo "sysfs           /sys            sysfs   defaults        0 0" >>${nfsroot}/etc/fstab
+echo "proc            /proc           proc    defaults        0 0" >>${nfsroot}/etc/fstab
 chroot $nfsroot bash -c 'echo -e "redhat\nredhat" | passwd --stdin root'
 
 echo 'add_dracutmodules+="nfs"' >>$nfsroot/etc/dracut.conf
