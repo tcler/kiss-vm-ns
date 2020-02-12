@@ -66,7 +66,11 @@ _vmdelete() {
 	}
 
 	[[ "$_vmname" != ${vmprefix}-* ]] && {
-		echo -e "{VM:WARN} VM '$_vmname' was not created by current user"
+		echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
+		cat <<-EOF
+		  virsh destroy $_vmname
+		  virsh undefine $_vmname --remove-all-storage
+		EOF
 		return 1
 	}
 
