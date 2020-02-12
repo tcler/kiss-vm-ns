@@ -372,6 +372,8 @@ netcreate() {
 	}
 	for opt; do [[ "$opt" =~ ^(netname|brname|subnet)=.* ]] || continue; eval "$opt"; done
 	[[ -z "$netname" || -z "$brname" || -z "$subnet" ]] && { Usage; return 1; }
+	[[ -n "$tftproot" ]] && tftpNode="<tftp root='$tftproot'/>"
+	[[ -n "$bootpfile" ]] && bootpNode="<bootp file='$bootpfile'/>"
 
 	virsh net-info -- "$netname" &>/dev/null && {
 		echo "{VM:WARN} Virt network $netname has been there."
@@ -389,8 +391,10 @@ netcreate() {
 		    </nat>
 		  </forward>
 		  <ip address="192.168.${subnet}.1" netmask="255.255.255.0" >
+		    $tftpNode
 		    <dhcp>
 		      <range start="192.168.${subnet}.2" end="192.168.${subnet}.254"/>
+		      $bootpNode
 		    </dhcp>
 		  </ip>
 		</network>
@@ -838,6 +842,7 @@ Usage() {
 
 	  vm net               #list all virtual network
 	  vm net netname=testnet brname=virbrN subnet=100  #create virtual network 'testnet'
+	  vm net netname=pxe brname=virpxebrN subnet=200 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
 	  vm netinfo testnet   #show detail info of virtual network 'testnet'
 	  vm netdel testnet    #delete virtual network 'testnet'
 	EOF
