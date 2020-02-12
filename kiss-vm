@@ -781,6 +781,8 @@ Usage() {
 	                      #ref: https://www.linux-kvm.org/page/Nested_Guests
 	  -x[arg]             #expected return code of sub-command exec, if doesn't match output test fail msg
 	                      # e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
+	  --pxe          #PXE install
+	  --diskless     #diskless install
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -913,6 +915,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long enable-nested-vm \
 	--long enable-guest-hypv \
 	--long pxe \
+	--long diskless \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -925,6 +928,7 @@ while true; do
 	-i)        InstallType=import; Imageurl=${2}; shift 2;;
 	-I)        InstallType=import; shift 1;;
 	-P|--pxe)  InstallType=pxe; shift 1;;
+	--diskless) DISKLESS=yes; shift 1;;
 	--ks)      KSPath=$2; shift 2;;
 	--rm)      RM=yes; shift 1;;
 	--xzopt)          XZ="$2"; shift 2;;
@@ -1614,16 +1618,23 @@ elif [[ "$InstallType" = import ]]; then
 	}
 elif [[ "$InstallType" = pxe ]]; then
 	imagefile=$VMpath/${vmname}.qcow2
+	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
+	[[ "$DISKLESS" = yes ]] && diskOpt=none
 	virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  --name $vmname \
 	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
-	  --pxe --disk none \
+	  --pxe \
+	  --disk $diskOpt \
 	  --noautoconsole \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --vnc --vnclisten 0.0.0.0 $OS_VARIANT_OPT
-	virsh console "$vmname"
-	exit
+
+	echo -e "\n{VM:INFO} please connect vnc to continue install:"
+	for vncaddr in $(vmvncport $vmname); do
+		echo -e "  $ vncviewer $vncaddr    #from remote"
+	done
+	exit 0
 fi
 
 if ! virsh desc $vmname &>/dev/null; then
@@ -1705,5 +1716,7 @@ COMM
 
 echo -e "\n{VM:INFO} you can try login $vmname again by using:"
 echo -e "  $ vm login $vmname          #from host"
-echo -e "  $ vncviewer $(vmvncport $vmname)    #from remote"
+for vncaddr in $(vmvncport $vmname); do
+	echo -e "  $ vncviewer $vncaddr    #from remote"
+done
 exit 0
