@@ -4,11 +4,11 @@
 
 #---------------------------------------------------------------
 #install tftp server and configure pxe
-yum install -y syslinux tftp-server
+sudo yum install -y syslinux tftp-server
 # prepare pxelinux.0
-mkdir -p /var/lib/tftpboot/pxelinux
-cp /usr/share/syslinux/pxelinux.0 /var/lib/tftpboot/pxelinux/.
-cp /usr/share/syslinux/ldlinux.c32 /var/lib/tftpboot/pxelinux/. 
+sudo mkdir -p /var/lib/tftpboot/pxelinux
+sudo cp /usr/share/syslinux/pxelinux.0 /var/lib/tftpboot/pxelinux/.
+sudo cp /usr/share/syslinux/ldlinux.c32 /var/lib/tftpboot/pxelinux/. 
 
 
 #---------------------------------------------------------------
@@ -56,15 +56,16 @@ vm exec $vmname -- bash prepare-nfsroot.sh
 bootfiles=$(vm exec $vmname -- ls $nfsroot/boot)
 vmlinuz=$(echo "bootfiles"|grep ^vmlinuz-)
 initramfs=$(echo "bootfiles"|grep ^initramfs.pxe-)
-scp root@$vmname:$nfsroot/boot/$vmlinuz /var/lib/tftpboot/pxelinux/.
-scp root@$vmname:$nfsroot/boot/$initramfs /var/lib/tftpboot/pxelinux/.
+scp root@$vmname:$nfsroot/boot/$vmlinuz .
+scp root@$vmname:$nfsroot/boot/$initramfs .
+sudo mv $vmlinuz $initramfs /var/lib/tftpboot/pxelinux/.
 
 
 #---------------------------------------------------------------
 # generate pxe config file
 nfsserv=$(vm ifaddr $vmname | grep "192\\.168\\.$netaddr\\.")
-mkdir -p /var/lib/tftpboot/pxelinux/pxelinux.cfg
-cat <<EOF >/var/lib/tftpboot/pxelinux/pxelinux.cfg/default
+sudo mkdir -p /var/lib/tftpboot/pxelinux/pxelinux.cfg
+sudo cat <<EOF | tee /var/lib/tftpboot/pxelinux/pxelinux.cfg/default
 # boot rhel-7 with tftp/nfs
 default menu.c32
 prompt 0
@@ -83,7 +84,7 @@ label memtest
   menu label memtest
   kernel memtest86+
 EOF
-systemctl start tftp
+sudo systemctl start tftp
 
 #---------------------------------------------------------------
 # install diskless vm
