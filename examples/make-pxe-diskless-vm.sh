@@ -47,7 +47,7 @@ systemctl enable nfs-server
 systemctl restart nfs-server
 EOF
 
-scp prepare-nfsroot.sh root@$vmname:
+scp -o StrictHostKeyChecking=no prepare-nfsroot.sh root@$vmname:
 vm exec $vmname -- bash prepare-nfsroot.sh
 
 
@@ -56,8 +56,8 @@ vm exec $vmname -- bash prepare-nfsroot.sh
 bootfiles=$(vm exec $vmname -- ls $nfsroot/boot)
 vmlinuz=$(echo "bootfiles"|grep ^vmlinuz-)
 initramfs=$(echo "bootfiles"|grep ^initramfs.pxe-)
-scp root@$vmname:$nfsroot/boot/$vmlinuz .
-scp root@$vmname:$nfsroot/boot/$initramfs .
+scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$vmlinuz .
+scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$initramfs .
 sudo mv $vmlinuz $initramfs /var/lib/tftpboot/pxelinux/.
 
 
