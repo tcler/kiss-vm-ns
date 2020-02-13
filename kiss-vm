@@ -314,36 +314,42 @@ vmlogin() {
 			echo -e "{VM:WARN} port $addr:22 is not available"
 			continue
 		}
+		sshexec=no
 		ssh -n -o Batchmode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr &>$RuntimeTmp/sshtest
-		if [[ $? != 0 ]]; then
-			grep -q -w password $RuntimeTmp/sshtest || {
+		[[ $? = 0 ]] && sshexec=yes
+		if [[ $sshexec = yes ]]; then
+			ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr "$*"
+			rc=$?
+		else
+			if grep -q -w password $RuntimeTmp/sshtest; then
+				expect <(cat <<-EOF
+				set timeout 120
+				set sshcmd [exec cat $RuntimeTmp/sshcmd]
+				log_user 0
+				spawn ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr \$sshcmd
+				log_user 1
+				if {\$argc == 0} {
+					expect {
+					"password:" { send "redhat\r"; exp_continue }
+					"*# " { send "\r"; interact }
+					}
+				} else {
+					expect {
+					"password:" { send "redhat\r"; exp_continue }
+					eof
+					}
+				}
+				foreach {pid spawnid os_error_flag value} [wait] break
+				exit \$value
+				EOF
+				) "$@"
+				rc=$?
+			else
 				echo -e "{VM:WARN} ssh root@$addr is not available, try login with console ..."
 				virsh console "$_vmname"
 				return $?
-			}
+			fi
 		fi
-		expect <(cat <<-EOF
-		set timeout 120
-		set sshcmd [exec cat $RuntimeTmp/sshcmd]
-		log_user 0
-		spawn ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr \$sshcmd
-		log_user 1
-		if {\$argc == 0} {
-			expect {
-			"password:" { send "redhat\r"; exp_continue }
-			"*# " { send "\r"; interact }
-			}
-		} else {
-			expect {
-			"password:" { send "redhat\r"; exp_continue }
-			eof
-			}
-		}
-		foreach {pid spawnid os_error_flag value} [wait] break
-		exit \$value
-		EOF
-		) "$@"
-		rc=$?
 
 		faillog() { echo -e "\033[41m{TEST:FAIL} $*\033[0m"; }
 		[[ -n "$expectedrc" ]] && {
