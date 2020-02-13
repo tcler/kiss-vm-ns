@@ -1,6 +1,7 @@
 #!/bin/bash
 #ref1: https://tcler.github.io/2018/06/17/pxe-server/
 #ref2: http://www.iram.fr/~blanchet/tutorials/diskless-centos-7.pdf
+#ref3: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_host_configuration_and_guest_installation_guide/chap-virtualization_host_configuration_and_guest_installation_guide-libvirt_network_booting#chap-Virtualization_Host_Configuration_and_Guest_Installation_Guide-Libvirt_network_booting-PXE_boot_private_network
 
 distro=${1:-RHEL-7.7}
 
