@@ -83,8 +83,8 @@ timeout 50
 
 label rhel-7
   menu label Install diskless rhel-7 ${vmlinuz#vmlinuz-}
-  kernel pxelinux/$vmlinuz
-  append initrd=pxelinux/$initramfs root=/dev/nfs nfsroot=$nfsserv:$nfsroot rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
+  kernel $vmlinuz
+  append initrd=$initramfs root=/dev/nfs nfsroot=$nfsserv:$nfsroot rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
 
 label memtest
   menu label memtest
