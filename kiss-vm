@@ -1638,8 +1638,8 @@ elif [[ "$InstallType" = pxe ]]; then
 	  --pxe \
 	  --disk $diskOpt \
 	  --noautoconsole \
-	  $NETWORK_OPTS $CONTROLLER_OPTS \
-	  --vnc --vnclisten 0.0.0.0 $OS_VARIANT_OPT
+	  ${NETWORK_OPTS%,model=virtio} \
+	  --vnc --vnclisten 0.0.0.0
 
 	echo -e "\n{VM:INFO} please connect vnc to continue install:"
 	for vncaddr in $(vmvncport $vmname); do
