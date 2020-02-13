@@ -42,8 +42,8 @@ echo "proc            /proc           proc    defaults        0 0" >>${nfsroot}/
 chroot $nfsroot bash -c 'echo -e "redhat\nredhat" | passwd --stdin root'
 
 echo 'add_dracutmodules+="nfs"' >>$nfsroot/etc/dracut.conf
-chroot $nfsroot dracut --no-hostonly --nolvmconf -m "nfs network base" --xz /boot/initramfs.pxe-$(uname -r) $(uname -r)
-chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-$(uname -r)
+chroot $nfsroot dracut --no-hostonly --nolvmconf -m "nfs network base" --xz /boot/initramfs.pxe-\$(uname -r) \$(uname -r)
+chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$(uname -r)
 
 echo "$nfsroot *(rw)" >/etc/exports
 systemctl enable nfs-server
