@@ -376,7 +376,7 @@ netcreate() {
 		  vm net netname=net10 brname=virbr10 subnet=10  #subnet range: [1-121,123-254]
 		U
 	}
-	for opt; do [[ "$opt" =~ ^(netname|brname|subnet)=.* ]] || continue; eval "$opt"; done
+	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|tftproot|bootpfile)=.* ]] || continue; eval "$opt"; done
 	[[ -z "$netname" || -z "$brname" || -z "$subnet" ]] && { Usage; return 1; }
 	[[ -n "$tftproot" ]] && tftpNode="<tftp root='$tftproot'/>"
 	[[ -n "$bootpfile" ]] && bootpNode="<bootp file='$bootpfile'/>"
