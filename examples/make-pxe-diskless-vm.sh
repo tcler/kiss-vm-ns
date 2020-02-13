@@ -60,8 +60,8 @@ while ! vm exec $vmname -- ls $nfsroot/boot; do
 	sleep 2
 done
 bootfiles=$(vm exec $vmname -- ls $nfsroot/boot)
-vmlinuz=$(echo "bootfiles"|grep ^vmlinuz-)
-initramfs=$(echo "bootfiles"|grep ^initramfs.pxe-)
+vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-)
+initramfs=$(echo "$bootfiles"|grep ^initramfs.pxe-)
 scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$vmlinuz .
 scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$initramfs .
 sudo mv $vmlinuz $initramfs /var/lib/tftpboot/pxelinux/.
@@ -71,7 +71,7 @@ sudo mv $vmlinuz $initramfs /var/lib/tftpboot/pxelinux/.
 # generate pxe config file
 nfsserv=$(vm ifaddr $vmname | grep "192\\.168\\.$netaddr\\.")
 sudo mkdir -p /var/lib/tftpboot/pxelinux/pxelinux.cfg
-sudo cat <<EOF | tee /var/lib/tftpboot/pxelinux/pxelinux.cfg/default
+cat <<EOF | sudo tee /var/lib/tftpboot/pxelinux/pxelinux.cfg/default
 # boot rhel-7 with tftp/nfs
 default menu.c32
 prompt 0
