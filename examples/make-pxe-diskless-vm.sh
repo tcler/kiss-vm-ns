@@ -94,4 +94,4 @@ sudo systemctl start tftp
 
 #---------------------------------------------------------------
 # install diskless vm
-vm ${distro}-pxe --net pxenet --pxe --diskless
+vm ${distro}-pxe --net pxenet --pxe --diskless --force
