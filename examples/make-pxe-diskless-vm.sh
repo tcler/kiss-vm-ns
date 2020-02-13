@@ -65,6 +65,7 @@ initramfs=$(echo "$bootfiles"|grep ^initramfs.pxe-)
 scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$vmlinuz .
 scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$initramfs .
 sudo mv $vmlinuz $initramfs /var/lib/tftpboot/pxelinux/.
+sudo chcon --reference=/var/lib/tftpboot/pxelinux/pxelinux.0 /var/lib/tftpboot/pxelinux/*
 
 
 #---------------------------------------------------------------
