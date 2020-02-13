@@ -56,6 +56,9 @@ vm exec $vmname -- bash prepare-nfsroot.sh
 
 #---------------------------------------------------------------
 # prepare vmlinuz and initrd.img
+while ! vm exec $vmname -- ls $nfsroot/boot; do
+	sleep 2
+done
 bootfiles=$(vm exec $vmname -- ls $nfsroot/boot)
 vmlinuz=$(echo "bootfiles"|grep ^vmlinuz-)
 initramfs=$(echo "bootfiles"|grep ^initramfs.pxe-)
