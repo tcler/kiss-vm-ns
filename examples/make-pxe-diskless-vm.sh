@@ -18,13 +18,21 @@ set -- "${argv[@]}"
 
 distro=${1:-RHEL-8.1.0}
 
+
+#---------------------------------------------------------------
+while true; do
+	read -s -p "sudo Password: " password
+	echo
+	echo "$password" | sudo -S ls / >/dev/null && break
+done
+
 #---------------------------------------------------------------
 #install tftp server and configure pxe
-sudo yum install -y syslinux tftp-server
+echo "$password" | sudo -S yum install -y syslinux tftp-server
 # prepare pxelinux.0
-sudo mkdir -p /var/lib/tftpboot/pxelinux
-sudo cp /usr/share/syslinux/pxelinux.0 /var/lib/tftpboot/pxelinux/.
-sudo cp /usr/share/syslinux/ldlinux.c32 /var/lib/tftpboot/pxelinux/. 
+echo "$password" | sudo -S mkdir -p /var/lib/tftpboot/pxelinux
+echo "$password" | sudo -S cp /usr/share/syslinux/pxelinux.0 /var/lib/tftpboot/pxelinux/.
+echo "$password" | sudo -S cp /usr/share/syslinux/ldlinux.c32 /var/lib/tftpboot/pxelinux/. 
 
 
 #---------------------------------------------------------------
@@ -84,14 +92,14 @@ vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-)
 initramfs=$(echo "$bootfiles"|grep ^initramfs.pxe-)
 scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$vmlinuz .
 scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$initramfs .
-sudo mv $vmlinuz $initramfs /var/lib/tftpboot/pxelinux/.
-sudo chcon --reference=/var/lib/tftpboot/pxelinux/pxelinux.0 /var/lib/tftpboot/pxelinux/*
+echo "$password" | sudo -S mv $vmlinuz $initramfs /var/lib/tftpboot/pxelinux/.
+echo "$password" | sudo -S chcon --reference=/var/lib/tftpboot/pxelinux/pxelinux.0 /var/lib/tftpboot/pxelinux/*
 
 
 #---------------------------------------------------------------
 # generate pxe config file
 nfsserv=$(vm ifaddr $vmname | grep "192\\.168\\.$netaddr\\.")
-sudo mkdir -p /var/lib/tftpboot/pxelinux/pxelinux.cfg
+echo "$password" | sudo -S mkdir -p /var/lib/tftpboot/pxelinux/pxelinux.cfg
 cat <<EOF | sudo tee /var/lib/tftpboot/pxelinux/pxelinux.cfg/default
 # boot rhel-7 with tftp/nfs
 default menu.c32
@@ -111,7 +119,7 @@ label memtest
   menu label memtest
   kernel memtest86+
 EOF
-sudo systemctl start tftp
+echo "$password" | sudo -S systemctl start tftp
 
 #---------------------------------------------------------------
 # install diskless vm
