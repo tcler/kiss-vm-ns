@@ -20,6 +20,7 @@ distro=${1:-RHEL-8.1.0}
 
 
 #---------------------------------------------------------------
+sudo -K
 while true; do
 	read -s -p "sudo Password: " password
 	echo
