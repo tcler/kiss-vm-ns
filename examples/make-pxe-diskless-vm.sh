@@ -8,11 +8,12 @@ argv=()
 extrapkgs=()
 for arg; do
 	case "$arg" in
-	-selinux|-selinux=[12])
-		SELINUX=yes
+	-selinux|-selinux=[012])
+		SELINUX=enforcing
 		SEVAL=${arg#-selinux=}
+		case "$SEVAL" in 0) SELINUX=disabled;; 1) SELINUX=permissive;; 2) SELINUX=enforcing;; esac
 		;;
-	-h)   echo "Usage: $0 [distro] [-selinux[={1|2}]";;
+	-h)   echo "Usage: $0 [distro] [-selinux[={0|1|2}]";;
 	-*)   echo "{WARN} unkown option '${arg}'";;
 	*)    argv+=($arg);;
 	esac
@@ -52,7 +53,7 @@ vm --prepare
 vm $distro -p nfs-utils --net pxenet --nointeract --force
 vmname=$(vm --getvmname $distro)
 
-[[ "$SELINUX" = yes ]] && extrapkgs+=(selinux-policy)
+[[ -n "$SELINUX" ]] && extrapkgs+=(selinux-policy)
 
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
@@ -64,7 +65,7 @@ echo "tmpfs           /dev/shm        tmpfs   defaults        0 0" >>${nfsroot}/
 echo "sysfs           /sys            sysfs   defaults        0 0" >>${nfsroot}/etc/fstab
 echo "proc            /proc           proc    defaults        0 0" >>${nfsroot}/etc/fstab
 
-[[ "$SELINUX" = yes && "$SEVAL" = 1 ]] && sed -i 's/^SELINUX=.*/SELINUX=permissive/' $nfsroot/etc/sysconfig/selinux
+[[ -n "$SELINUX" ]] && sed -i 's/^SELINUX=.*/SELINUX=$SELINUX/' $nfsroot/etc/sysconfig/selinux
 
 ls -lZ /etc/shadow $nfsroot/etc/shadow
 chcon --reference=/etc/shadow $nfsroot/etc/shadow
