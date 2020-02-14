@@ -53,7 +53,7 @@ vm --prepare
 vm $distro -p nfs-utils --net pxenet --nointeract --force
 vmname=$(vm --getvmname $distro)
 
-[[ -n "$SELINUX" ]] && extrapkgs+=(selinux-policy)
+[[ -n "$SELINUX" ]] && extrapkgs+=(selinux-policy selinux-policy-targeted)
 
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
