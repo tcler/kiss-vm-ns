@@ -2,6 +2,7 @@
 #ref1: https://tcler.github.io/2018/06/17/pxe-server/
 #ref2: http://www.iram.fr/~blanchet/tutorials/diskless-centos-7.pdf
 #ref3: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_host_configuration_and_guest_installation_guide/chap-virtualization_host_configuration_and_guest_installation_guide-libvirt_network_booting#chap-Virtualization_Host_Configuration_and_Guest_Installation_Guide-Libvirt_network_booting-PXE_boot_private_network
+#ref4: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/ch-disklesssystems
 
 distro=${1:-RHEL-7.7}
 
@@ -26,27 +27,31 @@ nfsroot=/home/nfsroot
 vm --prepare
 vm $distro -p nfs-utils --net pxenet --nointeract --force
 vmname=$(vm --getvmname $distro)
-vm exec $vmname -- "echo SELINUX=disabled >>/etc/sysconfig/selinux"
-vm reboot /w $vmname
 
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
 mkdir $nfsroot
-yum -y groupinstall Base --installroot=$nfsroot --releasever=/
-rm -rf $nfsroot/etc/yum.repos.d
-yum -y install kernel nfs-utils --installroot=$nfsroot --releasever=/
+yum install -y @Base kernel dracut-network nfs-utils --installroot=$nfsroot --releasever=/
 cp /etc/resolv.conf ${nfsroot}/etc/resolv.conf
 echo "none            /tmp            tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
 echo "tmpfs           /dev/shm        tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
 echo "sysfs           /sys            sysfs   defaults        0 0" >>${nfsroot}/etc/fstab
 echo "proc            /proc           proc    defaults        0 0" >>${nfsroot}/etc/fstab
-chroot $nfsroot bash -c 'echo -e "redhat\nredhat" | passwd --stdin root'
+
+ls -lZ /etc/shadow $nfsroot/etc/shadow
+chcon --reference=/etc/shadow $nfsroot/etc/shadow
+ls -lZ /etc/shadow $nfsroot/etc/shadow
+chroot $nfsroot bash -c 'echo redhat | passwd --stdin root'
+ls -lZ /etc/shadow $nfsroot/etc/shadow
+chcon --reference=/etc/shadow $nfsroot/etc/shadow
+ls -lZ /etc/shadow $nfsroot/etc/shadow
 
 echo 'add_dracutmodules+="nfs"' >>$nfsroot/etc/dracut.conf
 chroot $nfsroot dracut --no-hostonly --nolvmconf -m "nfs network base" --xz /boot/initramfs.pxe-\$(uname -r) \$(uname -r)
 chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$(uname -r)
+touch $nfsroot/.autorelabel
 
-echo "$nfsroot *(rw)" >/etc/exports
+echo "$nfsroot *(rw,no_root_squash,security_label)" >/etc/exports
 systemctl enable nfs-server
 systemctl restart nfs-server
 EOF
