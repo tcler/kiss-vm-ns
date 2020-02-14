@@ -8,12 +8,12 @@ argv=()
 extrapkgs=()
 for arg; do
 	case "$arg" in
-	-selinux|-selinux=[012])
+	-selinux|-selinux=[01]|-selinux=*)
 		SELINUX=enforcing
 		SEVAL=${arg#-selinux=}
-		case "$SEVAL" in 0) SELINUX=disabled;; 1) SELINUX=permissive;; 2) SELINUX=enforcing;; esac
+		case "$SEVAL" in 0) SELINUX=permissive;; 1) SELINUX=enforcing;; *) SELINUX=;; esac
 		;;
-	-h)   echo "Usage: $0 [distro] [-selinux[={0|1|2}]";;
+	-h)   echo "Usage: $0 [distro] [-selinux[={0|1|no}]";;
 	-*)   echo "{WARN} unkown option '${arg}'";;
 	*)    argv+=($arg);;
 	esac
