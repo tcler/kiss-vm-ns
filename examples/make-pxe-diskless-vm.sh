@@ -58,7 +58,7 @@ vmname=$(vm --getvmname $distro)
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
 mkdir $nfsroot
-yum install -y @Base kernel dracut-network nfs-utils "${extrapkgs[@]}" --installroot=$nfsroot --releasever=/
+yum install -y @Base kernel dracut-network nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
 cp /etc/resolv.conf ${nfsroot}/etc/resolv.conf
 echo "none            /tmp            tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
 echo "tmpfs           /dev/shm        tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
