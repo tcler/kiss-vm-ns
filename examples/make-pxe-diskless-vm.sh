@@ -89,6 +89,7 @@ EOF
 
 scp -o StrictHostKeyChecking=no prepare-nfsroot.sh root@$vmname:
 vm exec $vmname -- bash prepare-nfsroot.sh
+vm exec $vmname -- systemctl stop firewalld
 
 
 #---------------------------------------------------------------
