@@ -8,8 +8,11 @@ argv=()
 extrapkgs=()
 for arg; do
 	case "$arg" in
-	-selinux|--selinux) SELINUX=yes;;
-	-h)   echo "Usage: $0 [distro] [-selinux]";;
+	-selinux|-selinux=[12])
+		SELINUX=yes
+		SEVAL=${arg#-selinux=}
+		;;
+	-h)   echo "Usage: $0 [distro] [-selinux[={1|2}]";;
 	-*)   echo "{WARN} unkown option '${arg}'";;
 	*)    argv+=($arg);;
 	esac
@@ -61,6 +64,8 @@ echo "tmpfs           /dev/shm        tmpfs   defaults        0 0" >>${nfsroot}/
 echo "sysfs           /sys            sysfs   defaults        0 0" >>${nfsroot}/etc/fstab
 echo "proc            /proc           proc    defaults        0 0" >>${nfsroot}/etc/fstab
 
+[[ "$SELINUX" = yes && "$SEVAL" = 1 ]] && sed -i 's/^SELINUX=.*/SELINUX=permissive/' $nfsroot/etc/sysconfig/selinux
+
 ls -lZ /etc/shadow $nfsroot/etc/shadow
 chcon --reference=/etc/shadow $nfsroot/etc/shadow
 ls -lZ /etc/shadow $nfsroot/etc/shadow
@@ -73,6 +78,8 @@ echo 'add_dracutmodules+="nfs"' >>$nfsroot/etc/dracut.conf
 chroot $nfsroot dracut --no-hostonly --nolvmconf -m "nfs network base" --xz /boot/initramfs.pxe-\$(uname -r) \$(uname -r)
 chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$(uname -r)
 touch $nfsroot/.autorelabel
+
+
 
 echo "$nfsroot *(rw,no_root_squash,security_label)" >/etc/exports
 systemctl enable nfs-server
