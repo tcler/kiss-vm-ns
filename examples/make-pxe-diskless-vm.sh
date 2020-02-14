@@ -4,7 +4,19 @@
 #ref3: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_host_configuration_and_guest_installation_guide/chap-virtualization_host_configuration_and_guest_installation_guide-libvirt_network_booting#chap-Virtualization_Host_Configuration_and_Guest_Installation_Guide-Libvirt_network_booting-PXE_boot_private_network
 #ref4: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/ch-disklesssystems
 
-distro=${1:-RHEL-7.7}
+argv=()
+extrapkgs=()
+for arg; do
+	case "$arg" in
+	-selinux|--selinux) SELINUX=yes;;
+	-h)   echo "Usage: $0 [distro] [-selinux]";;
+	-*)   echo "{WARN} unkown option '${arg}'";;
+	*)    argv+=($arg);;
+	esac
+done
+set -- "${argv[@]}"
+
+distro=${1:-RHEL-8.1.0}
 
 #---------------------------------------------------------------
 #install tftp server and configure pxe
@@ -28,10 +40,12 @@ vm --prepare
 vm $distro -p nfs-utils --net pxenet --nointeract --force
 vmname=$(vm --getvmname $distro)
 
+[[ "$SELINUX" = yes ]] && extrapkgs+=(selinux-policy)
+
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
 mkdir $nfsroot
-yum install -y @Base kernel dracut-network nfs-utils --installroot=$nfsroot --releasever=/
+yum install -y @Base kernel dracut-network nfs-utils "${extrapkgs[@]}" --installroot=$nfsroot --releasever=/
 cp /etc/resolv.conf ${nfsroot}/etc/resolv.conf
 echo "none            /tmp            tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
 echo "tmpfs           /dev/shm        tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
