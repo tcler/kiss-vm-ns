@@ -1057,8 +1057,8 @@ mkdir -p $RuntimeTmp
 }
 
 declare -A distroInfo
-distroInfo[CentOS-8-stream]="nil http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/"
-distroInfo[CentOS-8]="nil http://mirror.centos.org/centos/8/BaseOS/x86_64/os/"
+distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/x86_64/images/ http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/"
+distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/x86_64/images/ http://mirror.centos.org/centos/8/BaseOS/x86_64/os/"
 distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2.xz http://mirror.centos.org/centos/7/os/x86_64/"
 distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz http://mirror.centos.org/centos/6/os/x86_64/"
 # https://ord.mirror.rackspace.com/fedora/releases/$version/Cloud/
