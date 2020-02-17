@@ -132,7 +132,7 @@ $(
 FIPS
 )
   - which yum && curl -L -m 30 -o /usr/bin/kdump-setup.sh "$baseUrl/utils/kdump-setup.sh" &&
-    chmod +x /usr/bin/kdump-setup.sh && kdump-setup.sh reboot
+    chmod +x /usr/bin/kdump-setup.sh && kdump-setup.sh reboot || reboot
 EOF
 
 genisoimage -output $isof -volid cidata -joliet -rock user-data meta-data
