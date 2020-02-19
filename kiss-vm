@@ -25,7 +25,7 @@ vmprefix=$(whoami)
 [[ -n "$SUDO_USER" ]] && vmprefix=${SUDO_USER}-sudo
 Intranet=yes
 VIRT_READY=unkown
-MSIZE=1024
+_MSIZE=1024
 DSIZE=27
 baudrate=115200
 QEMU_OPTS=--qemu-commandline=
@@ -1228,11 +1228,17 @@ if [[ "$InstallType" = location ]]; then
 		exit 1
 	fi
 
-	MSIZE=2048
+	_MSIZE=2048
 
 	[[ -n "$Location" ]] &&
 		echo -e "location url: $Location"
 fi
+
+if [[ "$InstallType" = pxe ]]; then
+	_MSIZE=2048
+fi
+
+MSIZE=${MSIZE:-$_MSIZE}
 
 [[ -n "$OnlyGetUrl" ]] && { exit; }
 
