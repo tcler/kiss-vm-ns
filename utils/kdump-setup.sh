@@ -30,7 +30,7 @@ mmsize=$(free -mt | awk '/^Mem/{print $2}')
 #RHEL-8
 if [[ $kver -ge 4 ]]; then
 	val=auto
-	[[ ${mmsize} -lt 960 ]] && val=64M
+	[[ ${mmsize} -lt 896 ]] && val=64M
 #RHEL-7
 elif [[ $kver -eq 3 ]]; then
 	if [[ ${mgsize} -ge 4 ]]; then
@@ -42,7 +42,7 @@ elif [[ $kver -eq 3 ]]; then
 			val=auto
 		fi
 	else
-		val="0M-960M:64M,960M-2G:128M"
+		val="0M-896M:64M,896M-2G:128M"
 	fi
 else
 	echo "{WARN} don't support kernel older then kernel-3"
