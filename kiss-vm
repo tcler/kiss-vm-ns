@@ -780,6 +780,7 @@ Usage() {
 	                 #e.g: --nvdimm="511 1023" -> two nvdimm device
 	                 #               ^^^^^^^^ default labelSize is 1, if omitting
 	                 #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+	  --kdump        #enable kdump
 	  --fips         #enable fips
 	  --nosshkey     #don't inject sshkey
 	  -v|--verbose   #verbose mode
@@ -917,6 +918,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long ready \
 	--long xdisk \
 	--long nvdimm: \
+	--long kdump \
 	--long fips \
 	--long nosshkey \
 	--long verbose \
@@ -970,6 +972,7 @@ while true; do
 	-r|--ready)      VIRT_READY=yes; shift 1;;
 	--xdisk)         EXTRA_DISKS=yes; shift 1;;
 	--nvdimm)        NVDIMM_LIST=$2; shift 2;;
+	--kdump)         kdump=yes; shift 1;;
 	--fips)          fips=yes; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
@@ -1357,7 +1360,7 @@ if [[ "$InstallType" = location ]]; then
 		enable-fips.sh
 
 		END
-		cat <<-END >>$postscript
+		[[ "$kdump" = yes ]] && cat <<-END >>$postscript
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] kdump-setup ..."
 		wget -O /usr/bin/kdump-setup.sh -N -q $baseUrl/utils/kdump-setup.sh --no-check-certificate
 		chmod +x /usr/bin/kdump-setup.sh
@@ -1526,14 +1529,16 @@ elif [[ "$InstallType" = import ]]; then
 		cloudinitiso=$VMpath/$vmname-cloud-init.iso
 
 		[[ "$fips" = yes ]] && FIPS_OPT=--fips
+		[[ "$kdump" = yes ]] && KDUMP_OPT=--kdump
 		[[ $Intranet = yes && -n "$Location" ]] && {
 			REPO_OPTS=$(distro2repos $Distro $Location | sed -e '/cdn_os:/d' -e 's/^/--repo /')
 		}
 		if [[ "$NO_SSHKEY" = yes ]]; then
-			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS $FIPS_OPT
+			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS \
+				$FIPS_OPT $KDUMP_OPT
 		else
-			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS $FIPS_OPT \
-				--sshkeyf ~/.ssh/id_rsa.pub
+			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" -D $REPO_OPTS \
+				$FIPS_OPT $KDUMP_OPT --sshkeyf ~/.ssh/id_rsa.pub
 		fi
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom"
 	}
