@@ -347,7 +347,7 @@ vmlogin() {
 			else
 				echo -e "{VM:WARN} ssh root@$addr is not available, try login with console ..."
 				virsh console "$_vmname"
-				return $?
+				rc=$?
 			fi
 		fi
 
