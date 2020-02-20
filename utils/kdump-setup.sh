@@ -49,8 +49,8 @@ else
 	exit 1
 fi
 
-echo grubby --args="crashkernel=${val}" --update-kernel="$(/sbin/grubby --default-kernel)" --copy-default
-grubby --args="crashkernel=${val}" --update-kernel="$(/sbin/grubby --default-kernel)" --copy-default
+echo grubby --args="crashkernel=${val}" --update-kernel="$(/sbin/grubby --default-kernel)" #--copy-default
+grubby --args="crashkernel=${val}" --update-kernel="$(/sbin/grubby --default-kernel)" #--copy-default
 
 # hack /usr/bin/kdumpctl: add 'chmod a+r corefile'
 sed 's;mv $coredir/vmcore-incomplete $coredir/vmcore;&\nchmod a+r $coredir/vmcore;' /usr/bin/kdumpctl -i
