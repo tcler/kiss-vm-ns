@@ -69,7 +69,7 @@ is_intranet && {
 }
 
 sshkeyf=${sshkeyf:-/dev/null}
-tmpdir=.cloud-init-iso-gen-$$
+tmpdir=/tmp/.cloud-init-iso-gen-$$
 mkdir -p $tmpdir
 pushd $tmpdir &>/dev/null
 
