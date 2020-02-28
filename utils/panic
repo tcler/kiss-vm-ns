@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sysctl -w kernel.panic=0
+echo c >/proc/sysrq-trigger
