@@ -4,6 +4,14 @@
 #ref3: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_host_configuration_and_guest_installation_guide/chap-virtualization_host_configuration_and_guest_installation_guide-libvirt_network_booting#chap-Virtualization_Host_Configuration_and_Guest_Installation_Guide-Libvirt_network_booting-PXE_boot_private_network
 #ref4: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/ch-disklesssystems
 
+which vm &>/dev/null || {
+	echo -e "[WARN] you have not installed kiss-vm, please install kiss-vm first by run:"
+	echo -e " git clone https://github.com/tcler/kiss-vm-ns"
+	echo -e " sudo make -C kiss-vm-ns"
+	echo -e " vm --prepare"
+	exit 1
+}
+
 argv=()
 extrapkgs=()
 for arg; do
@@ -49,7 +57,6 @@ vm net netname=pxenet brname=virpxebr0 subnet=$netaddr tftproot=/var/lib/tftpboo
 #---------------------------------------------------------------
 #create nfs root
 nfsroot=/home/nfsroot
-vm --prepare
 vm $distro -p nfs-utils --net pxenet --nointeract --force
 vmname=$(vm --getvmname $distro)
 
