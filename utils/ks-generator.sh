@@ -124,7 +124,7 @@ for repo in "${Repos[@]}"; do
 done
 COMM
 [[ ${#Repos[@]} > 0 ]] && {
-	read name url <<<"${Repos[0]}"
+	read name url <<<"${Repos[0]/:/ }"
 	echo "repo --name=$name --baseurl=$url"
 }
 
