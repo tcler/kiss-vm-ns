@@ -117,16 +117,14 @@ RHEL-5*|RHEL5*|centos5*|centos-5*)
 	;;
 esac
 
-: <<\COMM
+#repo command is necessary on RHEL-8
 for repo in "${Repos[@]}"; do
 	read name url <<<"${repo/:/ }"
 	echo "repo --name=$name --baseurl=$url"
+
+	#1st repo(base) is enough, skip others
+	break
 done
-COMM
-[[ ${#Repos[@]} > 0 ]] && {
-	read name url <<<"${Repos[0]/:/ }"
-	echo "repo --name=$name --baseurl=$url"
-}
 
 echo -e "\n%post"
 
