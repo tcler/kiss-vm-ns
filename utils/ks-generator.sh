@@ -123,6 +123,10 @@ for repo in "${Repos[@]}"; do
 	echo "repo --name=$name --baseurl=$url"
 done
 COMM
+[[ ${#Repos[@]} > 0 ]] && {
+	read name url <<<"${Repos[0]}"
+	echo "repo --name=$name --baseurl=$url"
+}
 
 echo -e "\n%post"
 
