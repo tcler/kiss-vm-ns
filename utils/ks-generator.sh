@@ -118,12 +118,13 @@ RHEL-5*|RHEL5*|centos5*|centos-5*)
 esac
 
 #repo command is necessary on RHEL-8
-for repo in "${Repos[@]}"; do
+for ((i=0; i < ${#Repos[@]}; i++)); do
+	repo=${Repos[$i]}
 	read name url <<<"${repo/:/ }"
 	echo "repo --name=$name --baseurl=$url"
 
-	#1st repo(base) is enough, skip others
-	break
+	#First two repos(BaseOS and AppStream) are enough, skip others
+	[[ $i = 1 ]] && break
 done
 
 echo -e "\n%post"
