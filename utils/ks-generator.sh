@@ -10,6 +10,7 @@ Repos=()
 Post=
 NetCommand=
 KeyCommand=
+AuthConfigure="auth --passalgo=sha512 --useshadow"
 
 Usage() {
 	cat <<-EOF >&2
@@ -69,6 +70,7 @@ RHEL-7*|RHEL7*|centos7*|centos-7*)
 	;;
 RHEL-8*|RHEL8*|centos8*|centos-8*|Fedora-*)
 	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
+	AuthConfigure=
 	;;
 esac
 shopt -u nocasematch
@@ -96,7 +98,7 @@ $Bootloader
 zerombr
 clearpart --all --initlabel
 autopart
-auth --passalgo=sha512 --useshadow
+$AuthConfigure
 selinux --enforcing
 firewall --enabled --http --ftp --smtp --ssh
 skipx
@@ -117,7 +119,8 @@ RHEL-5*|RHEL5*|centos5*|centos-5*)
 	;;
 esac
 
-#repo command is necessary on RHEL-8
+: <<'COMM'
+#seems repo command is necessary on RHEL-8
 for ((i=0; i < ${#Repos[@]}; i++)); do
 	repo=${Repos[$i]}
 	read name url <<<"${repo/:/ }"
@@ -126,6 +129,7 @@ for ((i=0; i < ${#Repos[@]}; i++)); do
 	#First two repos(BaseOS and AppStream) are enough, skip others
 	[[ $i = 1 ]] && break
 done
+COMM
 
 echo -e "\n%post"
 
