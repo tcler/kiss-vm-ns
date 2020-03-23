@@ -56,7 +56,7 @@ vm net netname=pxenet brname=virpxebr0 subnet=$netaddr tftproot=/var/lib/tftpboo
 
 #---------------------------------------------------------------
 #create nfs root
-nfsroot=/home/nfsroot
+nfsroot=/nfsroot
 vm $distro -p nfs-utils --net pxenet --nointeract --force
 vmname=$(vm --getvmname $distro)
 
