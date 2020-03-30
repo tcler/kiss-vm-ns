@@ -1409,7 +1409,7 @@ if [[ "$InstallType" = location ]]; then
 	  --vnc --vnclisten 0.0.0.0 $NOREBOOT &>$VMpath/nohup.log &
 	Installpid=$!
 
-	while true; do test -f $VMpath/nohup.log && break; done
+	while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
 		expect {
 			{* to complete the installation process.} { exit }
@@ -1417,6 +1417,7 @@ if [[ "$InstallType" = location ]]; then
 			{</domain>} { exit }
 		}
 	"
+
 	[[ -n "$XML" ]] && {
 		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
@@ -1443,6 +1444,11 @@ if [[ "$InstallType" = location ]]; then
 					send "\r"
 					puts $expect_out(buffer)
 					exit 5
+				}
+				"error: failed to get domain" {
+					send "\r"
+					puts $expect_out(buffer)
+					exit 6
 				}
 				"error: internal error: character device console0 is not using a PTY" {
 					send "\r"
