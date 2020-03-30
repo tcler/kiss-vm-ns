@@ -774,11 +774,12 @@ Usage() {
 	                 #macvtap mode
 	  -r|--ready     #virt config is ready, don't have to run enable_libvirt function
 	  --xdisk        #add 2 extra disk for test
-	  --nvdimm <nvdimm list> 
+	  --nvdimm <nvdimm list | no>
 	                 #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
 	                 #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
 	                 #e.g: --nvdimm="511 1023" -> two nvdimm device
 	                 #               ^^^^^^^^ default labelSize is 1, if omitting
+	                 #e.g: --nvdimm=no -> disable nvdimm
 	                 #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
 	  --kdump        #enable kdump
 	  --fips         #enable fips
@@ -1285,7 +1286,7 @@ fi
 NVDIMM=no
 CONTROLLER_OPTS=
 qemukvm=$(rpm -q qemu-kvm)
-vercmp $qemukvm ge qemu-kvm-2.6 && {
+[[ "$NVDIMM_LIST" != no ]] && vercmp $qemukvm ge qemu-kvm-2.6 && {
 	NVDIMM=yes
 	CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
 }
