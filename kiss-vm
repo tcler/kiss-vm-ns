@@ -517,6 +517,7 @@ enable_libvirt() {
 COMM
 
 	eval setfacl -mu:qemu:rx $sudouserhome
+	eval setfacl -mu:qemu:rx -R $sudouserhome/.cache/virt-manager
 
 	#first time
 	[[ $(id -u) != 0 ]] && {
