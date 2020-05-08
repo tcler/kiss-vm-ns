@@ -415,6 +415,11 @@ netinfo() {
 		virsh net-dumpxml -- $net
 	done
 }
+netstart() {
+	for net; do
+		virsh net-start -- $net
+	done
+}
 netdelete() {
 	echo -e "\n{VM:INFO} => delete virtual net: $@ .."
 	for net; do
@@ -852,8 +857,9 @@ Usage() {
 	  vm net               #list all virtual network
 	  vm net netname=testnet brname=virbrN subnet=100  #create virtual network 'testnet'
 	  vm net netname=pxe brname=virpxebrN subnet=200 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
-	  vm netinfo testnet   #show detail info of virtual network 'testnet'
-	  vm netdel testnet    #delete virtual network 'testnet'
+	  vm netinfo netname   #show detail info of virtual network 'netname'
+	  vm netstart netname  #start virtual network 'netname'
+	  vm netdel netname    #delete virtual network 'netname'
 	EOF
 }
 
@@ -1057,6 +1063,7 @@ mkdir -p $RuntimeTmp
 	clone) shift; [[ "$1" = -d ]] && shift; vmclone "$@"; exit $?;;
 	net|netcreate) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
 	netinfo) shift; [[ "$1" = -d ]] && shift; netinfo "$@"; exit $?;;
+	netstart) shift; [[ "$1" = -d ]] && shift; netstart "$@"; exit $?;;
 	netdel|netdelete) shift; [[ "$1" = -d ]] && shift; netdelete "$@"; exit $?;;
 	esac
 }
