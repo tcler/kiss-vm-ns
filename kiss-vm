@@ -779,7 +779,8 @@ Usage() {
 	  --macvtapmode <vepa|bridge>
 	                 #macvtap mode
 	  -r|--ready     #virt config is ready, don't have to run enable_libvirt function
-	  --xdisk        #add 2 extra disk for test
+	  --xdisk <size> #add an extra disk, could be specified multi-times. size unit is G
+	                 #e.g: --xdisk 10 --xdisk 20
 	  --nvdimm <nvdimm list | no>
 	                 #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
 	                 #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
@@ -924,7 +925,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long nointeract \
 	--long saveimage:: --long sa:: \
 	--long ready \
-	--long xdisk \
+	--long xdisk: \
 	--long nvdimm: \
 	--long kdump \
 	--long fips \
@@ -978,7 +979,7 @@ while true; do
 		shift 2
 		;;
 	-r|--ready)      VIRT_READY=yes; shift 1;;
-	--xdisk)         EXTRA_DISKS=yes; shift 1;;
+	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
 	--nvdimm)        NVDIMM_LIST=$2; shift 2;;
 	--kdump)         kdump=yes; shift 1;;
 	--fips)          fips=yes; shift 1;;
@@ -1285,11 +1286,12 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	fi
 }
 
-if [[ "$EXTRA_DISKS" = yes ]]; then
-	qemu-img create -f qcow2 $VMpath/ext4.qcow2 10G
-	qemu-img create -f qcow2 $VMpath/xfs.qcow2 10G
-	DISK_OPTS="--disk path=$VMpath/ext4.qcow2,bus=scsi --disk path=$VMpath/xfs.qcow2,bus=scsi"
-fi
+k=0
+for size in "${EXTRA_DISKS[@]}"; do
+	ximage=xdisk$((k++)).qcow2
+	qemu-img create -f qcow2 $VMpath/$ximage ${size}G
+	DISK_OPTS+=" --disk path=$VMpath/$ximage,bus=virtio"  #bus=scsi
+done
 
 NVDIMM=no
 CONTROLLER_OPTS=
