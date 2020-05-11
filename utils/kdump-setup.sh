@@ -53,7 +53,7 @@ if [[ -z "$reserveVal" ]]; then
 				val=auto
 			fi
 		else
-			val="0M-896M:64M,896M-2G:128M"
+			val="0M-896M:64M,896M-2G:128M,2G-4G:256M"
 		fi
 	else
 		echo "{WARN} don't support kernel older then kernel-3"
