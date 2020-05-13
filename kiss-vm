@@ -50,7 +50,7 @@ vmname_gen() {
 	local name=${Distro//./}
 	name=${name,,}
 	[[ -n "$cname" ]] && name=${cname}
-	name=${vmprefix}-${name}
+	[[ -n "$vmprefix" ]] && name=${vmprefix}-${name}
 	echo -n $name
 }
 
@@ -65,14 +65,18 @@ _vmdelete() {
 		return 1
 	}
 
-	[[ "$_vmname" != ${vmprefix}-* ]] && {
-		echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
-		cat <<-EOF
-		  virsh destroy $_vmname
-		  virsh undefine $_vmname --remove-all-storage
-		EOF
-		return 1
-	}
+	if [[ -n "${vmprefix}" ]]; then
+		[[ "$_vmname" != ${vmprefix}-* ]] && {
+			echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
+			cat <<-EOF
+			  virsh destroy $_vmname
+			  virsh undefine $_vmname --remove-all-storage
+			EOF
+			return 1
+		}
+	else
+		:
+	fi
 
 	local _image=$(virsh dumpxml --domain $_vmname | sed -n "/source file=.*qcow/{s|^.*='||; s|'/>$||; p; q}")
 	local _vmdir=$(dirname $_image)
@@ -96,7 +100,7 @@ vmdialogchecklist() {
 	local resfile=$2
 	local all=$3
 	local vmlist=$(virsh list --name ${all:+--all})
-	vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
+	[[ -n "$vmprefix" ]] && vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
 	local vmList=$(echo "$vmlist" | sed -e /^$/d -e 's/.*/"&" "" 1/')
 	[[ -z "${vmList}" ]] && {
 		echo -e "{VM:WARN} there is not any VM in your host .." >&2
@@ -112,7 +116,7 @@ vmdialogradiolist() {
 	local resfile=$2
 	local all=$3
 	local vmlist=$(virsh list --name ${all:+--all})
-	vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
+	[[ -n "$vmprefix" ]] && vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
 	local vmList=$(echo "$vmlist" | sed -e /^$/d -e 's/.*/"&" "" 1/')
 	[[ -z "${vmList}" ]] && {
 		echo -e "{VM:WARN} there is not any VM in your host .." >&2
@@ -1151,6 +1155,8 @@ fi
 	_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | head -1)
 	[[ -n "$_distro" ]] && Distro="$_distro"
 }
+
+[[ -n "$VMName" ]] && vmprefix=
 
 [[ "$OnlyGetVMName" = yes ]] && {
 	vmname_gen $Distro $VMName
