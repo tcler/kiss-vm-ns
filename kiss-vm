@@ -143,6 +143,11 @@ vmdelete() {
 }
 
 vmifaddr() {
+	[[ "$1" = /x ]] && {
+		shift
+		local GETENT=yes
+	}
+
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
@@ -151,8 +156,11 @@ vmifaddr() {
 	}
 
 	local addrs=
-	#addrs=$(getent hosts "$_vmname"|awk '{print $1}'|tac)
-	addrs=$(virsh domifaddr "$_vmname" | awk '$3=="ipv4" {print gensub("/.*","",1,$4)}')
+	if [[ "$GETENT" = yes ]]; then
+		addrs=$(getent hosts "$_vmname"|awk '{print $1}'|tac)
+	else
+		addrs=$(virsh domifaddr "$_vmname" | awk '$3=="ipv4" {print gensub("/.*","",1,$4)}')
+	fi
 	[[ -n "$addrs" ]] && echo "$addrs"
 }
 
