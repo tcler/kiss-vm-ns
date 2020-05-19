@@ -49,8 +49,12 @@ vmname_gen() {
 	local cname=$2
 	local name=${Distro//./}
 	name=${name,,}
-	[[ -n "$cname" ]] && name=${cname}
-	[[ -n "$vmprefix" ]] && name=${vmprefix}-${name}
+
+	if [[ -n "$cname" ]]; then
+		name=${cname}
+	else
+		[[ -n "$vmprefix" ]] && name=${vmprefix}-${name}
+	fi
 	echo -n $name
 }
 
