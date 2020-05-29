@@ -1070,7 +1070,7 @@ fi
 	for shdir in "${SHARE_DIRS[@]}"; do
 		read srcdir target _ <<< "${shdir//:/ }"
 		sock=/tmp/virtiofs:${srcdir//\//.}.sock
-		/usr/libexec/virtiofsd --socket-path="$SOCK_TEST" -o source=$srcdir
+		/usr/libexec/virtiofsd --socket-path="$sock" -o source=$srcdir &
 		QEMU_OPTS+=" -device vhost-user-fs-pci,chardev=char$i,tag=$target -chardev socket,id=char$i,path=$sock"
 	done
 }
@@ -1765,7 +1765,7 @@ fi
 for shdir in "${SHARE_DIRS[@]}"; do
 	read srcdir target _ <<< "${shdir//:/ }"
 	sock=/tmp/virtiofs:${srcdir//\//.}.sock
-	/usr/libexec/virtiofsd --socket-path="$SOCK_TEST" -o source=$srcdir
+	/usr/libexec/virtiofsd --socket-path="$sock" -o source=$srcdir &
 	cat >virtiofs.xml <<-EOF
 	<filesystem type='mount' accessmode='passthrough'>
 		<binary path='/usr/libexec/virtiofsd' xattr='on'/>
