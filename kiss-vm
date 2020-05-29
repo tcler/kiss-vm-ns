@@ -798,6 +798,8 @@ Usage() {
 	  -r|--ready     #virt config is ready, don't have to run enable_libvirt function
 	  --xdisk <size> #add an extra disk, could be specified multi-times. size unit is G
 	                 #e.g: --xdisk 10 --xdisk 20
+	  --sharedir <srcpath:target>
+	                 #share path between host and guest
 	  --nvdimm <nvdimm list | no>
 	                 #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
 	                 #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
@@ -943,6 +945,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long saveimage:: --long sa:: \
 	--long ready \
 	--long xdisk: \
+	--long sharedir: \
 	--long nvdimm: \
 	--long kdump \
 	--long fips \
@@ -997,6 +1000,7 @@ while true; do
 		;;
 	-r|--ready)      VIRT_READY=yes; shift 1;;
 	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
+	--sharedir)      SHARE_DIRS+=("$2"); shift 2;;
 	--nvdimm)        NVDIMM_LIST=$2; shift 2;;
 	--kdump)         kdump=yes; shift 1;;
 	--fips)          fips=yes; shift 1;;
@@ -1059,6 +1063,16 @@ fi
 	intel) QEMU_OPTS+=" -cpu host,+vmx";;
 	amd) QEMU_OPTS+=" -cpu host,+svm";;
 	esac
+}
+
+[[ ${#SHARE_DIRS} -gt 0 ]] && {
+	i=0
+	for shdir in "${SHARE_DIRS[@]}"; do
+		read srcdir target _ <<< "${shdir//:/ }"
+		sock=/tmp/virtiofs:${srcdir//\//.}.sock
+		/usr/libexec/virtiofsd --socket-path="$SOCK_TEST" -o source=$srcdir
+		QEMU_OPTS+=" -device vhost-user-fs-pci,chardev=char$i,tag=$target -chardev socket,id=char$i,path=$sock"
+	done
 }
 
 mkdir -p $RuntimeTmp
@@ -1746,6 +1760,23 @@ if [[ "$GenerateImage" = yes ]]; then
 	_vmdelete $vmname
 	exit 0
 fi
+
+: <<'COMM'
+for shdir in "${SHARE_DIRS[@]}"; do
+	read srcdir target _ <<< "${shdir//:/ }"
+	sock=/tmp/virtiofs:${srcdir//\//.}.sock
+	/usr/libexec/virtiofsd --socket-path="$SOCK_TEST" -o source=$srcdir
+	cat >virtiofs.xml <<-EOF
+	<filesystem type='mount' accessmode='passthrough'>
+		<binary path='/usr/libexec/virtiofsd' xattr='on'/>
+		<driver type='virtiofs'/>
+		<source dir='$srcdir'/>
+		<target dir='$target'/>
+	</filesystem>
+	EOF
+	virsh attach-device $vmname virtiofs.xml --persistent
+done
+COMM
 
 if [[ "$RM" = yes ]]; then
 	_vmdelete $vmname
