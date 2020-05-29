@@ -1071,6 +1071,8 @@ fi
 		read srcdir target _ <<< "${shdir//:/ }"
 		sock=/tmp/virtiofs:${srcdir//\//.}.sock
 		/usr/libexec/virtiofsd --socket-path="$sock" -o source=$srcdir &
+		sleep 1
+		setfacl -mu:qemu:rw $sock
 		QEMU_OPTS+=" -device vhost-user-fs-pci,chardev=char$i,tag=$target -chardev socket,id=char$i,path=$sock"
 	done
 }
@@ -1760,6 +1762,14 @@ if [[ "$GenerateImage" = yes ]]; then
 	_vmdelete $vmname
 	exit 0
 fi
+
+[[ ${#SHARE_DIRS} -gt 0 ]] && {
+	for shdir in "${SHARE_DIRS[@]}"; do
+		read srcdir target _ <<< "${shdir//:/ }"
+		vm exec -v $vmname -- mkdir /$target
+		vm exec -v $vmname -- mount -t virtiofs $target /$target
+	done
+}
 
 : <<'COMM'
 for shdir in "${SHARE_DIRS[@]}"; do
