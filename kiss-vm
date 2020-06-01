@@ -25,7 +25,7 @@ vmprefix=$(whoami)
 [[ -n "$SUDO_USER" ]] && vmprefix=${SUDO_USER}-sudo
 Intranet=yes
 VIRT_READY=unkown
-_MSIZE=1024
+_MSIZE=1536
 DSIZE=27
 baudrate=115200
 QEMU_OPTS=--qemu-commandline=
@@ -1065,18 +1065,6 @@ fi
 	esac
 }
 
-[[ ${#SHARE_DIRS} -gt 0 ]] && {
-	i=0
-	for shdir in "${SHARE_DIRS[@]}"; do
-		read srcdir target _ <<< "${shdir//:/ }"
-		sock=/tmp/virtiofs:${srcdir//\//.}.sock
-		/usr/libexec/virtiofsd --socket-path="$sock" -o source=$srcdir &
-		sleep 1
-		setfacl -mu:qemu:rw $sock
-		QEMU_OPTS+=" -device vhost-user-fs-pci,chardev=char$i,tag=$target -chardev socket,id=char$i,path=$sock"
-	done
-}
-
 mkdir -p $RuntimeTmp
 
 # sub-command
@@ -1355,6 +1343,12 @@ if [[ "$NVDIMM" = yes ]]; then
 else
 	MEM_OPTS="--memory=${MSIZE}"
 fi
+
+[[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
+	INTERACT=no
+	MEM_OPTS+=" --memorybacking=access.mode=shared"
+	virsh allocpages 2M $((MSIZE/2))
+}
 
 case $Distro in
 RHEL-5*|RHEL5*|centos5*|centos-5*)
@@ -1763,35 +1757,30 @@ if [[ "$GenerateImage" = yes ]]; then
 	exit 0
 fi
 
-[[ ${#SHARE_DIRS} -gt 0 ]] && {
-	for shdir in "${SHARE_DIRS[@]}"; do
-		read srcdir target _ <<< "${shdir//:/ }"
-		vm exec -v $vmname -- mkdir /$target
-		vm exec -v $vmname -- mount -t virtiofs $target /$target
-	done
-}
-
-: <<'COMM'
-for shdir in "${SHARE_DIRS[@]}"; do
-	read srcdir target _ <<< "${shdir//:/ }"
-	sock=/tmp/virtiofs:${srcdir//\//.}.sock
-	/usr/libexec/virtiofsd --socket-path="$sock" -o source=$srcdir &
-	cat >virtiofs.xml <<-EOF
-	<filesystem type='mount' accessmode='passthrough'>
-		<binary path='/usr/libexec/virtiofsd' xattr='on'/>
-		<driver type='virtiofs'/>
-		<source dir='$srcdir'/>
-		<target dir='$target'/>
-	</filesystem>
-	EOF
-	virsh attach-device $vmname virtiofs.xml --persistent
-done
-COMM
-
 if [[ "$RM" = yes ]]; then
 	_vmdelete $vmname
 	exit 0
 fi
+
+vm stop $vmname
+[[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
+	for shdir in "${SHARE_DIRS[@]}"; do
+		read srcdir target _ <<< "${shdir//:/ }"
+		mkdir -p $srcdir
+		cat >virtiofs.xml <<-EOF
+		<filesystem type='mount' accessmode='passthrough'>
+			<binary path='/usr/libexec/virtiofsd' xattr='on'/>
+			<driver type='virtiofs'/>
+			<source dir='$srcdir'/>
+			<target dir='$target'/>
+		</filesystem>
+		EOF
+		virsh attach-device $vmname virtiofs.xml --persistent
+	done
+}
+vm restart /w $vmname
+vm exec -v $vmname -- mkdir -p /$target
+vm exec -v $vmname -- mount -t virtiofs $target /$target
 
 if [[ ! -f ~/.ssh/config ]]; then
 	cat <<-EOF > ~/.ssh/config
