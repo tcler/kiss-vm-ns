@@ -798,7 +798,7 @@ Usage() {
 	  -r|--ready     #virt config is ready, don't have to run enable_libvirt function
 	  --xdisk <size> #add an extra disk, could be specified multi-times. size unit is G
 	                 #e.g: --xdisk 10 --xdisk 20
-	  --sharedir <srcpath:target>
+	  --sharedir <shpath:target>
 	                 #share path between host and guest
 	  --nvdimm <nvdimm list | no>
 	                 #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
@@ -1769,8 +1769,8 @@ fi
 
 vm stop $vmname
 [[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
-	for shdir in "${SHARE_DIRS[@]}"; do
-		read srcdir target _ <<< "${shdir//:/ }"
+	for shpath in "${SHARE_DIRS[@]}"; do
+		read srcdir target _ <<< "${shpath//:/ }"
 		mkdir -p $srcdir
 		cat >virtiofs.xml <<-EOF
 		<filesystem type='mount' accessmode='passthrough'>
