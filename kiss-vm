@@ -1347,7 +1347,12 @@ fi
 [[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
 	INTERACT=no
 	MEM_OPTS+=" --memorybacking=access.mode=shared"
+
+	#ref: https://libvirt.org/kbase/virtiofs.html#id3
+	#- The host-side virtiofsd daemon, like other vhost-user backed devices,
+	#- requires shared memory between the host and the guest.
 	virsh allocpages 2M $((MSIZE/2))
+	#or add memory_backing_dir = "/dev/shm/" in /etc/libvirt/qemu.conf
 }
 
 case $Distro in
