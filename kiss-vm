@@ -1767,8 +1767,9 @@ if [[ "$RM" = yes ]]; then
 	exit 0
 fi
 
-vm stop $vmname
 [[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
+	vm stop $vmname
+
 	for shpath in "${SHARE_DIRS[@]}"; do
 		read srcdir target _ <<< "${shpath//:/ }"
 		mkdir -p $srcdir
@@ -1782,10 +1783,11 @@ vm stop $vmname
 		EOF
 		virsh attach-device $vmname virtiofs.xml --persistent
 	done
+
+	vm restart /w $vmname
+	vm exec -v $vmname -- mkdir -p /$target
+	vm exec -v $vmname -- mount -t virtiofs $target /$target
 }
-vm restart /w $vmname
-vm exec -v $vmname -- mkdir -p /$target
-vm exec -v $vmname -- mount -t virtiofs $target /$target
 
 if [[ ! -f ~/.ssh/config ]]; then
 	cat <<-EOF > ~/.ssh/config
