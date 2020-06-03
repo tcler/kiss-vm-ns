@@ -887,9 +887,9 @@ expandrc() {
 	local rcrange=$1
 	local rclist=()
 	for rc in ${rcrange//,/ }; do
-		if [[ "$rc" =~ [0-9]+ ]]; then
+		if [[ "$rc" =~ ^[0-9]+$ ]]; then
 			rclist+=($rc)
-		elif [[ "$rc" =~ [0-9]+-[0-9]+ ]]; then
+		elif [[ "$rc" =~ ^[0-9]+-[0-9]+$ ]]; then
 			eval rclist+=({${rc/-/..}})
 		fi
 	done
