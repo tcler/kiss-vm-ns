@@ -1778,7 +1778,7 @@ fi
 
 	for idx in "${!SHARE_DIRS[@]}"; do
 		read srcdir rtarget _ <<< "${SHARE_DIRS[$idx]//:/ }"
-		rtarget=${rtarget:-$idx}
+		rtarget=${rtarget:-tag$idx}
 		target=virtiofs-tag-$rtarget
 		mkdir -p $srcdir
 		cat >virtiofs.xml <<-EOF
@@ -1796,7 +1796,7 @@ fi
 
 	for idx in "${!SHARE_DIRS[@]}"; do
 		read _ rtarget _ <<< "${SHARE_DIRS[$idx]//:/ }"
-		rtarget=${rtarget:-$idx}
+		rtarget=${rtarget:-tag$idx}
 		target=virtiofs-tag-$rtarget
 		mp=/virtiofs/$rtarget
 		vm exec -v $vmname -- mkdir -p $mp
