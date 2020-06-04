@@ -69,23 +69,38 @@ _vmdelete() {
 		return 1
 	}
 
+	homedir=$(getent passwd "$vmprefix" | cut -d: -f6)
 	if [[ -n "${vmprefix}" ]]; then
-		homedir=$(getent passwd "$vmprefix" | cut -d: -f6)
 		blk=$(virsh domblklist "$_vmname" | sed 1,2d)
-		test -n "$blk" && ! grep -q $homedir/VMs <<<"$blk" && {
+		if test -n "$blk"; then
+			! grep -q $homedir/VMs/ <<<"$blk" && {
+				echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
+				cat <<-EOF
+				  virsh destroy $_vmname
+				  virsh undefine $_vmname --remove-all-storage
+				EOF
+				return 1
+			}
+		#pxe vms
+		elif [[ ! -d $homedir/VMs/PXE/$_vmname ]]; then
 			echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
 			cat <<-EOF
 			  virsh destroy $_vmname
 			  virsh undefine $_vmname --remove-all-storage
 			EOF
 			return 1
-		}
+		fi
 	else
 		:
 	fi
 
+	local _vmdir=
 	local _image=$(virsh dumpxml --domain $_vmname | sed -n "/source file=.*qcow/{s|^.*='||; s|'/>$||; p; q}")
-	local _vmdir=$(dirname $_image)
+	if test -n "$_image"; then
+		_vmdir=$(dirname $_image)
+	else
+		_vmdir=$homedir/VMs/PXE/$_vmname
+	fi
 
 	echo -e "\n{VM:INFO} => dist removing VM $_vmname .."
 	virsh destroy $_vmname 2>/dev/null
@@ -1197,6 +1212,7 @@ fi
 	[[ "$GenerateImage" = yes ]] && vmhostname=${vmname#${vmprefix}-}
 
 	VMpath=$VMSHOME/$Distro/$vmname
+	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
 	mkdir -p $VMpath
 }
 
@@ -1707,16 +1723,6 @@ elif [[ "$InstallType" = pxe ]]; then
 	imagefile=$VMpath/${vmname}.qcow2
 	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
-
-	virsh desc $vmname &>/dev/null && {
-		if [[ "${OVERWRITE}" = "yes" ]]; then
-			echo "{VM:INFO} VM $vmname has been there, remove it ..."
-			_vmdelete $vmname
-		else
-			echo "{VM:INFO} VM $vmname has been there, if you want overwrite please use --force option"
-			exit 1
-		fi
-	}
 
 	virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  --name $vmname \
