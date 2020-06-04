@@ -798,7 +798,7 @@ Usage() {
 	  -r|--ready     #virt config is ready, don't have to run enable_libvirt function
 	  --xdisk <size> #add an extra disk, could be specified multi-times. size unit is G
 	                 #e.g: --xdisk 10 --xdisk 20
-	  --sharedir <shpath:target>
+	  --sharedir <shpath[:target]>
 	                 #share path between host and guest
 	  --nvdimm <nvdimm list | no>
 	                 #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
@@ -1776,8 +1776,10 @@ fi
 [[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
 	vm stop $vmname
 
-	for shpath in "${SHARE_DIRS[@]}"; do
-		read srcdir target _ <<< "${shpath//:/ }"
+	for idx in "${!SHARE_DIRS[@]}"; do
+		read srcdir rtarget _ <<< "${SHARE_DIRS[$idx]//:/ }"
+		rtarget=${rtarget:-$idx}
+		target=virtiofs-tag-$rtarget
 		mkdir -p $srcdir
 		cat >virtiofs.xml <<-EOF
 		<filesystem type='mount' accessmode='passthrough'>
@@ -1791,8 +1793,15 @@ fi
 	done
 
 	vm restart /w $vmname
-	vm exec -v $vmname -- mkdir -p /$target
-	vm exec -v $vmname -- mount -t virtiofs $target /$target
+
+	for idx in "${!SHARE_DIRS[@]}"; do
+		read _ rtarget _ <<< "${SHARE_DIRS[$idx]//:/ }"
+		rtarget=${rtarget:-$idx}
+		target=virtiofs-tag-$rtarget
+		mp=/virtiofs/$rtarget
+		vm exec -v $vmname -- mkdir -p $mp
+		vm exec -v $vmname -- mount -t virtiofs $target $mp
+	done
 }
 
 if [[ ! -f ~/.ssh/config ]]; then
