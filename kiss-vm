@@ -1345,14 +1345,20 @@ else
 fi
 
 [[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
-	INTERACT=no
-	MEM_OPTS+=" --memorybacking=access.mode=shared"
+	libvirt_nvr=$(rpm -q libvirt)
+	if vercmp "$libvirt_nvr" ge libvirt-6.2; then
+		INTERACT=no
+		MEM_OPTS+=" --memorybacking=access.mode=shared"
 
-	#ref: https://libvirt.org/kbase/virtiofs.html#id3
-	#- The host-side virtiofsd daemon, like other vhost-user backed devices,
-	#- requires shared memory between the host and the guest.
-	virsh allocpages 2M $((MSIZE/2))
-	#or add memory_backing_dir = "/dev/shm/" in /etc/libvirt/qemu.conf
+		#ref: https://libvirt.org/kbase/virtiofs.html#id3
+		#- The host-side virtiofsd daemon, like other vhost-user backed devices,
+		#- requires shared memory between the host and the guest.
+		virsh allocpages 2M $((MSIZE/2))
+		#or add memory_backing_dir = "/dev/shm/" in /etc/libvirt/qemu.conf
+	else
+		echo -e "{VM:WARN} $libvirt_nvr don't support virtiofs driver"
+		SHARE_DIRS=()
+	fi
 }
 
 case $Distro in
