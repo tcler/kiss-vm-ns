@@ -71,7 +71,8 @@ _vmdelete() {
 
 	if [[ -n "${vmprefix}" ]]; then
 		homedir=$(getent passwd "$vmprefix" | cut -d: -f6)
-		virsh domblklist "$_vmname" | grep -q $homedir/VMs || {
+		blk=$(virsh domblklist "$_vmname" | sed 1,2d)
+		test -n "$blk" && ! grep -q $homedir/VMs <<<"$blk" && {
 			echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
 			cat <<-EOF
 			  virsh destroy $_vmname
