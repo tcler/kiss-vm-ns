@@ -1706,6 +1706,17 @@ elif [[ "$InstallType" = pxe ]]; then
 	imagefile=$VMpath/${vmname}.qcow2
 	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
+
+	virsh desc $vmname &>/dev/null && {
+		if [[ "${OVERWRITE}" = "yes" ]]; then
+			echo "{VM:INFO} VM $vmname has been there, remove it ..."
+			_vmdelete $vmname
+		else
+			echo "{VM:INFO} VM $vmname has been there, if you want overwrite please use --force option"
+			exit 1
+		fi
+	}
+
 	virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  --name $vmname \
 	  --vcpus ${VCPUS} \
