@@ -236,22 +236,24 @@ vmstop() {
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
-		vmdialogradiolist vm-shutdown $resf && _vmname=$(sed 's/"//g' $resf)
-		[[ -z "$_vmname" ]] && { return; }
+		vmdialogchecklist vm-shutdown $resf all && vmList=$(< $resf)
+		[[ -z "$vmList" ]] && { return; }
+		eval set $vmList
 	}
 
-	virsh destroy "$_vmname"
+	for vm; do virsh destroy "$vm"; done
 }
 
 vmstart() {
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
-		vmdialogradiolist vm-start $resf all && _vmname=$(sed 's/"//g' $resf)
-		[[ -z "$_vmname" ]] && { return; }
+		vmdialogchecklist vm-start $resf all && vmList=$(< $resf)
+		[[ -z "$vmList" ]] && { return; }
+		eval set $vmList
 	}
 
-	virsh start "$_vmname"
+	for vm; do virsh start "$vm"; done
 }
 
 vmclone() {
