@@ -1227,7 +1227,7 @@ fi
 if [[ "$InstallType" = import ]]; then
 	if [[ -n "$Imageurl" ]]; then
 		if [[ ! -f $Imageurl ]] && ! is_available_url $Imageurl; then
-			echo "{VM:INFO} image url $Imageurl is not available, switching to Location mode" >&2
+			echo "{VM:WARN} image url $Imageurl is not available, switching to Location mode" >&2
 			InstallType=location
 			Imageurl=
 		fi
@@ -1580,14 +1580,17 @@ elif [[ "$InstallType" = import ]]; then
 	imagefile=$VMpath/$imagefilename
 
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
-	[[ $Imageurl = file://$imagefile ]] || {
+	if [[ $Imageurl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
 			until curl --fail -C - -L $Imageurl -o ${SaveImagePath}/${imagefilename}; do sleep 1; done
 			cp ${SaveImagePath}/${imagefilename} $imagefile
 		else
 			until curl --fail -C - -L $Imageurl -o $imagefile; do sleep 1; done
 		fi
-	}
+	else
+		#curl --fail $Imageurl -o $imagefile
+		cp -f ${Imageurl#file://} $imagefile
+	fi
 	[[ -f ${imagefile} ]] || exit 1
 
 	[[ $imagefile = *.xz ]] && {
