@@ -1582,10 +1582,10 @@ elif [[ "$InstallType" = import ]]; then
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
 	[[ $Imageurl = file://$imagefile ]] || {
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			curl -C - -L $Imageurl -o ${SaveImagePath}/${imagefilename}
+			until curl --fail -C - -L $Imageurl -o ${SaveImagePath}/${imagefilename}; do sleep 1; done
 			cp ${SaveImagePath}/${imagefilename} $imagefile
 		else
-			curl -C - -L $Imageurl -o $imagefile
+			until curl --fail -C - -L $Imageurl -o $imagefile; do sleep 1; done
 		fi
 	}
 	[[ -f ${imagefile} ]] || exit 1
