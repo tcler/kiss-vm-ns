@@ -869,7 +869,7 @@ Usage() {
 	  $P CentOS-6
 	  $P fedora-31
 	  $P centos-5 -l http://vault.centos.org/5.11/os/x86_64/
-	  $P debian-10 -i https://cdimage.debian.org/cdimage/openstack/10.1.5-20191015/debian-10.1.5-20191015-openstack-amd64.qcow2
+	  $P debian-10 -i https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2
 	  $P openSUSE-leap-15.2
 
 	  $P --enable-nested-vm  #enable nested on host, need sudo
@@ -877,7 +877,7 @@ Usage() {
 
 	Example from local image:
 	  $P rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
-	  $P debian-10 -i /mnt/vm-images/debian-10.1.5-20191015-openstack-amd64.qcow2
+	  $P debian-10 -i /mnt/vm-images/debian-10-openstack-amd64.qcow2
 	  $P openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
 
 	Example [subcmd]:
@@ -1114,6 +1114,8 @@ distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/x86_64/images/ http://mi
 distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2.xz http://mirror.centos.org/centos/7/os/x86_64/"
 distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz http://mirror.centos.org/centos/6/os/x86_64/"
 # https://ord.mirror.rackspace.com/fedora/releases/$version/Cloud/
+distroInfo[fedora-rawhide]="https://ord.mirror.rackspace.com/fedora/development/rawhide/Cloud/x86_64/images/"
+distroInfo[fedora-32]="https://ord.mirror.rackspace.com/fedora/releases/32/Cloud/x86_64/images/"
 distroInfo[fedora-31]="https://ord.mirror.rackspace.com/fedora/releases/31/Cloud/x86_64/images/"
 distroInfo[fedora-30]="https://ord.mirror.rackspace.com/fedora/releases/30/Cloud/x86_64/images/"
 distroInfo[fedora-29]="https://ord.mirror.rackspace.com/fedora/releases/29/Cloud/x86_64/images/"
@@ -1121,10 +1123,8 @@ distroInfo[fedora-29]="https://ord.mirror.rackspace.com/fedora/releases/29/Cloud
 # https://cdimage.debian.org/cdimage/openstack/$latestVersion/
 # https://cdimage.debian.org/cdimage/openstack/archive/$olderVersion/
 distroInfo[debian-testing]="https://cdimage.debian.org/cdimage/openstack/testing/debian-testing-openstack-amd64.qcow2"
-distroInfo[debian-10.1.5]="https://cdimage.debian.org/cdimage/openstack/10.1.5-20191015/debian-10.1.5-20191015-openstack-amd64.qcow2"
-distroInfo[debian-10.1.4]="https://cdimage.debian.org/cdimage/openstack/archive/10.1.4-20191009/debian-10.1.4-20191009-openstack-amd64.qcow2"
-distroInfo[debian-9.11.4]="https://cdimage.debian.org/cdimage/openstack/9.11.4-20191015/debian-9.11.4-20191015-openstack-amd64.qcow2 nil"
-distroInfo[debian-9.11.3]="https://cdimage.debian.org/cdimage/openstack/archive/9.11.3-20191003/debian-9.11.3-20191003-openstack-amd64.qcow2"
+distroInfo[debian-10]="https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2"
+distroInfo[debian-9]="https://cdimage.debian.org/cdimage/openstack/current-9/debian-9-openstack-amd64.qcow2"
 distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2"
 
 is_intranet || {
