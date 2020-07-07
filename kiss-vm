@@ -1334,39 +1334,15 @@ for size in "${EXTRA_DISKS[@]}"; do
 	DISK_OPTS+=" --disk path=$VMpath/$ximage,bus=virtio"  #bus=scsi
 done
 
-NVDIMM=no
-CONTROLLER_OPTS=
-qemukvm=$(rpm -q qemu-kvm)
-[[ -n "$NVDIMM_LIST" ]] && vercmp $qemukvm ge qemu-kvm-2.6 && {
-	NVDIMM=yes
-	CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
-}
-if [[ "$NVDIMM" = yes ]]; then
-	NVDIMM_LIST=${NVDIMM_LIST:-511+1}
-	hpmemMax=$((1024*512))   #units Mi
-	memSlots=4
-	nvdimmdevs=($NVDIMM_LIST)
-	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=$hpmemMax,hotplugmemoryslots=$memSlots --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024))"
-
-	for ((i=0; i<${#nvdimmdevs[@]}; i++)); do
-		[[ $i -ge $memSlots ]] && break
-		nvdimmfile=$VMpath/nvdimm-$i.dev
-		read targetSize labelSize _ <<<"${nvdimmdevs[$i]//+/ }"
-		targetSize=${targetSize:-511}
-		labelSize=${labelSize:-1}
-		totalSize=$((targetSize+labelSize))
-		truncate -s ${totalSize}M $nvdimmfile
-		MEM_OPTS+=" --memdev nvdimm,source_path=$nvdimmfile,target_size=${targetSize},target_node=0,target_label_size=${labelSize}"
-	done
-else
-	MEM_OPTS="--memory=${MSIZE}"
-fi
-
 [[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
 	libvirt_nvr=$(rpm -q libvirt)
 	if vercmp "$libvirt_nvr" ge libvirt-6.2; then
 		INTERACT=no
 		MEM_OPTS+=" --memorybacking=access.mode=shared"
+
+		hpmemMax=$((1024*512))   #units Mi
+		memSlots=4
+		MEM_OPTS+=" --memory=${MSIZE},hotplugmemorymax=$hpmemMax,hotplugmemoryslots=$memSlots --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024))"
 
 		#ref: https://libvirt.org/kbase/virtiofs.html#id3
 		#- The host-side virtiofsd daemon, like other vhost-user backed devices,
@@ -1379,6 +1355,33 @@ fi
 		exit 1
 	fi
 }
+
+NVDIMM=no
+CONTROLLER_OPTS=
+qemukvm=$(rpm -q qemu-kvm)
+[[ -n "$NVDIMM_LIST" ]] && vercmp $qemukvm ge qemu-kvm-2.6 && {
+	NVDIMM=yes
+	CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
+}
+if [[ "$NVDIMM" = yes ]]; then
+	hpmemMax=$((1024*512))   #units Mi
+	memSlots=4
+	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=$hpmemMax,hotplugmemoryslots=$memSlots --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024))"
+
+	nvdimmdevs=($NVDIMM_LIST)
+	for ((i=0; i<${#nvdimmdevs[@]}; i++)); do
+		[[ $i -ge $memSlots ]] && break
+		nvdimmfile=$VMpath/nvdimm-$i.dev
+		read targetSize labelSize _ <<<"${nvdimmdevs[$i]//+/ }"
+		targetSize=${targetSize:-511}
+		labelSize=${labelSize:-1}
+		totalSize=$((targetSize+labelSize))
+		truncate -s ${totalSize}M $nvdimmfile
+		MEM_OPTS+=" --memdev nvdimm,source_path=$nvdimmfile,target_size=${targetSize},target_node=0,target_label_size=${labelSize}"
+	done
+fi
+
+MEM_OPTS=${MEM_OPTS:---memory=${MSIZE}}
 
 case $Distro in
 RHEL-5*|RHEL5*|centos5*|centos-5*)
