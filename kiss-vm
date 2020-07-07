@@ -1376,6 +1376,7 @@ fi
 	else
 		echo -e "{VM:WARN} $libvirt_nvr don't support virtiofs driver"
 		SHARE_DIRS=()
+		exit 1
 	fi
 }
 
