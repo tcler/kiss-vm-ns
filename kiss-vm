@@ -976,6 +976,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long pxe \
 	--long diskless \
     -a -n "$0" -- "$@"`
+[[ $? != 0 ]] && { exit 1; }
 eval set -- "$_at"
 while true; do
 	case "$1" in
