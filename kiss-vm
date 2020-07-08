@@ -224,7 +224,7 @@ vmreboot() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 
-	virsh destroy "$_vmname"
+	virsh destroy "$_vmname" 2>/dev/null
 	virsh start "$_vmname"
 	[[ "$WAIT" = yes ]] && {
 		echo -e "{VM:INFO} waiting restart finish ..."
@@ -1828,6 +1828,7 @@ fi
 		mp=/virtiofs/$rtarget
 		vm exec -v $vmname -- mkdir -p $mp
 		vm exec -v $vmname -- mount -t virtiofs $target $mp
+		vm exec -v $vmname -- mount -t virtiofs
 	done
 }
 
