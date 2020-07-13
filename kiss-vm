@@ -353,7 +353,7 @@ vmlogin() {
 		ssh -n -o Batchmode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr &>$RuntimeTmp/sshtest
 		[[ $? = 0 ]] && sshexec=yes
 		if [[ $sshexec = yes ]]; then
-			ssh -n -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr "$*"
+			ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr "$*"
 			rc=$?
 		else
 			if grep -q -w password $RuntimeTmp/sshtest; then
@@ -361,7 +361,7 @@ vmlogin() {
 				set timeout 120
 				set sshcmd [exec cat $RuntimeTmp/sshcmd]
 				log_user 0
-				spawn ssh -n -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr \$sshcmd
+				spawn ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr \$sshcmd
 				log_user 1
 				if {\$argc == 0} {
 					expect {
