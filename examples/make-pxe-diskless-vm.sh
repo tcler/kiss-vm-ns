@@ -92,9 +92,11 @@ touch $nfsroot/.autorelabel
 echo "$nfsroot *(rw,no_root_squash,security_label)" >/etc/exports
 systemctl enable nfs-server
 systemctl restart nfs-server
+
+cp /etc/yum.repos.d/*.repo ${nfsroot}/etc/yum.repos.d/.
 EOF
 
-scp -o StrictHostKeyChecking=no prepare-nfsroot.sh root@$vmname:
+scp -o StrictHostKeyChecking=no prepare-nfsroot.sh root@$vmname: && rm -f prepare-nfsroot.sh
 vm exec $vmname -- bash prepare-nfsroot.sh
 vm exec $vmname -- systemctl stop firewalld
 
