@@ -1499,84 +1499,88 @@ if [[ "$InstallType" = location ]]; then
 		exit
 	}
 
-	trap - SIGINT
-	for ((i=0; i<8; i++)); do
-		#clear -x
-		printf '\33[H\33[2J'
-		INTERACT=$INTERACT expect -c '
-			set intc 0
-			set timeout -1
-			spawn virsh console '"$vmname"'
-			trap {
-				send_user "You pressed Ctrl+C [incr intc]/8\n"
-				if {$intc >= 8} {
-					interact
+	if [[ "$NOAUTO" = yes ]]; then
+		trap - SIGINT
+		for ((i=0; i<8; i++)); do
+			#clear -x
+			printf '\33[H\33[2J'
+			INTERACT=$INTERACT expect -c '
+				set intc 0
+				set timeout -1
+				spawn virsh console '"$vmname"'
+				trap {
+					send_user "You pressed Ctrl+C [incr intc]/8\n"
+					if {$intc >= 8} {
+						interact
+					}
+				} SIGINT
+				expect {
+					"error: Disconnected from qemu:///system due to end of file*" {
+						send "\r"
+						puts $expect_out(buffer)
+						exit 5
+					}
+					"error: failed to get domain" {
+						send "\r"
+						puts $expect_out(buffer)
+						exit 6
+					}
+					"error: internal error: character device console0 is not using a PTY" {
+						send "\r"
+						puts $expect_out(buffer)
+						exit 7
+					}
+					"Unsupported Hardware Detected" {
+						send "\r"
+						exp_continue
+					}
+					"Which would you like to install through" {
+						# see: [RHEL 6.1] Anaconda requires user interaction in case of kickstart network activation failing
+						send "\r"
+						interact
+					}
+
+					"reboot: Power down" { exit 0 }
+					"Power down" { exit 0 }
+
+					"reboot: Restarting system" { send "\r"; exit 1 }
+					"Restarting system" { send "\r"; exit 1 }
+
+					"error: The domain is not running" { send "\r"; exit 127 }
+
+					"reboot: System halted" { send_user "\r\rsomething is wrong! cancel installation ..\r\r"; exit 255 }
+					"System halted" { send_user "\r\rsomething is wrong! cancel installation ..\r\r"; exit 255 }
+
+					"An unknown error has occurred" { exit 255 }
+					"error: Domain not found:" { exit 255 }
+
+					"* login:" { send "root\r" }
 				}
-			} SIGINT
-			expect {
-				"error: Disconnected from qemu:///system due to end of file*" {
-					send "\r"
-					puts $expect_out(buffer)
-					exit 5
-				}
-				"error: failed to get domain" {
-					send "\r"
-					puts $expect_out(buffer)
-					exit 6
-				}
-				"error: internal error: character device console0 is not using a PTY" {
-					send "\r"
-					puts $expect_out(buffer)
-					exit 7
-				}
-				"Unsupported Hardware Detected" {
-					send "\r"
-					exp_continue
-				}
-				"Which would you like to install through" {
-					# see: [RHEL 6.1] Anaconda requires user interaction in case of kickstart network activation failing
-					send "\r"
-					interact
+				expect "Password:" {
+					send "redhat\r"
+					send "\r\r\r\r\r\r"
+					send "# your are in console, Ctr + ] to exit \r"
+					send "\r\r\r\r\r\r"
 				}
 
-				"reboot: Power down" { exit 0 }
-				"Power down" { exit 0 }
+				if {$env(INTERACT) == "no"} { exit 0 }
+				interact
+			'
+			ReturnCode=$?
+			[[ $ReturnCode = 0 || $ReturnCode = 255 ]] && break
+			[[ $ReturnCode = 127 ]] && { virsh start $vmname 2>&1 | sed 's/error: //'; continue; }
+			sleep 1
+		done
+		echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
 
-				"reboot: Restarting system" { send "\r"; exit 1 }
-				"Restarting system" { send "\r"; exit 1 }
-
-				"error: The domain is not running" { send "\r"; exit 127 }
-
-				"reboot: System halted" { send_user "\r\rsomething is wrong! cancel installation ..\r\r"; exit 255 }
-				"System halted" { send_user "\r\rsomething is wrong! cancel installation ..\r\r"; exit 255 }
-
-				"An unknown error has occurred" { exit 255 }
-				"error: Domain not found:" { exit 255 }
-
-				"* login:" { send "root\r" }
-			}
-			expect "Password:" {
-				send "redhat\r"
-				send "\r\r\r\r\r\r"
-				send "# your are in console, Ctr + ] to exit \r"
-				send "\r\r\r\r\r\r"
-			}
-
-			if {$env(INTERACT) == "no"} { exit 0 }
-			interact
-		'
-		ReturnCode=$?
-		[[ $ReturnCode = 0 || $ReturnCode = 255 ]] && break
-		[[ $ReturnCode = 127 ]] && { virsh start $vmname 2>&1 | sed 's/error: //'; continue; }
-		sleep 1
-	done
-	echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
-
-	[[ $ReturnCode = 255 ]] && {
-		echo -e "\n{VM:INFO} something is wrong(please check screen log), will clean all tmp files ..."
-		RM=yes
-		GenerateImage=
-	}
+		[[ $ReturnCode = 255 ]] && {
+			echo -e "\n{VM:INFO} something is wrong(please check screen log), will clean all tmp files ..."
+			RM=yes
+			GenerateImage=
+		}
+	else
+		virsh console $vmname
+	fi
 
 elif [[ "$InstallType" = import ]]; then
 	[[ -f $Imageurl ]] && Imageurl=file://$(readlink -f ${Imageurl})
@@ -1665,69 +1669,73 @@ elif [[ "$InstallType" = import ]]; then
 		exit
 	}
 
-	trap - SIGINT
-	for ((i=0; i<8; i++)); do
-		INTERACT=$INTERACT SHUTDOWN=$GenerateImage expect -c '
-			set intc 0
-			set timeout -1
-			spawn virsh console '"$vmname"'
-			trap {
-				send_user "You pressed Ctrl+C [incr intc]/8\n"
-				if {$intc >= 8} {
-					interact
-				}
-			} SIGINT
-			expect {
-				"error: failed to get domain" {
-					send "\r"
-					puts $expect_out(buffer)
-					exit 6
-				}
-				"error: internal error: character device console0 is not using a PTY" {
-					send "\r"
-					puts $expect_out(buffer)
-					exit 7
-				}
-				"* login:" { send "root\r" }
-			}
-			expect "Password:" {
-				send "redhat\r"
-				send "\r\r\r\r\r\r"
-				if {$env(SHUTDOWN) == "yes"} {
-					send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
-					send "\r\n"
-					expect "Restarting system" { exit 0 }
-				}
-
-				send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
-				send "\r\n"
+	if [[ "$NOAUTO" = yes ]]; then
+		trap - SIGINT
+		for ((i=0; i<8; i++)); do
+			INTERACT=$INTERACT SHUTDOWN=$GenerateImage expect -c '
+				set intc 0
+				set timeout -1
+				spawn virsh console '"$vmname"'
+				trap {
+					send_user "You pressed Ctrl+C [incr intc]/8\n"
+					if {$intc >= 8} {
+						interact
+					}
+				} SIGINT
 				expect {
-					"or cloud-init done ~~~~~~~~d" {send "\r\r# Now you can take over the keyboard\r\r"}
-					"* login:" {
-						send "root\r"
-						expect "Password:" {
-							send "redhat\r"
-							send "\r\r# Now you can take over the keyboard\r\r"
+					"error: failed to get domain" {
+						send "\r"
+						puts $expect_out(buffer)
+						exit 6
+					}
+					"error: internal error: character device console0 is not using a PTY" {
+						send "\r"
+						puts $expect_out(buffer)
+						exit 7
+					}
+					"* login:" { send "root\r" }
+				}
+				expect "Password:" {
+					send "redhat\r"
+					send "\r\r\r\r\r\r"
+					if {$env(SHUTDOWN) == "yes"} {
+						send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
+						send "\r\n"
+						expect "Restarting system" { exit 0 }
+					}
+
+					send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
+					send "\r\n"
+					expect {
+						"or cloud-init done ~~~~~~~~d" {send "\r\r# Now you can take over the keyboard\r\r"}
+						"* login:" {
+							send "root\r"
+							expect "Password:" {
+								send "redhat\r"
+								send "\r\r# Now you can take over the keyboard\r\r"
+							}
 						}
 					}
+					send "# and your are in console, Ctr + ] to exit \r"
+					send "\r\r"
 				}
-				send "# and your are in console, Ctr + ] to exit \r"
-				send "\r\r"
-			}
 
-			if {$env(INTERACT) == "no"} { exit 0 }
-			interact
-		' && break
-		test -d /proc/$Installpid || break
-		sleep 1
-	done
-	unset Installpid
-	echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
+				if {$env(INTERACT) == "no"} { exit 0 }
+				interact
+			' && break
+			test -d /proc/$Installpid || break
+			sleep 1
+		done
+		unset Installpid
+		echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
 
-	[[ -f "$cloudinitiso" ]] && {
-		echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
-		virsh change-media $vmname $cloudinitiso --eject
-	}
+		[[ -f "$cloudinitiso" ]] && {
+			echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
+			virsh change-media $vmname $cloudinitiso --eject
+		}
+	else
+		virsh console $vmname
+	fi
 elif [[ "$InstallType" = pxe ]]; then
 	imagefile=$VMpath/${vmname}.qcow2
 	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
