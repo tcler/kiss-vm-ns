@@ -403,6 +403,7 @@ netcreate() {
 	local netname=
 	local brname=
 	local subnet=
+	local forward=nat
 
 	[[ $# = 0 ]] && { virsh net-list; return; }
 	Usage() {
@@ -411,8 +412,16 @@ netcreate() {
 		  vm net netname=net10 brname=virbr10 subnet=10  #subnet range: [1-121,123-254]
 		U
 	}
-	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|tftproot|bootpfile)=.* ]] || continue; eval "$opt"; done
+	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile)=.* ]] || continue; eval "$opt"; done
 	[[ -z "$netname" || -z "$brname" || -z "$subnet" ]] && { Usage; return 1; }
+
+	#https://libvirt.org/formatnetwork.html
+	[[ -n "$forward" ]] && forwardNode="<forward mode=\"$forward\" >
+		    <nat>
+		      <port start='1024' end='65535'/>
+		    </nat>
+		  </forward>"
+
 	[[ -n "$tftproot" ]] && tftpNode="<tftp root='$tftproot'/>"
 	[[ -n "$bootpfile" ]] && bootpNode="<bootp file='$bootpfile'/>"
 
@@ -426,11 +435,7 @@ netcreate() {
 		<network>
 		  <name>$netname</name>
 		  <bridge name="$brname" />
-		  <forward mode="nat" >
-		    <nat>
-		      <port start='1024' end='65535'/>
-		    </nat>
-		  </forward>
+		  $forwardNode
 		  <ip address="192.168.${subnet}.1" netmask="255.255.255.0" >
 		    $tftpNode
 		    <dhcp>
@@ -898,7 +903,8 @@ Usage() {
 	  vm start [VM]        #start VM           //nil
 
 	  vm net               #list all virtual network
-	  vm net netname=testnet brname=virbrN subnet=100  #create virtual network 'testnet'
+	  vm net netname=nat-net brname=virbrM subnet=10 forward=nat  #create virtual network 'nat-net', default forward is 'nat'
+	  vm net netname=isolated-net brname=virbrN subnet=20 forward=  #create virtual network 'isolated-net'
 	  vm net netname=pxe brname=virpxebrN subnet=200 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
 	  vm netinfo netname   #show detail info of virtual network 'netname'
 	  vm netstart netname  #start virtual network 'netname'
