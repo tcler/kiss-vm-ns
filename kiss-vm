@@ -811,7 +811,9 @@ Usage() {
 	  --dsize <size> #disk size, default 16
 	  --net <$name[,$model]>
 	                 #attach vnet and join libvirt net $name, optional $model: virtio,e1000,...
-	  --netmacvtap [$sourceNIC[,$model]]
+	  --net-br <$brname[,$model]>
+	                 #attach vnet and join bridge $brname, optional $model: virtio,e1000,...
+	  --net-macvtap, --netmacvtap [$sourceNIC[,$model]]
 	                 #attach macvtap interface over $sourceNIC, optional $model: virtio,e1000,...
 	  --macvtapmode <vepa|bridge>
 	                 #macvtap mode
@@ -960,7 +962,8 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long msize: \
 	--long dsize: \
 	--long net: \
-	--long netmacvtap:: \
+	--long net-br: \
+	--long net-macvtap:: --long netmacvtap:: \
 	--long macvtapmode: \
 	--long nointeract \
 	--long noauto \
@@ -1015,7 +1018,10 @@ while true; do
 	--net)
 		read netname model <<<"${2/,/ }"
 		NETWORK_OPTS+=" --network=network=$netname,model=${model:-virtio}"; shift 2;;
-	--netmacvtap)
+	--net-br)
+		read brname model <<<"${2/,/ }"
+		NETWORK_OPTS+=" --network=bridge=$brname,model=${model:-virtio}"; shift 2;;
+	--net-macvtap|--netmacvtap)
 		read srcif model <<<"${2/,/ }"
 		srcif=${srcif:-$(get_default_if)}
 		NETWORK_OPTS+=" --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${model:-virtio}"; shift 2;;
