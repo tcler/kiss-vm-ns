@@ -1014,7 +1014,7 @@ while true; do
 	--noauto)        NOAUTO="yes"; shift 1;;
 	--net)
 		read netname model <<<"${2/,/ }"
-		NETWORK_OPTS+=" --network=network=$2,model=${model:-virtio}"; shift 2;;
+		NETWORK_OPTS+=" --network=network=$netname,model=${model:-virtio}"; shift 2;;
 	--netmacvtap)
 		read srcif model <<<"${2/,/ }"
 		srcif=${srcif:-$(get_default_if)}
