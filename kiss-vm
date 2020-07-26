@@ -1532,6 +1532,8 @@ if [[ "$InstallType" = location ]]; then
 	}
 
 	if [[ "$NOAUTO" = yes ]]; then
+		virsh console $vmname
+	else
 		trap - SIGINT
 		for ((i=0; i<8; i++)); do
 			#clear -x
@@ -1610,8 +1612,6 @@ if [[ "$InstallType" = location ]]; then
 			RM=yes
 			GenerateImage=
 		}
-	else
-		virsh console $vmname
 	fi
 
 elif [[ "$InstallType" = import ]]; then
@@ -1702,6 +1702,8 @@ elif [[ "$InstallType" = import ]]; then
 	}
 
 	if [[ "$NOAUTO" = yes ]]; then
+		virsh console $vmname
+	else
 		trap - SIGINT
 		for ((i=0; i<8; i++)); do
 			INTERACT=$INTERACT SHUTDOWN=$GenerateImage expect -c '
@@ -1765,8 +1767,6 @@ elif [[ "$InstallType" = import ]]; then
 			echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
 			virsh change-media $vmname $cloudinitiso --eject
 		}
-	else
-		virsh console $vmname
 	fi
 elif [[ "$InstallType" = pxe ]]; then
 	imagefile=$VMpath/${vmname}.qcow2
