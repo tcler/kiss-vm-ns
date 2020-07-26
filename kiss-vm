@@ -1033,6 +1033,7 @@ while true; do
 	--net-macvtap|--netmacvtap)
 		read srcif model <<<"${2/,/ }"
 		srcif=${srcif:-$(get_default_if)}
+		[[ "$srcif" = - ]] && srcif=$(get_default_if)
 		NETWORK_OPTS+=" --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${model:-virtio}"; shift 2;;
 	--macvtapmode)   MacvtapMode="$2"; shift 2;;
 	--saveimage|--sa)
