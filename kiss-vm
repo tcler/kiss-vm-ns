@@ -830,6 +830,7 @@ Usage() {
 	                 #e.g: --xdisk 10 --xdisk 20
 	  --disk <img[,bus=]>
 	                 #add exist disk file, could be specified multi-times.
+	  --bus <$start_disk_bus>
 	  --sharedir <shpath[:target]>
 	                 #share path between host and guest
 	  --nvdimm <nvdimm list | no>
@@ -978,6 +979,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long noauto \
 	--long saveimage:: --long sa:: \
 	--long ready \
+	--long bus: \
 	--long xdisk: \
 	--long disk: \
 	--long sharedir: \
@@ -1043,6 +1045,7 @@ while true; do
 		shift 2
 		;;
 	-r|--ready)      VIRT_READY=yes; shift 1;;
+	--bus)           START_DISK_BUS="$2"; shift 2;;
 	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
 	--disk)          DISKS+=("$2"); shift 2;;
 	--sharedir)      SHARE_DIRS+=("$2"); shift 2;;
@@ -1506,7 +1509,7 @@ if [[ "$InstallType" = location ]]; then
 	  $OS_VARIANT_OPT \
 	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
-	  --disk path=$VMpath/${vmname}.qcow2,bus=virtio \
+	  --disk path=$VMpath/${vmname}.qcow2,bus=${START_DISK_BUS:-virtio} \
 	  $DISK_OPTS \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --initrd-inject $KSPath \
@@ -1680,7 +1683,7 @@ elif [[ "$InstallType" = import ]]; then
 	  --name $vmname \
 	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
-	  --disk path=${imagefile},bus=virtio \
+	  --disk path=${imagefile},bus=${START_DISK_BUS:-virtio} \
 	  $DISK_OPTS \
 	  $CLOUD_INIT_OPT \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
