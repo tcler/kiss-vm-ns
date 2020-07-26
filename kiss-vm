@@ -1669,10 +1669,12 @@ elif [[ "$InstallType" = import ]]; then
 	touch $VMpath/.kiss-vm
 	echo $Imageurl >$VMpath/url
 
-	_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
-	[[ "$_size" -lt $((DSIZE*1024*1024*1024)) ]] && {
-		echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
-		qemu-img resize ${imagefile} ${DSIZE}G
+	[[ "$NOAUTO" = yes ]] || {
+		_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
+		[[ "$_size" -lt $((DSIZE*1024*1024*1024)) ]] && {
+			echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
+			qemu-img resize ${imagefile} ${DSIZE}G
+		}
 	}
 	nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  --name $vmname \
