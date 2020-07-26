@@ -413,7 +413,7 @@ netcreate() {
 		U
 	}
 	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile)=.* ]] || continue; eval "$opt"; done
-	[[ -z "$netname" || -z "$brname" || -z "$subnet" ]] && { Usage; return 1; }
+	[[ -z "$netname" || -z "$brname" ]] && { Usage; return 1; }
 
 	#https://libvirt.org/formatnetwork.html
 	[[ -n "$forward" ]] && {
@@ -424,9 +424,15 @@ netcreate() {
 		    </nat>
 		  </forward>"
 	}
-
 	[[ -n "$tftproot" ]] && tftpNode="<tftp root='$tftproot'/>"
 	[[ -n "$bootpfile" ]] && bootpNode="<bootp file='$bootpfile'/>"
+	[[ -n "$subnet" ]] && ipNode="<ip address=\"192.168.${subnet}.1\" netmask=\"255.255.255.0\" >
+		    $tftpNode
+		    <dhcp>
+		      <range start=\"192.168.${subnet}.128\" end=\"192.168.${subnet}.254\"/>
+		      $bootpNode
+		    </dhcp>
+		  </ip>"
 
 	virsh net-info -- "$netname" &>/dev/null && {
 		echo "{VM:WARN} Virt network $netname has been there."
@@ -439,13 +445,7 @@ netcreate() {
 		  <name>$netname</name>
 		  <bridge name="$brname" />
 		  $forwardNode
-		  <ip address="192.168.${subnet}.1" netmask="255.255.255.0" >
-		    $tftpNode
-		    <dhcp>
-		      <range start="192.168.${subnet}.128" end="192.168.${subnet}.254"/>
-		      $bootpNode
-		    </dhcp>
-		  </ip>
+		  $ipNode
 		</network>
 		NET
 	)
