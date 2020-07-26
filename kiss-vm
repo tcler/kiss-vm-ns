@@ -416,11 +416,14 @@ netcreate() {
 	[[ -z "$netname" || -z "$brname" || -z "$subnet" ]] && { Usage; return 1; }
 
 	#https://libvirt.org/formatnetwork.html
-	[[ -n "$forward" ]] && forwardNode="<forward mode=\"$forward\" >
+	[[ -n "$forward" ]] && {
+		forwardNode="<forward mode=\"$forward\"/>"
+		[[ "$forward" = nat ]] && forwardNode="<forward mode=\"$forward\" >
 		    <nat>
 		      <port start='1024' end='65535'/>
 		    </nat>
 		  </forward>"
+	}
 
 	[[ -n "$tftproot" ]] && tftpNode="<tftp root='$tftproot'/>"
 	[[ -n "$bootpfile" ]] && bootpNode="<bootp file='$bootpfile'/>"
