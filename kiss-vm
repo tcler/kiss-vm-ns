@@ -196,6 +196,17 @@ vmvncport() {
 	}
 }
 
+vmxml() {
+	local _vmname=$1
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-dumpxml $resf all && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+
+	virsh dumpxml "$_vmname"
+}
+
 vmedit() {
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
@@ -900,6 +911,7 @@ Usage() {
 	  vm delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
 	  vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
 	  vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
+	  vm xml [VM]          #dump vm xml file   //you can use x,xm instead xml
 	  vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
 	  vm exec [-v] [-x] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
 	  vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
@@ -1126,6 +1138,7 @@ mkdir -p $RuntimeTmp
 	ls|li|lis|list) shift; [[ "$1" = -d ]] && shift; vmlist "$@"; exit $?;;
 	i|if|if*) shift; [[ "$1" = -d ]] && shift; vmifaddr "$@"; exit $?;;
 	v|v*) shift; [[ "$1" = -d ]] && shift; vmvncport "$@"; exit $?;;
+	x|xm*) shift; [[ "$1" = -d ]] && shift; vmxml "$@"; exit $?;;
 	ed|ed*) shift; [[ "$1" = -d ]] && shift; vmedit "$@"; exit $?;;
 	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
 	stop|sto*) shift; [[ "$1" = -d ]] && shift; vmstop "$@"; exit $?;;
