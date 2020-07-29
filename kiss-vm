@@ -1003,6 +1003,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long nosshkey \
 	--long verbose \
 	--long xml \
+	--long machine: \
 	--long qemu-opts: \
 	--long qemu-env: \
 	--long enable-nested-vm \
