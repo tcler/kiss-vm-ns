@@ -1553,7 +1553,17 @@ if [[ "$InstallType" = location ]]; then
 	}
 
 	if [[ "$NOAUTO" = yes ]]; then
-		virsh console $vmname
+		expect -c '
+			set timeout 10
+			spawn virsh console '"$vmname"'
+			expect {
+				timeout {
+					send "\n\n{VM:INFO} exiting from console...\n"
+					exit 0
+				}
+				exp_continue
+			}
+		'
 	else
 		trap - SIGINT
 		for ((i=0; i<8; i++)); do
@@ -1727,7 +1737,17 @@ elif [[ "$InstallType" = import ]]; then
 	}
 
 	if [[ "$NOAUTO" = yes ]]; then
-		virsh console $vmname
+		expect -c '
+			set timeout 10
+			spawn virsh console '"$vmname"'
+			expect {
+				timeout {
+					send "\n\n{VM:INFO} exiting from console...\n"
+					exit 0
+				}
+				exp_continue
+			}
+		'
 	else
 		trap - SIGINT
 		for ((i=0; i<8; i++)); do
