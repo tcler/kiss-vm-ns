@@ -1558,7 +1558,7 @@ if [[ "$InstallType" = location ]]; then
 			spawn virsh console '"$vmname"'
 			expect {
 				timeout {
-					send "\n\n{VM:INFO} exiting from console...\n"
+					send_user "\n\n{VM:INFO} exiting from console...\n"
 					exit 0
 				}
 				exp_continue
@@ -1742,7 +1742,7 @@ elif [[ "$InstallType" = import ]]; then
 			spawn virsh console '"$vmname"'
 			expect {
 				timeout {
-					send "\n\n{VM:INFO} exiting from console...\n"
+					send_user "\n\n{VM:INFO} exiting from console...\n"
 					exit 0
 				}
 				exp_continue
