@@ -1949,6 +1949,10 @@ COMM
 echo -e "\n{VM:INFO} you can try login $vmname again by using:"
 echo -e "  $ vm login $vmname          #from host"
 for vncaddr in $(vmvncport $vmname); do
-	echo -e "  $ vncviewer $vncaddr    #from remote"
+	if [[ "$vncaddr" = localhost* ]]; then
+		echo -e "  $ vncviewer $vncaddr    #from localhost"
+	else
+		echo -e "  $ vncviewer $vncaddr    #from remote"
+	fi
 done
 exit 0
