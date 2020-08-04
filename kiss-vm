@@ -181,6 +181,35 @@ vmifaddr() {
 	[[ -n "$addrs" ]] && echo "$addrs"
 }
 
+vncget() {
+	local vncport=$1
+	which vncdo convert gocr >/dev/null || {
+		echo "{VM:WARN} vncdo, convert and gocr are needed by 'vncget' function!" >&2
+		return 1
+	}
+	vncdo -s $vncport capture $RuntimeTmp/_screen.png
+	convert $RuntimeTmp/_screen.png -threshold 30% $RuntimeTmp/_screen2.png
+	gocr -i $RuntimeTmp/_screen2.png
+}
+
+vncput() {
+	local vncport=$1
+	shift
+
+	which vncdo >/dev/null || {
+		echo "{VM:WARN} vncdo'vncput' function!" >&2
+		return 1
+	}
+	for msg; do
+		if [[ "$msg" = key:* ]]; then
+			vncdo -s $vncport key "${msg#key:}"
+		else
+			vncdo -s $vncport type "${msg#type:}"
+		fi
+		sleep 1
+	done
+}
+
 vmvncport() {
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
@@ -191,26 +220,15 @@ vmvncport() {
 
 	local port=$(virsh dumpxml "$_vmname" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}")
 	[[ -n "${port}" ]] && {
-		#echo ${HOSTNAME}:${port}
-		hostname -A | sed -r "s/ |$/:${port}\\n/g" | sort -ru
+		if [[ -n "${VNCPUTS}" ]]; then
+			vncput localhost::$port "${VNCPUTS[@]}"
+			vncget localhost::$port
+		elif [[ -n "${VNCGET}" ]]; then
+			vncget localhost::$port
+		else
+			hostname -A | sed -r "s/ |$/:${port}\\n/g" | sort -ru
+		fi
 	}
-}
-vmocr() {
-	local _vmname=$1
-	[[ -z "$_vmname" ]] && {
-		resf=$RuntimeTmp/vmlist
-		vmdialogradiolist vm-vncport $resf all && _vmname=$(sed 's/"//g' $resf)
-		[[ -z "$_vmname" ]] && { return; }
-	}
-
-	local port=$(virsh dumpxml "$_vmname" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}")
-	which vncdo convert gocr >/dev/null || {
-		echo "{VM:WARN} vncdo, convert and gocr are needed by 'vm ocr' subcommand!" >&2
-		return 1
-	}
-	vncdo -s localhost::$port capture $RuntimeTmp/_screen.png
-	convert $RuntimeTmp/_screen.png -threshold 30% $RuntimeTmp/_screen2.png
-	gocr -i $RuntimeTmp/_screen2.png
 }
 
 vmxml() {
@@ -871,6 +889,9 @@ Usage() {
 	  --fips         #enable fips
 	  --nosshkey     #don't inject sshkey
 	  -v|--verbose   #verbose mode
+	  --vncget       #get vnc screen and convert to text by gocr
+	  --vncput <msg> #send string or key event to vnc server, could be specified multi-times
+	                 #e.g: --vncput root --vncput key:enter --vncput password --vncput key:enter
 	  --xml          #just generate xml
 	  --machine <machine type>
 	                 #specify machine type #get supported type by: qemu-kvm -machine help
@@ -1019,6 +1040,8 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long fips \
 	--long nosshkey \
 	--long verbose \
+	--long vncget \
+	--long vncput: \
 	--long xml \
 	--long machine: \
 	--long qemu-opts: \
@@ -1086,6 +1109,8 @@ while true; do
 	--fips)          fips=yes; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
+	--vncget)        VNCGET=yes; shift 1;;
+	--verput)        VNCPUTS+=("$2"); shift 2;;
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
 	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
@@ -1159,7 +1184,6 @@ mkdir -p $RuntimeTmp
 	ls|li|lis|list) shift; [[ "$1" = -d ]] && shift; vmlist "$@"; exit $?;;
 	i|if|if*) shift; [[ "$1" = -d ]] && shift; vmifaddr "$@"; exit $?;;
 	v|v*) shift; [[ "$1" = -d ]] && shift; vmvncport "$@"; exit $?;;
-	o|oc|ocr) shift; [[ "$1" = -d ]] && shift; vmocr "$@"; exit $?;;
 	x|xm*) shift; [[ "$1" = -d ]] && shift; vmxml "$@"; exit $?;;
 	ed|ed*) shift; [[ "$1" = -d ]] && shift; vmedit "$@"; exit $?;;
 	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
