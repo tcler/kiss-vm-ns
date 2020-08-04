@@ -892,6 +892,8 @@ Usage() {
 	  --vncget       #get vnc screen and convert to text by gocr
 	  --vncput <msg> #send string or key event to vnc server, could be specified multi-times
 	                 #e.g: --vncput root --vncput key:enter --vncput password --vncput key:enter
+	  --vncputln <msg>
+	                 #alias of: --vncput msg --vncput key:enter
 	  --xml          #just generate xml
 	  --machine <machine type>
 	                 #specify machine type #get supported type by: qemu-kvm -machine help
@@ -1042,6 +1044,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long verbose \
 	--long vncget \
 	--long vncput: \
+	--long vncputln: \
 	--long xml \
 	--long machine: \
 	--long qemu-opts: \
@@ -1111,6 +1114,7 @@ while true; do
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	--vncget)        VNCGET=yes; shift 1;;
 	--vncput)        VNCPUTS+=("$2"); shift 2;;
+	--vncputln)      VNCPUTS+=("$2" "key:enter"); shift 2;;
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
 	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
