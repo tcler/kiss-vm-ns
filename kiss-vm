@@ -1200,6 +1200,7 @@ mkdir -p $RuntimeTmp
 	netdel|netdelete) shift; [[ "$1" = -d ]] && shift; netdelete "$@"; exit $?;;
 	esac
 }
+[[ -n "$VNCPUTS" || -n "$VNCGET" ]] && { vmvncport "$@"; exit $?; }
 
 declare -A distroInfo
 distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/x86_64/images/ http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/"
