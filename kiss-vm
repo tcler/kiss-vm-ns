@@ -1110,7 +1110,7 @@ while true; do
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	--vncget)        VNCGET=yes; shift 1;;
-	--verput)        VNCPUTS+=("$2"); shift 2;;
+	--vncput)        VNCPUTS+=("$2"); shift 2;;
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
 	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
