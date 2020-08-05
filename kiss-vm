@@ -189,7 +189,7 @@ vncget() {
 	}
 	vncdo -s $vncport capture $RuntimeTmp/_screen.png
 	convert $RuntimeTmp/_screen.png -threshold 30% $RuntimeTmp/_screen2.png
-	gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=07;35' grep --color .
+	gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=01;30;47' grep --color .
 }
 
 vncput() {
