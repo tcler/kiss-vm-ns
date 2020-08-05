@@ -1220,6 +1220,7 @@ distroInfo[debian-testing]="https://cdimage.debian.org/cdimage/openstack/testing
 distroInfo[debian-10]="https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2"
 distroInfo[debian-9]="https://cdimage.debian.org/cdimage/openstack/current-9/debian-9-openstack-amd64.qcow2"
 distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2"
+distroInfo[freeBSD-12.1]="https://download.freebsd.org/ftp/releases/VM-IMAGES/12.1-RELEASE/amd64/Latest/FreeBSD-12.1-RELEASE-amd64.qcow2.xz"
 
 is_intranet || {
 	Intranet=no
@@ -1239,7 +1240,7 @@ is_intranet || {
 		dialogres=$RuntimeTmp/dialogRes
 		touch $distropatternOut $distropatternIn
 
-		echo -e "CentOS\nfedora\ndebian\nopenSUSE" >>$distropatternOut
+		echo -e "CentOS\nfedora\ndebian\nopenSUSE\nfreeBSD" >>$distropatternOut
 		for dname in "${!distroInfo[@]}"; do echo "$dname"; done >>$distrolist
 
 		[[ "$Intranet" = yes ]] && {
