@@ -892,7 +892,7 @@ Usage() {
 	  --vncget       #get vnc screen and convert to text by gocr
 	  --vncput <msg> #send string or key event to vnc server, could be specified multi-times
 	                 #e.g: --vncput root --vncput key:enter --vncput password --vncput key:enter
-	  --vncputln [msg]
+	  --vncputln <msg>
 	                 #alias of: --vncput msg --vncput key:enter
 	  --xml          #just generate xml
 	  --machine <machine type>
@@ -1044,7 +1044,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long verbose \
 	--long vncget \
 	--long vncput: \
-	--long vncputln:: \
+	--long vncputln: \
 	--long xml \
 	--long machine: \
 	--long qemu-opts: \
