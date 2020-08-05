@@ -200,7 +200,23 @@ vncput() {
 		echo "{VM:WARN} vncdo'vncput' function!" >&2
 		return 1
 	}
+
+	local msgArray=()
 	for msg; do
+		if [[ "$msg" = key:* ]]; then
+			msgArray+=("$msg")
+		else
+			regex='[~@#$%^&*()_+|}{":?><!]'
+			msg=${msg#type:}
+			if [[ "$msg" =~ $regex ]]; then
+				while read msg; do
+					[[ "$msg" =~ $regex ]] || msg="type:$msg"
+					msgArray+=("$msg")
+				done < <(sed -r -e 's;[~!@#$%^&*()_+|}{":?><]+;&\n;g' -e 's;[~!@#$%^&*()_+|}{":?><];\nkey:shift-&;g' <<<"$msg")
+			fi
+		fi
+	done
+	for msg in "${msgArray[@]}"; do
 		if [[ "$msg" = key:* ]]; then
 			vncdo -s $vncport key "${msg#key:}"
 		else
