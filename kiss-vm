@@ -440,11 +440,13 @@ vmlogin() {
 				if {\$argc == 0} {
 					expect {
 					"password:" { send "redhat\r"; exp_continue }
+					"Password for" { send "redhat\r"; exp_continue }
 					"*# " { send "\r"; interact }
 					}
 				} else {
 					expect {
 					"password:" { send "redhat\r"; exp_continue }
+					"Password for" { send "redhat\r"; exp_continue }
 					eof
 					}
 				}
