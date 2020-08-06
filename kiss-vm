@@ -197,7 +197,7 @@ vncput() {
 	shift
 
 	which vncdo >/dev/null || {
-		echo "{VM:WARN} vncdo'vncput' function!" >&2
+		echo "{VM:WARN} vncdo is needed by 'vncput' function!" >&2
 		return 1
 	}
 
