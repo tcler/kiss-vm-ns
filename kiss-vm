@@ -214,6 +214,8 @@ vncput() {
 						[[ "$line" =~ $regex ]] || line="type:$line"
 						msgArray+=("$line")
 					done < <(sed -r -e 's;[~!@#$%^&*()_+|}{":?><]+;&\n;g' -e 's;[~!@#$%^&*()_+|}{":?><];\nkey:shift-&;g' <<<"$_msg")
+				else
+					msgArray+=("$msg")
 				fi
 			fi
 			msgArray+=("")
