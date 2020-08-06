@@ -208,11 +208,11 @@ vncput() {
 				msgArray+=("$msg")
 			else
 				regex='[~@#$%^&*()_+|}{":?><!]'
-				_msg=${msg#type:}
+				_msg="${msg#type:}"
 				if [[ "$_msg" =~ $regex ]]; then
-					while read __msg; do
-						[[ "$__msg" =~ $regex ]] || __msg="type:$__msg"
-						msgArray+=("$__msg")
+					while IFS= read -r line; do
+						[[ "$line" =~ $regex ]] || line="type:$line"
+						msgArray+=("$line")
 					done < <(sed -r -e 's;[~!@#$%^&*()_+|}{":?><]+;&\n;g' -e 's;[~!@#$%^&*()_+|}{":?><];\nkey:shift-&;g' <<<"$_msg")
 				fi
 			fi
