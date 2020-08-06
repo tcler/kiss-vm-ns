@@ -1438,6 +1438,8 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	fi
 }
 
+grep -i -q freebsd <<<"$Distro" && NOAUTO=yes
+
 # Phase-2: start create VM
 # prepare ssh pub key
 [[ -f ~/.ssh/id_rsa && -f ~/.ssh/id_rsa.pub ]] || {
@@ -1826,6 +1828,21 @@ elif [[ "$InstallType" = import ]]; then
 				exp_continue
 			}
 		'
+		echo -e "{VM:INFO} vnc info:"
+		vm vncport $vmname
+		vm "$vmname" -vncget
+		echo -e "{VM:INFO} waiting login: prompt ..."
+		grep -i -q freebsd <<<"$Distro" && {
+                        while ! grep "^login:" < <(vm "$vmname" -vncget); do sleep 10; done
+			vm "$vmname" -vncputln root
+			vm "$vmname" -vncputln "echo 'sshd_enable="YES"' >>/etc/rc.conf"
+			vm "$vmname" -vncputln "printf 'PermitRootLogin yes\nPasswordAuthentication yes\n' >>/etc/ssh/sshd_config"
+			vm "$vmname" -vncputln "cat /etc/ssh/sshd_config"
+			vm "$vmname" -vncputln "pw useradd foo -G wheel"
+			vm "$vmname" -vncputln "passwd foo" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat"
+			vm "$vmname" -vncputln "passwd root" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat"
+			vm "$vmname" -vncputln "/etc/rc.d/sshd start"
+		}
 	else
 		trap - SIGINT
 		for ((i=0; i<8; i++)); do
