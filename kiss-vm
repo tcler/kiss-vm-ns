@@ -249,6 +249,7 @@ vmvncport() {
 	[[ -n "${port}" ]] && {
 		if [[ -n "${VNCPUTS}" ]]; then
 			vncput localhost::$port "${VNCPUTS[@]}"
+			echo "[$_vmname]> ${VNCPUTS[*]}"
 			vncget localhost::$port
 		elif [[ -n "${VNCGET}" ]]; then
 			vncget localhost::$port
