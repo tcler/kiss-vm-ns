@@ -203,26 +203,35 @@ vncput() {
 
 	local msgArray=()
 	for msg; do
-		if [[ "$msg" = key:* ]]; then
-			msgArray+=("$msg")
-		else
-			regex='[~@#$%^&*()_+|}{":?><!]'
-			msg=${msg#type:}
-			if [[ "$msg" =~ $regex ]]; then
-				while read msg; do
-					[[ "$msg" =~ $regex ]] || msg="type:$msg"
-					msgArray+=("$msg")
-				done < <(sed -r -e 's;[~!@#$%^&*()_+|}{":?><]+;&\n;g' -e 's;[~!@#$%^&*()_+|}{":?><];\nkey:shift-&;g' <<<"$msg")
+		if [[ -n "$msg" ]]; then
+			if [[ "$msg" = key:* ]]; then
+				msgArray+=("$msg")
+			else
+				regex='[~@#$%^&*()_+|}{":?><!]'
+				_msg=${msg#type:}
+				if [[ "$_msg" =~ $regex ]]; then
+					while read __msg; do
+						[[ "$__msg" =~ $regex ]] || __msg="type:$__msg"
+						msgArray+=("$__msg")
+					done < <(sed -r -e 's;[~!@#$%^&*()_+|}{":?><]+;&\n;g' -e 's;[~!@#$%^&*()_+|}{":?><];\nkey:shift-&;g' <<<"$_msg")
+				fi
 			fi
+			msgArray+=("")
+		else
+			msgArray+=("$msg")
 		fi
+
 	done
 	for msg in "${msgArray[@]}"; do
-		if [[ "$msg" = key:* ]]; then
-			vncdo -s $vncport key "${msg#key:}"
+		if [[ -n "$msg" ]]; then
+			if [[ "$msg" = key:* ]]; then
+				vncdo -s $vncport key "${msg#key:}"
+			else
+				vncdo -s $vncport type "${msg#type:}"
+			fi
 		else
-			vncdo -s $vncport type "${msg#type:}"
+			sleep 1
 		fi
-		sleep 1
 	done
 }
 
