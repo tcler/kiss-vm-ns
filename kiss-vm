@@ -1648,7 +1648,7 @@ if [[ "$InstallType" = location ]]; then
 		'
 	else
 		trap - SIGINT
-		for ((i=0; i<8; i++)); do
+		for ((i=0; i<16; i++)); do
 			#clear -x
 			printf '\33[H\33[2J'
 			INTERACT=$INTERACT expect -c '
@@ -1716,7 +1716,7 @@ if [[ "$InstallType" = location ]]; then
 			ReturnCode=$?
 			[[ $ReturnCode = 0 || $ReturnCode = 255 ]] && break
 			[[ $ReturnCode = 127 ]] && { virsh start $vmname 2>&1 | sed 's/error: //'; continue; }
-			sleep 1
+			sleep 2
 		done
 		echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
 
@@ -1847,7 +1847,7 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	else
 		trap - SIGINT
-		for ((i=0; i<8; i++)); do
+		for ((i=0; i<16; i++)); do
 			INTERACT=$INTERACT SHUTDOWN=$GenerateImage expect -c '
 				set intc 0
 				set timeout -1
@@ -1900,7 +1900,7 @@ elif [[ "$InstallType" = import ]]; then
 				interact
 			' && break
 			test -d /proc/$Installpid || break
-			sleep 1
+			sleep 2
 		done
 		unset Installpid
 		echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
