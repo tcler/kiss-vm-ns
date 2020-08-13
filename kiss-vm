@@ -1833,8 +1833,8 @@ elif [[ "$InstallType" = import ]]; then
 		echo -e "{VM:INFO} vnc info:"
 		vm vncport $vmname
 		vm "$vmname" -vncget
-		echo -e "{VM:INFO} waiting login: prompt ..."
 		grep -i -q freebsd <<<"$Distro" && {
+			echo -e "{VM:INFO} waiting login: prompt ..."
                         while ! grep "^login:" < <(vm "$vmname" -vncget); do sleep 10; done
 			vm "$vmname" -vncputln root
 			vm "$vmname" -vncputln "echo 'sshd_enable="YES"' >>/etc/rc.conf"
