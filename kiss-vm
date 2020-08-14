@@ -249,9 +249,10 @@ vmvncport() {
 	[[ -n "${port}" ]] && {
 		if [[ -n "${VNCPUTS}" ]]; then
 			vncput localhost::$port "${VNCPUTS[@]}"
-			echo "[$_vmname]> ${VNCPUTS[*]}"
+			echo "[vncput@$_vmname]> ${VNCPUTS[*]}"
 			vncget localhost::$port
 		elif [[ -n "${VNCGET}" ]]; then
+			echo "[vncget@$_vmname]:"
 			vncget localhost::$port
 		else
 			hostname -A | sed -r "s/ |$/:${port}\\n/g" | sort -ru
@@ -1928,6 +1929,20 @@ elif [[ "$InstallType" = pxe ]]; then
 	  --noautoconsole \
 	  ${NETWORK_OPTS%,model=virtio} \
 	  --vnc --vnclisten 0.0.0.0
+
+	sleep 1
+	vm $vmname -vncget
+
+	if [[ "$NOAUTO" = yes ]]; then
+		echo -e "{VM:INFO} waiting boot: prompt ..."
+		while ! grep "^boot:" < <(vm "$vmname" -vncget); do sleep 1; done
+		vm $vmname -vncget
+		vm $vmname -vncputln "menu"
+		vm $vmname -vncput "key:down"
+	else
+		sleep 10
+		vm $vmname -vncget
+	fi
 
 	echo -e "\n{VM:INFO} please connect vnc to continue install:"
 	for vncaddr in $(vmvncport $vmname); do
