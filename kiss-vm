@@ -594,6 +594,10 @@ enable_libvirt() {
 		grep -q '^VERSION=.7' /etc/os-release &&
 			sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 		sudo yum install -y $pkglist
+
+		#install packages required by -vncget -vncput -vncputln options
+		sudo yum install -y gocr python-devel
+		sudo pip install vncdotool
 	}
 
 	#echo -e "{VM:INFO} configure libvirt-nss ..."
