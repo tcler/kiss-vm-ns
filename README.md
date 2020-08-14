@@ -43,10 +43,8 @@ Options:
   -h, --help     #Display this help.
   --prepare      #check/install/configure libvirt and other dependent packages
   -I             #create VM by import existing disk image, auto search url according distro name
-                  `-> just could be used in Intranet
   -i <url/path>  #create VM by import existing disk image, value can be url or local path
   -L             #create VM by using location, auto search url according distro name
-                  `-> just could be used in Intranet
   -l <url>       #create VM by using location
   --ks <file>    #kickstart file, will auto generate according distro name if omitting
   -n|--vmname <name>
@@ -70,27 +68,46 @@ Options:
                  $ osinfo-query os  #RHEL-7 and later
                  $ virt-install --os-variant list  #RHEL-6
   --nointeract   #exit from virsh console after install finish
+  --noauto       #enter virsh console after installing start
   --saveimage [path]
                  #save image in path if install with import mode
   --cpus <N>     #number of virtual cpus, default 4
   --msize <size> #memory size, default 2048
   --dsize <size> #disk size, default 16
-  --net <$name>  #join libvirt net $name
-  --netmacvtap [source NIC]
-                 #attach a macvtap interface
+  --net <$name[,$model]>
+                 #attach vnet and join libvirt net $name, optional $model: virtio,e1000,...
+  --net-br <$brname[,$model]>
+                 #attach vnet and join bridge $brname, optional $model: virtio,e1000,...
+  --net-macvtap, --netmacvtap [$sourceNIC[,$model]]
+                 #attach macvtap interface over $sourceNIC, optional $model: virtio,e1000,...
   --macvtapmode <vepa|bridge>
                  #macvtap mode
   -r|--ready     #virt config is ready, don't have to run enable_libvirt function
-  --xdisk        #add 2 extra disk for test
-  --nvdimm <nvdimm list> 
+  --xdisk <size> #add an extra disk, could be specified multi-times. size unit is G
+                 #e.g: --xdisk 10 --xdisk 20
+  --disk <img[,bus=]>
+                 #add exist disk file, could be specified multi-times.
+  --bus <$start_disk_bus>
+  --sharedir <shpath[:target]>
+                 #share path between host and guest
+  --nvdimm <nvdimm list | no>
                  #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
                  #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
                  #e.g: --nvdimm="511 1023" -> two nvdimm device
                  #               ^^^^^^^^ default labelSize is 1, if omitting
                  #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+  --kdump        #enable kdump
+  --fips         #enable fips
   --nosshkey     #don't inject sshkey
   -v|--verbose   #verbose mode
+  --vncget       #get vnc screen and convert to text by gocr
+  --vncput <msg> #send string or key event to vnc server, could be specified multi-times
+                 #e.g: --vncput root --vncput key:enter --vncput password --vncput key:enter
+  --vncputln <msg>
+                 #alias of: --vncput msg --vncput key:enter
   --xml          #just generate xml
+  --machine <machine type>
+                 #specify machine type #get supported type by: qemu-kvm -machine help
   --qemu-opts    #Pass-through qemu options
   --qemu-env     #Pass-through qemu env[s]
   --enable-nested-vm  #enable nested on host
@@ -98,6 +115,8 @@ Options:
                       #ref: https://www.linux-kvm.org/page/Nested_Guests
   -x[arg]             #expected return code of sub-command exec, if doesn't match output test fail msg
                       # e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
+  --pxe          #PXE install
+  --diskless     #diskless install
 
 Example Intranet:
   vm # will enter a TUI show you all available distros that could auto generate source url
@@ -122,9 +141,9 @@ Example Internet:
   vm CentOS-8 -p "jimtcl vim git make gcc"
   vm CentOS-7 -p "vim git wget make gcc"
   vm CentOS-6
-  vm fedora-31
+  vm fedora-32
   vm centos-5 -l http://vault.centos.org/5.11/os/x86_64/
-  vm debian-10 -i https://cdimage.debian.org/cdimage/openstack/10.1.5-20191015/debian-10.1.5-20191015-openstack-amd64.qcow2
+  vm debian-10 -i https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2
   vm openSUSE-leap-15.2
 
   vm --enable-nested-vm  #enable nested on host, need sudo
@@ -132,7 +151,7 @@ Example Internet:
 
 Example from local image:
   vm rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
-  vm debian-10 -i /mnt/vm-images/debian-10.1.5-20191015-openstack-amd64.qcow2
+  vm debian-10 -i /mnt/vm-images/debian-10-openstack-amd64.qcow2
   vm openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
 
 Example [subcmd]:
@@ -141,6 +160,7 @@ Example [subcmd]:
   vm delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
   vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
   vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
+  vm xml [VM]          #dump vm xml file   //you can use x,xm instead xml
   vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
   vm exec [-v] [-x] "$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
   vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
@@ -148,9 +168,12 @@ Example [subcmd]:
   vm start [VM]        #start VM           //nil
 
   vm net               #list all virtual network
-  vm net netname=testnet brname=virbrN subnet=100  #create virtual network 'testnet'
-  vm netinfo testnet   #show detail info of virtual network 'testnet'
-  vm netdel testnet    #delete virtual network 'testnet'
+  vm net netname=nat-net brname=virbrM subnet=10 forward=nat  #create virtual network 'nat-net', default forward is 'nat'
+  vm net netname=isolated-net brname=virbrN subnet=20 forward=  #create virtual network 'isolated-net'
+  vm net netname=pxe brname=virpxebrN subnet=200 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
+  vm netinfo netname   #show detail info of virtual network 'netname'
+  vm netstart netname  #start virtual network 'netname'
+  vm netdel netname    #delete virtual network 'netname'
 
 ```
 
