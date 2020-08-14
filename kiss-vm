@@ -938,7 +938,9 @@ Usage() {
 	  -x[arg]             #expected return code of sub-command exec, if doesn't match output test fail msg
 	                      # e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 	  --pxe          #PXE install
+	                      # e.g: vm fedora-32 -n f32 -net-macvtap -pxe --noauto -f
 	  --diskless     #diskless install
+	                      # e.g: vm fedora-32 -n f32-diskless --net pxenet --pxe --diskless -f
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
