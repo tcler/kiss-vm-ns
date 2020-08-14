@@ -864,10 +864,8 @@ Usage() {
 	  -h, --help     #Display this help.
 	  --prepare      #check/install/configure libvirt and other dependent packages
 	  -I             #create VM by import existing disk image, auto search url according distro name
-	                  `-> just could be used in Intranet
 	  -i <url/path>  #create VM by import existing disk image, value can be url or local path
 	  -L             #create VM by using location, auto search url according distro name
-	                  `-> just could be used in Intranet
 	  -l <url>       #create VM by using location
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  -n|--vmname <name>
@@ -968,7 +966,7 @@ Usage() {
 	  $P CentOS-8 -p "jimtcl vim git make gcc"
 	  $P CentOS-7 -p "vim git wget make gcc"
 	  $P CentOS-6
-	  $P fedora-31
+	  $P fedora-32
 	  $P centos-5 -l http://vault.centos.org/5.11/os/x86_64/
 	  $P debian-10 -i https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2
 	  $P openSUSE-leap-15.2
