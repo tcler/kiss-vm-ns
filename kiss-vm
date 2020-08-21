@@ -597,7 +597,7 @@ enable_libvirt() {
 		sudo yum install -y $pkglist
 
 		#install packages required by -vncget -vncput -vncputln options
-		sudo yum install -y gocr python-devel
+		sudo yum install -y gocr ImageMagick python-devel
 		sudo pip install vncdotool
 	}
 
