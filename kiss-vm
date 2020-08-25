@@ -183,12 +183,26 @@ vmifaddr() {
 
 vncget() {
 	local vncport=$1
-	which vncdo convert gocr >/dev/null || {
-		echo "{VM:WARN} vncdo, convert and gocr are needed by 'vncget' function!" >&2
+	local ConvertCmd=convert
+
+	! which vncdo >/dev/null && {
+		echo "{VM:WARN} command vncdo is needed by 'vncget' function!" >&2
+		return 1
+	}
+	! which convert >/dev/null && {
+		if ! which gm >/dev/null; then
+			echo "{VM:WARN} command convert or gm are needed by 'vncget' function!" >&2
+			return 1
+		else
+			ConvertCmd="gm convert"
+		fi
+	}
+	! which gocr >/dev/null && {
+		echo "{VM:WARN} command gocr is needed by 'vncget' function!" >&2
 		return 1
 	}
 	vncdo -s $vncport capture $RuntimeTmp/_screen.png
-	convert $RuntimeTmp/_screen.png -threshold 30% $RuntimeTmp/_screen2.png
+	$ConvertCmd $RuntimeTmp/_screen.png -threshold 30% $RuntimeTmp/_screen2.png
 	gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=01;30;47' grep --color .
 }
 
@@ -597,8 +611,10 @@ enable_libvirt() {
 		sudo yum install -y $pkglist
 
 		#install packages required by -vncget -vncput -vncputln options
-		sudo yum install -y gocr ImageMagick python-devel
+		sudo yum install -y python-devel
 		sudo pip install vncdotool
+		sudo yum install -y GraphicsMagick || sudo yum install -y ImageMagick
+		sudo yum install -y gocr
 	}
 
 	#echo -e "{VM:INFO} configure libvirt-nss ..."
