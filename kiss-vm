@@ -612,8 +612,11 @@ enable_libvirt() {
 
 		#install packages required by -vncget -vncput -vncputln options
 		sudo yum install -y python-devel python-pip platform-python-devel python3-pip --setopt=strict=0
-		sudo pip install --upgrade pip || sudo pip3 install --upgrade pip
-		sudo pip install vncdotool || sudo pip3 install vncdotool
+		PIP=pip
+		which pip &>/dev/null || PIP=pip3
+		sudo $PIP install --upgrade pip
+		sudo $PIP install --upgrade setuptools
+		sudo $PIP install vncdotool
 		sudo yum install -y GraphicsMagick; which gm 2>/dev/null || sudo yum install -y ImageMagick
 		sudo yum install -y gocr; which gocr 2>/dev/null || sudo gocr-src-install.sh
 	}
