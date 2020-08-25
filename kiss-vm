@@ -1872,8 +1872,8 @@ elif [[ "$InstallType" = import ]]; then
 			echo -e "{VM:INFO} waiting login: prompt ..."
                         while ! grep "^login:" < <(vm "$vmname" -vncget); do sleep 10; done
 			vm "$vmname" -vncputln root
-			vm "$vmname" -vncputln "echo 'sshd_enable="YES"' >>/etc/rc.conf"
-			vm "$vmname" -vncputln "printf 'PermitRootLogin yes\nPasswordAuthentication yes\n' >>/etc/ssh/sshd_config"
+			vm "$vmname" -vncputln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf"
+			vm "$vmname" -vncputln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config"
 			vm "$vmname" -vncputln "cat /etc/ssh/sshd_config"
 			vm "$vmname" -vncputln "pw useradd foo -G wheel"
 			vm "$vmname" -vncputln "passwd foo" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat"
