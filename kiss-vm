@@ -225,7 +225,11 @@ vncput() {
 				_msg="${msg#type:}"
 				if [[ "$_msg" =~ $regex ]]; then
 					while IFS= read -r line; do
-						[[ "$line" =~ $regex ]] || line="type:$line"
+						if [[ "$line" = key:shift-? ]]; then
+							: #line=key:shift-$(tr ')~!@#$%^&*(+}{|:><?"'   '0`123456789=][\\;.,/'"'" <<<"${line: -1}")
+						else
+							line="type:$line"
+						fi
 						msgArray+=("$line")
 					done < <(sed -r -e 's;[~!@#$%^&*()_+|}{":?><]+;&\n;g' -e 's;[~!@#$%^&*()_+|}{":?><];\nkey:shift-&;g' <<<"$_msg")
 				else
@@ -241,9 +245,9 @@ vncput() {
 	for msg in "${msgArray[@]}"; do
 		if [[ -n "$msg" ]]; then
 			if [[ "$msg" = key:* ]]; then
-				vncdo -s $vncport key "${msg#key:}"
+				vncdo --force-caps -s $vncport key "${msg#key:}"
 			else
-				vncdo -s $vncport type "${msg#type:}"
+				vncdo --force-caps -s $vncport type "${msg#type:}"
 			fi
 		else
 			sleep 1
@@ -1878,7 +1882,7 @@ elif [[ "$InstallType" = import ]]; then
 			vm "$vmname" -vncputln root
 			vm "$vmname" -vncputln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf"
 			vm "$vmname" -vncputln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config"
-			vm "$vmname" -vncputln "cat /etc/ssh/sshd_config"
+			vm "$vmname" -vncputln "grep -v '^#' /etc/ssh/sshd_config"
 			vm "$vmname" -vncputln "pw useradd foo -G wheel"
 			vm "$vmname" -vncputln "passwd foo" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat"
 			vm "$vmname" -vncputln "passwd root" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat"
