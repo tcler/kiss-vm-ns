@@ -183,21 +183,21 @@ vmifaddr() {
 
 vncget() {
 	local vncport=$1
-	local ConvertCmd=convert
+	local ConvertCmd="gm convert"
 
-	! which vncdo >/dev/null && {
+	! which vncdo &>/dev/null && {
 		echo "{VM:WARN} command vncdo is needed by 'vncget' function!" >&2
 		return 1
 	}
-	! which convert >/dev/null && {
-		if ! which gm >/dev/null; then
-			echo "{VM:WARN} command convert or gm are needed by 'vncget' function!" >&2
+	! which gm &>/dev/null && {
+		if ! which convert &>/dev/null; then
+			echo "{VM:WARN} command gm or convert are needed by 'vncget' function!" >&2
 			return 1
 		else
-			ConvertCmd="gm convert"
+			ConvertCmd=convert
 		fi
 	}
-	! which gocr >/dev/null && {
+	! which gocr &>/dev/null && {
 		echo "{VM:WARN} command gocr is needed by 'vncget' function!" >&2
 		return 1
 	}
