@@ -1880,13 +1880,14 @@ elif [[ "$InstallType" = import ]]; then
 			echo -e "{VM:INFO} waiting login: prompt ..."
                         while ! grep "^login:" < <(vm "$vmname" -vncget); do sleep 10; done
 			vm "$vmname" -vncputln root
-			vm "$vmname" -vncputln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf"
-			vm "$vmname" -vncputln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config"
-			vm "$vmname" -vncputln "grep -v '^#' /etc/ssh/sshd_config"
-			vm "$vmname" -vncputln "pw useradd foo -G wheel"
-			vm "$vmname" -vncputln "passwd foo" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat"
-			vm "$vmname" -vncputln "passwd root" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat"
-			vm "$vmname" -vncputln "/etc/rc.d/sshd start"
+			vm "$vmname" -vncputln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf" \
+				-vncputln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config" \
+				-vncputln "grep '^[^#]' /etc/rc.conf" \
+				-vncputln "grep '^[^#]' /etc/ssh/sshd_config"
+			vm "$vmname" -vncputln "pw useradd foo -G wheel" \
+				-vncputln "passwd foo" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat" \
+				-vncputln "passwd root" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat" \
+				-vncputln "/etc/rc.d/sshd start"
 		}
 	else
 		trap - SIGINT
