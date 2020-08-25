@@ -1193,9 +1193,9 @@ else
 	exit 1
 fi
 
-[[ "$ENABLE_NESTED" = yes ]] && {
-	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
-	vendor=${kmodule#kvm_}
+enable_nested_kvm() {
+	local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
+	local vendor=${kmodule#kvm_}
 
 	{
 	echo "options kvm-$vendor nested=1"
@@ -1210,12 +1210,15 @@ fi
 	if [[ $(< /sys/module/$kmodule/parameters/nested) != [Yy1] ]]; then
 		modprobe -r $kmodule || {
 			echo -e "{VM:WARN} stop tasks are using module $kmodule, and try again"
-			exit 1
+			return 1
 		}
 		modprobe $kmodule
 	fi
 	cat /sys/module/$kmodule/parameters/nested
-	exit
+}
+[[ "$ENABLE_NESTED" = yes ]] && {
+	enable_nested_kvm
+	exit $?
 }
 
 support_nested_kvm() {
