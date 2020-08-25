@@ -1217,6 +1217,17 @@ fi
 	cat /sys/module/$kmodule/parameters/nested
 	exit
 }
+
+support_nested_kvm() {
+	local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
+	local rc=0
+
+	if [[ $(< /sys/module/$kmodule/parameters/nested) != [Yy1] ]]; then
+		rc=1
+	fi
+	return $rc
+}
+support_nested_kvm && ENABLE_L2VM=yes
 [[ "$ENABLE_L2VM" = yes ]] && {
 	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 	vendor=${kmodule#kvm_}
