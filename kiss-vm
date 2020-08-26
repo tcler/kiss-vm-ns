@@ -621,6 +621,8 @@ enable_libvirt() {
 		sudo $PIP install --upgrade pip
 		sudo $PIP install --upgrade setuptools
 		sudo $PIP install vncdotool
+		[[ $(rpm -E %rhel) != "%rhel" ]]
+			sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(rpm -E %rhel).noarch.rpm
 		sudo yum install -y GraphicsMagick; which gm 2>/dev/null || sudo yum install -y ImageMagick
 		sudo yum install -y gocr; which gocr 2>/dev/null || sudo gocr-src-install.sh
 	}
