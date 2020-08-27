@@ -5,5 +5,6 @@ sudo yum install -y python-devel platform-python-devel python-pip python3-pip --
 PIP=pip
 which pip &>/dev/null || PIP=pip3
 
-sudo $PIP install --upgrade pip setuptools
+sudo $PIP install --upgrade pip
+sudo $PIP install --upgrade setuptools
 sudo $PIP install vncdotool service_identity
