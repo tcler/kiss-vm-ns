@@ -1141,7 +1141,7 @@ while true; do
 	-p|--pkginstall)  PKGS="$2"; shift 2;;
 	--osv|--os-variant) VM_OS_VARIANT="$2"; shift 2;;
 	--nocloud*)      NO_CLOUD_INIT="yes"; shift 1;;
-	--dsize)         DSIZE="$2"; shift 2;;
+	--dsize)         dsizeflag=1; DSIZE="$2"; shift 2;;
 	--msize)         MSIZE="$2"; shift 2;;
 	--cpus)          VCPUS="$2"; shift 2;;
 	--nointeract)    INTERACT="no"; shift 1;;
@@ -1828,7 +1828,7 @@ elif [[ "$InstallType" = import ]]; then
 	touch $VMpath/.kiss-vm
 	echo $Imageurl >$VMpath/url
 
-	[[ "$NOAUTO" = yes ]] || {
+	[[ "$dsizeflag" = 1 || "$NOAUTO" != yes ]] && {
 		_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
 		[[ "$_size" -lt $((DSIZE*1024*1024*1024)) ]] && {
 			echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
