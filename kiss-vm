@@ -1008,6 +1008,7 @@ Usage() {
 	  --enable-nested-vm  #enable nested on host
 	  --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
 	                      #ref: https://www.linux-kvm.org/page/Nested_Guests
+	  --disable-guest-hypv #disable guest hypervisor
 	  -x[arg]             #expected return code of sub-command exec, if doesn't match output test fail msg
 	                      # e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 	  --pxe          #PXE install
@@ -1159,6 +1160,7 @@ _at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
 	--long qemu-env: \
 	--long enable-nested-vm \
 	--long enable-guest-hypv \
+	--long disable-guest-hypv \
 	--long pxe \
 	--long diskless \
     -a -n "$0" -- "$@"`
@@ -1229,6 +1231,7 @@ while true; do
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	--enable-guest-hy*) ENABLE_L2VM=yes; shift 1;;
+	--disable-guest-hy*) ENABLE_L2VM=no; shift 1;;
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
 	--) shift; break;;
 	esac
@@ -1287,7 +1290,7 @@ support_nested_kvm() {
 	fi
 	return $rc
 }
-support_nested_kvm && ENABLE_L2VM=yes
+support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 [[ "$ENABLE_L2VM" = yes ]] && {
 	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 	vendor=${kmodule#kvm_}
