@@ -19,10 +19,14 @@ VMName=
 InstallType=import
 ImagePath=~/myimages
 VMSHOME=~/VMs
+vmprefix=$(whoami)
+[[ -n "$SUDO_USER" ]] && {
+	eval ImagePath=~$SUDO_USER/myimages
+	eval VMSHOME=~$SUDO_USER/VMs
+	vmprefix=${SUDO_USER}
+}
 RuntimeTmp=/tmp/vm-$$
 INTERACT=yes
-vmprefix=$(whoami)
-[[ -n "$SUDO_USER" ]] && vmprefix=${SUDO_USER}-sudo
 Intranet=yes
 VIRT_READY=unkown
 _MSIZE=1536
@@ -73,7 +77,7 @@ _vmdelete() {
 	if [[ -n "${vmprefix}" ]]; then
 		blk=$(virsh domblklist "$_vmname" | sed 1,2d)
 		if test -n "$blk"; then
-			! grep -q $homedir/VMs/ <<<"$blk" && {
+			! grep -q "$homedir/VM[sS]/" <<<"$blk" && {
 				echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
 				cat <<-EOF
 				  virsh destroy $_vmname
@@ -109,7 +113,7 @@ _vmdelete() {
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "- {VM:INFO} removing VM folder $_vmdir ..."
 		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
-		rm -f $_vmdir/*.qcow2.xz
+		rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
 		rm -f $_vmdir/nvdimm-*.dev
 		rmdir $_vmdir 2>/dev/null
 		rmdir ${_vmdir%/*} 2>/dev/null
@@ -598,6 +602,47 @@ vercmp() {
 	return $res
 }
 
+create_vdisk() {
+	local path=$1
+	local size=$2
+	local fstype=$3
+
+	dd if=/dev/null of=$path bs=1${size//[0-9]/} seek=${size//[^0-9]/}
+	local dev=$(losetup --partscan --show --find $path)
+	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$dev"
+	mkfs.$fstype $MKFS_OPT "${dev}p1"
+	losetup -d $dev
+}
+
+mount_vdisk() {
+	local path=$1
+	local mp=$2
+	local partN=${3:-1}
+	local offset=$(fdisk -l -o Start "$path" |
+		awk -v N=$partN '
+			/^Units:/ { unit=$(NF-1); offset=0; }
+			/^Start/ {
+				for(i=0;i<N;i++)
+					if(getline == 0) { $0=""; break; }
+				offset=$1*unit;
+			}
+			END { print offset; }'
+	)
+	echo "offset: $offset"
+
+	[[ -d "$mp" ]] || {
+		echo "{warn} mount_vdisk: dir '$mp' not exist"
+		return 1
+	}
+
+	if [[ "$offset" -ne 0 || "$partN" -eq 1 ]]; then
+		mount $MNT_OPT -oloop,offset=$offset $path $mp
+	else
+		echo "{warn} mount_vdisk: there's not part($partN) on disk $path"
+		return 1
+	fi
+}
+
 #-------------------------------------------------------------------------------
 
 enable_libvirt() {
@@ -932,8 +977,9 @@ Usage() {
 	  --macvtapmode <vepa|bridge>
 	                 #macvtap mode
 	  -r|--ready     #virt config is ready, don't have to run enable_libvirt function
-	  --xdisk <size> #add an extra disk, could be specified multi-times. size unit is G
-	                 #e.g: --xdisk 10 --xdisk 20
+	  --xdisk <size[,fstype]>
+	                 #add an extra disk, could be specified multi-times. size unit is G
+	                 #e.g: --xdisk 10 --xdisk 20,xfs
 	  --disk <img[,bus=]>
 	                 #add exist disk file, could be specified multi-times.
 	  --bus <$start_disk_bus>
@@ -1305,6 +1351,15 @@ is_intranet || {
 	bkrClientImprovedUrl=
 }
 
+for disk in "${EXTRA_DISKS[@]}"; do
+	read size fstype _ <<<"${disk//,/ }"
+	[[ -n "$fstype" && $(id -u) -ne 0 ]] && {
+		echo "{WARN} creating extra disk($disk) need super user permission, try:"
+		echo "  sudo $0 ${_at[@]} $@"
+		exit 1
+	}
+done
+
 # Phase-0 get distro name
 [[ -z "$Distro" ]] && Distro=$1
 [[ -z "$Distro" ]] && {
@@ -1504,10 +1559,18 @@ grep -i -q freebsd <<<"$Distro" && NOAUTO=yes
 }
 
 k=0
-for size in "${EXTRA_DISKS[@]}"; do
+for disk in "${EXTRA_DISKS[@]}"; do
+	read size fstype _ <<<"${disk//,/ }"
 	ximage=xdisk$((k++)).qcow2
-	qemu-img create -f qcow2 $VMpath/$ximage ${size}G
-	DISK_OPTS+=" --disk path=$VMpath/$ximage,bus=virtio"  #bus=scsi
+	format=qcow2
+	if [[ -z "$fstype" ]]; then
+		qemu-img create -f qcow2 $VMpath/$ximage ${size}G
+	else
+		ximage=${ximage/qcow2/img}
+		format=raw
+		sudo bash -c "$(declare -f create_vdisk); create_vdisk $VMpath/$ximage ${size}G $fstype"
+	fi
+	DISK_OPTS+=" --disk path=$VMpath/$ximage,format=$format,bus=virtio"  #bus=scsi
 done
 for disk in "${DISKS[@]}"; do
 	read img arg <<<"${disk/,/ }"
