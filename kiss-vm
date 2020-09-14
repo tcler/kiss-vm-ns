@@ -1544,8 +1544,6 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	fi
 }
 
-grep -i -q freebsd <<<"$Distro" && NOAUTO=yes
-
 # Phase-2: start create VM
 # prepare ssh pub key
 [[ -f ~/.ssh/id_rsa && -f ~/.ssh/id_rsa.pub ]] || {
@@ -1945,7 +1943,8 @@ elif [[ "$InstallType" = import ]]; then
 		echo -e "{VM:INFO} vnc info:"
 		vm vncport $vmname
 		vm "$vmname" -vncget
-		grep -i -q freebsd <<<"$Distro" && {
+	else
+		if grep -i -q freebsd <<<"$Distro"; then
 			echo -e "{VM:INFO} waiting login: prompt ..."
                         while ! grep "^login:" < <(vm "$vmname" -vncget); do sleep 10; done
 			vm "$vmname" -vncputln root
@@ -1957,71 +1956,78 @@ elif [[ "$InstallType" = import ]]; then
 				-vncputln "passwd foo" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat" \
 				-vncputln "passwd root" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat" \
 				-vncputln "/etc/rc.d/sshd start"
-		}
-	else
-		trap - SIGINT
-		for ((i=0; i<16; i++)); do
-			INTERACT=$INTERACT SHUTDOWN=$GenerateImage expect -c '
-				set intc 0
-				set timeout -1
-				spawn virsh console '"$vmname"'
-				trap {
-					send_user "You pressed Ctrl+C [incr intc]/8\n"
-					if {$intc >= 8} {
-						interact
-					}
-				} SIGINT
-				expect {
-					"error: failed to get domain" {
-						send "\r"
-						puts $expect_out(buffer)
-						exit 6
-					}
-					"error: internal error: character device console0 is not using a PTY" {
-						send "\r"
-						puts $expect_out(buffer)
-						exit 7
-					}
-					"* login:" { send "root\r" }
-				}
-				expect "Password:" {
-					send "redhat\r"
-					send "\r\r\r\r\r\r"
-					if {$env(SHUTDOWN) == "yes"} {
-						send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
-						send "\r\n"
-						expect "Restarting system" { exit 0 }
-					}
-
-					send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
-					send "\r\n"
+			expect -c "
+				spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$vmname
+				expect -re .*: {send \"redhat\\r\"}
+				expect eof
+			"
+		else
+			trap - SIGINT
+			for ((i=0; i<16; i++)); do
+				INTERACT=$INTERACT SHUTDOWN=$GenerateImage expect -c '
+					set intc 0
+					set timeout -1
+					spawn virsh console '"$vmname"'
+					trap {
+						send_user "You pressed Ctrl+C [incr intc]/8\n"
+						if {$intc >= 8} {
+							interact
+						}
+					} SIGINT
 					expect {
-						"or cloud-init done ~~~~~~~~d" {send "\r\r# Now you can take over the keyboard\r\r"}
-						"* login:" {
-							send "root\r"
-							expect "Password:" {
-								send "redhat\r"
-								send "\r\r# Now you can take over the keyboard\r\r"
+						"error: failed to get domain" {
+							send "\r"
+							puts $expect_out(buffer)
+							exit 6
+						}
+						"error: internal error: character device console0 is not using a PTY" {
+							send "\r"
+							puts $expect_out(buffer)
+							exit 7
+						}
+						"* login:" { send "root\r" }
+					}
+					expect "Password:" {
+						send "redhat\r"
+						send "\r\r\r\r\r\r"
+						if {$env(SHUTDOWN) == "yes"} {
+							send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
+							send "\r\n"
+							expect "Restarting system" { exit 0 }
+						}
+
+						send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
+						send "\r\n"
+						expect {
+							"or cloud-init done ~~~~~~~~d" {send "\r\r# Now you can take over the keyboard\r\r"}
+							"* login:" {
+								send "root\r"
+								expect "Password:" {
+									send "redhat\r"
+									send "\r\r# Now you can take over the keyboard\r\r"
+								}
 							}
 						}
+						send "# and your are in console, Ctr + ] to exit \r"
+						send "\r\r"
 					}
-					send "# and your are in console, Ctr + ] to exit \r"
-					send "\r\r"
-				}
 
-				if {$env(INTERACT) == "no"} { exit 0 }
-				interact
-			' && break
-			test -d /proc/$Installpid || break
-			sleep 2
-		done
-		unset Installpid
-		echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
+					if {$env(INTERACT) == "no"} { exit 0 }
+					interact
+				' && break
+				test -d /proc/$Installpid || break
+				sleep 2
+			done
 
-		[[ -f "$cloudinitiso" ]] && {
-			echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
-			virsh change-media $vmname $cloudinitiso --eject
-		}
+			unset Installpid
+			echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
+
+			[[ -f "$cloudinitiso" ]] && {
+				echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
+				virsh change-media $vmname $cloudinitiso --eject
+			}
+
+		fi
 	fi
 elif [[ "$InstallType" = pxe ]]; then
 	imagefile=$VMpath/${vmname}.qcow2
