@@ -224,6 +224,8 @@ chroot_install() {
 	local rootfs=$1; shift
 
 	rm -rf $rootfs/etc/yum.repos.d
+
+	echo -e "{NS:INFO} chroot($rootfs) and install pkgs ..."
 	if which dnf &>/dev/null; then
 		releasever=$(rpm -q --qf "%{version}" -f /etc/os-release)
 		read repo < <(LANG=C dnf whatprovides bash|awk '$1 == "Repo" && $3 != "@System" {print $3}')
@@ -245,6 +247,7 @@ nsjinja() {
 	echo -e "{NS:INFO} creating NS template $NS($rootdir) ..."
 	if [[ -n "$CLONE" && -d "$NSHome/$CLONE" && ! -d $rootdir ]]; then
 		mkdir -p $rootdir
+		echo -e "- {NS:INFO} clone from $NSHome/$CLONE ..."
 		rsync -a --info=progress2 $rsyncOpt $NSHome/$CLONE/  $rootdir/.
 	fi
 	chroot_install $rootdir "$@"
