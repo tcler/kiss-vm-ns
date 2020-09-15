@@ -282,6 +282,7 @@ _nsdelete() {
 		NSdir=$NSHome/$ns
 		rm -rf $NSdir
 	}
+	return 0
 }
 nsdelete() {
 	local opt=
