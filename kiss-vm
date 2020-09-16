@@ -656,21 +656,19 @@ enable_libvirt() {
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
 	rpm -q $pkglist || {
 		echo -e "{*INFO*} you have not install all dependencies package, trying sudo yum install ..."
-		grep -q '^VERSION=.7' /etc/os-release &&
-			sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-		sudo yum install -y $pkglist
+		[[ $(rpm -E %rhel) != "%rhel" ]] &&
+			sudo yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(rpm -E %rhel).noarch.rpm
+		sudo yum $yumOpt install -y $pkglist
 
 		#install packages required by -vncget -vncput -vncputln options
-		sudo yum install -y python-devel python-pip platform-python-devel python3-pip --setopt=strict=0
+		sudo yum $yumOpt install -y python-devel python-pip platform-python-devel python3-pip --setopt=strict=0
 		PIP=$(which --skip-alias --skip functions pip 2>/dev/null)
 		which pip &>/dev/null || PIP=$(which --skip-alias --skip functions pip3 2>/dev/null)
 		sudo $PIP --default-timeout=720 install --upgrade pip
 		sudo $PIP --default-timeout=720 install --upgrade setuptools
 		sudo $PIP --default-timeout=720 install vncdotool service_identity
-		[[ $(rpm -E %rhel) != "%rhel" ]] &&
-			sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(rpm -E %rhel).noarch.rpm
-		sudo yum install -y GraphicsMagick; which gm 2>/dev/null || sudo yum install -y ImageMagick
-		sudo yum install -y gocr; which gocr 2>/dev/null || sudo gocr-src-install.sh
+		sudo yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || sudo yum $yumOpt install -y ImageMagick
+		sudo yum $yumOpt install -y gocr; which gocr 2>/dev/null || sudo gocr-src-install.sh
 	}
 
 	#echo -e "{VM:INFO} configure libvirt-nss ..."
@@ -1015,6 +1013,7 @@ Usage() {
 	                      # e.g: vm fedora-32 -n f32 -net-macvtap -pxe --noauto -f
 	  --diskless     #diskless install
 	                      # e.g: vm fedora-32 -n f32-diskless --net pxenet --pxe --diskless -f
+	  -q             #quiet mode, intend suppress the outputs of command yum, curl
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -1115,7 +1114,7 @@ get_default_if() {
 }
 
 # command line parse
-_at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::P \
+_at=`getopt -o hd:Ll:fn:gb:p:Ii:rvx::Pq \
 	--long help \
 	--long prepare \
 	--long ks: \
@@ -1233,9 +1232,15 @@ while true; do
 	--enable-guest-hy*) ENABLE_L2VM=yes; shift 1;;
 	--disable-guest-hy*) ENABLE_L2VM=no; shift 1;;
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
+	-q)              QUIET=yes; shift 1;;
 	--) shift; break;;
 	esac
 done
+
+[[ "$QUIET" = yes ]] && {
+	yumOpt=-q
+	curlOpt=-s
+}
 
 # __main__
 if egrep -wo '(vmx|svm)' /proc/cpuinfo -q; then
@@ -1845,14 +1850,13 @@ elif [[ "$InstallType" = import ]]; then
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
 	if [[ $Imageurl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl --fail -C - -L $Imageurl -o ${SaveImagePath}/${imagefilename}; do sleep 1; done
+			until curl $curlOpt --fail -C - -L $Imageurl -o ${SaveImagePath}/${imagefilename}; do sleep 1; done
 			cp ${SaveImagePath}/${imagefilename} $imagefile
 		else
-			until curl --fail -C - -L $Imageurl -o $imagefile; do sleep 1; done
+			until curl $curlOpt --fail -C - -L $Imageurl -o $imagefile; do sleep 1; done
 		fi
 	else
-		#curl --fail $Imageurl -o $imagefile
-		cp -f ${Imageurl#file://} $imagefile
+		cp -f ${Imageurl#file://} $imagefile   #curl $curlOpt --fail $Imageurl -o $imagefile
 	fi
 	[[ -f ${imagefile} ]] || exit 1
 
