@@ -66,6 +66,7 @@ Usage() {
 	Options:
 	  -h, --help           ; show this help info
 	  -v                   ; verbose mode
+	  -d                   ; debug mode
 	  -n <arg>             ; netns name
 	  -x[arg]              ; expected return code of sub-command exec, if doesn't match output test fail msg
 	                       ; e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
@@ -102,6 +103,13 @@ Usage() {
 	  $P del ns0 br-0
 
 	EOF
+}
+
+run() {
+	[[ $# -eq 0 ]] && return 0
+
+	[[ "$debug" = yes ]] && echo "[sys]" "$@"
+	"$@"
 }
 
 is_valid_ip() {
@@ -173,7 +181,7 @@ netnsdelete() {
 
 		echo -e "- {NETNS:INFO} remove ifs in netns $netns ..."
 		for dev in $(netnsexec $netns ip a s | awk -F'[: @]+' '/^[0-9]+:/ {if ($2 != "lo") print $2}'); do
-			netnsexec $netns ip link del "$dev"
+			run netnsexec $netns ip link del "$dev"
 		done
 		netnsexec $netns ip a s
 
@@ -181,7 +189,7 @@ netnsdelete() {
 		tmux -L netns:$netns send-keys -t "$netns" C-z " exit; exit" Enter
 
 		echo -e "- {NETNS:INFO} remove netns $netns ..."
-		ip netns del $netns 2>/dev/null
+		run ip netns del $netns 2>/dev/null
 	done
 }
 brdelete() {
@@ -190,12 +198,12 @@ brdelete() {
 
 		echo -e "- {NETNS:INFO} remove ifs in bridge $br ..."
 		for dev in $(bridge link show | awk -F'[ :@]+' "/master $br/"'{print $2}'); do
-			ip link delete dev "$dev"
+			run ip link delete dev "$dev"
 		done
 		bridge link show | awk -F'[ :@]+' "/master $br/"'{print $2}'
 
 		echo -e "- {NETNS:INFO} remove bridge $br ..."
-		ip link delete dev $br
+		run ip link delete dev $br
 	done
 }
 nsdelete() {
@@ -224,24 +232,24 @@ addif2netns() {
 		echo $addr
 	}
 
-	ip link set $if netns $ns
-	netnsexec $ns ip link set dev $if up
+	run ip link set $if netns $ns
+	run netnsexec $ns ip link set dev $if up
 
-	[[ -n "$addr" ]] && netnsexec $ns ip addr add $(xaddr $addr) dev $if
+	[[ -n "$addr" ]] && run netnsexec $ns ip addr add $(xaddr $addr) dev $if
 }
 
 addif2bridge() {
 	local brname=$1
 	local if=$2
 
-	ip link set dev $if master $brname
-	ip link set dev $if up
+	run ip link set dev $if master $brname
+	run ip link set dev $if up
 }
 
 detachif() {
 	local ns=$1
 	local if=$2
-	ip netns exec $ns ip link set $if netns 1
+	run ip netns exec $ns ip link set $if netns 1
 }
 
 addveth() {
@@ -256,7 +264,7 @@ addveth() {
 	for pair; do
 		read end0 end1 _ <<<"${pair//,/ }"
 		if [[ -n "$end0" && -n "$end1" ]]; then
-			ip link add $end0 type veth peer name $end1
+			run ip link add $end0 type veth peer name $end1
 		else
 			Usage >&2
 		fi
@@ -287,7 +295,7 @@ addmacvlan() {
 	fi
 
 	for mv in $mvs; do
-		ip link add link $updev name ${mv} type macvlan mode $mode
+		run ip link add link $updev name ${mv} type macvlan mode $mode
 	done
 }
 addipvlan() {
@@ -315,7 +323,7 @@ addipvlan() {
 	fi
 
 	for iv in $ivs; do
-		ip link add link $updev name ${iv} type ipvlan mode $mode
+		run ip link add link $updev name ${iv} type ipvlan mode $mode
 	done
 }
 addbr() {
@@ -328,8 +336,8 @@ addbr() {
 	fi
 
 	for brname; do
-		ip link add $brname type bridge
-		ip link set dev $brname up
+		run ip link add $brname type bridge
+		run ip link set dev $brname up
 	done
 }
 addressup() {
@@ -342,17 +350,17 @@ addressup() {
 		echo $addr
 	}
 
-	ip link set dev $if up
-	ip addr add $(xaddr $addr) dev $if
+	run ip link set dev $if up
+	run ip addr add $(xaddr $addr) dev $if
 }
 delif() {
 	for if; do
-		ip link delete dev $if
+		run ip link delete dev $if
 	done
 }
 
 # command line parse
-_at=`getopt -o hvn:x:: \
+_at=`getopt -o hvdn:x:: \
 	--long help \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
@@ -361,6 +369,7 @@ while true; do
 	-h|--help) Usage; shift 1; exit 0;;
 	-n) NS="$2"; shift 2;;
 	-v) VERBOSE=yes; shift 1;;
+	-d) debug=yes; shift 1;;
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
 	--) shift; break;;
 	esac
@@ -391,7 +400,7 @@ del*|de|d) shift
 	nsdelete $NS "$@"
 	exit $?;;
 ls) shift
-	ip netns
+	run ip netns
 	exit $?;;
 addveth|veth) shift
 	addveth "$@"
@@ -497,7 +506,7 @@ for NS in "${!NS_IFS[@]}"; do
 		addbr $NS
 	else
 		echo -e "{NETNS:INFO} creating NS $NS ..."
-		ip netns add "$NS"
+		run ip netns add "$NS"
 		tmux -L netns:$NS new -s "$NS" -d "ip netns exec \"$NS\" /bin/bash"
 	fi
 done
@@ -519,8 +528,8 @@ is_bridge() {
 Upperdev=$(get_default_if)
 if is_bridge $Upperdev; then
 	Upperdev=kss-netns-dummy
-	ip link add name $Upperdev type dummy 2>/dev/null
-	ip link set $Upperdev up
+	run ip link add name $Upperdev type dummy 2>/dev/null
+	run ip link set $Upperdev up
 fi
 for vnicinfo in "${VNICList[@]}"; do
 	iftype=
