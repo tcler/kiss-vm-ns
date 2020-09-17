@@ -181,9 +181,9 @@ netnsdelete() {
 
 		echo -e "- {NETNS:INFO} remove ifs in netns $netns ..."
 		for dev in $(netnsexec $netns ip a s | awk -F'[: @]+' '/^[0-9]+:/ {if ($2 != "lo") print $2}'); do
-			run netnsexec $netns ip link del "$dev"
+			run ip netns exec $netns ip link del "$dev"
 		done
-		run netnsexec $netns ip a s
+		run ip netns exec $netns ip a s
 
 		echo -e "- {NETNS:INFO} exit init bash ..."
 		tmux -L netns:$netns send-keys -t "$netns" C-z " exit; exit" Enter
@@ -233,9 +233,9 @@ addif2netns() {
 	}
 
 	run ip link set $if netns $ns
-	run netnsexec $ns ip link set dev $if up
+	run ip netns exec $ns ip link set dev $if up
 
-	[[ -n "$addr" ]] && run netnsexec $ns ip addr add $(xaddr $addr) dev $if
+	[[ -n "$addr" ]] && run ip netns exec $ns ip addr add $(xaddr $addr) dev $if
 }
 
 addif2bridge() {
