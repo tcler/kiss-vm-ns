@@ -177,13 +177,13 @@ netnsdelete() {
 		echo -e "\n{NETNS:INFO} delete/destroy netns $netns ..."
 
 		echo -e "- {NETNS:INFO} umount all networking fs ..."
-		netnsexec $netns umount -a -t nfs,nfs4,cifs
+		run netnsexec $netns umount -a -t nfs,nfs4,cifs
 
 		echo -e "- {NETNS:INFO} remove ifs in netns $netns ..."
 		for dev in $(netnsexec $netns ip a s | awk -F'[: @]+' '/^[0-9]+:/ {if ($2 != "lo") print $2}'); do
 			run netnsexec $netns ip link del "$dev"
 		done
-		netnsexec $netns ip a s
+		run netnsexec $netns ip a s
 
 		echo -e "- {NETNS:INFO} exit init bash ..."
 		tmux -L netns:$netns send-keys -t "$netns" C-z " exit; exit" Enter
