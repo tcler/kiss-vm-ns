@@ -76,6 +76,13 @@ Usage() {
 	EOF
 }
 
+run() {
+	[[ $# -eq 0 ]] && return 0
+
+	[[ "$DEBUG" = yes ]] && echo "[sys]" "$@"
+	"$@"
+}
+
 addmacvlan() {
 	local fname=${FUNCNAME[0]}
 	Usage() { echo -e "Usage:\n  $fname [-updev=updev] [-mode={bridge|vepa|private|passthru}] mv1 [mv2 ...]"; }
@@ -101,7 +108,7 @@ addmacvlan() {
 	fi
 
 	for mv in $mvs; do
-		ip link add link $updev name ${mv} type macvlan mode $mode
+		run ip link add link $updev name ${mv} type macvlan mode $mode
 	done
 }
 addressup() {
@@ -114,8 +121,22 @@ addressup() {
 		echo $addr
 	}
 
-	ip link set dev $if up
-	ip addr add $(xaddr $addr) dev $if
+	run ip link set dev $if up
+	run ip addr add $(xaddr $addr) dev $if
+}
+_nsaddressup() {
+	local initpid=$1
+	local if=$2
+	local addr=$3
+
+	xaddr() {
+		local addr=$1
+		[[ "$addr" =~ .*/[1-9]+$ ]] || addr+=/24
+		echo $addr
+	}
+
+	run _nsexec $initpid ip link set dev $if up
+	run _nsexec $initpid ip addr add $(xaddr $addr) dev $if
 }
 
 is_valid_ip() {
@@ -264,9 +285,10 @@ _nsdelete() {
 	echo -e "- {NS:INFO} umount all networking fs on $ns ..."
 	nsexec $ns umount -a -t nfs,nfs4,cifs
 
-	macvlan4ns=${ns}.
-	echo -e "- {NS:INFO} remove macvlan ifs in ns ..."
-	for dev in $(nsexec $ns ip a s | awk -F'[: @]+' -v pre=mv-${macvlan4ns} '/^[0-9]+:/ {if ($2 ~ "^" pre "[0-9]*$") print $2}'); do
+	local macvlan4ns=${ns}.
+	local iflist=$(nsexec $ns ip a s | awk -F'[: @]+' -v pre=mv-${macvlan4ns} '/^[0-9]+:/ {if ($2 ~ "^" pre "[0-9]*$") print $2}'|xargs)
+	echo -e "- {NS:INFO} remove macvlan ifs in ns: {${iflist// /,}} ..."
+	for dev in $iflist; do
 		nsexec $ns ip link del "$dev"
 	done
 
@@ -277,10 +299,10 @@ _nsdelete() {
 	ns_pstree $ns | awk 'NF > 4 {print $1}' |tac|sed '$d'| xargs kill -9 2>/dev/null
 
 	echo -e "- {NS:INFO} remove veth ifs @host ..."
-	ip link del ve-$ns 2>/dev/null
+	run ip link del ve-$ns 2>/dev/null
 	echo -e "- {NS:INFO} remove macvlan ifs @host ..."
 	for dev in $(ip a s | awk -F'[: @]+' -v pre=${macvlan4ns} '/^[0-9]+:/ {if ($2 ~ "^" pre "[0-9]*$") print $2}'); do
-		ip link del "$dev"
+		run ip link del "$dev"
 	done
 	[[ $opt = /h* ]] && {
 		NSdir=$NSHome/$ns
@@ -441,11 +463,7 @@ NETWORK_VETH_OPT=
 
 CMD="systemd-nspawn $BIND_OPTS $VOLATILE_OPT $NETWORK_VETH_OPT $NET_MACVLAN_OPTS $BOOT_OPT $MachineOpt"
 echo -e "\n{NS:INFO} [creating NS $NS]: $CMD"
-if [[ "$DEBUG" = yes ]]; then
-	$CMD
-else
-	tmux -L ns:$NS new -s $NS -d "$CMD"
-fi
+run tmux -L ns:$NS new -s $NS -d "$CMD"
 
 echo -e "\n{NS:INFO} waiting NS $NSdir start ..."
 sleep 1
@@ -461,11 +479,6 @@ echo -e "\n{NS:INFO} NS info"
 ns_list
 ns_pstree $NS
 
-# generate utils addressup
-{ declare -f addressup; echo 'addressup "$@"'; } >$NSdir/bin/addressup
-chmod +x $NSdir/bin/addressup
-which addressup &>/dev/null || cp $NSdir/bin/addressup /usr/bin/.
-
 # post setup
 hostvethif=ve-$NS
 if [[ -n "$HOST_VETH_IP" && -n "$NS_VETH_IP" ]]; then
@@ -478,15 +491,17 @@ if [[ -n "$HOST_VETH_IP" && -n "$NS_VETH_IP" ]]; then
 
 	vifidx=$(ip a s $hostvethif|sed -nr -e '/.*@if([0-9]+): .*/{s//\1/;p}')
 	nsvethif=$(_nsexec "$InitPid" ip a s | awk -F[@:\ ]+ '/^'$vifidx':/{print $2}')
-	echo -e "\n{NS:INFO} setup veth ns side $nsvethif $NS_VETH_IP"
-	_nsexec "$InitPid" addressup $nsvethif $NS_VETH_IP
+	echo -e "\n{NS:INFO} setup veth ns($NS) side: $nsvethif $NS_VETH_IP"
+	_nsaddressup "$InitPid"  $nsvethif $NS_VETH_IP
 	_nsexec "$InitPid" ip a s $nsvethif
 
 	#add default route
+	echo -e "\n{NS:INFO} add default route for $NS: ip route add default via $HOST_VETH_IP dev $nsvethif"
 	_nsexec "$InitPid" ip route add default via $HOST_VETH_IP dev $nsvethif
 	_nsexec "$InitPid" sysctl -w net.ipv4.conf.all.rp_filter=2
 
 	#enable NAT
+	echo -e "\n{NS:INFO} enable ip forward and NAT"
 	sysctl -w net.ipv4.conf.all.forwarding=1
 	#iptables -A POSTROUTING -s ${HOST_VETH_IP%.*}.0/24 -j MASQUERADE -t nat
 	systemctl start firewalld
@@ -502,7 +517,7 @@ for addr in $NS_MACVLAN_IPS; do
 	is_valid_ip "$addr" || { echo -e "\n{NS:WARN} '$addr' is not a valid address"|grep --color=always . >&2; continue; }
 	nsifname=mv-${macvlan4ns}$((loop++))
 	echo -e "\n{NS:INFO} setup macvlan if $nsifname $addr"
-	_nsexec "$InitPid" addressup $nsifname $addr
+	_nsaddressup "$InitPid" $nsifname $addr
 	_nsexec "$InitPid" ip a s $nsifname
 done
 
