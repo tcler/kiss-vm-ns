@@ -235,7 +235,10 @@ addif2netns() {
 	run ip link set $if netns $ns
 	run ip netns exec $ns ip link set dev $if up
 
-	[[ -n "$addr" ]] && run ip netns exec $ns ip addr add $(xaddr $addr) dev $if
+	[[ -n "$addr" ]] && {
+		run ip netns exec $ns ip addr add $(xaddr $addr) dev $if
+		run ip netns exec $ns ip route add default via ${addr%/*} dev $if
+	}
 }
 
 addif2bridge() {
