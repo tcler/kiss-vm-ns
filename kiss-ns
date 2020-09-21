@@ -503,10 +503,10 @@ if [[ -n "$HOST_VETH_IP" && -n "$NS_VETH_IP" ]]; then
 	#enable NAT
 	echo -e "\n{NS:INFO} enable ip forward and NAT"
 	sysctl -w net.ipv4.conf.all.forwarding=1
-	#iptables -A POSTROUTING -s ${HOST_VETH_IP%.*}.0/24 -j MASQUERADE -t nat
 	systemctl start firewalld
 	firewall-cmd --permanent --zone=public --add-masquerade
 	firewall-cmd --reload
+	#iptables -A POSTROUTING -s ${HOST_VETH_IP%.*}.0/24 -j MASQUERADE -t nat
 else
 	:
 fi

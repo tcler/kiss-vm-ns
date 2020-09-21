@@ -510,6 +510,7 @@ for NS in "${!NS_IFS[@]}"; do
 	else
 		echo -e "{NETNS:INFO} creating NS $NS ..."
 		run ip netns add "$NS"
+		run ip netns exec "$NS" ip link set lo up   #for ping localhost
 		tmux -L netns:$NS new -s "$NS" -d "ip netns exec \"$NS\" /bin/bash"
 	fi
 done
