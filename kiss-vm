@@ -938,6 +938,7 @@ Usage() {
 	  -i <url/path>  #create VM by import existing disk image, value can be url or local path
 	  -L             #create VM by using location, auto search url according distro name
 	  -l <url>       #create VM by using location
+	  -C <iso path>  #create VM by using ISO image
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  -n|--vmname <name>
 	                 #VM name suffix, will auto generate according distro name if omitting
@@ -1122,7 +1123,7 @@ get_default_if() {
 }
 
 # command line parse
-_at=`getopt -o hd:Ll:fn:gb:p:Ii:rvdx::Pq \
+_at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long help \
 	--long prepare \
 	--long ks: \
@@ -1178,6 +1179,7 @@ while true; do
 	-h|--help) Usage; shift 1; exit 0;;
 	--prepare) ONLY_PREPARE=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
+	-C)        InstallType=cdrom; Isourl=$2; shift 2;;
 	-l)        InstallType=location; Location=$2; shift 2;;
 	-L)        InstallType=location; shift 1;;
 	-i)        InstallType=import; Imageurl=${2}; shift 2;;
@@ -1380,7 +1382,7 @@ done
 # Phase-0 get distro name
 [[ -z "$Distro" ]] && Distro=$1
 [[ -z "$Distro" ]] && {
-	if [[ -z "$Location" && -z "$Imageurl" ]]; then
+	if [[ -z "$Location" && -z "$Imageurl" && -z "$Isourl" ]]; then
 		which dialog &>/dev/null || yum install -y dialog &>/dev/null
 		distropatternOut=$RuntimeTmp/distroPatternOut
 		distropatternIn=$RuntimeTmp/distroPatternIn
@@ -2072,6 +2074,44 @@ elif [[ "$InstallType" = pxe ]]; then
 		sleep 10
 		vm $vmname -vncget
 	fi
+
+	echo -e "\n{VM:INFO} please connect vnc to continue install:"
+	for vncaddr in $(vmvncport $vmname); do
+		echo -e "  $ vncviewer $vncaddr    #from remote"
+	done
+	exit 0
+elif [[ "$InstallType" = cdrom ]]; then
+	[[ -f $Isourl ]] && Isourl=file://$(readlink -f ${Isourl})
+	isofilename=${Isourl##*/}
+	isofile=$VMpath/$isofilename
+
+	echo "{VM:INFO} downloading iso file of $Distro to $isofile ..."
+	if [[ $Isourl != file:///* ]]; then
+		if [[ -n "$SAVE_IMAGE" ]]; then
+			until curl $curlOpt --fail -C - -L $Isourl -o ${SaveImagePath}/${isofilename}; do sleep 1; done
+			cp ${SaveImagePath}/${isofilename} $isofile
+		else
+			until curl $curlOpt --fail -C - -L $Isourl -o $isofile; do sleep 1; done
+		fi
+	else
+		cp -f ${Isourl#file://} $isofile   #curl $curlOpt --fail $Isourl -o $isofile
+	fi
+	[[ -f ${isofile} ]] || exit 1
+
+	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
+	  --name $vmname \
+	  $OS_VARIANT_OPT \
+	  $MACHINE_OPT \
+	  --vcpus ${VCPUS} \
+	  $MEM_OPTS \
+	  --disk $isofile,device=cdrom,bus=${START_DISK_BUS:-virtio} \
+	  $DISK_OPTS \
+	  $NETWORK_OPTS $CONTROLLER_OPTS \
+	  --noautoconsole \
+	  --vnc --vnclisten 0.0.0.0
+
+	sleep 2
+	vm $vmname -vncget
 
 	echo -e "\n{VM:INFO} please connect vnc to continue install:"
 	for vncaddr in $(vmvncport $vmname); do
