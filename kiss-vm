@@ -2098,13 +2098,13 @@ elif [[ "$InstallType" = cdrom ]]; then
 	fi
 	[[ -f ${isofile} ]] || exit 1
 
-	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
+	run virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  --name $vmname \
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
-	  --disk $isofile,device=cdrom,bus=${START_DISK_BUS:-virtio} \
+	  --cdrom $isofile \
 	  $DISK_OPTS \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --noautoconsole \
@@ -2112,6 +2112,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 
 	sleep 2
 	vm $vmname -vncget
+	vm $vmname -vncput "key:down" -vncput "key:up"
 
 	echo -e "\n{VM:INFO} please connect vnc to continue install:"
 	for vncaddr in $(vmvncport $vmname); do
