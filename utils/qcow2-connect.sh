@@ -6,7 +6,7 @@ freenbd() {
 	for x in /sys/class/block/nbd*; do
 		S=$(< $x/size)
 		[[ "$S" == "0" ]] && {
-			echo -n $x
+			echo -n /dev/${x##*/}
 			break
 		}
 	done
