@@ -1083,7 +1083,7 @@ Usage() {
 run() {
 	[[ $# -eq 0 ]] && return 0
 
-	[[ "$debug" = yes ]] && echo "[sys]" "$@"
+	[[ "$DEBUG" = yes ]] && echo "[sys]" "$@"
 	"$@"
 }
 
@@ -1725,6 +1725,11 @@ if [[ "$InstallType" = location ]]; then
 	}
 	ksfile=${KSPath##*/}
 	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
+
+	[[ "$DEBUG" = yes ]] && {
+		echo "#[debug] kickstart:"
+		cat ${KSPath}
+	}
 
 	#workaround: see https://bugzilla.redhat.com/show_bug.cgi?id=1707389#c15
 	workaroundExtraArgs="rd.driver.pre=loop"
