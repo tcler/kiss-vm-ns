@@ -994,7 +994,7 @@ Usage() {
 	  --fips         #enable fips
 	  --nosshkey     #don't inject sshkey
 	  -v|--verbose   #verbose mode
-	  -d             #debug mode
+	  --debug        #debug mode
 	  --vncget       #get vnc screen and convert to text by gocr
 	  --vncput <msg> #send string or key event to vnc server, could be specified multi-times
 	                 #e.g: --vncput root --vncput key:enter --vncput password --vncput key:enter
