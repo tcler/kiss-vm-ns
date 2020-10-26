@@ -1684,7 +1684,7 @@ if [[ "$InstallType" = location ]]; then
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install ..."
 		wget -O /usr/bin/brewinstall.sh -N -q $bkrClientImprovedUrl/utils/brewinstall.sh --no-check-certificate
 		chmod +x /usr/bin/brewinstall.sh
-		brewinstall.sh $BPKGS
+		brewinstall.sh $BPKGS -noreboot
 
 		END
 
