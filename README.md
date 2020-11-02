@@ -10,8 +10,7 @@ Thereby focusing more on the verification and testing of business functions.
 vm:
     功能: 快速创建、登陆、重启、删除 libvirt 虚拟机(VMs)，以及构建虚拟网络(Virtual lab);
     用途: 自动化测试 网络协议、网络文件系统、本地文件系统、nvdimm 等模块功能（硬件无关的功能都可以）
-        vm create $distro [other options]
-        vmname=$(vm -r -getvmname $distro)
+        vm create $distro -n $vmname [other options]
         vm exec $vmname -- command line
 
 ns:
