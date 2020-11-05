@@ -68,7 +68,11 @@ RHEL-6*|RHEL6*|centos6*|centos-6*)
 RHEL-7*|RHEL7*|centos7*|centos-7*)
 	Packages="-iwl* @base @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
 	;;
-RHEL-8*|RHEL8*|centos8*|centos-8*|Fedora-*)
+RHEL-8*|RHEL8*|centos8*|centos-8*)
+	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
+	AuthConfigure=
+	;;
+RHEL-9*|RHEL9*|centos9*|centos-9*|Fedora-*)
 	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
 	AuthConfigure=
 	;;

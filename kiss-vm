@@ -915,6 +915,34 @@ if [[ $Intranet = yes ]]; then
 				beaker-harness:https://download.devel.redhat.com/beakerrepos/harness/RedHatEnterpriseLinux8
 			)
 			;;
+		RHEL-9*|RHEL9*)
+			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
+			debug_url=${url/\/os/\/debug\/tree}
+			read dtype distro < <(awk -F/+ '{ for (i=3;i<NF;i++) { if ($(i+1) ~ /RHEL-/) { print($i, $(i+1)); break }}}' <<<"$url")
+			Repos+=(
+				BaseOS:${url}
+				AppStream:${url/BaseOS/AppStream}
+				CRB:${url/BaseOS/CRB}
+				HighAvailability:${url/BaseOS/HighAvailability}
+				NFV:${url/BaseOS/NFV}
+				ResilientStorage:${url/BaseOS/ResilientStorage}
+				RT:${url/BaseOS/RT}
+				SAP:${url/BaseOS/SAP}
+				SAPHANA:${url/BaseOS/SAPHANA}
+
+				BaseOS-debuginfo:${debug_url}
+				AppStream-debuginfo:${debug_url/BaseOS/AppStream}
+				CRB-debuginfo:${debug_url/BaseOS/CRB}
+				HighAvailability-debuginfo:${debug_url/BaseOS/HighAvailability}
+				NFV-debuginfo:${debug_url/BaseOS/NFV}
+				ResilientStorage-debuginfo:${debug_url/BaseOS/ResilientStorage}
+				RT-debuginfo:${debug_url/BaseOS/RT}
+				SAP-debuginfo:${debug_url/BaseOS/SAP}
+				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
+				Buildroot:http://download.devel.redhat.com/$dtype/latest-BUILDROOT-9-RHEL-9/compose/Buildroot/$arch/os
+				beaker-harness:https://download.devel.redhat.com/beakerrepos/harness/RedHatEnterpriseLinux8
+			)
+			;;
 		esac
 		shopt -u nocasematch
 
