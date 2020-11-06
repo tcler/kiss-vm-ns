@@ -40,7 +40,7 @@ while true; do
 	--url)     URL="$2"; shift 2;;
 	--repo)    Repos+=("$2"); shift 2;;
 	--post)    Post="$2"; shift 2;;
-	--sshkeyf) sshkeyf="$2"; shift 2;;
+	--sshkeyf) sshkeyf+=" $2"; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -170,15 +170,19 @@ echo "[$USER@${HOSTNAME} ${HOME} $(pwd)] fix CentOS-5 repo ..."
 ver=$(LANG=C rpm -q --qf %{version} centos-release)
 [[ "$ver" = 5* ]] && sed -i -e 's;mirror.centos.org/centos;vault.centos.org;' -e 's/^mirror/#&/' -e 's/^#base/base/' /etc/yum.repos.d/*
 [[ "$ver" = 5 ]] && sed -i -e 's;\$releasever;5.11;' /etc/yum.repos.d/*
+
+grep ^PermitRootLogin.yes /etc/ssh/sshd_config || echo -e "\nPermitRootLogin yes" >>/etc/ssh/sshd_config
 KSF
 
 [[ -n "$sshkeyf" ]] && {
 	cat <<-KSF
 	echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] inject sshkey ..."
 	USERS="root foo bar"
-	for U in \$USERS; do
-		H=\$(getent passwd "\$U" | awk -F: '{print \$6}')
-		mkdir \$H/.ssh && echo "$(tail -n1 $sshkeyf)" >>\$H/.ssh/authorized_keys
+	for F in \$sshkeyf; do
+		for U in \$USERS; do
+			H=\$(getent passwd "\$U" | awk -F: '{print \$6}')
+			mkdir \$H/.ssh && echo "\$(tail -n1 \$F)" >>\$H/.ssh/authorized_keys
+		done
 	done
 	KSF
 }

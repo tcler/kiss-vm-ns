@@ -46,7 +46,7 @@ while true; do
 	--repo) Repos+=($2); shift 2;;
 	-p|--pkginstall) PKGS="$2"; shift 2;;
 	-b|--brewinstall) BPKGS="$2"; shift 2;;
-	--sshkeyf) sshkeyf="$2"; shift 2;;
+	--sshkeyf) sshkeyf+=" $2"; shift 2;;
 	--kdump) kdump=yes; shift 1;;
 	--fips) fips=yes; shift 1;;
 	--) shift; break;;
@@ -85,7 +85,7 @@ users:
     plain_text_passwd: redhat
     lock_passwd: false
     ssh_authorized_keys:
-      - $(tail -n1 ${sshkeyf})
+$(for F in $sshkeyf; do echo "      -" $(tail -n1 ${F}); done)
 
   - name: foo
     group: users, admin
@@ -93,7 +93,7 @@ users:
     plain_text_passwd: redhat
     lock_passwd: false
     ssh_authorized_keys:
-      - $(tail -n1 ${sshkeyf})
+$(for F in $sshkeyf; do echo "      -" $(tail -n1 ${F}); done)
 
 chpasswd: { expire: False }
 

@@ -1594,6 +1594,9 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 [[ -f ~/.ssh/id_rsa && -f ~/.ssh/id_rsa.pub ]] || {
 	echo -e 'y\n' | ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
 }
+[[ -f ~/.ssh/id_ecdsa && -f ~/.ssh/id_ecdsa.pub ]] || {
+	echo -e 'y\n' | ssh-keygen -q -t ecdsa -f ~/.ssh/id_ecdsa -N ''
+}
 # prepare network option
 [[ -z "$NETWORK_OPTS" ]] && {
 	srcif=$(get_default_if)
@@ -1740,7 +1743,7 @@ if [[ "$InstallType" = location ]]; then
 		if [[ "$NO_SSHKEY" = yes ]]; then
 			ks-generator.sh -d $Distro -url $Location $REPO_OPTS --post $postscript >$KSPath
 		else
-			ks-generator.sh -d $Distro -url $Location $REPO_OPTS --post $postscript --sshkeyf ~/.ssh/id_rsa.pub >$KSPath
+			ks-generator.sh -d $Distro -url $Location $REPO_OPTS --post $postscript --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub >$KSPath
 		fi
 	}
 
@@ -1933,7 +1936,7 @@ elif [[ "$InstallType" = import ]]; then
 				$FIPS_OPT $KDUMP_OPT
 		else
 			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" $DEBUG_OPT $REPO_OPTS \
-				$FIPS_OPT $KDUMP_OPT --sshkeyf ~/.ssh/id_rsa.pub
+				$FIPS_OPT $KDUMP_OPT --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub
 		fi
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom"
 	}
