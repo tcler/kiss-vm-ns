@@ -178,11 +178,9 @@ KSF
 	cat <<-KSF
 	echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] inject sshkey ..."
 	USERS="root foo bar"
-	for F in \$sshkeyf; do
-		for U in \$USERS; do
-			H=\$(getent passwd "\$U" | awk -F: '{print \$6}')
-			mkdir \$H/.ssh && echo "\$(tail -n1 \$F)" >>\$H/.ssh/authorized_keys
-		done
+	for U in \$USERS; do
+		H=\$(getent passwd "\$U" | awk -F: '{print \$6}')
+		mkdir \$H/.ssh && echo "$(for F in $sshkeyf; do tail -n1 $F; done)" >>\$H/.ssh/authorized_keys
 	done
 	KSF
 }
