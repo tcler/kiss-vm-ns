@@ -22,6 +22,7 @@ Usage() {
 	  $P <\$nsname,\$vethX,\$addr---\$nsname,\$vethX_peer,\$addr | \$nsname,\$vnic_name[,\$addr][?updev=\$if,mode=\$mode,iftype=\$iftype]>
 	  # ^^^ nsname 'host' means default network namespace, br-* means it's a bridge //[convention over configuration]
 	  # ^^^ vnic_name 'iv-*' means ipvlan nic, 'mv-*' and others means macvlan nic //[convention over configuration]
+	  # ^^^ addr 'dhcp' means get ip address by using dhclient //[convention over configuration]
 
 	  # +--------+                            +--------+
 	  # | ns0    [veth0.X]------------[veth0.Y] host   |
@@ -50,6 +51,8 @@ Usage() {
 	  #               |       eth0       |
 	  #               +------------------+
 	  # netns ns0,veth5.X,192.168.4.2---ns1,veth5.Y,192.168.4.1  ns0,mv-ns0,192.168.5.10  ns1,mv-ns1,192.168.5.11
+	  # netns del ns0 ns1
+	  # netns ns0,veth5.X,192.168.4.2---ns1,veth5.Y,192.168.4.1  ns0,mv-ns0,dhcp  ns1,mv-ns1,dhcp
 
 	  $P exec \$nsname -- cmdline
 	  $P del \$nsname
@@ -175,6 +178,7 @@ expandrc() {
 netnsdelete() {
 	for netns; do
 		echo -e "\n{NETNS:INFO} delete/destroy netns $netns ..."
+		nshome=/opt/NETNS/$netns
 
 		echo -e "- {NETNS:INFO} umount all networking fs ..."
 		run netnsexec $netns umount -a -t nfs,nfs4,cifs
@@ -190,6 +194,9 @@ netnsdelete() {
 
 		echo -e "- {NETNS:INFO} remove netns $netns ..."
 		run ip netns del $netns 2>/dev/null
+
+		echo -e "- {NETNS:INFO} remove netns home $nshome ..."
+		\rm -rf $nshome 2>/dev/null
 	done
 }
 brdelete() {
@@ -236,8 +243,13 @@ addif2netns() {
 	run ip netns exec $ns ip link set dev $if up
 
 	[[ -n "$addr" ]] && {
-		run ip netns exec $ns ip addr add $(xaddr $addr) dev $if
-		run ip netns exec $ns ip route add default via ${addr%/*} dev $if
+		if [[ "$addr" = dhcp* ]]; then
+			nshome=/opt/NETNS/$ns
+			run netnsexec $ns dhclient -pf $nshome/dhclient-$if.pid
+		else
+			run ip netns exec $ns ip addr add $(xaddr $addr) dev $if
+			run ip netns exec $ns ip route add default via ${addr%/*} dev $if
+		fi
 	}
 }
 
@@ -354,7 +366,13 @@ addressup() {
 	}
 
 	run ip link set dev $if up
-	run ip addr add $(xaddr $addr) dev $if
+	[[ -n "$addr" ]] && {
+		if [[ "$addr" = dhcp* ]]; then
+			run dhclient -pf /var/run/dhclient-$if.pid
+		else
+			run ip addr add $(xaddr $addr) dev $if
+		fi
+	}
 }
 delif() {
 	for if; do
@@ -464,7 +482,7 @@ declare -A NS_IFS
 echo -e "\n{NETNS:INFO} parse parameters ..."
 for topo; do
 	# ns that connected to/by veth: host,veth0.x,192.168.0.1---ns0,veth0.y,192.168.0.2
-	if [[ "$topo" =~ ^[^,]+,[^,]+(,[^,]+)?---+[^,]+,[^,]+(,[^,]+)?$ ]]; then
+	if [[ "$topo" =~ ^[^,]+,[^,]+(,[^,]+|,dhcp)?---+[^,]+,[^,]+(,[^,]+|,dhcp)?$ ]]; then
 		topo=$(echo "$topo"|sed -r 's/---+/ /')
 		read nodeX nodeY _ <<<"${topo}"
 		read nsX vethX addrX _ <<<"${nodeX//,/ }"
@@ -477,7 +495,7 @@ for topo; do
 		existinfo=$(netnsexist $nsX $nsY; ifexist $vethX $vethY)
 		[[ -n "$existinfo" ]] && existCheck+=${existinfo}$'\n'
 	# ns that connected to macvlan
-	elif [[ "$topo" =~ ^[^,]+,[^,]+(,[0-9.]+)?(\?((updev|mode|type)=.*)(,((updev|mode|type)=.*))*)?$ ]]; then
+	elif [[ "$topo" =~ ^[^,]+,[^,]+(,[0-9.]+|,dhcp)?(\?((updev|mode|type)=.*)(,((updev|mode|type)=.*))*)?$ ]]; then
 		read ifinfo env _ <<<"${topo/\?/ }"
 		read ns ifname addr _ <<<"${ifinfo//,/ }"
 		NS_IFS[$ns]+=" $ifname,$addr"
@@ -508,9 +526,12 @@ for NS in "${!NS_IFS[@]}"; do
 		echo -e "{NETNS:INFO} creating brige $NS ..."
 		addbr $NS
 	else
+		nshome=/opt/NETNS/$NS
 		echo -e "{NETNS:INFO} creating NS $NS ..."
 		run ip netns add "$NS"
 		run ip netns exec "$NS" ip link set lo up   #for ping localhost
+		run mkdir -p $nshome
+		run chcon --reference=/var/run -R $nshome
 		tmux -L netns:$NS new -s "$NS" -d "ip netns exec \"$NS\" /bin/bash"
 	fi
 done
