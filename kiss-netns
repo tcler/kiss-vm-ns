@@ -20,7 +20,7 @@ Usage() {
 	cat <<-EOF
 	Usage:
 	  $P <\$nsname,\$vethX,\$addr---\$nsname,\$vethX_peer,\$addr | \$nsname,\$vnic_name[,\$addr][?updev=\$if,mode=\$mode,iftype=\$iftype]>
-	  # ^^^ nsname 'host' means default network namespace, br-* means it's a bridge //[convention over configuration]
+	  # ^^^ nsname 'host' means default network namespace, br-$suffix,br:\$brname means it's a bridge //[convention over configuration]
 	  # ^^^ vnic_name 'iv-*' means ipvlan nic, 'mv-*' and others means macvlan nic //[convention over configuration]
 	  # ^^^ addr 'dhcp' means get ip address by using dhclient //[convention over configuration]
 
@@ -219,7 +219,7 @@ nsdelete() {
 
 	for ns; do
 		case "$ns" in
-		br-*) brList+=("$ns");;
+		br[-:]*) brname=${ns#br:}; brList+=("$brname");;
 		*) netnsList+=("$ns");;
 		esac
 	done
@@ -467,8 +467,9 @@ _netnsexist() {
 }
 netnsexist() {
 	for ns; do
-		if [[ "$ns" = br-* ]]; then
-			ifexist $ns
+		if [[ "$ns" = br[-:]* ]]; then
+			brname=${ns#br:}
+			continue
 		else
 			_netnsexist $ns
 		fi
@@ -487,6 +488,15 @@ for topo; do
 		read nodeX nodeY _ <<<"${topo}"
 		read nsX vethX addrX _ <<<"${nodeX//,/ }"
 		read nsY vethY addrY _ <<<"${nodeY//,/ }"
+		for ns in $nsX $nsY; do
+			[[ "$ns" = br[-:]* ]] && {
+				brname=${ns#br:}
+				if [[ -n "$(ifexist $brname)" ]] && ! is_bridge $brname; then
+					echo -e "{NETNS:ERR} bridge name conflict with existed interface ${brname}"
+					exit 1
+				fi
+			}
+		done
 		VethList+=($vethX,$vethY)
 		NS_IFS[$nsX]+=" $vethX,$addrX"
 		NS_IFS[$nsY]+=" $vethY,$addrY"
@@ -498,6 +508,11 @@ for topo; do
 	elif [[ "$topo" =~ ^[^,]+,[^,]+(,[0-9.]+|,dhcp)?(\?((updev|mode|type)=.*)(,((updev|mode|type)=.*))*)?$ ]]; then
 		read ifinfo env _ <<<"${topo/\?/ }"
 		read ns ifname addr _ <<<"${ifinfo//,/ }"
+		[[ "$ns" = br[-:]* ]] && {
+			brname=${ns#br:}
+			echo -e "{NETNS:ERR} bridge(${brname}) only accept veth interface"
+			exit 1
+		}
 		NS_IFS[$ns]+=" $ifname,$addr"
 		VNICList+=($ifname,${env})
 
@@ -522,9 +537,14 @@ echo "$existCheck" | grep -q exist$ && {
 for NS in "${!NS_IFS[@]}"; do
 	[[ "$NS" = host ]] && continue
 
-	if [[ "$NS" = br-* ]]; then
-		echo -e "{NETNS:INFO} creating brige $NS ..."
-		addbr $NS
+	if [[ "$NS" = br[-:]* ]]; then
+		brname=${NS#br:}
+		echo -e "{NETNS:INFO} creating brige ${brname} ..."
+		if [[ -n "$(ifexist $brname)" ]]; then
+			echo -e "{NETNS:INFO} bridge ${brname} has been there."
+		else
+			addbr $brname
+		fi
 	else
 		nshome=/opt/NETNS/$NS
 		echo -e "{NETNS:INFO} creating NS $NS ..."
@@ -593,8 +613,9 @@ for NS in "${!NS_IFS[@]}"; do
 		echo -e "{NETNS:INFO} add $ifname to netns/br($NS) and/or set ip address($addr) ..."
 		if [[ "$NS" = host ]]; then
 			addressup $ifname $addr
-		elif [[ "$NS" = br-* ]]; then
-			addif2bridge "$NS" $ifname
+		elif [[ "$NS" = br[-:]* ]]; then
+			brname=${NS#br:}
+			addif2bridge "$brname" $ifname
 		else
 			addif2netns "$NS" $ifname $addr
 		fi
