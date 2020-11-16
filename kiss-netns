@@ -582,7 +582,8 @@ for NS in "${!NS_IFS[@]}"; do
 		run ip netns add "$NS"
 		run ip netns exec "$NS" ip link set lo up   #for ping localhost
 		run mkdir -p $nshome
-		run chcon --reference=/var/run -R $nshome
+		[[ "$(getenforce)" != Disabled ]] &&
+			run chcon --reference=/var/run -R $nshome
 		tmux -L netns:$NS new -s "$NS" -d "ip netns exec \"$NS\" /bin/bash"
 	fi
 done
