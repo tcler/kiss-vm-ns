@@ -73,6 +73,7 @@ Usage() {
 	  -n <arg>             ; netns name
 	  -x[arg]              ; expected return code of sub-command exec, if doesn't match output test fail msg
 	                       ; e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
+	  -f                   ; force delete bridge while there still have interface[s] in it.
 
 	Examples: host connect ns0 with both veth and macvlan
 	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  host,mv-host0,192.168.100.1 ns0,mv-ns0,192.168.100.2
@@ -113,6 +114,13 @@ run() {
 
 	[[ "$DEBUG" = yes ]] && echo "[sys]" "$@"
 	"$@"
+}
+
+get_default_if() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
+is_bridge() {
+	local ifname=$1
+	[[ -z "$ifname" ]] && return 1
+	ip -d a s $ifname | grep -qw bridge
 }
 
 is_valid_ip() {
@@ -200,17 +208,29 @@ netnsdelete() {
 	done
 }
 brdelete() {
+	local iflist=
+
 	for br; do
-		echo -e "\n{NETNS:INFO} delete/destroy bridge $br ..."
+		iflist=$(bridge link show | awk -F'[ :@]+' "/master $br/"'{print $2}')
+		#for dev in $iflist; do run ip link delete dev "$dev"; done
+		if [[ -n "$iflist" ]]; then
+			if [[ "$FORCE" = yes ]]; then
+				for dev in $iflist; do
+					echo -e "- {NETNS:INFO} remove interface $dev in bridge $br ..."
+					run ip link delete dev "$dev"
+				done
 
-		echo -e "- {NETNS:INFO} remove ifs in bridge $br ..."
-		for dev in $(bridge link show | awk -F'[ :@]+' "/master $br/"'{print $2}'); do
-			run ip link delete dev "$dev"
-		done
-		bridge link show | awk -F'[ :@]+' "/master $br/"'{print $2}'
-
-		echo -e "- {NETNS:INFO} remove bridge $br ..."
-		run ip link delete dev $br
+				echo -e "- {NETNS:INFO} remove bridge $br ..."
+				run ip link delete dev $br
+			else
+				echo -e "- {NETNS:WARN} there still have interface[s] in $br, try again with '-f' option if realy want remove it"
+				echo "$iflist"|sed 's/^/    /'
+				continue
+			fi
+		else
+			echo -e "- {NETNS:INFO} remove bridge $br ..."
+			run ip link delete dev $br
+		fi
 	done
 }
 nsdelete() {
@@ -220,7 +240,17 @@ nsdelete() {
 	for ns; do
 		case "$ns" in
 		br[-:]*) brname=${ns#br:}; brList+=("$brname");;
-		*) netnsList+=("$ns");;
+		*)
+			if [[ ! -f /var/run/netns/$ns ]]; then
+				if is_bridge "$ns"; then
+					brList+=("$ns")
+				else
+					echo -e "- {NETNS:WARN} [$ns] is neither netns nor bridge ..."
+				fi
+			else
+				netnsList+=("$ns")
+			fi
+			;;
 		esac
 	done
 
@@ -381,7 +411,7 @@ delif() {
 }
 
 # command line parse
-_at=`getopt -o hvdn:x:: \
+_at=`getopt -o hvdn:x::f \
 	--long help \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
@@ -392,6 +422,7 @@ while true; do
 	-v) VERBOSE=yes; shift 1;;
 	-d) DEBUG=yes; shift 1;;
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
+	-f) FORCE=yes; shift 1;;
 	--) shift; break;;
 	esac
 done
@@ -564,12 +595,6 @@ for veth in "${VethList[@]}"; do
 done
 
 # creating other VNICs
-get_default_if() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
-is_bridge() {
-	local ifname=$1
-	[[ -z "$ifname" ]] && return 1
-	ip -d a s $ifname | grep -qw bridge
-}
 Upperdev=$(get_default_if)
 if is_bridge $Upperdev; then
 	Upperdev=kss-netns-dummy
