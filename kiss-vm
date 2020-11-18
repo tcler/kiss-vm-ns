@@ -1712,7 +1712,7 @@ if [[ "$InstallType" = location ]]; then
 
 		END
 		[[ $Intranet = yes ]] && cat <<-END >>$postscript
-		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install ..."
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install $BPKGS ..."
 		wget -O /usr/bin/brewinstall.sh -N -q $bkrClientImprovedUrl/utils/brewinstall.sh --no-check-certificate
 		chmod +x /usr/bin/brewinstall.sh
 		brewinstall.sh $BPKGS -noreboot
