@@ -659,15 +659,21 @@ enable_libvirt() {
 		[[ $(rpm -E %rhel) != "%rhel" ]] &&
 			sudo yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(rpm -E %rhel).noarch.rpm
 		sudo yum $yumOpt install -y $pkglist
+	}
 
-		#install packages required by -vncget -vncput -vncputln options
+	#install packages required by -vncget -vncput -vncputln options
+	! which vncdo &>/dev/null && {
 		sudo yum $yumOpt install -y python-devel python-pip platform-python-devel python3-pip --setopt=strict=0
 		PIP=$(which --skip-alias --skip functions pip 2>/dev/null)
 		which pip &>/dev/null || PIP=$(which --skip-alias --skip functions pip3 2>/dev/null)
 		sudo $PIP --default-timeout=720 install --upgrade pip
 		sudo $PIP --default-timeout=720 install --upgrade setuptools
 		sudo $PIP --default-timeout=720 install vncdotool service_identity
+	}
+	! which gm &>/dev/null && ! which convert &>/dev/null && {
 		sudo yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || sudo yum $yumOpt install -y ImageMagick
+	}
+	! which gocr &>/dev/null && {
 		sudo yum $yumOpt install -y gocr; which gocr 2>/dev/null || sudo gocr-src-install.sh
 	}
 
