@@ -8,6 +8,7 @@ create_vdisk() {
 	dd if=/dev/null of=$path bs=1${size//[0-9]/} seek=${size//[^0-9]/}
 	local dev=$(losetup --partscan --show --find $path)
 	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$dev"
+	partprobe "$dev"
 	mkfs.$fstype $MKFS_OPT "${dev}p1"
 	losetup -d $dev
 }
