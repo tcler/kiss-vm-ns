@@ -410,6 +410,8 @@ addressup() {
 }
 delif() {
 	for if; do
+		_pid=$(pgrep -f "dhclient -pf .* $if")
+		[[ -n "$_ip" ]] && run kill $_ip
 		run ip link delete dev $if
 	done
 }
