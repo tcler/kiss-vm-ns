@@ -1143,10 +1143,15 @@ get_default_if() {
 	local notbr=$1
 	local iface=
 
-	iface=$(ip route get 1 | awk '/^[0-9]/{print $5}')
+	ifaces=$(ip route | awk '/^default/{print $5}')
+	for iface in $ifaces; do
+		[[ -z "$(ip -d link show  dev $iface|sed -n 3p)" ]] && {
+			break
+		}
+	done
 	if [[ -n "$notbr" ]] && is_bridge $iface; then
 		# ls /sys/class/net/$iface/brif
-		if command -v brctl; then
+		if command -v brctl >/dev/null; then
 			brctl show $iface | awk 'NR==2 {print $4}'
 		else
 			ip link show type bridge_slave | awk -F'[ :]+' '/master '$iface' state UP/{print $2}' | head -n1
