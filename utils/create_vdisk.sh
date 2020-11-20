@@ -9,6 +9,7 @@ create_vdisk() {
 	local dev=$(losetup --partscan --show --find $path)
 	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$dev"
 	partprobe "$dev"
+	while ! ls ${dev}p1 2>/dev/null; do sleep 1; done
 	mkfs.$fstype $MKFS_OPT "${dev}p1"
 	losetup -d $dev
 }
