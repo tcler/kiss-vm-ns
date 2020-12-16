@@ -808,6 +808,7 @@ if [[ $Intranet = yes ]]; then
 		for imagename in $imagenames; do
 			if [[ -n "${imagename}" ]]; then
 				[[ "${imagename}" = *Atomic* ]] && continue
+				[[ "${imagename}" = CentOS*-ec2* ]] && continue
 				echo ${parenturl%/}/${imagename}
 				rc=0
 			fi
@@ -1531,7 +1532,7 @@ if [[ "$InstallType" = import ]]; then
 		baseurl=http://download.eng.bos.redhat.com/qa/rhts/lookaside/distro-vm-images
 		baseurl=http://download.devel.redhat.com/qa/rhts/lookaside/distro-vm-images
 		imageLocation=${baseurl}/$Distro
-		read Imageurl _ < <(getimageurls ${imageLocation} "(qcow2|qcow2.xz)")
+		read Imageurl _ < <(getimageurls ${imageLocation} "(qcow2|qcow2.xz)"|sort -Vr)
 
 		if [[ -z "$Imageurl" ]]; then
 			echo "{VM:INFO} getting fastest location of $Distro ..." >&2
@@ -1547,7 +1548,7 @@ if [[ "$InstallType" = import ]]; then
 				imageLocation=$(echo "$imageLocation" | sed -r 's;/[Ss]erver|Everything/;/Cloud/;')
 			is_available_url $imageLocation ||
 				imageLocation=${imageLocation/Cloud/CloudImages}
-			read Imageurl _ < <(getimageurls $imageLocation "(qcow2|qcow2.xz)")
+			read Imageurl _ < <(getimageurls $imageLocation "(qcow2|qcow2.xz)"|sort -Vr)
 			if [[ $? != 0 ]]; then
 				echo "{VM:INFO} can not find imageUrl of '$Distro' in database, switching to Location mode" >&2
 				InstallType=location
@@ -1560,7 +1561,7 @@ if [[ "$InstallType" = import ]]; then
 	fi
 
 	egrep -q '(qcow2|qcow2.xz)' <<<"$Imageurl" || {
-		read Imageurl _ < <(getimageurls ${Imageurl} '(qcow2|qcow2.xz)')
+		read Imageurl _ < <(getimageurls ${Imageurl} '(qcow2|qcow2.xz)'|sort -Vr)
 	}
 
 	[[ -n "$Imageurl" ]] &&
