@@ -724,6 +724,7 @@ enable_libvirt() {
 	}
 COMM
 
+	echo -e "{VM:INFO} setfacl -mu:qemu:rx $sudouserhome ..."
 	eval setfacl -mu:qemu:rx $sudouserhome
 	eval setfacl -mu:qemu:rx -R $sudouserhome/.cache/virt-manager 2>/dev/null
 
