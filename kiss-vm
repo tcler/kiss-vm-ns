@@ -805,8 +805,9 @@ if [[ $Intranet = yes ]]; then
 		local suffix_pattern=$2
 		local rc=1
 
-		local imagenames=$(curl -L -s ${parenturl} | sed -nr '/.*"([^"]+\.'"${suffix_pattern}"')".*/{s//\1/;p}')
+		local imagenames=$(curl -L -s ${parenturl} | sed -nr '/.*"([^"]+'"${suffix_pattern}"')".*/{s//\1/;p}')
 		for imagename in $imagenames; do
+			echo -e "{VM:INFO} imagename: $imagename" >&2
 			if [[ -n "${imagename}" ]]; then
 				[[ "${imagename}" = *Atomic* ]] && continue
 				[[ "${imagename}" = CentOS*-ec2* ]] && continue
@@ -1411,8 +1412,8 @@ mkdir -p $RuntimeTmp
 declare -A distroInfo
 distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/x86_64/images/ http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/"
 distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/x86_64/images/ http://mirror.centos.org/centos/8/BaseOS/x86_64/os/"
-distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2.xz http://mirror.centos.org/centos/7/os/x86_64/"
-distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz http://mirror.centos.org/centos/6/os/x86_64/"
+distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/%%GenericCloud-.{4}.qcow2c http://mirror.centos.org/centos/7/os/x86_64/"
+distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/%%GenericCloud.qcow2c http://mirror.centos.org/centos/6/os/x86_64/"
 # https://ord.mirror.rackspace.com/fedora/releases/$version/Cloud/
 distroInfo[fedora-rawhide]="https://ord.mirror.rackspace.com/fedora/development/rawhide/Cloud/x86_64/images/"
 distroInfo[fedora-32]="https://ord.mirror.rackspace.com/fedora/releases/32/Cloud/x86_64/images/"
@@ -1529,9 +1530,15 @@ fi
 }
 
 # Phase-1: get distro's Location or Image url
+_Imagepattern='(qcow2c|qcow2|qcow2.xz)'
 [[ -n "${distroInfo[$Distro]}" ]] && {
 	echo -e "{VM:INFO} ${distroInfo[$Distro]}"
 	read _Imageurl _Location <<<"${distroInfo[$Distro]}"
+	[[ "$_Imageurl" = *%%* ]] && {
+		read _Imageurl _Imagepattern <<<"${_Imageurl/\%\%/ }"
+	}
+	echo -e "{VM:INFO} $_Imageurl($_Imagepattern) $_Location"
+
 	[[ -z "$Imageurl" ]] && Imageurl=${_Imageurl}
 	[[ -z "$Location" ]] && Location=${_Location}
 }
@@ -1548,7 +1555,7 @@ if [[ "$InstallType" = import ]]; then
 		baseurl=http://download.eng.bos.redhat.com/qa/rhts/lookaside/distro-vm-images
 		baseurl=http://download.devel.redhat.com/qa/rhts/lookaside/distro-vm-images
 		imageLocation=${baseurl}/$Distro
-		read Imageurl _ < <(getimageurls ${imageLocation} "(qcow2|qcow2.xz)"|sort -Vr)
+		read Imageurl _ < <(getimageurls ${imageLocation} "${_Imagepattern}"|sort -Vr)
 
 		if [[ -z "$Imageurl" ]]; then
 			echo "{VM:INFO} getting fastest location of $Distro ..." >&2
@@ -1564,7 +1571,7 @@ if [[ "$InstallType" = import ]]; then
 				imageLocation=$(echo "$imageLocation" | sed -r 's;/[Ss]erver|Everything/;/Cloud/;')
 			is_available_url $imageLocation ||
 				imageLocation=${imageLocation/Cloud/CloudImages}
-			read Imageurl _ < <(getimageurls $imageLocation "(qcow2|qcow2.xz)"|sort -Vr)
+			read Imageurl _ < <(getimageurls $imageLocation "${_Imagepattern}"|sort -Vr)
 			if [[ $? != 0 ]]; then
 				echo "{VM:INFO} can not find imageUrl of '$Distro' in database, switching to Location mode" >&2
 				InstallType=location
@@ -1577,7 +1584,7 @@ if [[ "$InstallType" = import ]]; then
 	fi
 
 	egrep -q '(qcow2|qcow2.xz)' <<<"$Imageurl" || {
-		read Imageurl _ < <(getimageurls ${Imageurl} '(qcow2|qcow2.xz)'|sort -Vr)
+		read Imageurl _ < <(getimageurls ${Imageurl} "${_Imagepattern}"|sort -Vr)
 	}
 
 	[[ -n "$Imageurl" ]] &&
