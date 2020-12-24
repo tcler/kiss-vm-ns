@@ -278,7 +278,7 @@ vmvncport() {
 			echo "[vncget@$_vmname]:"
 			vncget localhost::$port
 		else
-			for _host in $(hostname -A|sort -u); do
+			for _host in $(hostname -A|xargs -n 1|sort -u); do
 				ping -c 2 $_host &>/dev/null || continue
 				echo $_host:$port
 			done
