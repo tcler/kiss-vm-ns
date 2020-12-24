@@ -2029,6 +2029,7 @@ elif [[ "$InstallType" = import ]]; then
 		'
 		echo -e "{VM:INFO} vnc info:"
 		vm vncport $vmname
+		echo
 		vm "$vmname" -vncget
 		[[ -n "$VNCPUT_AFTER_INSTALL" ]] &&
 			vm "$vmname" -vncput "$VNCPUT_AFTER_INSTALL"
