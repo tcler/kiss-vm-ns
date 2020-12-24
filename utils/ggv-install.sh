@@ -6,8 +6,12 @@
 	exit 126
 }
 
-[[ $(rpm -E %rhel) != "%rhel" ]] &&
-	yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(rpm -E %rhel).noarch.rpm
+if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
+	OSV=$(rpm -E %rhel)
+	if [[ "$OSV" != "%rhel" ]]; then
+		yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
+	fi
+fi
 
 #install gm(GraphicsMagick/ImageMagick)
 ! which gm &>/dev/null && ! which convert &>/dev/null && {
