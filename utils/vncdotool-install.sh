@@ -5,6 +5,14 @@
 	exit 126
 }
 
+#install epel repo
+if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
+	OSV=$(rpm -E %rhel)
+	if [[ "$OSV" != "%rhel" ]]; then
+		yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
+	fi
+fi
+
 #install packages required
 yum install -y python-devel platform-python-devel python-pip python3-pip --setopt=strict=0
 PIP=$(which --skip-alias --skip functions pip 2>/dev/null)
