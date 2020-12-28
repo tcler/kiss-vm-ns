@@ -1311,7 +1311,7 @@ done
 }
 
 # __main__
-if egrep -wo '(vmx|svm)' /proc/cpuinfo -q; then
+if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo; then
 	[[ "$VIRT_READY" != yes ]] && {
 		if [[ -t 1 ]]; then
 			enable_libvirt $ONLY_PREPARE &>/dev/tty
