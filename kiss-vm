@@ -1356,9 +1356,10 @@ enable_nested_kvm() {
 
 support_nested_kvm() {
 	local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
+	local paramf=/sys/module/$kmodule/parameters/nested
 	local rc=0
 
-	if [[ $(< /sys/module/$kmodule/parameters/nested) != [Yy1] ]]; then
+	if [[ ! -f $paramf || $(< $paramf) != [Yy1] ]]; then
 		rc=1
 	fi
 	return $rc
