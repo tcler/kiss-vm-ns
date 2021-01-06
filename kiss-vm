@@ -669,14 +669,15 @@ enable_libvirt() {
 	}
 
 	#install packages(gm,gocr,vncdo) required by -vncget -vncput options
+	echo -e "{VM:INFO} install gm gocr and vncdo ..."
 	which ggv-install.sh &>/dev/null || {
 		_url=$baseUrl/utils/ggv-install.sh
 		sudo curl -s -o /usr/bin/ggv-install.sh -C - -L $_url
 		sudo chmod +x /usr/bin/ggv-install.sh
-		sudo ggv-install.sh
 	}
+	sudo ggv-install.sh
 
-	#echo -e "{VM:INFO} configure libvirt-nss ..."
+	echo -e "{VM:INFO} configure libvirt-nss ..."
 	grep -q '^hosts:.*libvirt libvirt_guest' /etc/nsswitch.conf || {
 		echo -e "{*INFO*} you have not configure /etc/nsswitch.conf, trying sudo sed ..."
 		sudo sed -ri '/^hosts:/s/files /&libvirt libvirt_guest /' /etc/nsswitch.conf
