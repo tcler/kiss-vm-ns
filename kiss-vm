@@ -1855,7 +1855,7 @@ if [[ "$InstallType" = location ]]; then
 		for ((i=0; i<16; i++)); do
 			#clear -x
 			printf '\33[H\33[2J'
-			INTERACT=$INTERACT expect -c '
+			INTERACT=$INTERACT LANG=C expect -c '
 				set intc 0
 				set timeout -1
 				spawn virsh console '"$vmname"'
@@ -1879,7 +1879,7 @@ if [[ "$InstallType" = location ]]; then
 					"error: internal error: character device console0 is not using a PTY" {
 						send "\r"
 						puts $expect_out(buffer)
-						exit 7
+						exit 0
 					}
 					"Unsupported Hardware Detected" {
 						send "\r"
@@ -2061,7 +2061,7 @@ elif [[ "$InstallType" = import ]]; then
 		else
 			trap - SIGINT
 			for ((i=0; i<16; i++)); do
-				INTERACT=$INTERACT SHUTDOWN=$GenerateImage expect -c '
+				INTERACT=$INTERACT SHUTDOWN=$GenerateImage LANG=C expect -c '
 					set intc 0
 					set timeout -1
 					spawn virsh console '"$vmname"'
@@ -2080,7 +2080,7 @@ elif [[ "$InstallType" = import ]]; then
 						"error: internal error: character device console0 is not using a PTY" {
 							send "\r"
 							puts $expect_out(buffer)
-							exit 7
+							exit 0
 						}
 						"* login:" { send "root\r" }
 					}
