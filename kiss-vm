@@ -1551,8 +1551,8 @@ if [[ "$InstallType" = import ]]; then
 		fi
 	elif [[ $Intranet = yes ]]; then
 		echo "{VM:INFO} searching private image url of $Distro ..." >&2
-		baseurl=http://download.eng.bos.redhat.com/qa/rhts/lookaside/distro-vm-images
-		baseurl=http://download.devel.redhat.com/qa/rhts/lookaside/distro-vm-images
+		baseurl=http://download.eng.bos.redhat.com/qa/rhts/lookaside/vm-images
+		baseurl=http://download.devel.redhat.com/qa/rhts/lookaside/vm-images
 		imageLocation=${baseurl}/$Distro
 		read Imageurl _ < <(getimageurls ${imageLocation} "${_Imagepattern}"|sort -Vr)
 
