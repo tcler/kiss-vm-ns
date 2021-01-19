@@ -4,16 +4,33 @@ mount_vdisk() {
 	local path=$1
 	local mp=$2
 	local partN=${3:-1}
-	local offset=$(fdisk -l -o Start "$path" |
-		awk -v N=$partN '
-			/^Units:/ { unit=$(NF-1); offset=0; }
-			/^Start/ {
-				for(i=0;i<N;i++)
-					if(getline == 0) { $0=""; break; }
-				offset=$1*unit;
-			}
-			END { print offset; }'
-	)
+	local offset=
+
+	if fdisk -l -o Start "$path" &>/dev/null; then
+		offset=$(fdisk -l -o Start "$path" |
+			awk -v N=$partN '
+				/^Units:/ { unit=$(NF-1); offset=0; }
+				/^Start/ {
+					for(i=0;i<N;i++)
+						if(getline == 0) { $0=""; break; }
+					offset=$1*unit;
+				}
+				END { print offset; }'
+		)
+	else
+		offset=$(fdisk -l "$path" |
+			awk -v N=$partN '
+				/^Units/ { unit=$(NF-1); offset=0; }
+				$3 == "Start" {
+					for(i=0;i<N;i++)
+						if(getline == 0) { $0=""; break; }
+					offset=$2*unit;
+					if ($2 == "*")
+						offset=$3*unit
+				}
+				END { print offset; }'
+		)
+	fi
 	echo "offset: $offset"
 
 	[[ -d "$mp" ]] || {
