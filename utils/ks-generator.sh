@@ -160,9 +160,6 @@ echo -e "%end\n"
 echo -e "%post --log=/root/extra-ks-post.log"
 cat <<'KSF'
 USER=$(id -un)
-echo "[$USER@${HOSTNAME} ${HOME} $(pwd)] set dnf strict=0 ..."
-test -f /etc/dnf/dnf.conf && echo strict=0 >>/etc/dnf/dnf.conf
-
 echo "[$USER@${HOSTNAME} ${HOME} $(pwd)] join wheel user to sudoers ..."
 echo "%wheel        ALL=(ALL)       ALL" >> /etc/sudoers
 
