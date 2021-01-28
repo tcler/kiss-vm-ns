@@ -18,6 +18,7 @@ MacvtapMode=bridge
 VMName=
 InstallType=import
 ImagePath=~/myimages
+DownloadImagePath=$ImagePath/download
 VMSHOME=~/VMs
 vmprefix=$(whoami)
 [[ -n "$SUDO_USER" ]] && {
@@ -1107,6 +1108,7 @@ Usage() {
 	  --noauto       #enter virsh console after installing start
 	  --saveimage [path]
 	                 #save image in path if install with import mode
+	  --downloadonly #download image only if there is qcow* image
 	  --cpus <N>     #number of virtual cpus, default 4
 	  --msize <size> #memory size, default 2048
 	  --dsize <size> #disk size, default 16
@@ -1300,6 +1302,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long nointeract \
 	--long noauto \
 	--long saveimage:: --long sa:: \
+	--long downloadonly \
 	--long ready \
 	--long bus: \
 	--long xdisk: \
@@ -1369,10 +1372,10 @@ while true; do
 	--macvtapmode)   MacvtapMode="$2"; shift 2;;
 	--saveimage|--sa)
 		SAVE_IMAGE="yes"
-		SaveImagePath=${2:-$ImagePath/download}
-		mkdir -p ${SaveImagePath}
+		DownloadImagePath=${2:-$ImagePath/download}
 		shift 2
 		;;
+	--downloadonly)  SAVE_IMAGE="yes"; DOWNLOAD_ONLY="yes"; InstallType=import; shift 1;;
 	-r|--ready)      VIRT_READY=yes; shift 1;;
 	--bus)           START_DISK_BUS="$2"; shift 2;;
 	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
@@ -1471,6 +1474,7 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 }
 
 mkdir -p $RuntimeTmp
+mkdir -p ${DownloadImagePath}
 
 # sub-command
 [[ $P = vmc || $P = vm ]] || true && {
@@ -2034,14 +2038,19 @@ elif [[ "$InstallType" = import ]]; then
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
 	if [[ $Imageurl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl $curlOpt --fail -C - -L $Imageurl -o ${SaveImagePath}/${imagefilename}; do
-				[[ $? = 22 && -f ${SaveImagePath}/${imagefilename} ]] && {
-					echo "{VM:INFO} ${SaveImagePath}/${imagefilename} exist."
+			until curl $curlOpt --fail -C - -L $Imageurl -o ${DownloadImagePath}/${imagefilename}; do
+				[[ $? = 22 && -f ${DownloadImagePath}/${imagefilename} ]] && {
+					echo "{VM:INFO} ${DownloadImagePath}/${imagefilename} exist."
+					ls -l ${DownloadImagePath}/${imagefilename}
 					break
 				}
 				sleep 1
 			done
-			cp ${SaveImagePath}/${imagefilename} $imagefile
+			[[ "$DOWNLOAD_ONLY" = yes ]] && {
+				ls -l ${DownloadImagePath}/${imagefilename}
+				exit 0
+			}
+			cp ${DownloadImagePath}/${imagefilename} $imagefile
 		else
 			until curl $curlOpt --fail -C - -L $Imageurl -o $imagefile; do sleep 1; done
 		fi
@@ -2273,8 +2282,18 @@ elif [[ "$InstallType" = cdrom ]]; then
 	echo "{VM:INFO} downloading iso file of $Distro to $isofile ..."
 	if [[ $Isourl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl $curlOpt --fail -C - -L $Isourl -o ${SaveImagePath}/${isofilename}; do sleep 1; done
-			cp ${SaveImagePath}/${isofilename} $isofile
+			until curl $curlOpt --fail -C - -L $Isourl -o ${DownloadImagePath}/${isofilename}; do
+				[[ $? = 22 && -f ${DownloadImagePath}/${isofilename} ]] && {
+					echo "{VM:INFO} ${DownloadImagePath}/${isofilename} exist."
+					break
+				}
+				sleep 1
+			done
+			[[ "$DOWNLOAD_ONLY" = yes ]] && {
+				ls -l ${DownloadImagePath}/${isofilename}
+				exit 0
+			}
+			cp ${DownloadImagePath}/${isofilename} $isofile
 		else
 			until curl $curlOpt --fail -C - -L $Isourl -o $isofile; do sleep 1; done
 		fi
