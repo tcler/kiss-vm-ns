@@ -434,11 +434,13 @@ vmcopyto() {
 			spawn scp $sshOpts -r "${srcarray[@]}" root@${_vmname}:$dstdir/.
 			expect {
 				"password:" { send "redhat\r"; exp_continue }
+				"Password for" { send "redhat\r"; exp_continue }
 				eof
 			}
 			foreach {pid spawnid os_error_flag value} [wait] break
 			exit \$value
-			EOF)
+			EOF
+			)
 			rc=$?
 		else
 			echo -e "{VM:WARN} ssh $_vmname is not available ..."
@@ -477,11 +479,13 @@ vmcopyfrom() {
 			spawn scp -r root@${_vmname}:$src $dstdir/.
 			expect {
 				"password:" { send "redhat\r"; exp_continue }
+				"Password for" { send "redhat\r"; exp_continue }
 				eof
 			}
 			foreach {pid spawnid os_error_flag value} [wait] break
 			exit \$value
-			EOF)
+			EOF
+			)
 			rc=$?
 		else
 			echo -e "{VM:WARN} ssh $_vmname is not available ..."
