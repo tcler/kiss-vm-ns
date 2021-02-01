@@ -29,7 +29,7 @@ fi
 		git clone https://github.com/tcler/gocr
 		(
 		cd gocr
-		./configure && make && make install
+		./configure --prefix=/usr && make && make install
 		)
 	}
 }
