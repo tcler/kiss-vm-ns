@@ -15,13 +15,17 @@ fi
 
 #install gm(GraphicsMagick/ImageMagick)
 ! which gm &>/dev/null && ! which convert &>/dev/null && {
+	echo -e "\n{ggv-install} install GraphicsMagick/ImageMagick ..."
 	yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || yum $yumOpt install -y ImageMagick
 }
 
 #install gocr
 ! which gocr &>/dev/null && {
+	echo -e "\n{ggv-install} install gocr ..."
 	yum $yumOpt install -y gocr; which gocr 2>/dev/null || {
+		echo -e "\n{ggv-install} install gocr from src ..."
 		yum install -y autoconf gcc make netpbm-progs
+		rm -rf gocr
 		git clone https://github.com/tcler/gocr
 		(
 		cd gocr
@@ -32,6 +36,7 @@ fi
 
 #install vncdotool
 ! which vncdo &>/dev/null && {
+	echo -e "\n{ggv-install} install vncdotool ..."
 	yum $yumOpt install -y python-devel python-pip platform-python-devel python3-pip --setopt=strict=0
 	PIP=$(which --skip-alias --skip functions pip 2>/dev/null)
 	which pip &>/dev/null || PIP=$(which --skip-alias --skip functions pip3 2>/dev/null)
