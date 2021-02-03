@@ -1919,7 +1919,6 @@ if [[ "$InstallType" = location ]]; then
 	  --extra-args="ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
 	  --noautoconsole \
 	  --vnc --vnclisten 0.0.0.0 $NOREBOOT &>$VMpath/nohup.log &
-	Installpid=$!
 
 	while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -1951,7 +1950,7 @@ if [[ "$InstallType" = location ]]; then
 		'
 	else
 		trap - SIGINT
-		for ((i=0; i<16; i++)); do
+		for ((i=0; i<31; i++)); do
 			#clear -x
 			printf '\33[H\33[2J'
 			INTERACT=$INTERACT LANG=C expect -c '
@@ -1978,7 +1977,7 @@ if [[ "$InstallType" = location ]]; then
 					"error: internal error: character device console0 is not using a PTY" {
 						send "\r"
 						puts $expect_out(buffer)
-						exit 0
+						exit 1
 					}
 					"Unsupported Hardware Detected" {
 						send "\r"
@@ -2116,7 +2115,6 @@ elif [[ "$InstallType" = import ]]; then
 	  --import \
 	  --noautoconsole \
 	  --vnc --vnclisten 0.0.0.0 &>$VMpath/nohup.log &
-	Installpid=$!
 
 	while true; do test -f $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2172,7 +2170,7 @@ elif [[ "$InstallType" = import ]]; then
 			"
 		else
 			trap - SIGINT
-			for ((i=0; i<16; i++)); do
+			for ((i=0; i<31; i++)); do
 				INTERACT=$INTERACT SHUTDOWN=$GenerateImage LANG=C expect -c '
 					set intc 0
 					set timeout -1
@@ -2192,7 +2190,7 @@ elif [[ "$InstallType" = import ]]; then
 						"error: internal error: character device console0 is not using a PTY" {
 							send "\r"
 							puts $expect_out(buffer)
-							exit 0
+							exit 1
 						}
 						"* login:" { send "root\r" }
 					}
@@ -2223,19 +2221,19 @@ elif [[ "$InstallType" = import ]]; then
 
 					if {$env(INTERACT) == "no"} { exit 0 }
 					interact
-				' && break
-				test -d /proc/$Installpid || break
+				'
+				ReturnCode=$?
+				[[ $ReturnCode = 0 || $ReturnCode = 255 ]] && break
+				[[ $ReturnCode = 127 ]] && { virsh start $vmname 2>&1 | sed 's/error: //'; continue; }
 				sleep 2
 			done
 
-			unset Installpid
 			echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
 
 			[[ -f "$cloudinitiso" ]] && {
 				echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
 				virsh change-media $vmname $cloudinitiso --eject
 			}
-
 		fi
 	fi
 elif [[ "$InstallType" = pxe ]]; then
