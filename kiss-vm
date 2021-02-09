@@ -2155,6 +2155,7 @@ elif [[ "$InstallType" = import ]]; then
 			vm "$vmname" -vncputln root
 			vm "$vmname" -vncputln "hostname ${vmname}" \
 				-vncputln "echo 'hostname=\"${vmname}\"' >>/etc/rc.conf" \
+				-vncputln "service syslogd reload" \
 				-vncputln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf" \
 				-vncputln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config" \
 				-vncputln "grep '^[^#]' /etc/rc.conf" \
