@@ -1252,13 +1252,17 @@ is_bridge() {
 	[[ -z "$ifname" ]] && return 1
 	ip -d a s $ifname | grep -qw bridge
 }
+
 get_default_if() {
-	local notbr=$1
-	local iface=
+	local notbr=$1  #indicate get real NIC not bridge
+	local _iface= iface=
+	local type=
 
 	ifaces=$(ip route | awk '/^default/{print $5}')
-	for iface in $ifaces; do
-		[[ -z "$(ip -d link show  dev $iface|sed -n 3p)" ]] && {
+	for _iface in $ifaces; do
+		type=$(ip -d link show dev $_iface|sed -n '3{s/^\s*//; p}')
+		[[ -z "$type" || "$type" = altname* ]] && {
+			iface=$_iface
 			break
 		}
 	done
