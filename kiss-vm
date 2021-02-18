@@ -2146,12 +2146,14 @@ elif [[ "$InstallType" = import ]]; then
 				exp_continue
 			}
 		'
+		if [[ -n "$VNCPUT_AFTER_INSTALL" ]]; then
+			vm "$vmname" -vncput "$VNCPUT_AFTER_INSTALL"
+		else
+			vm "$vmname" -vncget
+		fi
+
 		echo -e "{VM:INFO} vnc info:"
 		vm vncport $vmname
-		echo
-		vm "$vmname" -vncget
-		[[ -n "$VNCPUT_AFTER_INSTALL" ]] &&
-			vm "$vmname" -vncput "$VNCPUT_AFTER_INSTALL"
 	else
 		if grep -i -q freebsd <<<"$Distro"; then
 			echo -e "{VM:INFO} waiting login: prompt ..."
