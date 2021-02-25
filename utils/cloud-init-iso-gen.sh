@@ -97,8 +97,9 @@ $(for F in $sshkeyf; do echo "      -" $(tail -n1 ${F}); done)
 
 chpasswd: { expire: False }
 
-yum_repos:
 $(
+[[ ${#Repos[@]} -gt 0 ]] && echo yum_repos:
+
 for repo in "${Repos[@]}"; do
 read name url <<<"${repo/:/ }"
 [[ ${url:0:1} = / ]] && { name=; url=$repo; }
