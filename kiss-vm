@@ -741,7 +741,7 @@ mount_vdisk() {
 
 enable_libvirt() {
 	local force=$1
-	local pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img"
+	local pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img iptables-nft"
 	local sudouser=${SUDO_USER:-$(whoami)}
 	eval sudouserhome=~$sudouser
 	[[ -z "$force" && -d $sudouserhome/.config/kiss-vm ]] && return 0
