@@ -756,7 +756,7 @@ enable_libvirt() {
 	fi
 
 	rpm -q $pkglist || {
-		sudo yum $yumOpt --setopt=stirct=0 install -y $pkglist
+		sudo yum $yumOpt --setopt=strict=0 install -y $pkglist
 	}
 
 	#install packages(gm,gocr,vncdo) required by -vncget -vncput options
