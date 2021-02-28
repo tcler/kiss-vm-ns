@@ -25,12 +25,18 @@ fi
 	yum $yumOpt install -y gocr; which gocr 2>/dev/null || {
 		echo -e "\n{ggv-install} install gocr from src ..."
 		yum install -y autoconf gcc make netpbm-progs
-		rm -rf gocr
-		git clone https://github.com/tcler/gocr
-		(
-		cd gocr
-		./configure --prefix=/usr && make && make install
-		)
+		while true; do
+			rm -rf gocr
+			git clone https://github.com/tcler/gocr
+			(
+			cd gocr
+			./configure --prefix=/usr && make && make install
+			)
+			which gocr && break
+
+			sleep 5
+			echo -e " {ggv-install} installing gocr fail, try again ..."
+		done
 	}
 }
 
