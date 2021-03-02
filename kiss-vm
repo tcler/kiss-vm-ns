@@ -1265,7 +1265,7 @@ get_default_if() {
 	ifaces=$(ip route | awk '/^default/{print $5}')
 	for _iface in $ifaces; do
 		type=$(ip -d link show dev $_iface|sed -n '3{s/^\s*//; p}')
-		[[ -z "$type" || "$type" = altname* ]] && {
+		[[ -z "$type" || "$type" = altname* || "$type" = bridge* ]] && {
 			iface=$_iface
 			break
 		}
