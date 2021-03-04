@@ -6,8 +6,8 @@
 	exit 126
 }
 
+OSV=$(rpm -E %rhel)
 if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
-	OSV=$(rpm -E %rhel)
 	if [[ "$OSV" != "%rhel" ]]; then
 		yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
 	fi
@@ -17,6 +17,11 @@ fi
 ! which gm &>/dev/null && ! which convert &>/dev/null && {
 	echo -e "\n{ggv-install} install GraphicsMagick/ImageMagick ..."
 	yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || yum $yumOpt install -y ImageMagick
+
+	#if still install fail, try install from brew
+	! which gm &>/dev/null && ! which convert &>/dev/null && {
+		brewinstall.sh latest-GraphicsMagick
+	}
 }
 
 #install gocr
