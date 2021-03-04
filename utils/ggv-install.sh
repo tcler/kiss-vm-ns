@@ -20,6 +20,7 @@ fi
 
 	#if still install fail, try install from brew
 	! which gm &>/dev/null && ! which convert &>/dev/null && {
+		export PATH=/usr/local/bin:$PATH
 		which brewinstall.sh 2>/dev/null && brewinstall.sh latest-GraphicsMagick
 	}
 }
