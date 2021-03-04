@@ -20,7 +20,7 @@ fi
 
 	#if still install fail, try install from brew
 	! which gm &>/dev/null && ! which convert &>/dev/null && {
-		brewinstall.sh latest-GraphicsMagick
+		which brewinstall.sh 2>/dev/null && brewinstall.sh latest-GraphicsMagick
 	}
 }
 
