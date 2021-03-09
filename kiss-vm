@@ -764,8 +764,8 @@ curl_download() {
 	rc=$?
 	if [[ $rc != 0 && -s $filename ]]; then
 		fsizel=$(stat -c %s $filename)
-		if [[ $fsizer = $fsizel ]]; then
-			echo "{VM:INFO} *** $filename *** already exist"
+		if [[ $fsizer -le $fsizel ]]; then
+			echo "{VM:INFO} *** $filename *** already exist $fsizel/$fsizer"
 			rc=0
 		fi
 	fi
