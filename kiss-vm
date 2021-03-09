@@ -749,7 +749,7 @@ curl_download() {
 		return 1
 	}
 
-	if curl -I $url|grep -q 'Accept-Ranges: bytes'; then
+	if curl -L -I $url|grep -q 'Accept-Ranges: bytes'; then
 		curlopts+=' --continue-at -'
 	fi
 	echo "{VM:INFO} run: curl -o $filename $curl $curlopts $curlOpt $@"
