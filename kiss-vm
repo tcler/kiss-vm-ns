@@ -2310,7 +2310,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	echo "{VM:INFO} downloading iso file of $Distro to $isofile ..."
 	if [[ $Isourl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl ${DownloadImagePath}/${isofilename} $Isourl; do
+			until curl_download ${DownloadImagePath}/${isofilename} $Isourl; do
 				[[ $? = 22 && -f ${DownloadImagePath}/${isofilename} ]] && {
 					echo "{VM:INFO} ${DownloadImagePath}/${isofilename} exist."
 					break
