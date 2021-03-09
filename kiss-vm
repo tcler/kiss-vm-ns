@@ -737,6 +737,25 @@ mount_vdisk() {
 	fi
 }
 
+curl_download() {
+	local filename=$1
+	local url=$2
+	shift 2;
+
+	local curlopts="-f -L"
+
+	[[ -z "$filename" || -z "$url" ]] && {
+		echo "Usage: curl_download <filename> <url> [curl options]" >&2
+		return 1
+	}
+
+	if curl -I $url|grep -q 'Accept-Ranges: bytes'; then
+		curlopts+=' --continue-at -'
+	fi
+	echo "{VM:INFO} run: curl -o $filename $curl $curlopts $curlOpt $@"
+	curl -o $filename $url $curlopts $curlOpt "$@";
+}
+
 #-------------------------------------------------------------------------------
 
 enable_libvirt() {
@@ -763,10 +782,10 @@ enable_libvirt() {
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
 	which ggv-install.sh &>/dev/null || {
 		_url=$baseUrl/utils/ggv-install.sh
-		sudo curl -s -o /usr/bin/ggv-install.sh -C - -L $_url
-		sudo chmod +x /usr/bin/ggv-install.sh
+		_file=${_url%%*/}
+		mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 	}
-	sudo ggv-install.sh
+	sudo ~/bin/ggv-install.sh
 
 	echo -e "{VM:INFO} configure libvirt-nss ..."
 	grep -q '^hosts:.*libvirt libvirt_guest' /etc/nsswitch.conf || {
@@ -856,8 +875,8 @@ if [[ $Intranet = yes ]]; then
 	install_distro_compose() {
 		which distro-compose &>/dev/null || {
 			_url=$bkrClientImprovedUrl/utils/distro-compose
-			mkdir -p ~/bin && curl -s -o ~/bin/distro-compose -C - -L $_url
-			chmod +x ~/bin/distro-compose
+			_file=${_url%%*/}
+			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
 	}
 	fetch_distro_list() {
@@ -887,8 +906,8 @@ if [[ $Intranet = yes ]]; then
 
 		which fastesturl.sh &>/dev/null || {
 			_url=$baseUrl/utils/fastesturl.sh
-			mkdir -p ~/bin && curl -s -o ~/bin/fastesturl.sh -C - -L $_url
-			chmod +x ~/bin/fastesturl.sh
+			_file=${_url%%/*}
+			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
 		fastesturl.sh $urls
 	}
@@ -1845,8 +1864,8 @@ if [[ "$InstallType" = location ]]; then
 		REPO_OPTS=$(distro2repos $Distro $Location | sed 's/^/--repo /')
 		which ks-generator.sh &>/dev/null || {
 			_url=$baseUrl/utils/ks-generator.sh
-			mkdir -p ~/bin && curl -s -o ~/bin/ks-generator.sh -C - -L $_url
-			chmod +x ~/bin/ks-generator.sh
+			_file=${_url%%/*}
+			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
 
 		cat <<-END >>$postscript
@@ -2045,7 +2064,7 @@ elif [[ "$InstallType" = import ]]; then
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
 	if [[ $Imageurl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl $curlOpt --fail -C - -L $Imageurl -o ${DownloadImagePath}/${imagefilename}; do
+			until curl_download ${DownloadImagePath}/${imagefilename} $Imageurl; do
 				[[ $? = 22 && -f ${DownloadImagePath}/${imagefilename} ]] && {
 					echo "{VM:INFO} ${DownloadImagePath}/${imagefilename} exist."
 					ls -l ${DownloadImagePath}/${imagefilename}
@@ -2059,10 +2078,10 @@ elif [[ "$InstallType" = import ]]; then
 			}
 			cp ${DownloadImagePath}/${imagefilename} $imagefile
 		else
-			until curl $curlOpt --fail -C - -L $Imageurl -o $imagefile; do sleep 1; done
+			until curl_download $imagefile $Imageurl; do sleep 1; done
 		fi
 	else
-		cp -f ${Imageurl#file://} $imagefile   #curl $curlOpt --fail $Imageurl -o $imagefile
+		cp -f ${Imageurl#file://} $imagefile
 	fi
 	[[ -f ${imagefile} ]] || exit 1
 
@@ -2078,8 +2097,8 @@ elif [[ "$InstallType" = import ]]; then
 		echo -e "{VM:INFO} creating cloud-init iso"
 		which cloud-init-iso-gen.sh &>/dev/null || {
 			_url=$baseUrl/utils/cloud-init-iso-gen.sh
-			mkdir -p ~/bin && curl -s -o ~/bin/cloud-init-iso-gen.sh -C - -L $_url
-			chmod +x ~/bin/cloud-init-iso-gen.sh
+			_file=${_url%%/*}
+			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
 		cloudinitiso=$VMpath/$vmname-cloud-init.iso
 
@@ -2291,7 +2310,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	echo "{VM:INFO} downloading iso file of $Distro to $isofile ..."
 	if [[ $Isourl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl $curlOpt --fail -C - -L $Isourl -o ${DownloadImagePath}/${isofilename}; do
+			until curl ${DownloadImagePath}/${isofilename} $Isourl; do
 				[[ $? = 22 && -f ${DownloadImagePath}/${isofilename} ]] && {
 					echo "{VM:INFO} ${DownloadImagePath}/${isofilename} exist."
 					break
@@ -2304,10 +2323,10 @@ elif [[ "$InstallType" = cdrom ]]; then
 			}
 			cp ${DownloadImagePath}/${isofilename} $isofile
 		else
-			until curl $curlOpt --fail -C - -L $Isourl -o $isofile; do sleep 1; done
+			until curl_download $isofile $Isourl; do sleep 1; done
 		fi
 	else
-		cp -f ${Isourl#file://} $isofile   #curl $curlOpt --fail $Isourl -o $isofile
+		cp -f ${Isourl#file://} $isofile
 	fi
 	[[ -f ${isofile} ]] || exit 1
 
