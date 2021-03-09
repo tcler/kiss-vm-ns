@@ -743,17 +743,34 @@ curl_download() {
 	shift 2;
 
 	local curlopts="-f -L"
+	local header=
+	local fsizer=1
+	local fsizel=0
+	local rc=
 
 	[[ -z "$filename" || -z "$url" ]] && {
 		echo "Usage: curl_download <filename> <url> [curl options]" >&2
 		return 1
 	}
 
-	if curl -L -I $url|grep -q 'Accept-Ranges: bytes'; then
+	header=$(curl -L -I -s $url)
+	fsizer=$(echo "$header"|awk '/Content-Length:/ {print $2; exit}')
+	if echo "$header"|grep -q 'Accept-Ranges: bytes'; then
 		curlopts+=' --continue-at -'
 	fi
+
 	echo "{VM:INFO} run: curl -o $filename $curl $curlopts $curlOpt $@"
 	curl -o $filename $url $curlopts $curlOpt "$@";
+	rc=$?
+	if [[ $rc != 0 && -s $filename ]]; then
+		fsizel=$(stat -c %s $filename)
+		if [[ $fsizer = $fsizel ]]; then
+			echo "{VM:INFO} *** $filename *** already exist"
+			rc=0
+		fi
+	fi
+
+	return $rc
 }
 
 #-------------------------------------------------------------------------------
@@ -2064,14 +2081,7 @@ elif [[ "$InstallType" = import ]]; then
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
 	if [[ $Imageurl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl_download ${DownloadImagePath}/${imagefilename} $Imageurl; do
-				[[ $? = 22 && -f ${DownloadImagePath}/${imagefilename} ]] && {
-					echo "{VM:INFO} ${DownloadImagePath}/${imagefilename} exist."
-					ls -l ${DownloadImagePath}/${imagefilename}
-					break
-				}
-				sleep 1
-			done
+			until curl_download ${DownloadImagePath}/${imagefilename} $Imageurl; do sleep 1; done
 			[[ "$DOWNLOAD_ONLY" = yes ]] && {
 				ls -l ${DownloadImagePath}/${imagefilename}
 				exit 0
@@ -2310,13 +2320,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	echo "{VM:INFO} downloading iso file of $Distro to $isofile ..."
 	if [[ $Isourl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl_download ${DownloadImagePath}/${isofilename} $Isourl; do
-				[[ $? = 22 && -f ${DownloadImagePath}/${isofilename} ]] && {
-					echo "{VM:INFO} ${DownloadImagePath}/${isofilename} exist."
-					break
-				}
-				sleep 1
-			done
+			until curl_download ${DownloadImagePath}/${isofilename} $Isourl; do sleep 1; done
 			[[ "$DOWNLOAD_ONLY" = yes ]] && {
 				ls -l ${DownloadImagePath}/${isofilename}
 				exit 0
