@@ -797,12 +797,13 @@ enable_libvirt() {
 
 	#install packages(gm,gocr,vncdo) required by -vncget -vncput options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
-	which ggv-install.sh &>/dev/null || {
+	if ! which ggv-install.sh &>/dev/null; then
 		_url=$baseUrl/utils/ggv-install.sh
 		_file=${_url%%*/}
 		mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
-	}
-	sudo ~/bin/ggv-install.sh
+		sudo cp ~/bin/ggv-install.sh /usr/bin/.
+	fi
+	sudo ggv-install.sh
 
 	echo -e "{VM:INFO} configure libvirt-nss ..."
 	grep -q '^hosts:.*libvirt libvirt_guest' /etc/nsswitch.conf || {
