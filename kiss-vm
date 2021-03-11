@@ -797,11 +797,11 @@ enable_libvirt() {
 
 	#install packages(gm,gocr,vncdo) required by -vncget -vncput options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
-	if ! which ggv-install.sh &>/dev/null; then
-		_url=$baseUrl/utils/ggv-install.sh
-		_file=${_url%%*/}
+	_file=ggv-install.sh
+	if ! which $_file &>/dev/null; then
+		_url=$baseUrl/utils/$_file
 		mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
-		sudo cp ~/bin/ggv-install.sh /usr/bin/.
+		sudo cp ~/bin/$_file /usr/bin/.
 	fi
 	sudo ggv-install.sh
 
@@ -891,9 +891,9 @@ is_intranet() {
 # functions that work in Intranet
 if [[ $Intranet = yes ]]; then
 	install_distro_compose() {
-		which distro-compose &>/dev/null || {
-			_url=$bkrClientImprovedUrl/utils/distro-compose
-			_file=${_url%%*/}
+		local _file=distro-compose
+		which $_file &>/dev/null || {
+			_url=$bkrClientImprovedUrl/utils/$_file
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
 	}
@@ -922,12 +922,12 @@ if [[ $Intranet = yes ]]; then
 		distrotrees=$(fetch_distro_trees $distro $arch)
 		urls=$(echo "$distrotrees" | awk '$3 ~ /https?:.*'"(${variant}|BaseOS|Everything)"'/{print $3}' | sort -u)
 
-		which fastesturl.sh &>/dev/null || {
-			_url=$baseUrl/utils/fastesturl.sh
-			_file=${_url%%/*}
+		local _file=fastesturl.sh
+		which $_file &>/dev/null || {
+			_url=$baseUrl/utils/$_file
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
-		fastesturl.sh $urls
+		$_file $urls
 	}
 	getimageurls() {
 		local parenturl=$1
@@ -1880,9 +1880,9 @@ if [[ "$InstallType" = location ]]; then
 		postscript=$RuntimeTmp/postscript.ks
 		KSPath=$ksauto
 		REPO_OPTS=$(distro2repos $Distro $Location | sed 's/^/--repo /')
-		which ks-generator.sh &>/dev/null || {
-			_url=$baseUrl/utils/ks-generator.sh
-			_file=${_url%%/*}
+		_file=ks-generator.sh
+		which $_file &>/dev/null || {
+			_url=$baseUrl/utils/$_file
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
 
@@ -2106,9 +2106,9 @@ elif [[ "$InstallType" = import ]]; then
 
 	[[ "$NO_CLOUD_INIT" != yes ]] && {
 		echo -e "{VM:INFO} creating cloud-init iso"
-		which cloud-init-iso-gen.sh &>/dev/null || {
-			_url=$baseUrl/utils/cloud-init-iso-gen.sh
-			_file=${_url%%/*}
+		_file=cloud-init-iso-gen.sh
+		which $_file &>/dev/null || {
+			_url=$baseUrl/utils/$_file
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
 		cloudinitiso=$VMpath/$vmname-cloud-init.iso
