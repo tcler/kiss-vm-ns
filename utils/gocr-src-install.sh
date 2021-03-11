@@ -6,7 +6,10 @@
 }
 
 yum install -y autoconf gcc make netpbm-progs
-git clone https://github.com/tcler/gocr
+
+[[ -d gocr ]] && rm -rf gocr
+_url=https://github.com/tcler/gocr
+while ! git clone --depth=1 $_url; do [[ -d gocr ]] && break || sleep 5; done
 (
 cd gocr
 ./configure && make && make install
