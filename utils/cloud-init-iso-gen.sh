@@ -8,7 +8,9 @@ Repos=()
 BPKGS=
 PKGS=
 Intranet=no
+_downhostname="download.devel.fedorahat.com"
 baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
+downhostname=${_downhostname/fedora/red}
 bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
 
 is_available_url() {
@@ -16,7 +18,7 @@ is_available_url() {
         curl --connect-timeout 8 -m 16 --output /dev/null --silent --head --fail $_url &>/dev/null
 }
 is_intranet() {
-	local iurl=http://download.devel.redhat.com
+	local iurl=http://$downhostname
 	is_available_url $iurl
 }
 
@@ -65,8 +67,8 @@ fi
 
 is_intranet && {
 	Intranet=yes
-	baseUrl=http://download.devel.redhat.com/qa/rhts/lookaside/kiss-vm-ns
-	bkrClientImprovedUrl=http://download.devel.redhat.com/qa/rhts/lookaside/bkr-client-improved
+	baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
+	bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
 }
 
 sshkeyf=${sshkeyf:-/dev/null}
