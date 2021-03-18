@@ -1589,7 +1589,7 @@ done
 		for dname in "${!distroInfo[@]}"; do echo "$dname"; done >>$distrolist
 
 		[[ "$Intranet" = yes ]] && {
-			echo -e "Fedora\nRHEL-8\nRHEL-7\nRHEL-6\nRHEL5" >>$distropatternIn
+			echo -e "Fedora\nRHEL-9\nRHEL-8\nRHEL-7\nRHEL-6\nRHEL5" >>$distropatternIn
 			fetch_distro_list >>$distrolist
 		}
 
