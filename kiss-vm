@@ -1840,7 +1840,9 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	devfile=nvme$c.$format
 	qemu-img create -f $format $VMpath/$devfile ${fsize}G
 	setfacl -mu:qemu:rwx -mg:qemu:rwx $VMpath/$devfile
+	chcon system_u:object_r:qemu_var_run_t:s0 $VMpath/$devfile #system_u:object_r:virt_cache_t:s0 also works
 	getfacl $VMpath/$devfile
+	ls -lZ $VMpath/$devfile
 	QEMU_OPTS+=" -drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c"
 	let c++
 done
