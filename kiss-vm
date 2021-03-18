@@ -1148,7 +1148,7 @@ Usage() {
 	                 #e.g: --xdisk 10 --xdisk 20,xfs
 	  --disk <img[,bus=]>
 	                 #add exist disk file, could be specified multi-times.
-	  --bus <$start_disk_bus>
+	  --bus <$boot_disk_bus>
 	  --sharedir <shpath[:target]>
 	                 #share path between host and guest
 	  --nvdimm <nvdimm list | no>
@@ -1369,7 +1369,7 @@ while true; do
 	-C)        InstallType=cdrom; Isourl=$2; shift 2;;
 	-l)        InstallType=location; Location=$2; shift 2;;
 	-L)        InstallType=location; shift 1;;
-	-i)        InstallType=import; Imageurl=${2}; shift 2;;
+	-i)        InstallType=import; ImportImageInfo=${2}; shift 2;;
 	-I)        InstallType=import; shift 1;;
 	-P|--pxe)  InstallType=pxe; shift 1;;
 	--diskless) DISKLESS=yes; shift 1;;
@@ -1409,7 +1409,7 @@ while true; do
 		;;
 	--downloadonly)  SAVE_IMAGE="yes"; DOWNLOAD_ONLY="yes"; InstallType=import; shift 1;;
 	-r|--ready)      VIRT_READY=yes; shift 1;;
-	--bus)           START_DISK_BUS="$2"; shift 2;;
+	--bus)           BOOT_DISK_BUS="$2"; shift 2;;
 	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
 	--disk)          DISKS+=("$2"); shift 2;;
 	--sharedir)      SHARE_DIRS+=("$2"); shift 2;;
@@ -1590,6 +1590,15 @@ for disk in "${EXTRA_DISKS[@]}"; do
 	}
 done
 
+Imageurl=
+BOOT_DISK_BUS=${BOOT_DISK_BUS:-virtio}
+[[ -n "$ImportImageInfo" ]] && read Imageurl BOOT_DISK_ATTRS <<<"${ImportImageInfo/,/ }"
+if [[ -n "$BOOT_DISK_ATTRS" ]]; then
+	[[ "$BOOT_DISK_ATTRS" =~ bus= ]] || BOOT_DISK_ATTRS+=,bus=$BOOT_DISK_BUS
+else
+	BOOT_DISK_ATTRS=bus=$BOOT_DISK_BUS
+fi
+
 # Phase-0 get distro name
 [[ -z "$Distro" ]] && Distro=$1
 [[ -z "$Distro" ]] && {
@@ -1643,7 +1652,8 @@ fi
 	dpattern=${Distro//./\\.}
 	dpattern=${dpattern//\?/.}
 	dpattern=${dpattern//[%*]/.*}
-	_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | head -1)
+	#_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | head -1)
+	_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | sed -n '2{p;q}')
 	[[ -n "$_distro" ]] && Distro="$_distro"
 }
 
@@ -1971,7 +1981,7 @@ if [[ "$InstallType" = location ]]; then
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
-	  --disk path=$VMpath/${vmname}.qcow2,bus=${START_DISK_BUS:-virtio} \
+	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --initrd-inject $KSPath \
@@ -2160,7 +2170,7 @@ elif [[ "$InstallType" = import ]]; then
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
-	  --disk path=${imagefile},bus=${START_DISK_BUS:-virtio} \
+	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
 	  $CLOUD_INIT_OPT \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
