@@ -36,7 +36,7 @@ baudrate=115200
 QEMU_OPTS=--qemu-commandline=
 QEMU_ENV=()
 _downhostname="download.devel.fedorahat.com"
-downhostname=${_downhostname/fedora/red/}
+downhostname=${_downhostname/fedora/red}
 baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
 bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
 VCPUS=4
@@ -1157,6 +1157,10 @@ Usage() {
 	                 #e.g: --nvdimm="511 1023" -> two nvdimm device
 	                 #               ^^^^^^^^ default labelSize is 1, if omitting
 	                 #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+	  --nvme <size=[,format=]>
+	                 #one or more nvdimm specification.
+			 #e.g: --nvme=size=10 --nvme=size=20,format=raw
+			 #size units: G, default format is qcow2
 	  --kdump        #enable kdump
 	  --fips         #enable fips
 	  --nosshkey     #don't inject sshkey
@@ -1335,6 +1339,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long disk: \
 	--long sharedir: \
 	--long nvdimm: \
+	--long nvme: \
 	--long kdump \
 	--long fips \
 	--long nosshkey \
@@ -1408,6 +1413,7 @@ while true; do
 	--disk)          DISKS+=("$2"); shift 2;;
 	--sharedir)      SHARE_DIRS+=("$2"); shift 2;;
 	--nvdimm)        NVDIMM_LIST=$2; shift 2;;
+	--nvme)          NVME_DEVS+=("$2"); shift 2;;
 	--kdump)         kdump=yes; shift 1;;
 	--fips)          fips=yes; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
@@ -1786,10 +1792,26 @@ for disk in "${EXTRA_DISKS[@]}"; do
 	fi
 	DISK_OPTS+=" --disk path=$VMpath/$ximage,format=$format,bus=virtio"  #bus=scsi
 done
+
 for disk in "${DISKS[@]}"; do
 	read img arg <<<"${disk/,/ }"
 	cp -f $img $VMpath/.
 	DISK_OPTS+=" --disk path=$VMpath/$img,${arg:-bus=ide}"
+done
+
+c=0
+for devinfo in "${NVME_DEVS[@]}"; do
+	for attr in ${devinfo//,/ }; do
+		case $attr in
+		size=*) fsize=${attr#size=};;
+		format=*) format=${attr#format=};;
+		esac
+	done
+	format=${format:-qcow2}
+	devfile=nvme$c.$format
+	qemu-img create -f qcow2 $VMpath/$devfile ${fsize}G
+	QEMU_OPTS+=" -drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c"
+	let c++
 done
 
 [[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
