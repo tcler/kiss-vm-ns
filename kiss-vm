@@ -1809,7 +1809,9 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	done
 	format=${format:-qcow2}
 	devfile=nvme$c.$format
-	qemu-img create -f qcow2 $VMpath/$devfile ${fsize}G
+	qemu-img create -f $format $VMpath/$devfile ${fsize}G
+	setfacl -mu:qemu:rwx -mg:qemu:rwx $VMpath/$devfile
+	getfacl $VMpath/$devfile
 	QEMU_OPTS+=" -drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c"
 	let c++
 done
