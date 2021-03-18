@@ -1437,6 +1437,21 @@ while true; do
 	esac
 done
 
+libvirt_nvr=$(rpm -q libvirt)
+qemukvm=$(rpm -q qemu-kvm)
+if [[ "${#NVME_DEVS[@]}" -gt 0 ]] && vercmp $qemukvm lt qemu-kvm-4.1; then
+	echo -e "{VM:WARN} $qemukvm don't support nvme driver."
+	exit 1
+fi
+if [[ ${#SHARE_DIRS[@]} -gt 0 ]] && vercmp "$libvirt_nvr" lt libvirt-6.2; then
+	echo -e "{VM:WARN} $libvirt_nvr doesn't support virtiofs driver that's needed by --sharedir option."
+	exit 1
+fi
+if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]] && vercmp $qemukvm lt qemu-kvm-2.6; then
+	echo -e "{VM:WARN} $qemukvm doesn't support nvdimm driver."
+	exit 1
+fi
+
 [[ "$QUIET" = yes ]] && {
 	yumOpt=-q
 	curlOpt=-s
@@ -1803,15 +1818,6 @@ for disk in "${DISKS[@]}"; do
 done
 
 ### nvme option
-qemukvm=$(rpm -q qemu-kvm)
-NVME_SUPPORT=no
-if [[ -n "$NVME_DEVS" ]] && vercmp $qemukvm ge qemu-kvm-4.1; then
-	NVME_SUPPORT=yes
-else
-	echo -e "{VM:WARN} $qemukvm don't support nvme driver"
-	exit 1
-fi
-
 c=0
 for devinfo in "${NVME_DEVS[@]}"; do
 	for attr in ${devinfo//,/ }; do
@@ -1829,18 +1835,30 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	let c++
 done
 
-### sharedir(virtio) option
-libvirt_nvr=$(rpm -q libvirt)
-VIRTIOFS_SUPPORT=no
-if [[ ${#SHARE_DIRS[@]} -gt 0 ]] && vercmp "$libvirt_nvr" ge libvirt-6.2; then
-	VIRTIOFS_SUPPORT=yes
-else
-	echo -e "{VM:WARN} $libvirt_nvr doesn't support virtiofs driver that's needed by --sharedir option."
-	SHARE_DIRS=()
-	exit 1
+### nvdimm option
+CONTROLLER_OPTS=
+if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
+	CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
+
+	hpmemMax=$((1024*512))   #units Mi
+	memSlots=4
+	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=$hpmemMax,hotplugmemoryslots=$memSlots --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024))"
+
+	nvdimmdevs=("${NVDIMM_LIST[@]}")
+	for ((i=0; i<${#nvdimmdevs[@]}; i++)); do
+		[[ $i -ge $memSlots ]] && break
+		nvdimmfile=$VMpath/nvdimm-$i.dev
+		read targetSize labelSize _ <<<"${nvdimmdevs[$i]//+/ }"
+		targetSize=${targetSize:-511}
+		labelSize=${labelSize:-1}
+		totalSize=$((targetSize+labelSize))
+		truncate -s ${totalSize}M $nvdimmfile
+		MEM_OPTS+=" --memdev nvdimm,source_path=$nvdimmfile,target_size=${targetSize},target_node=0,target_label_size=${labelSize}"
+	done
 fi
 
-if [[ "$VIRTIOFS_SUPPORT" = yes ]]; then
+### sharedir(virtio) option
+if [[ ${#SHARE_DIRS[@]} -gt 0 ]]; then
 	INTERACT=no
 	MEM_OPTS+=" --memorybacking=access.mode=shared"
 
@@ -1853,35 +1871,6 @@ if [[ "$VIRTIOFS_SUPPORT" = yes ]]; then
 	#- requires shared memory between the host and the guest.
 	virsh allocpages 2M $((MSIZE/2))
 	#or add memory_backing_dir = "/dev/shm/" in /etc/libvirt/qemu.conf
-fi
-
-### nvdimm option
-NVDIMM_SUPPORT=no
-CONTROLLER_OPTS=
-if [[ -n "$NVDIMM_LIST" ]] && vercmp $qemukvm ge qemu-kvm-2.6; then
-	NVDIMM_SUPPORT=yes
-	CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
-else
-	echo -e "{VM:WARN} $qemukvm doesn't support nvdimm driver"
-	exit 1
-fi
-
-if [[ "$NVDIMM_SUPPORT" = yes ]]; then
-	hpmemMax=$((1024*512))   #units Mi
-	memSlots=4
-	MEM_OPTS="--memory=${MSIZE},hotplugmemorymax=$hpmemMax,hotplugmemoryslots=$memSlots --cpu cell0.cpus=0-$((VCPUS-1)),cell0.memory=$((MSIZE*1024))"
-
-	nvdimmdevs=($NVDIMM_LIST)
-	for ((i=0; i<${#nvdimmdevs[@]}; i++)); do
-		[[ $i -ge $memSlots ]] && break
-		nvdimmfile=$VMpath/nvdimm-$i.dev
-		read targetSize labelSize _ <<<"${nvdimmdevs[$i]//+/ }"
-		targetSize=${targetSize:-511}
-		labelSize=${labelSize:-1}
-		totalSize=$((targetSize+labelSize))
-		truncate -s ${totalSize}M $nvdimmfile
-		MEM_OPTS+=" --memdev nvdimm,source_path=$nvdimmfile,target_size=${targetSize},target_node=0,target_label_size=${labelSize}"
-	done
 fi
 
 MEM_OPTS=${MEM_OPTS:---memory=${MSIZE}}
