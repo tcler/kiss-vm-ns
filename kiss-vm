@@ -1439,7 +1439,7 @@ done
 
 libvirt_nvr=$(rpm -q libvirt)
 qemukvm=$(rpm -q qemu-kvm)
-if [[ "${#NVME_DEVS[@]}" -gt 0 ]] && vercmp $qemukvm lt qemu-kvm-4.1; then
+if [[ "${#NVME_DEVS[@]}" -gt 0 ]] && ! grep -q nvme < <(PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvme); then
 	echo -e "{VM:WARN} $qemukvm don't support nvme driver."
 	exit 1
 fi
