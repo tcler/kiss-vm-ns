@@ -3,12 +3,14 @@
 _bin=/usr/bin
 completion_path=/usr/share/bash-completion/completions
 
-install: _isroot
-	[[ -n "$${SUDO_USER}" ]] && su $${SUDO_USER} bash -c 'git pull --rebase' || git pull --rebase; :
-	cp -af utils/* $(_bin)/.
-	cp -af kiss-vm $(_bin)/vm
-	cp -af kiss-ns $(_bin)/ns
-	cp -af kiss-netns $(_bin)/netns
+install: pull
+	sudo cp -af utils/* $(_bin)/.
+	sudo cp -af kiss-vm $(_bin)/vm
+	sudo cp -af kiss-ns $(_bin)/ns
+	sudo cp -af kiss-netns $(_bin)/netns
+
+pull:
+	git pull --rebase || :
 
 _isroot:
 	@test `id -u` = 0 || { echo "[Warn] need root permission" >&2; exit 1; }
