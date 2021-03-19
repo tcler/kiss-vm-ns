@@ -1165,6 +1165,7 @@ Usage() {
 	                 #size units: GB, default format is qcow2
 	                 #Note: will exit if qemu on your system does not support nvme, check by:
 	                 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvme
+	  --vtpm         #enable virtual tpm
 	  --kdump        #enable kdump
 	  --fips         #enable fips
 	  --nosshkey     #don't inject sshkey
@@ -1345,6 +1346,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long sharedir: \
 	--long nvdimm: \
 	--long nvme: \
+	--long vtpm \
 	--long kdump \
 	--long fips \
 	--long nosshkey \
@@ -1419,6 +1421,7 @@ while true; do
 	--sharedir)      SHARE_DIRS+=("$2"); shift 2;;
 	--nvdimm)        NVDIMM_LIST+=($2); shift 2;;
 	--nvme)          NVME_DEVS+=($2); shift 2;;
+	--vtpm)          VTPM=yes; shift 1;;
 	--kdump)         kdump=yes; shift 1;;
 	--fips)          fips=yes; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
@@ -1454,6 +1457,10 @@ fi
 if [[ ${#SHARE_DIRS[@]} -gt 0 ]] && vercmp "$libvirt_nvr" lt libvirt-6.2; then
 	echo -e "{VM:WARN} $libvirt_nvr doesn't support virtiofs driver that's needed by --sharedir option."
 	exit 1
+fi
+
+if [[ "$VTPM" = yes ]]; then
+	VTPM_OPT="--tpm emulator,model=tpm-crb,version=2.0"
 fi
 
 [[ "$QUIET" = yes ]] && {
@@ -1993,6 +2000,7 @@ if [[ "$InstallType" = location ]]; then
 	  --initrd-inject $KSPath \
 	  --extra-args="ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
 	  --noautoconsole \
+	  $VTPM_OPT \
 	  --vnc --vnclisten 0.0.0.0 $NOREBOOT &>$VMpath/nohup.log &
 
 	while true; do test -s $VMpath/nohup.log && break; done
@@ -2182,6 +2190,7 @@ elif [[ "$InstallType" = import ]]; then
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --import \
 	  --noautoconsole \
+	  $VTPM_OPT \
 	  --vnc --vnclisten 0.0.0.0 &>$VMpath/nohup.log &
 
 	while true; do test -f $VMpath/nohup.log && break; done
@@ -2321,6 +2330,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  --pxe \
 	  --disk $diskOpt \
 	  --noautoconsole \
+	  $VTPM_OPT \
 	  ${NETWORK_OPTS%,model=virtio} \
 	  --vnc --vnclisten 0.0.0.0
 
@@ -2375,6 +2385,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $DISK_OPTS \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --noautoconsole \
+	  $VTPM_OPT \
 	  --vnc --vnclisten 0.0.0.0
 
 	sleep 2
