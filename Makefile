@@ -11,6 +11,7 @@ install: pull
 
 pull:
 	git pull --rebase || :
+	@echo
 
 _isroot:
 	@test `id -u` = 0 || { echo "[Warn] need root permission" >&2; exit 1; }
