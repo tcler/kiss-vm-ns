@@ -1151,17 +1151,19 @@ Usage() {
 	  --bus <$boot_disk_bus>
 	  --sharedir <shpath[:target]>
 	                 #share path between host and guest
-	  --nvdimm <nvdimm list | no>
+	  --nvdimm <nvdimm list>
 	                 #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
 	                 #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
 	                 #e.g: --nvdimm="511 1023" -> two nvdimm device
 	                 #               ^^^^^^^^ default labelSize is 1, if omitting
-	                 #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+	                 #Note: will exit if qemu on your system does not support nvdimm, check by:
+			 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvdimm
 	  --nvme <size=[,format=]>
 	                 #one or more nvme specification.
 			 #e.g: --nvme=size=10 --nvme=size=20,format=raw
 			 #size units: GB, default format is qcow2
-	                 #note: nvme function need qemu >= v4.1.0(RHEL/CentOS 8.1 or later)
+	                 #Note: will exit if qemu on your system does not support nvme, check by:
+			 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvme
 	  --kdump        #enable kdump
 	  --fips         #enable fips
 	  --nosshkey     #don't inject sshkey
@@ -1413,8 +1415,8 @@ while true; do
 	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
 	--disk)          DISKS+=("$2"); shift 2;;
 	--sharedir)      SHARE_DIRS+=("$2"); shift 2;;
-	--nvdimm)        NVDIMM_LIST=$2; shift 2;;
-	--nvme)          NVME_DEVS+=("$2"); shift 2;;
+	--nvdimm)        NVDIMM_LIST+=($2); shift 2;;
+	--nvme)          NVME_DEVS+=($2); shift 2;;
 	--kdump)         kdump=yes; shift 1;;
 	--fips)          fips=yes; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
@@ -1439,16 +1441,16 @@ done
 
 libvirt_nvr=$(rpm -q libvirt)
 qemukvm=$(rpm -q qemu-kvm)
-if [[ "${#NVME_DEVS[@]}" -gt 0 ]] && ! grep -q nvme < <(PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvme); then
+if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]] && ! grep -q nvdimm < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
+	echo -e "{VM:WARN} $qemukvm doesn't support nvdimm driver."
+	exit 1
+fi
+if [[ "${#NVME_DEVS[@]}" -gt 0 ]] && ! grep -q nvme < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
 	echo -e "{VM:WARN} $qemukvm don't support nvme driver."
 	exit 1
 fi
 if [[ ${#SHARE_DIRS[@]} -gt 0 ]] && vercmp "$libvirt_nvr" lt libvirt-6.2; then
 	echo -e "{VM:WARN} $libvirt_nvr doesn't support virtiofs driver that's needed by --sharedir option."
-	exit 1
-fi
-if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]] && vercmp $qemukvm lt qemu-kvm-2.6; then
-	echo -e "{VM:WARN} $qemukvm doesn't support nvdimm driver."
 	exit 1
 fi
 
