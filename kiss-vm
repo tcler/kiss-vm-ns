@@ -40,6 +40,7 @@ downhostname=${_downhostname/fedora/red}
 baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
 bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
 VCPUS=4
+defaultPasswd=redhat
 
 Cleanup() {
 	cd ~
@@ -436,8 +437,8 @@ vmcopyto() {
 			set timeout 120
 			spawn scp $sshOpts -r "${srcarray[@]}" root@${_vmname}:$dstdir/.
 			expect {
-				"password:" { send "redhat\r"; exp_continue }
-				"Password for" { send "redhat\r"; exp_continue }
+				"password:" { send "$defaultPasswd\r"; exp_continue }
+				"Password for" { send "$defaultPasswd\r"; exp_continue }
 				eof
 			}
 			foreach {pid spawnid os_error_flag value} [wait] break
@@ -481,8 +482,8 @@ vmcopyfrom() {
 			set timeout 120
 			spawn scp -r root@${_vmname}:$src $dstdir/.
 			expect {
-				"password:" { send "redhat\r"; exp_continue }
-				"Password for" { send "redhat\r"; exp_continue }
+				"password:" { send "$defaultPasswd\r"; exp_continue }
+				"Password for" { send "$defaultPasswd\r"; exp_continue }
 				eof
 			}
 			foreach {pid spawnid os_error_flag value} [wait] break
@@ -559,14 +560,14 @@ vmlogin() {
 				log_user 1
 				if {\$argc == 0} {
 					expect {
-					"password:" { send "redhat\r"; exp_continue }
-					"Password for" { send "redhat\r"; exp_continue }
+					"password:" { send "$defaultPasswd\r"; exp_continue }
+					"Password for" { send "$defaultPasswd\r"; exp_continue }
 					"*# " { send "\r"; interact }
 					}
 				} else {
 					expect {
-					"password:" { send "redhat\r"; exp_continue }
-					"Password for" { send "redhat\r"; exp_continue }
+					"password:" { send "$defaultPasswd\r"; exp_continue }
+					"Password for" { send "$defaultPasswd\r"; exp_continue }
 					eof
 					}
 				}
@@ -2080,7 +2081,7 @@ if [[ "$InstallType" = location ]]; then
 					"* login:" { send "root\r" }
 				}
 				expect "Password:" {
-					send "redhat\r"
+					send "'"$defaultPasswd"'\r"
 					send "\r\r\r\r\r\r"
 					send "# your are in console, Ctr + ] to exit \r"
 					send "\r\r\r\r\r\r"
@@ -2230,12 +2231,12 @@ elif [[ "$InstallType" = import ]]; then
 				-vncputln "grep '^[^#]' /etc/rc.conf" \
 				-vncputln "grep '^[^#]' /etc/ssh/sshd_config"
 			vm "$vmname" -vncputln "pw useradd foo -G wheel" \
-				-vncputln "passwd foo" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat" \
-				-vncputln "passwd root" -vncput "" -vncputln "redhat" -vncput "" -vncputln "redhat" \
+				-vncputln "passwd foo" -vncput "" -vncputln "$defaultPasswd" -vncput "" -vncputln "$defaultPasswd" \
+				-vncputln "passwd root" -vncput "" -vncputln "$defaultPasswd" -vncput "" -vncputln "$defaultPasswd" \
 				-vncputln "/etc/rc.d/sshd start"
 			expect -c "
 				spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$vmname
-				expect -re .*: {send \"redhat\\r\"}
+				expect -re .*: {send \"$defaultPasswd\\r\"}
 				expect eof
 			"
 		else
@@ -2265,7 +2266,7 @@ elif [[ "$InstallType" = import ]]; then
 						"* login:" { send "root\r" }
 					}
 					expect "Password:" {
-						send "redhat\r"
+						send "'"$defaultPasswd"'\r"
 						send "\r\r\r\r\r\r"
 						if {$env(SHUTDOWN) == "yes"} {
 							send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
@@ -2280,7 +2281,7 @@ elif [[ "$InstallType" = import ]]; then
 							"* login:" {
 								send "root\r"
 								expect "Password:" {
-									send "redhat\r"
+									send "'"$defaultPasswd"'\r"
 									send "\r\r# Now you can take over the keyboard\r\r"
 								}
 							}
@@ -2489,10 +2490,10 @@ virsh attach-disk $vmname --subdriver qcow2 --persistent $VMpath/xfs.qcow2 vdc #
 #virsh detach-disk $vmname --persistent vdc
 
 echo -e "  $ virsh console $vmname"
-echo -e "  $ ssh foo@$vmname  #password: redhat"
+echo -e "  $ ssh foo@$vmname  #password: $defaultPasswd"
 read addr < <(vmifaddr $vmname)
 [[ -n "$addr" ]] && {
-	echo -e "  $ ssh foo@$addr  #password: redhat"
+	echo -e "  $ ssh foo@$addr  #password: $defaultPasswd"
 }
 COMM
 
