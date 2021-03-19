@@ -1655,7 +1655,7 @@ fi
 	dpattern=${dpattern//\?/.}
 	dpattern=${dpattern//[%*]/.*}
 	#_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | head -1)
-	_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | sed -n '2{p;q}')
+	_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | head -2 | tail -1)
 	[[ -n "$_distro" ]] && Distro="$_distro"
 }
 
