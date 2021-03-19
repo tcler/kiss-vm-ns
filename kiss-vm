@@ -1460,7 +1460,17 @@ if [[ ${#SHARE_DIRS[@]} -gt 0 ]] && vercmp "$libvirt_nvr" lt libvirt-6.2; then
 fi
 
 if [[ "$VTPM" = yes ]]; then
+	_dependpkgs=swtpm-tools
+	if ! grep -q tpm-crb < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
+		echo -e "{VM:WARN} $qemukvm don't support tpm-crb driver."
+		exit 1
+	fi
+	if ! rpm -q $_dependpkgs; then
+		echo -e "{VM:WARN} pkg $_dependpkgs is/are needed by vTPM function, please install $_dependpkgs first."
+		exit 1
+	fi
 	VTPM_OPT="--tpm emulator,model=tpm-crb,version=2.0"
+	PKGS+=" tpm2-tools"
 fi
 
 [[ "$QUIET" = yes ]] && {
