@@ -1157,13 +1157,13 @@ Usage() {
 	                 #e.g: --nvdimm="511 1023" -> two nvdimm device
 	                 #               ^^^^^^^^ default labelSize is 1, if omitting
 	                 #Note: will exit if qemu on your system does not support nvdimm, check by:
-			 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvdimm
+	                 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvdimm
 	  --nvme <size=[,format=]>
 	                 #one or more nvme specification.
-			 #e.g: --nvme=size=10 --nvme=size=20,format=raw
-			 #size units: GB, default format is qcow2
+	                 #e.g: --nvme=size=10 --nvme=size=20,format=raw
+	                 #size units: GB, default format is qcow2
 	                 #Note: will exit if qemu on your system does not support nvme, check by:
-			 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvme
+	                 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvme
 	  --kdump        #enable kdump
 	  --fips         #enable fips
 	  --nosshkey     #don't inject sshkey
@@ -1206,6 +1206,7 @@ Usage() {
 	  $P RHEL-8.1.0 -brewinstall "lstk -debug"            # ship latest brew build release debug kernel
 	  $P RHEL-8.1.0 -brewinstall "upk -debug"             # ship latest brew build upstream debug kernel
 	  $P RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
+	  $P RHEL-8.3.0 --nvme "size=32 size=16,format=raw"   # add two nvme device
 	  $P rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
 	  $P rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
 

@@ -45,6 +45,7 @@ Options:
   -i <url/path>  #create VM by import existing disk image, value can be url or local path
   -L             #create VM by using location, auto search url according distro name
   -l <url>       #create VM by using location
+  -C <iso path>  #create VM by using ISO image
   --ks <file>    #kickstart file, will auto generate according distro name if omitting
   -n|--vmname <name>
                  #VM name suffix, will auto generate according distro name if omitting
@@ -70,40 +71,52 @@ Options:
   --noauto       #enter virsh console after installing start
   --saveimage [path]
                  #save image in path if install with import mode
+  --downloadonly #download image only if there is qcow* image
   --cpus <N>     #number of virtual cpus, default 4
   --msize <size> #memory size, default 2048
   --dsize <size> #disk size, default 16
   --net <$name[,$model]>
-                 #attach vnet and join libvirt net $name, optional $model: virtio,e1000,...
+                 #attach tun dev(vnetN) and connect to net $name, optional $model: virtio,e1000,...
   --net-br <$brname[,$model]>
-                 #attach vnet and join bridge $brname, optional $model: virtio,e1000,...
+                 #attach tun dev(vnetN) and connect to bridge $brname, optional $model: virtio,e1000,...
   --net-macvtap, --netmacvtap [$sourceNIC[,$model]]
                  #attach macvtap interface over $sourceNIC, optional $model: virtio,e1000,...
   --macvtapmode <vepa|bridge>
                  #macvtap mode
   -r|--ready     #virt config is ready, don't have to run enable_libvirt function
-  --xdisk <size> #add an extra disk, could be specified multi-times. size unit is G
-                 #e.g: --xdisk 10 --xdisk 20
+  --xdisk <size[,fstype]>
+                 #add an extra disk, could be specified multi-times. size unit is G
+                 #e.g: --xdisk 10 --xdisk 20,xfs
   --disk <img[,bus=]>
                  #add exist disk file, could be specified multi-times.
-  --bus <$start_disk_bus>
+  --bus <$boot_disk_bus>
   --sharedir <shpath[:target]>
                  #share path between host and guest
-  --nvdimm <nvdimm list | no>
+  --nvdimm <nvdimm list>
                  #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
                  #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
                  #e.g: --nvdimm="511 1023" -> two nvdimm device
                  #               ^^^^^^^^ default labelSize is 1, if omitting
-                 #note: nvdimm function need qemu >= v2.6.0(RHEL/CentOS 8.0 or later)
+                 #Note: will exit if qemu on your system does not support nvdimm, check by:
+                 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvdimm
+  --nvme <size=[,format=]>
+                 #one or more nvme specification.
+                 #e.g: --nvme=size=10 --nvme=size=20,format=raw
+                 #size units: GB, default format is qcow2
+                 #Note: will exit if qemu on your system does not support nvme, check by:
+                 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvme
   --kdump        #enable kdump
   --fips         #enable fips
   --nosshkey     #don't inject sshkey
   -v|--verbose   #verbose mode
+  --debug        #debug mode
   --vncget       #get vnc screen and convert to text by gocr
   --vncput <msg> #send string or key event to vnc server, could be specified multi-times
                  #e.g: --vncput root --vncput key:enter --vncput password --vncput key:enter
   --vncputln <msg>
                  #alias of: --vncput msg --vncput key:enter
+  --vncput-after-install <msg>
+                 #send string or key event ASAP after virt-intall
   --xml          #just generate xml
   --machine <machine type>
                  #specify machine type #get supported type by: qemu-kvm -machine help
@@ -112,10 +125,14 @@ Options:
   --enable-nested-vm  #enable nested on host
   --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
                       #ref: https://www.linux-kvm.org/page/Nested_Guests
+  --disable-guest-hypv #disable guest hypervisor
   -x[arg]             #expected return code of sub-command exec, if doesn't match output test fail msg
                       # e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
   --pxe          #PXE install
+                      # e.g: vm fedora-32 -n f32 -net-macvtap -pxe --noauto -f
   --diskless     #diskless install
+                      # e.g: vm fedora-32 -n f32-diskless --net pxenet --pxe --diskless -f
+  -q             #quiet mode, intend suppress the outputs of command yum, curl
 
 Example Intranet:
   vm # will enter a TUI show you all available distros that could auto generate source url
@@ -128,6 +145,7 @@ Example Intranet:
   vm RHEL-8.1.0 -brewinstall "lstk -debug"            # ship latest brew build release debug kernel
   vm RHEL-8.1.0 -brewinstall "upk -debug"             # ship latest brew build upstream debug kernel
   vm RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
+  vm RHEL-8.3.0 --nvme "size=32 size=16,format=raw"   # add two nvme device
   vm rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
   vm rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
 
@@ -173,7 +191,6 @@ Example [subcmd]:
   vm netinfo netname   #show detail info of virtual network 'netname'
   vm netstart netname  #start virtual network 'netname'
   vm netdel netname    #delete virtual network 'netname'
-
 ```
 
 ## kiss-ns
