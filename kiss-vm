@@ -1446,23 +1446,28 @@ done
 
 libvirt_nvr=$(rpm -q libvirt)
 qemukvm=$(rpm -q qemu-kvm)
-if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]] && ! grep -q nvdimm < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
-	echo -e "{VM:WARN} $qemukvm doesn't support nvdimm driver."
-	exit 1
+if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
+	if ! grep -q nvdimm < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
+		echo -e "{VM:WARN} $qemukvm doesn't support nvdimm driver."
+		exit 1
+	fi
 fi
-if [[ "${#NVME_DEVS[@]}" -gt 0 ]] && ! grep -q nvme < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
-	echo -e "{VM:WARN} $qemukvm don't support nvme driver."
-	exit 1
+if [[ "${#NVME_DEVS[@]}" -gt 0 ]]; then
+	if ! grep -q nvme < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
+		echo -e "{VM:WARN} $qemukvm doesn't support nvme driver."
+		exit 1
+	fi
 fi
-if [[ ${#SHARE_DIRS[@]} -gt 0 ]] && vercmp "$libvirt_nvr" lt libvirt-6.2; then
-	echo -e "{VM:WARN} $libvirt_nvr doesn't support virtiofs driver that's needed by --sharedir option."
-	exit 1
+if [[ ${#SHARE_DIRS[@]} -gt 0 ]]; then
+	if vercmp "$libvirt_nvr" lt libvirt-6.2; then
+		echo -e "{VM:WARN} $libvirt_nvr doesn't support virtiofs driver that's required by --sharedir option."
+		exit 1
+	fi
 fi
-
 if [[ "$VTPM" = yes ]]; then
 	_dependpkgs=swtpm-tools
 	if ! grep -q tpm-crb < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
-		echo -e "{VM:WARN} $qemukvm don't support tpm-crb driver."
+		echo -e "{VM:WARN} $qemukvm don't support tpm-crb driver that's required by --vtpm option"
 		exit 1
 	fi
 	if ! rpm -q $_dependpkgs; then
