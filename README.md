@@ -49,9 +49,6 @@ Options:
   --ks <file>    #kickstart file, will auto generate according distro name if omitting
   -n|--vmname <name>
                  #VM name suffix, will auto generate according distro name if omitting
-  --getvmname    #get *final* vmname. e.g:
-                   vm -r --getvmname centos-8 -n nfsserv
-                   vmname=$(vm -r --getvmname centos-8 -n nfsserv)
   -f|--force     #over write existing VM with same name
   -p|-pkginstall <pkgs>
                  #pkgs in default system repo, install by yum or apt-get
