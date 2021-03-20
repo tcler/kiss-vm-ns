@@ -48,7 +48,7 @@ Options:
   -C <iso path>  #create VM by using ISO image
   --ks <file>    #kickstart file, will auto generate according distro name if omitting
   -n|--vmname <name>
-                 #VM name suffix, will auto generate according distro name if omitting
+                 #VM name, will auto generate according distro name if omitting
   -f|--force     #over write existing VM with same name
   -p|-pkginstall <pkgs>
                  #pkgs in default system repo, install by yum or apt-get
