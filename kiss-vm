@@ -1760,9 +1760,11 @@ if [[ "$InstallType" = import ]]; then
 		exit 1
 	fi
 
-	egrep -q '(qcow2|qcow2.xz)' <<<"$Imageurl" || {
-		read Imageurl _ < <(getimageurls ${Imageurl} "${_Imagepattern}"|sort -Vr)
-	}
+	if [[ ! -f "$Imageurl" ]]; then
+		if ! egrep -q '(qcow2|qcow2.xz|raw)' <<<"$Imageurl"; then
+			read Imageurl _ < <(getimageurls ${Imageurl} "${_Imagepattern}"|sort -Vr)
+		fi
+	fi
 
 	[[ -n "$Imageurl" ]] &&
 		echo -e "image url: $Imageurl"
