@@ -85,7 +85,7 @@ _vmdelete() {
 				echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
 				cat <<-EOF
 				  virsh destroy $_vmname
-				  virsh undefine $_vmname --remove-all-storage
+				  virsh undefine $_vmname --remove-all-storage --nvram
 				EOF
 				return 1
 			}
@@ -94,7 +94,7 @@ _vmdelete() {
 			echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
 			cat <<-EOF
 			  virsh destroy $_vmname
-			  virsh undefine $_vmname --remove-all-storage
+			  virsh undefine $_vmname --remove-all-storage --nvram
 			EOF
 			return 1
 		fi
@@ -113,7 +113,7 @@ _vmdelete() {
 	echo -e "\n{VM:INFO} => dist removing VM $_vmname .."
 	virsh destroy $_vmname 2>/dev/null
 	sleep 1
-	virsh undefine --remove-all-storage $_vmname
+	virsh undefine $_vmname --remove-all-storage --nvram
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "- {VM:INFO} removing VM folder $_vmdir ..."
 		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
