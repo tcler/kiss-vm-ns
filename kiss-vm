@@ -1848,6 +1848,10 @@ done
 ### disk option
 for disk in "${DISKS[@]}"; do
 	read img arg <<<"${disk/,/ }"
+	if [[ ! -f "$img" ]]; then
+		echo -e "\n{VM:WARN} '--disk $disk': file '$img' does not exist, ignore it.\n"
+		continue
+	fi
 	cp -f $img $VMpath/.
 	DISK_OPTS+=" --disk path=$VMpath/$img,${arg:-bus=ide}"
 done
