@@ -1728,10 +1728,14 @@ _Imagepattern='(qcow2c|qcow2|qcow2.xz)'
 
 if [[ "$InstallType" = import ]]; then
 	if [[ -n "$Imageurl" ]]; then
-		if [[ ! -f $Imageurl ]] && ! is_available_url $Imageurl; then
-			echo "{VM:WARN} image url $Imageurl is not available, switching to Location mode" >&2
-			InstallType=location
-			Imageurl=
+		if [[ ! -f $Imageurl ]]; then
+			if ! is_available_url $Imageurl; then
+				echo "{VM:WARN} '$Imageurl' is neither an image file nor an available url, exit .." >&2
+				exit 2
+			else
+				InstallType=location
+				Imageurl=
+			fi
 		fi
 	elif [[ $Intranet = yes ]]; then
 		echo "{VM:INFO} searching private image url of $Distro ..." >&2
