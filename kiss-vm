@@ -1165,6 +1165,9 @@ Usage() {
 	  --vtpm         #enable virtual tpm
 	  --kdump        #enable kdump
 	  --fips         #enable fips
+	  --postrepo <name:url>
+	                 #add dnf/yum <repo> after install, only for CentOS/RHEL/Fedora
+	                 #e.g: --postrepo=beaker-tasks:http://beaker.engineering.fedora.com/rpms
 	  --nosshkey     #don't inject sshkey
 	  -v|--verbose   #verbose mode
 	  --debug        #debug mode
@@ -1346,6 +1349,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long vtpm \
 	--long kdump \
 	--long fips \
+	--long postrepo: \
 	--long nosshkey \
 	--long verbose \
 	--long vncget \
@@ -1421,6 +1425,7 @@ while true; do
 	--vtpm)          VTPM=yes; shift 1;;
 	--kdump)         kdump=yes; shift 1;;
 	--fips)          fips=yes; shift 1;;
+	--postrepo)      POST_REPOS+=("$2"); shift 2;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
@@ -2422,6 +2427,23 @@ if ! virsh desc $vmname &>/dev/null; then
 	rm -rf $VMpath && rmdir {$VMpath%/*} 2>/dev/null
 	exit 1
 fi
+
+for postrepo in "${POST_REPOS[@]}"; do
+	read _name _url _ <<<"${postrepo/:/ }"
+	[[ -z "$_name" || -z "$_url" ]] && continue
+
+	repofpath=$VMpath/$_name.repo
+	cat <<-REPO >$repofpath
+	[$_name]
+	name=$_name
+	baseurl=$_url
+	enabled=1
+	gpgcheck=0
+	skip_if_unavailable=1
+	REPO
+	vm cpto $vmname $repofpath /etc/yum.repos.d
+	rm -f $repofpath
+done
 
 if [[ "$GenerateImage" = yes ]]; then
 	mkdir -p $ImagePath/$Distro
