@@ -1736,13 +1736,11 @@ if [[ "$InstallType" = import ]]; then
 				: #do nothing
 			fi
 		fi
-	elif [[ $Intranet = yes ]]; then
-		echo "{VM:INFO} searching private image url of $Distro ..." >&2
-		baseurl=http://$downhostname/qa/rhts/lookaside/vm-images
-		imageLocation=${baseurl}/$Distro
-		read Imageurl _ < <(getimageurls ${imageLocation} "${_Imagepattern}"|sort -Vr)
-
-		if [[ -z "$Imageurl" ]]; then
+	else
+		if [[ $Intranet != yes ]]; then
+			echo "{VM:WARN} can not find imageUrl of '$Distro' in database." >&2
+			exit 1
+		else
 			echo "{VM:INFO} getting fastest location of $Distro ..." >&2
 			Location=$(distro2location $Distro)
 			[[ -z "$Location" ]] && {
@@ -1763,21 +1761,22 @@ if [[ "$InstallType" = import ]]; then
 				Imageurl=
 			fi
 		fi
-	else
-		echo "{VM:WARN} can not find imageUrl of '$Distro' in database." >&2
-		exit 1
 	fi
 
-	if [[ ! -f "$Imageurl" ]]; then
-		if ! egrep -q '(qcow2|qcow2.xz|raw)' <<<"$Imageurl"; then
-			read Imageurl _ < <(getimageurls ${Imageurl} "${_Imagepattern}"|sort -Vr)
+	# if not swithed to Location mode
+	if [[ "$InstallType" = import ]]; then
+		if [[ ! -f "$Imageurl" ]]; then
+			if ! egrep -q '(qcow2|qcow2.xz|raw)' <<<"$Imageurl"; then
+				read Imageurl _ < <(getimageurls ${Imageurl} "${_Imagepattern}"|sort -Vr)
+			fi
 		fi
-	fi
 
-	if [[ -n "$Imageurl" ]]; then
-		echo -e "image url: $Imageurl"
-	else
-		exit 1
+		if [[ -n "$Imageurl" ]]; then
+			echo -e "image url: $Imageurl"
+		else
+			echo "{VM:WARN} not found image from ${Imageurl} by pattern(${_Imagepattern})" >&2
+			exit 1
+		fi
 	fi
 fi
 
