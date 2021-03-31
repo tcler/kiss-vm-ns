@@ -1774,25 +1774,27 @@ if [[ "$InstallType" = import ]]; then
 		fi
 	fi
 
-	[[ -n "$Imageurl" ]] &&
+	if [[ -n "$Imageurl" ]]; then
 		echo -e "image url: $Imageurl"
+	else
+		exit 1
+	fi
 fi
 
 if [[ "$InstallType" = location ]]; then
+	_MSIZE=2048
+
 	if [[ $Intranet = yes && -z "$Location" ]]; then
 		echo "{VM:INFO} getting fastest location of $Distro ..." >&2
 		Location=$(distro2location $Distro)
 	fi
 
-	if [[ -z "$Location" ]]; then
+	if [[ -n "$Location" ]]; then
+		echo -e "location url: $Location"
+	else
 		echo "{VM:WARN} can not find distro location. please check if '$Distro' is valid distro" >&2
 		exit 1
 	fi
-
-	_MSIZE=2048
-
-	[[ -n "$Location" ]] &&
-		echo -e "location url: $Location"
 fi
 
 if [[ "$InstallType" = pxe ]]; then
