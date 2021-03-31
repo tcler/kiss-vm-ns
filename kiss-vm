@@ -1733,8 +1733,7 @@ if [[ "$InstallType" = import ]]; then
 				echo "{VM:WARN} '$Imageurl' is neither an image file nor an available url, exit .." >&2
 				exit 2
 			else
-				InstallType=location
-				Imageurl=
+				: #do nothing
 			fi
 		fi
 	elif [[ $Intranet = yes ]]; then
