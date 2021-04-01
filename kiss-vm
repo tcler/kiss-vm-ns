@@ -1,6 +1,9 @@
 #!/bin/bash
 # author: yin-jianhong@163.com
 # test pass on RHEL-7/CentOS-7, RHEL-8/CentOS-8 and Fedora-29/30/31
+#
+# inspired by https://www.brianlinkletter.com/2019/02/build-a-network-emulator-using-libvirt/
+# `and inspired by Red Hat traning Virtual Lab
 
 LANG=C
 PATH=~/bin:$PATH 
