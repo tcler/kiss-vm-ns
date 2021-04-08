@@ -1186,6 +1186,7 @@ Usage() {
 	  --xml          #just generate xml
 	  --machine <machine type>
 	                 #specify machine type #get supported type by: qemu-kvm -machine help
+	  --virt-install-opts #Pass-through virt-install options
 	  --qemu-opts    #Pass-through qemu options
 	  --qemu-env     #Pass-through qemu env[s]
 	  --enable-nested-vm  #enable nested on host
@@ -1363,6 +1364,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long vncput-after-install: \
 	--long xml \
 	--long machine: \
+	--long virt-install-opts: \
 	--long qemu-opts: \
 	--long qemu-env: \
 	--long enable-nested-vm \
@@ -1440,6 +1442,7 @@ while true; do
 	--vncput-after-install) VNCPUT_AFTER_INSTALL="$2"; shift 2;;
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
+	--virt-install-opts)    VIRT_INSTALL_OPTS+=("$2"); shift 2;;
 	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
@@ -2015,6 +2018,7 @@ if [[ "$InstallType" = location ]]; then
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
 	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
+	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
 	  --location $Location \
 	  $OS_VARIANT_OPT \
@@ -2206,6 +2210,7 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	}
 	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
+	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
@@ -2349,6 +2354,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
 
 	run virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
+	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
@@ -2403,6 +2409,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	[[ -f ${isofile} ]] || exit 1
 
 	run virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
+	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
