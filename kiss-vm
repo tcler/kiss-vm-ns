@@ -1587,8 +1587,14 @@ mkdir -p ${DownloadImagePath}
 declare -A distroInfo
 dbfile=/etc/kiss-vm/distro-db.bash
 owndbfile=$perConfDir/distro-db.bash
-[[ -f $dbfile ]] && source $dbfile
-[[ -f $dbfile ]] && source $owndbfile
+[[ -f $dbfile ]] && {
+	echo "{VM:INFO} load distro-db file $dbfile ..."
+	source $dbfile
+}
+[[ -f $owndbfile ]] && {
+	echo "{VM:INFO} load own distro-db file $owndbfile ..."
+	source $owndbfile
+}
 
 if is_intranet; then
 	distroInfo[FreeBSD-13.0]="http://$downhostname/qa/rhts/lookaside/vm-images/FreeBSD-13.0/FreeBSD-13.0-CURRENT-amd64.qcow2.xz"
