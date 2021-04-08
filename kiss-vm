@@ -23,10 +23,12 @@ InstallType=import
 ImagePath=~/myimages
 DownloadImagePath=$ImagePath/download
 VMSHOME=~/VMs
+perConfDir=~/.config/kiss-vm
 vmprefix=$(whoami)
 [[ -n "$SUDO_USER" ]] && {
 	eval ImagePath=~$SUDO_USER/myimages
 	eval VMSHOME=~$SUDO_USER/VMs
+	eval perConfDir=~$SUDO_USER/.config/kiss-vm
 	vmprefix=${SUDO_USER}
 }
 RuntimeTmp=/tmp/vm-$$
@@ -786,7 +788,7 @@ enable_libvirt() {
 	local pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img iptables-nft"
 	local sudouser=${SUDO_USER:-$(whoami)}
 	eval sudouserhome=~$sudouser
-	[[ -z "$force" && -d $sudouserhome/.config/kiss-vm ]] && return 0
+	[[ -z "$force" && -d $perConfDir ]] && return 0
 
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt start ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
@@ -880,7 +882,7 @@ COMM
 		fi
 	}
 
-	mkdir -p $sudouserhome/.config/kiss-vm
+	mkdir -p $perConfDir
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && printf '\33[H\33[2J'
 }
@@ -1584,9 +1586,9 @@ mkdir -p ${DownloadImagePath}
 
 declare -A distroInfo
 dbfile=/etc/kiss-vm/distro-db.bash
-if [ -f $dbfile ]; then
-	source $dbfile
-fi
+owndbfile=$perConfDir/distro-db.bash
+[[ -f $dbfile ]] && source $dbfile
+[[ -f $dbfile ]] && source $owndbfile
 
 if is_intranet; then
 	distroInfo[FreeBSD-13.0]="http://$downhostname/qa/rhts/lookaside/vm-images/FreeBSD-13.0/FreeBSD-13.0-CURRENT-amd64.qcow2.xz"
