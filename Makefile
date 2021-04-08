@@ -8,6 +8,8 @@ install: pull
 	sudo cp -af kiss-vm $(_bin)/vm
 	sudo cp -af kiss-ns $(_bin)/ns
 	sudo cp -af kiss-netns $(_bin)/netns
+	sudo mkdir -p /etc/kiss-vm
+	sudo cp -af distro-db.bash /etc/kiss-vm/.
 
 pull:
 	git pull --rebase || :
