@@ -10,6 +10,7 @@ install: pull
 	sudo cp -af kiss-netns $(_bin)/netns
 	sudo mkdir -p /etc/kiss-vm
 	sudo cp -af distro-db.bash /etc/kiss-vm/.
+	sudo cp bash-completion/* ${completion_path}/.
 
 pull:
 	git pull --rebase || :
