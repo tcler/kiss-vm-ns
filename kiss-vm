@@ -1104,7 +1104,7 @@ Usage() {
 	  vm [subcmd] <-d distroname> [OPTIONs] ...
 
 	Options:
-	  -h, --help     #Display this help.
+	  -h,--help      #Display this help.
 	  --prepare      #check/install/configure libvirt and other dependent packages
 	  -I             #create VM by import existing disk image, auto search url according distro name
 	  -i <url/path>  #create VM by import existing disk image, value can be url or local path
@@ -1112,17 +1112,17 @@ Usage() {
 	  -l <url>       #create VM by using location
 	  -C <iso path>  #create VM by using ISO image
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
-	  -n|--vmname <name>
+	  -n,--vmname <name>
 	                 #VM name, will auto generate according distro name if omitting
-	  -f|--force     #over write existing VM with same name
-	  -p|-pkginstall <pkgs>
+	  -f,--force     #over write existing VM with same name
+	  -p,--pkginstall <pkgs>
 	                 #pkgs in default system repo, install by yum or apt-get
-	  -b|-brewinstall <args>
+	  -b,--brewinstall <args>
 	                 #pkgs in brew system or specified by url, install by internal brewinstall.sh
 	                  `-> just could be used in Intranet
-	  -g|-genimage   #generate VM image, after install shutdown VM and generate new qcow2.xz file
+	  -g,--genimage  #generate VM image, after install shutdown VM and generate new qcow2.xz file
 	  --rm           #like --rm option of docker/podman, remove VM after quit from console
-	  --nocloud|--nocloud-init
+	  --nocloud,--nocloud-init
 	                 #don't create cloud-init iso for the image that is not cloud image
 	  --osv <variant>
 	                 #OS_VARIANT, optional. virt-install will attempt to auto detect this value
@@ -1141,11 +1141,11 @@ Usage() {
 	                 #attach tun dev(vnetN) and connect to net $name, optional $model: virtio,e1000,...
 	  --net-br <$brname[,$model]>
 	                 #attach tun dev(vnetN) and connect to bridge $brname, optional $model: virtio,e1000,...
-	  --net-macvtap, --netmacvtap [$sourceNIC[,$model]]
+	  --net-macvtap,--netmacvtap [$sourceNIC[,$model]]
 	                 #attach macvtap interface over $sourceNIC, optional $model: virtio,e1000,...
 	  --macvtapmode <vepa|bridge>
 	                 #macvtap mode
-	  -r|--ready     #virt config is ready, don't have to run enable_libvirt function
+	  -r,--ready     #virt config is ready, don't have to run enable_libvirt function
 	  --xdisk <size[,fstype]>
 	                 #add an extra disk, could be specified multi-times. size unit is G
 	                 #e.g: --xdisk 10 --xdisk 20,xfs
@@ -1174,7 +1174,7 @@ Usage() {
 	                 #add dnf/yum <repo> after install, only for CentOS/RHEL/Fedora
 	                 #e.g: --postrepo=beaker-tasks:http://beaker.engineering.fedora.com/rpms
 	  --nosshkey     #don't inject sshkey
-	  -v|--verbose   #verbose mode
+	  -v,--verbose   #verbose mode
 	  --debug        #debug mode
 	  --vncget       #get vnc screen and convert to text by gocr
 	  --vncput <msg> #send string or key event to vnc server, could be specified multi-times
