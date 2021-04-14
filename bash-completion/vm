@@ -1,0 +1,40 @@
+# vm(1) completion                                         -*- shell-script -*-
+
+prog=$(basename $BASH_SOURCE)
+_vm()
+{
+    local cur prev words cword
+    local narg
+    _init_completion || return
+
+    for w in "${words[@]}"; do
+        [[ $w =~ ^-.* ]] || let narg++
+    done
+
+    local opts=$( _parse_help "$1" )
+
+    if [[ "$cur" == -* ]]; then
+        #[[ $opts ]] || opts="" # POSIX fallback
+        COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
+    else
+        if [[ $narg -le 2 ]]; then
+            intranetDistroList=$(distro-compose -dlist 2>/dev/null | grep -v ' ' | xargs)
+            commonDistroList=$(source /etc/kiss-vm/distro-db.bash; echo ${!distroInfo[@]})
+            local arg1="<Distroname> $commonDistroList $intranetDistroList "
+            COMPREPLY=( $( compgen -W "$arg1" -- "$cur" ) )
+        else
+            COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
+        fi
+
+        : <<-COMM
+        if [[ $prev == --retention-tag ]]; then
+            retentions="scratch 60days 120days active active+1 audit"
+            COMPREPLY=( $(compgen -W "$retentions" -- "$cur") )
+        fi
+COMM
+    fi
+} &&
+complete -F _vm $prog
+
+#echo $prog
+# ex: ts=4 sw=4 et filetype=sh
