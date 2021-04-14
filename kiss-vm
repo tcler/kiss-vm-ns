@@ -1624,6 +1624,7 @@ owndbfile=$perConfDir/distro-db.bash
 }
 
 if is_intranet; then
+	timeout 2 hostname -A|grep -q '\.pek2\.' && downhostname=${downhostname/devel/eng.pek2}
 	distroInfo[FreeBSD-13.0]="http://$downhostname/qa/rhts/lookaside/vm-images/FreeBSD-13.0/FreeBSD-13.0-CURRENT-amd64.qcow2.xz"
 	distroInfo[FreeBSD-12.2]="http://$downhostname/qa/rhts/lookaside/vm-images/FreeBSD-12.2/FreeBSD-12.2-RELEASE-amd64.qcow2.xz"
 
