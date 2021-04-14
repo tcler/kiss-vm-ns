@@ -1,6 +1,17 @@
 # vm(1) completion                                         -*- shell-script -*-
 
 prog=$(basename $BASH_SOURCE)
+
+is_available_url() {
+	local _url=$1
+	curl --connect-timeout 4 -m 4 --output /dev/null --silent --head --fail $_url &>/dev/null
+}
+is_intranet() {
+    local _downhostname="download.devel.fedorahat.com"
+	local iurl=http://${_downhostname/fedora/red}
+	is_available_url $iurl 
+}
+
 _vm()
 {
     local cur prev words cword
@@ -18,9 +29,11 @@ _vm()
         COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
     else
         if [[ $narg -le 2 ]]; then
-            intranetDistroList=$(distro-compose -dlist 2>/dev/null | grep -v ' ' | xargs)
             commonDistroList=$(source /etc/kiss-vm/distro-db.bash; echo ${!distroInfo[@]})
-            local arg1="<Distroname> $commonDistroList $intranetDistroList "
+            if is_intranet; then
+                commonDistroList+=" RHEL-9% RHEL-8% RHEL-7% RHEL-6%"
+            fi
+            local arg1="A#<Distroname> A#<-h__or__just_Enter> $commonDistroList $intranetDistroList "
             COMPREPLY=( $( compgen -W "$arg1" -- "$cur" ) )
         else
             COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
