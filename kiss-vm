@@ -611,14 +611,17 @@ netcreate() {
 	Usage() {
 		cat <<-U
 		Example:
-		  vm net netname=net10 brname=virbr10 subnet=10  #subnet range: [1-121,123-254]
+		  vm net netname=net10 brname=virbr10 subnet=10  #means 192.168.10.0
+		  vm net netname=net10 brname=virbr10 subnet=172.25.252.0
+		  vm net netname=net10 brname=virbr10 subnet=172.25.252.0 forward=no
+		  vm net netname=net10 brname=virbr10 subnet=172.25.252.0 forward=nat [tftproot=/path] [bootpfile=]
 		U
 	}
 	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile)=.* ]] || continue; eval "$opt"; done
-	[[ -z "$netname" || -z "$brname" ]] && { Usage; return 1; }
+	[[ -z "$netname" || -z "$brname" ]] && { Usage >&2; return 1; }
 
 	#https://libvirt.org/formatnetwork.html
-	[[ -n "$forward" ]] && {
+	[[ -n "$forward" && "$forward" != no ]] && {
 		forwardNode="<forward mode=\"$forward\"/>"
 		[[ "$forward" = nat ]] && forwardNode="<forward mode=\"$forward\" >
 		    <nat>
@@ -628,13 +631,33 @@ netcreate() {
 	}
 	[[ -n "$tftproot" ]] && tftpNode="<tftp root='$tftproot'/>"
 	[[ -n "$bootpfile" ]] && bootpNode="<bootp file='$bootpfile'/>"
-	[[ -n "$subnet" ]] && ipNode="<ip address=\"192.168.${subnet}.1\" netmask=\"255.255.255.0\" >
+	if [[ -n "$subnet" ]]; then
+		netmask=255.255.255.0
+		rx='([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
+		if [[ "$subnet" =~ ^${rx}$ ]]; then
+			subnet=192.168.${subnet}
+		elif [[ "$subnet" =~ ^$rx\.$rx\.$rx$ ]]; then
+			subnet=${subnet}
+		elif [[ "$subnet" =~ ^$rx\.$rx\.$rx\.$rx$ ]]; then
+			subnet=${subnet%.*}
+		else
+			echo "{VM:netcreate} invalid subnet addr: $subnet" >&2
+			Usage >&2
+			return 1
+		fi
+
+		gatewayaddr="${subnet}.1"
+		range_start="${subnet}.128"
+		range_end="${subnet}.254"
+
+		ipNode="<ip address=\"${subnet}.1\" netmask=\"$netmask\" >
 		    $tftpNode
 		    <dhcp>
-		      <range start=\"192.168.${subnet}.128\" end=\"192.168.${subnet}.254\"/>
+		      <range start=\"${range_start}\" end=\"${range_end}\"/>
 		      $bootpNode
 		    </dhcp>
 		  </ip>"
+	fi
 
 	virsh net-info -- "$netname" &>/dev/null && {
 		echo "{VM:WARN} Virt network $netname has been there."
@@ -1256,9 +1279,9 @@ Usage() {
 	  vm start [VM]        #start VM           //nil
 
 	  vm net               #list all virtual network
-	  vm net netname=nat-net brname=virbrM subnet=10 forward=nat  #create virtual network 'nat-net', default forward is 'nat'
-	  vm net netname=isolated-net brname=virbrN subnet=20 forward=  #create virtual network 'isolated-net'
-	  vm net netname=pxe brname=virpxebrN subnet=200 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
+	  vm net netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
+	  vm net netname=isolated-net brname=virbrN subnet=20 forward=no  #create network 'isolated-net' with subnet: 192.168.20.0
+	  vm net netname=pxe brname=virpxebrN subnet=172.25.250.0 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
 	  vm netinfo netname   #show detail info of virtual network 'netname'
 	  vm netstart netname  #start virtual network 'netname'
 	  vm netdel netname    #delete virtual network 'netname'
