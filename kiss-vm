@@ -952,6 +952,7 @@ if [[ $Intranet = yes ]]; then
 
 		distrotrees=$(fetch_distro_trees $distro $arch)
 		urls=$(echo "$distrotrees" | awk '$3 ~ /https?:.*'"(${variant}|BaseOS|Everything)"'/{print $3}' | sort -u)
+		echo -e "\n====\n$urls\n====\n" >&2
 
 		local _file=fastesturl.sh
 		which $_file &>/dev/null || {
