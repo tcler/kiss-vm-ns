@@ -1746,12 +1746,12 @@ fi
 # Phase-1: get distro's Location or Image url
 _Imagepattern='(qcow2c|qcow2|qcow2.xz)'
 [[ -n "${distroInfo[$Distro]}" ]] && {
-	echo -e "{VM:INFO} ${distroInfo[$Distro]}"
+	echo -e "{VM:INFO} db: ${distroInfo[$Distro]}"
 	read _Imageurl _Location <<<"${distroInfo[$Distro]}"
 	[[ "$_Imageurl" = *%%* ]] && {
 		read _Imageurl _Imagepattern <<<"${_Imageurl/\%\%/ }"
 	}
-	echo -e "{VM:INFO} $_Imageurl($_Imagepattern) $_Location"
+	echo -e "{VM:INFO} db: $_Imageurl($_Imagepattern) $_Location"
 
 	[[ -z "$Imageurl" ]] && Imageurl=${_Imageurl}
 	[[ -z "$Location" ]] && Location=${_Location}
@@ -1803,7 +1803,11 @@ if [[ "$InstallType" = import ]]; then
 		fi
 
 		if [[ -n "$Imageurl" ]]; then
-			echo -e "image url: $Imageurl"
+			if [[ -n "$OnlyGetUrl" ]]; then
+				echo -e "image url: $Imageurl"
+			else
+				echo -e "image url: \e[4m$Imageurl\e[0m"
+			fi
 		else
 			echo "{VM:WARN} not found image from ${Imageurl} by pattern(${_Imagepattern})" >&2
 			exit 1
@@ -1820,12 +1824,19 @@ if [[ "$InstallType" = location ]]; then
 	fi
 
 	if [[ -n "$Location" ]]; then
-		echo -e "location url: $Location"
+		if [[ -n "$OnlyGetUrl" ]]; then
+			echo -e "location url: $Location"
+		else
+			echo -e "location url: \e[4m$Location\e[0m"
+		fi
 	else
 		echo "{VM:WARN} can not find distro location. please check if '$Distro' is valid distro" >&2
 		exit 1
 	fi
 fi
+
+[[ -n "$OnlyGetUrl" ]] && { exit; }
+
 
 if [[ "$InstallType" = pxe ]]; then
 	_MSIZE=2048
@@ -1833,7 +1844,6 @@ fi
 
 MSIZE=${MSIZE:-$_MSIZE}
 
-[[ -n "$OnlyGetUrl" ]] && { exit; }
 
 echo "{VM:INFO} guess/verify os-variant ..."
 [[ -z "$VM_OS_VARIANT" ]] && {
