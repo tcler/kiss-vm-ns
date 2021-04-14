@@ -279,18 +279,21 @@ vmvncport() {
 
 	local port=$(virsh dumpxml "$_vmname" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}")
 	[[ -n "${port}" ]] && {
-		if [[ -n "${VNCPUTS}" ]]; then
-			vncput localhost::$port "${VNCPUTS[@]}"
-			echo "[vncput@$_vmname]> ${VNCPUTS[*]}"
-			vncget localhost::$port
-		elif [[ -n "${VNCGET}" ]]; then
-			echo "[vncget@$_vmname]:"
-			vncget localhost::$port
-		else
+		if [[ -z "${VNCPUTS}" && -z "${VNCGET}" ]]; then
 			for _host in $(hostname -A|xargs -n 1|sort -u); do
 				ping -c 2 $_host &>/dev/null || continue
 				echo $_host:$port
 			done
+			return
+		fi
+
+		if [[ -n "${VNCPUTS}" ]]; then
+			vncput localhost::$port "${VNCPUTS[@]}"
+			echo "[vncput@$_vmname]> ${VNCPUTS[*]}"
+		fi
+		if [[ -n "${VNCGET}" ]]; then
+			echo "[vncget@$_vmname]:"
+			vncget localhost::$port
 		fi
 	}
 }
@@ -2296,10 +2299,12 @@ elif [[ "$InstallType" = import ]]; then
 				-vncputln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config" \
 				-vncputln "grep '^[^#]' /etc/rc.conf" \
 				-vncputln "grep '^[^#]' /etc/ssh/sshd_config"
+			timeout 5 vm "$vmname" -vncget
 			vm "$vmname" -vncputln "pw useradd foo -G wheel" \
 				-vncputln "passwd foo" -vncput "" -vncputln "$defaultPasswd" -vncput "" -vncputln "$defaultPasswd" \
 				-vncputln "passwd root" -vncput "" -vncputln "$defaultPasswd" -vncput "" -vncputln "$defaultPasswd" \
 				-vncputln "/etc/rc.d/sshd start"
+			timeout 5 vm "$vmname" -vncget
 			expect -c "
 				spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$vmname
 				expect -re .*: {send \"$defaultPasswd\\r\"}
