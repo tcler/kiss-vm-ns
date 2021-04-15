@@ -1128,11 +1128,17 @@ fi
 Usage() {
 	cat <<-'EOF'
 	Usage:
-	  vm [subcmd] <-d distroname> [OPTIONs] ...
+	  vm [create] <distro_or_family_name> [OPTIONs] ...
+	  vm <$other_subcmd> [OPTIONs] ...
 
 	Options:
 	  -h,--help      #Display this help.
+
+	Options for host setup:
 	  --prepare      #check/install/configure libvirt and other dependent packages
+	  --enable-nested-vm  #enable nested on host
+
+	Options for create:
 	  -I             #create VM by import existing disk image, auto search url according distro name
 	  -i <url/path>  #create VM by import existing disk image, value can be url or local path
 	  -L             #create VM by using location, auto search url according distro name
@@ -1175,7 +1181,7 @@ Usage() {
 	  -r,--ready     #virt config is ready, don't have to run enable_libvirt function
 	  --xdisk <size[,fstype]>
 	                 #add an extra disk, could be specified multi-times. size unit is G
-	                 #e.g: --xdisk 10 --xdisk 20,xfs
+	                 #`e.g: --xdisk 10 --xdisk 20,xfs
 	  --disk <img[,bus=]>
 	                 #add exist disk file, could be specified multi-times.
 	  --bus <$boot_disk_bus>
@@ -1183,14 +1189,14 @@ Usage() {
 	                 #share path between host and guest
 	  --nvdimm <nvdimm list>
 	                 #one or more nvdimm specification, format: 511+1 (targetSize+labelSize)
-	                 #e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
-	                 #e.g: --nvdimm="511 1023" -> two nvdimm device
+	                 #`e.g: --nvdimm="511+1 1023+1" -> two nvdimm device
+	                 #`e.g: --nvdimm="511 1023" -> two nvdimm device
 	                 #               ^^^^^^^^ default labelSize is 1, if omitting
 	                 #Note: will exit if qemu on your system does not support nvdimm, check by:
 	                 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvdimm
 	  --nvme <size=[,format=]>
 	                 #one or more nvme specification.
-	                 #e.g: --nvme=size=10 --nvme=size=20,format=raw
+	                 #`e.g: --nvme=size=10 --nvme=size=20,format=raw
 	                 #size units: GB, default format is qcow2
 	                 #Note: will exit if qemu on your system does not support nvme, check by:
 	                 # PATH=$PATH:/usr/libexec qemu-kvm -device help | grep nvme
@@ -1199,13 +1205,12 @@ Usage() {
 	  --fips         #enable fips
 	  --postrepo <name:url>
 	                 #add dnf/yum <repo> after install, only for CentOS/RHEL/Fedora
-	                 #e.g: --postrepo=beaker-tasks:http://beaker.engineering.fedora.com/rpms
+	                 #`e.g: --postrepo=beaker-tasks:http://beaker.engineering.fedora.com/rpms
 	  --nosshkey     #don't inject sshkey
-	  -v,--verbose   #verbose mode
 	  --debug        #debug mode
 	  --vncget       #get vnc screen and convert to text by gocr
 	  --vncput <msg> #send string or key event to vnc server, could be specified multi-times
-	                 #e.g: --vncput root --vncput key:enter --vncput password --vncput key:enter
+	                 #`e.g: --vncput root --vncput key:enter --vncput password --vncput key:enter
 	  --vncputln <msg>
 	                 #alias of: --vncput msg --vncput key:enter
 	  --vncput-after-install <msg>
@@ -1216,53 +1221,56 @@ Usage() {
 	  --virt-install-opts #Pass-through virt-install options
 	  --qemu-opts    #Pass-through qemu options
 	  --qemu-env     #Pass-through qemu env[s]
-	  --enable-nested-vm  #enable nested on host
 	  --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
 	                      #ref: https://www.linux-kvm.org/page/Nested_Guests
 	  --disable-guest-hypv #disable guest hypervisor
-	  -x[arg]             #expected return code of sub-command exec, if doesn't match output test fail msg
-	                      # e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 	  --pxe          #PXE install
-	                      # e.g: vm fedora-32 -n f32 -net-macvtap -pxe --noauto -f
+	                 #`e.g: vm fedora-32 -n f32 -net-macvtap -pxe --noauto -f
 	  --diskless     #diskless install
-	                      # e.g: vm fedora-32 -n f32-diskless --net pxenet --pxe --diskless -f
+	                 #`e.g: vm fedora-32 -n f32-diskless --net pxenet --pxe --diskless -f
+	  -v,--verbose   #verbose mode
 	  -q             #quiet mode, intend suppress the outputs of command yum, curl
+
+	Options for create:
+	  -v,--verbose   #verbose mode
+	  -x[arg]        #expected return code of sub-command exec, if doesn't match output test fail msg
+	                 #`e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
 	Example Intranet:
-	  $P # will enter a TUI show you all available distros that could auto generate source url
-	  $P RHEL-7.7                           # install RHEL-7.7 from cloud-image(by default)
-	  $P RHEL-6.10 -L                       # install RHEL-6.10 from Location(by -L option)
+	  $P [create] # will enter a TUI show you all available distros that could auto generate source url
+	  $P [create] RHEL-7.7                           # install RHEL-7.7 from cloud-image(by default)
+	  $P [create] RHEL-6.10 -L                       # install RHEL-6.10 from Location(by -L option)
 
-	  $P RHEL-8.1.0 -f -p "vim wget git"    # -f force install VM and ship pkgs: vim wget git
-	  $P RHEL-8.1.0 -brewinstall 23822847   # ship brew scratch build pkg (by task id)
-	  $P RHEL-8.1.0 -brewinstall kernel-4.18.0-147.8.el8  # ship brew build pkg (by build name)
-	  $P RHEL-8.1.0 -brewinstall "lstk -debug"            # ship latest brew build release debug kernel
-	  $P RHEL-8.1.0 -brewinstall "upk -debug"             # ship latest brew build upstream debug kernel
-	  $P RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
-	  $P RHEL-8.3.0 --nvme "size=32 size=16,format=raw"   # add two nvme device
-	  $P rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
-	  $P rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
+	  $P [create] RHEL-8.1.0 -f -p "vim wget git"    # -f force install VM and ship pkgs: vim wget git
+	  $P [create] RHEL-8.1.0 -brewinstall 23822847   # ship brew scratch build pkg (by task id)
+	  $P [create] RHEL-8.1.0 -brewinstall kernel-4.18.0-147.8.el8  # ship brew build pkg (by build name)
+	  $P [create] RHEL-8.1.0 -brewinstall "lstk -debug"            # ship latest brew build release debug kernel
+	  $P [create] RHEL-8.1.0 -brewinstall "upk -debug"             # ship latest brew build upstream debug kernel
+	  $P [create] RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
+	  $P [create] RHEL-8.3.0 --nvme "size=32 size=16,format=raw"   # add two nvme device
+	  $P [create] rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
+	  $P [create] rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
+	  $P [create] rhel-8.2% -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
 
 	  $P --enable-nested-vm  #enable nested on host, need sudo
-	  $P rhel-8.2% -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
 
 	EOF
 	cat <<-EOF
 	Example Internet:
-	  $P # will enter a TUI show you all available distros that could auto generate source url
-	  $P CentOS-8-stream -b ftp://url/path/x.rpm
-	  $P CentOS-8 -p "jimtcl vim git make gcc"
-	  $P CentOS-7 -p "vim git wget make gcc"
-	  $P CentOS-6
-	  $P fedora-32
-	  $P centos-5 -l http://vault.centos.org/5.11/os/x86_64/
-	  $P debian-10 -i https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2
-	  $P openSUSE-leap-15.2
+	  $P [create] # will enter a TUI show you all available distros that could auto generate source url
+	  $P [create] CentOS-8-stream -b ftp://url/path/x.rpm
+	  $P [create] CentOS-8 -p "jimtcl vim git make gcc"
+	  $P [create] CentOS-7 -p "vim git wget make gcc"
+	  $P [create] CentOS-6
+	  $P [create] fedora-32
+	  $P [create] centos-5 -l http://vault.centos.org/5.11/os/x86_64/
+	  $P [create] debian-10 -i https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2
+	  $P [create] openSUSE-leap-15.2
+	  $P [create] CentOS-7 -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
 
 	  $P --enable-nested-vm  #enable nested on host, need sudo
-	  $P CentOS-7 -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
 
 	Example from local image:
 	  $P rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
@@ -1270,26 +1278,25 @@ Usage() {
 	  $P openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
 
 	Example [subcmd]:
-	  vm [create] [opts]   #create VM          //create is the default action if omitted
-	  vm list              #list all VMs       //you can use ls,li,lis* instead list
-	  vm login [/c] [VM]   #login VM           //you can use l,lo,log* instead login
-	  vm delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
-	  vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
-	  vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
-	  vm xml [VM]          #dump vm xml file   //you can use x,xm instead xml
-	  vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
-	  vm exec [-v] [-x] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
-	  vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
-	  vm stop [VM]         #stop/shutdonw VM   //nil
-	  vm start [VM]        #start VM           //nil
+	  $P list              #list all VMs       //you can use ls,li,lis* instead list
+	  $P login [/c] [VM]   #login VM           //you can use l,lo,log* instead login
+	  $P delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
+	  $P ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
+	  $P vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
+	  $P xml [VM]          #dump vm xml file   //you can use x,xm instead xml
+	  $P edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
+	  $P exec [-v] [-x] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
+	  $P reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
+	  $P stop [VM]         #stop/shutdonw VM   //nil
+	  $P start [VM]        #start VM           //nil
 
-	  vm net               #list all virtual network
-	  vm net netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
-	  vm net netname=isolated-net brname=virbrN subnet=20 forward=no  #create network 'isolated-net' with subnet: 192.168.20.0
-	  vm net netname=pxe brname=virpxebrN subnet=172.25.250.0 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
-	  vm netinfo netname   #show detail info of virtual network 'netname'
-	  vm netstart netname  #start virtual network 'netname'
-	  vm netdel netname    #delete virtual network 'netname'
+	  $P net               #list all virtual network
+	  $P net netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
+	  $P net netname=isolated-net brname=virbrN subnet=20 forward=no  #create network 'isolated-net' with subnet: 192.168.20.0
+	  $P net netname=pxe brname=virpxebrN subnet=172.25.250.0 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
+	  $P netinfo netname   #show detail info of virtual network 'netname'
+	  $P netstart netname  #start virtual network 'netname'
+	  $P netdel netname    #delete virtual network 'netname'
 	EOF
 }
 
@@ -1347,8 +1354,9 @@ get_default_if() {
 # command line parse
 _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long help \
-	--long debug \
 	--long prepare \
+	--long enable-nested-vm \
+	--long debug \
 	--long ks: \
 	--long rm \
 	--long osv: \
@@ -1385,7 +1393,6 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long fips \
 	--long postrepo: \
 	--long nosshkey \
-	--long verbose \
 	--long vncget \
 	--long vncput: \
 	--long vncputln: \
@@ -1395,11 +1402,11 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long virt-install-opts: \
 	--long qemu-opts: \
 	--long qemu-env: \
-	--long enable-nested-vm \
 	--long enable-guest-hypv \
 	--long disable-guest-hypv \
 	--long pxe \
 	--long diskless \
+	--long verbose \
     -a -n "$0" -- "$@"`
 [[ $? != 0 ]] && { exit 1; }
 eval set -- "$_at"
@@ -1407,6 +1414,7 @@ while true; do
 	case "$1" in
 	-h|--help) Usage; shift 1; exit 0;;
 	--prepare) ONLY_PREPARE=yes; shift 1;;
+	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
 	-C)        InstallType=cdrom; Isourl=$2; shift 2;;
 	-l)        InstallType=location; Location=$2; shift 2;;
@@ -1462,7 +1470,6 @@ while true; do
 	--fips)          fips=yes; shift 1;;
 	--postrepo)      POST_REPOS+=("$2"); shift 2;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
-	-v|--verbose)    VERBOSE=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
 	--vncget)        VNCGET=yes; shift 1;;
 	--vncput)        VNCPUTS+=("$2"); shift 2;;
@@ -1473,10 +1480,10 @@ while true; do
 	--virt-install-opts)    VIRT_INSTALL_OPTS+=("$2"); shift 2;;
 	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
-	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	--enable-guest-hy*) ENABLE_L2VM=yes; shift 1;;
 	--disable-guest-hy*) ENABLE_L2VM=no; shift 1;;
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
+	-v|--verbose)    VERBOSE=yes; shift 1;;
 	-q)              QUIET=yes; shift 1;;
 	--) shift; break;;
 	esac
