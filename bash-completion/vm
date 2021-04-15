@@ -53,7 +53,7 @@ _vm()
             local vmlist=$(virsh list --name)
             COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             ;;
-        if|ifaddr|vnc|vncport|x|xm|xml|ed|edit)
+        lo|log|login|if|ifaddr|vnc|vncport|x|xm|xml|ed|edit)
             if [[ $narg -le 3 ]]; then
                 local vmlist=$(virsh list --name)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
