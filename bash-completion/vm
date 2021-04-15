@@ -19,32 +19,69 @@ _vm()
     _init_completion || return
 
     for w in "${words[@]}"; do
-        [[ $w =~ ^-.* ]] || let narg++
+        [[ $w =~ ^-.* && $w != "--" ]] || let narg++
     done
 
     local opts=$( _parse_help "$1" )
 
-    if [[ "$cur" == -* ]]; then
-        #[[ $opts ]] || opts="" # POSIX fallback
-        COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
+    if [[ $narg -le 2 ]]; then
+        local subcommandList="-h create ls list login delete ifaddr vncport xml edit exec reboot stop start net netinfo netdel netstart"
+        COMPREPLY=( $( compgen -W "$subcommandList" -- "$cur" ) )
     else
-        if [[ $narg -le 2 ]]; then
-            commonDistroList=$(source /etc/kiss-vm/distro-db.bash; echo ${!distroInfo[@]})
-            if is_intranet; then
-                commonDistroList+=" RHEL-9% RHEL-8% RHEL-7% RHEL-6%"
+        case "${words[1]}" in
+        create)
+            if [[ $narg -le 3 ]]; then
+                local distroList=$(source /etc/kiss-vm/distro-db.bash; echo ${!distroInfo[@]})
+                if is_intranet; then
+                    distroList+=" RHEL-9% RHEL-8% RHEL-7% RHEL-6%"
+                fi
+                local dlist="$distroList #<aDistroFamilyName> #<Enter>"
+                COMPREPLY=( $( compgen -W "$dlist" -- "$cur" ) )
+            else
+                COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
             fi
-            local arg1="A#<Distroname> A#<-h__or__just_Enter> $commonDistroList $intranetDistroList "
-            COMPREPLY=( $( compgen -W "$arg1" -- "$cur" ) )
-        else
-            COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
-        fi
-
-        : <<-COMM
-        if [[ $prev == --retention-tag ]]; then
-            retentions="scratch 60days 120days active active+1 audit"
-            COMPREPLY=( $(compgen -W "$retentions" -- "$cur") )
-        fi
-COMM
+            ;;
+        del|delete|reboot|stop|start)
+            local vmlist=$(virsh list --name)
+            COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            ;;
+        if|ifaddr|vnc|vncport|x|xm|xml|ed|edit)
+            if [[ $narg -le 3 ]]; then
+                local vmlist=$(virsh list --name)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            else
+                COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            fi
+            ;;
+        e|ex|exe|exec)
+            if [[ $narg -le 3 ]]; then
+                local vmlist=$(virsh list --name --state-running)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                COMPREPLY=( $( compgen -W "--" -- "$cur" ) )
+            else
+                COMPREPLY=( $( compgen -W "" -- "$cur" ) )
+            fi
+            ;;
+        ls|list)
+            COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            ;;
+        net)
+            local netparams="netname= brname= subnet= tftproot= bootpfile= #<Enter-for-list>"
+            COMPREPLY=( $( compgen -W "$netparams" -- "$cur" ) )
+            ;;
+        netinfo)
+            local netlist="$(virsh net-list --name)"
+            COMPREPLY=( $( compgen -W "$netparams" -- "$cur" ) )
+            ;;
+        netdel|netstart)
+            local netlist="$(virsh net-list --name)"
+            COMPREPLY=( $( compgen -W "$netparams" -- "$cur" ) )
+            ;;
+        *)
+            COMPREPLY=( $( compgen -W "#Warning:wrong-subcommand-name" -- "$cur" ) )
+            ;;
+        esac
     fi
 } &&
 complete -F _vm $prog
