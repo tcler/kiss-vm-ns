@@ -46,8 +46,8 @@ tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net student
 tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net student -n servera"
 tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net student -n serverb"
 tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net student -n utility"
-tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net student --net classroom -n bastion"
-tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net-macvtap --net classroom -n classroom"
+tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net classroom --net student -n bastion"
+tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net classroom --net-macvtap -n classroom"
 
 port_available() { nc $1 $2 </dev/null &>/dev/null; }
 for vm in $vmlist; do
@@ -55,7 +55,7 @@ for vm in $vmlist; do
 	until port_available $vm 22; do sleep 2; done
 done
 
-vm exec -v bastion -- sysctl -w net.ipv4.ip_forward=0
+vm exec -v bastion -- sysctl -w net.ipv4.ip_forward=1
 vm exec -v servera -- ping -c 4 $(vm ifaddr classroom)
 vm exec -v classroom -- ping -c 4 $(vm ifaddr servera)
 
