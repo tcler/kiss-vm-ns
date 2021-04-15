@@ -1270,6 +1270,7 @@ Usage() {
 	  $P openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
 
 	Example [subcmd]:
+	  vm [create] [opts]   #create VM          //create is the default action if omitted
 	  vm list              #list all VMs       //you can use ls,li,lis* instead list
 	  vm login [/c] [VM]   #login VM           //you can use l,lo,log* instead login
 	  vm delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
