@@ -2587,6 +2587,16 @@ if [[ ! -f ~/.ssh/config ]]; then
 	   StrictHostKeyChecking no
 	   UserKnownHostsFile=/dev/null
 	   LogLevel ERROR
+
+	Host 172.*.*.*
+	   StrictHostKeyChecking no
+	   UserKnownHostsFile=/dev/null
+	   LogLevel ERROR
+
+	Host 10.*.*.*
+	   StrictHostKeyChecking no
+	   UserKnownHostsFile=/dev/null
+	   LogLevel ERROR
 	EOF
 	chmod 600 ~/.ssh/config
 fi
