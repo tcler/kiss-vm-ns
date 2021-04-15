@@ -71,16 +71,16 @@ _vm()
             COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             ;;
         net)
-            local netparams="netname= brname= subnet= tftproot= bootpfile= #<Enter-for-list>"
+            local netparams="netname=fixme brname=virbr-fixme subnet=192.168.fixme.0 subnet=172.25.fixme.0 forward=no forward=nat tftproot= bootpfile= #<Enter-for-list>"
             COMPREPLY=( $( compgen -W "$netparams" -- "$cur" ) )
             ;;
         netinfo)
             local netlist="$(virsh net-list --name)"
-            COMPREPLY=( $( compgen -W "$netparams" -- "$cur" ) )
+            COMPREPLY=( $( compgen -W "$netlist" -- "$cur" ) )
             ;;
         netdel|netstart)
             local netlist="$(virsh net-list --name)"
-            COMPREPLY=( $( compgen -W "$netparams" -- "$cur" ) )
+            COMPREPLY=( $( compgen -W "$netlist" -- "$cur" ) )
             ;;
         *)
             COMPREPLY=( $( compgen -W "#Warning:wrong-subcommand-name" -- "$cur" ) )
