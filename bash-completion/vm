@@ -35,12 +35,16 @@ _vm()
         case "${words[1]}" in
         create)
             if [[ $narg -le 3 ]]; then
-                local distroList=$(source /etc/kiss-vm/distro-db.bash; echo ${!distroInfo[@]})
-                if is_intranet; then
-                    distroList+=" RHEL-9% RHEL-8% RHEL-7% RHEL-6%"
+                if [[ "$cur" == -* ]]; then
+                    COMPREPLY=( $( compgen -W "$opts -h" -- "$cur" ) )
+                else
+                    local distroList=$(source /etc/kiss-vm/distro-db.bash; echo ${!distroInfo[@]})
+                    if is_intranet; then
+                        distroList+=" RHEL-9% RHEL-8% RHEL-7% RHEL-6%"
+                    fi
+                    local dlist="$distroList #<aDistroFamilyName> #<Enter>"
+                    COMPREPLY=( $( compgen -W "$dlist" -- "$cur" ) )
                 fi
-                local dlist="$distroList #<aDistroFamilyName> #<Enter>"
-                COMPREPLY=( $( compgen -W "$dlist" -- "$cur" ) )
             else
                 COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
             fi
