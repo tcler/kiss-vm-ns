@@ -1600,6 +1600,7 @@ mkdir -p ${DownloadImagePath}
 	subcmd=$1
 	case "$subcmd" in
 	create|creat) shift;;
+	h|?|help) Usage; exit;;
 	r|rm|d|de|del*) shift; [[ "$1" = -d ]] && shift; vmdelete "$@"; exit $?;;
 	l|lo|log*) shift; [[ "$1" = -d ]] && shift; vmlogin "$@"; exit $?;;
 	cpfrom|cpf*) shift; [[ "$1" = -d ]] && shift; vmcopyfrom "$@"; exit $?;;
