@@ -1138,7 +1138,7 @@ Usage() {
 	  --prepare      #check/install/configure libvirt and other dependent packages
 	  --enable-nested-vm  #enable nested on host
 
-	Options for create:
+	Options for sub-command create:
 	  -I             #create VM by import existing disk image, auto search url according distro name
 	  -i <url/path>  #create VM by import existing disk image, value can be url or local path
 	  -L             #create VM by using location, auto search url according distro name
@@ -1231,7 +1231,7 @@ Usage() {
 	  -v,--verbose   #verbose mode
 	  -q             #quiet mode, intend suppress the outputs of command yum, curl
 
-	Options for create:
+	Options for sub-command exec:
 	  -v,--verbose   #verbose mode
 	  -x[arg]        #expected return code of sub-command exec, if doesn't match output test fail msg
 	                 #`e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
