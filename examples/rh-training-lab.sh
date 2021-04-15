@@ -6,25 +6,30 @@ Cleanup() {
 }
 trap Cleanup EXIT #SIGINT SIGQUIT SIGTERM
 
-distro=CentOS-8
-stdlogf=/tmp/std-$$.log
-echo -e "\n{INFO} downloading qcow2 image of $distro ..."
-vm --downloadonly $distro 2>&1 | tee $stdlogf
-imagef=$(sed -n '${s/^.* //; p}' $stdlogf)
+distro=$1
+imagef=$2
+
+distro=${distro:-CentOS-8}
 if [[ ! -f "$imagef" ]]; then
-	echo "{WARN} seems cloud image file download fail." >&2
-	exit 1
-fi
-if [[ $imagef = *.xz ]]; then
-	echo "{INFO} decompress $imagef ..."
-	xz -d $imagef
-	imagef=${imagef%.xz}
-	if [[ ! -f ${imagef} ]]; then
-		echo "{WARN} there is no $imagef, something was wrong." >&2
+	stdlogf=/tmp/std-$$.log
+	echo -e "\n{INFO} downloading qcow2 image of $distro ..."
+	vm --downloadonly $distro 2>&1 | tee $stdlogf
+	imagef=$(sed -n '${s/^.* //; p}' $stdlogf)
+	if [[ ! -f "$imagef" ]]; then
+		echo "{WARN} seems cloud image file download fail." >&2
 		exit 1
 	fi
+	if [[ $imagef = *.xz ]]; then
+		echo "{INFO} decompress $imagef ..."
+		xz -d $imagef
+		imagef=${imagef%.xz}
+		if [[ ! -f ${imagef} ]]; then
+			echo "{WARN} there is no $imagef, something was wrong." >&2
+			exit 1
+		fi
+	fi
+	echo -e "\n{INFO} download image file done:"
 fi
-echo -e "\n{INFO} download image file done:"
 echo -e "\e[4m$(ls -l $imagef)\e[0m"
 
 #__main__
@@ -49,4 +54,9 @@ for vm in $vmlist; do
 	echo -e "\n{INFO} waiting VM($vm) install finish ..."
 	until port_available $vm 22; do sleep 2; done
 done
+
+vm exec -v bastion -- sysctl -w net.ipv4.ip_forward=0
+vm exec -v servera -- ping -c 4 $(vm ifaddr classroom)
+vm exec -v classroom -- ping -c 4 $(vm ifaddr servera)
+
 vm list
