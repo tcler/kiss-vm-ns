@@ -55,8 +55,22 @@ for vm in $vmlist; do
 	until port_available $vm 22; do sleep 2; done
 done
 
+serveraAddr=$(vm if servera)
+classroomAddr=$(vm if classroom)
 vm exec -v bastion -- sysctl -w net.ipv4.ip_forward=1
-vm exec -v servera -- ping -c 4 $(vm ifaddr classroom)
-vm exec -v classroom -- ping -c 4 $(vm ifaddr servera)
+vm exec -v servera -- ip route add 172.25.252.0/24 via $serveraAddr
+vm exec -v classroom -- ip route add 172.25.250.0/24 via $classroomAddr
 
-vm list
+vm exec -v bastion -- sysctl net.ipv4.ip_forward=1
+vm exec -v servera -- ip route s
+vm exec -v classroom -- ip route s
+
+read bastionAddr1 bastionAddr2 _ < <(vm exec bastion -- ip a | awk -F'[ /]+' '/ *inet 172/{printf $3 " "}')
+vm exec -v servera -- ping -c 2 $bastionAddr1   \#ping router bastion addr1
+vm exec -v servera -- ping -c 2 $bastionAddr2   \#ping router bastion addr2
+vm exec -v classroom -- ping -c 2 $bastionAddr1 \#ping router bastion addr1
+vm exec -v classroom -- ping -c 2 $bastionAddr2 \#ping router bastion addr2
+
+vm exec -v bastion -- sysctl net.ipv4.ip_forward \#confirm ip_forward is enabled
+vm exec -v servera -- ping -c 4 $classroomAddr  \#ping classroom
+vm exec -v classroom -- ping -c 4 $serveraAddr  \#ping servera
