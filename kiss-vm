@@ -433,8 +433,8 @@ vmcopyto() {
 	}
 
 	local sshexec=no
-	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-	ssh -n -o Batchmode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$_vmname &>$RuntimeTmp/sshtest
+	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
+	ssh -n -o Batchmode=yes $sshOpts root@$_vmname &>$RuntimeTmp/sshtest
 	[[ $? = 0 ]] && sshexec=yes
 	if [[ $sshexec = yes ]]; then
 		scp $sshOpts -r "${srcarray[@]}" root@${_vmname}:$dstdir/.
@@ -478,8 +478,8 @@ vmcopyfrom() {
 	}
 
 	local sshexec=no
-	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-	ssh -n -o Batchmode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$_vmname &>$RuntimeTmp/sshtest
+	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
+	ssh -n -o Batchmode=yes $sshOpts root@$_vmname &>$RuntimeTmp/sshtest
 	[[ $? = 0 ]] && sshexec=yes
 	if [[ $sshexec = yes ]]; then
 		scp $sshOpts -r root@${_vmname}:$src $dstdir/.
@@ -546,6 +546,7 @@ vmlogin() {
 		return $?
 	}
 
+	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
 	echo "$*" >$RuntimeTmp/sshcmd
 	for addr in $addrs; do
 		nc $addr 22 </dev/null &>/dev/null || {
@@ -553,10 +554,10 @@ vmlogin() {
 			continue
 		}
 		sshexec=no
-		ssh -n -o Batchmode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr &>$RuntimeTmp/sshtest
+		ssh -n -o Batchmode=yes $sshOpts root@$addr &>$RuntimeTmp/sshtest
 		[[ $? = 0 ]] && sshexec=yes
 		if [[ $sshexec = yes ]]; then
-			ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr "$*"
+			ssh $sshOpts root@$addr "$*"
 			rc=$?
 		else
 			if grep -q -w password $RuntimeTmp/sshtest; then
@@ -564,7 +565,7 @@ vmlogin() {
 				set timeout 120
 				set sshcmd [exec cat $RuntimeTmp/sshcmd]
 				log_user 0
-				spawn ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$addr \$sshcmd
+				spawn ssh $sshOpts root@$addr \$sshcmd
 				log_user 1
 				if {\$argc == 0} {
 					expect {
