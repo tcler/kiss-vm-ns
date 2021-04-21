@@ -3,7 +3,7 @@
 _bin=/usr/bin
 completion_path=/usr/share/bash-completion/completions
 
-install: pull
+install:
 	sudo cp -af utils/* $(_bin)/.
 	sudo cp -af kiss-vm $(_bin)/vm
 	sudo cp -af kiss-ns $(_bin)/ns
