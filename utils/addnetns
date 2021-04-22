@@ -1,0 +1,13 @@
+#!bin/bash
+
+addnetns() {
+	local fname=${FUNCNAME[0]}
+	local netns=$1
+	[[ $# = 0 ]] && {
+		echo "Usage: $fnname <netns_name>" >&2
+		return 1
+	}
+
+	ip netns add $netns
+}
+addnetns "$@"

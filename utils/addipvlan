@@ -1,0 +1,61 @@
+#!/bin/bash
+
+is_bridge() {
+	local ifname=$1
+	[[ -z "$ifname" ]] && return 1
+	ip -d a s $ifname | grep -qw bridge
+}
+
+get_default_if() {
+	local notbr=$1  #indicate get real NIC not bridge
+	local _iface= iface=
+	local type=
+
+	ifaces=$(ip route | awk '/^default/{print $5}')
+	for _iface in $ifaces; do
+		type=$(ip -d link show dev $_iface|sed -n '3{s/^\s*//; p}')
+		[[ -z "$type" || "$type" = altname* || "$type" = bridge* ]] && {
+			iface=$_iface
+			break
+		}
+	done
+	if [[ -n "$notbr" ]] && is_bridge $iface; then
+		# ls /sys/class/net/$iface/brif
+		if command -v brctl >/dev/null; then
+			brctl show $iface | awk 'NR==2 {print $4}'
+		else
+			ip link show type bridge_slave | awk -F'[ :]+' '/master '$iface' state UP/{print $2}' | head -n1
+		fi
+		return 0
+	fi
+	echo $iface
+}
+
+addipvlan() {
+	local fname=${FUNCNAME[0]}
+	Usage() { echo -e "Usage:\n  $fname [-updev=updev] [-mode={l2|l3}] iv1 [iv2 ...]"; }
+
+	local updev=$(get_default_if)
+	local mode=l2
+
+	# parse options
+	local ivs=()
+	for arg; do
+		case "$arg" in
+		updev=*|-updev=*) val=${arg#*=}; [[ -n "$val" ]] && updev="$val";;
+		mode=*|-mode=*)  val=${arg#*=}; [[ -n "$val" ]] && mode="$val";;
+		-*)       echo "{WARN} unkown option '${arg}'" >&2;;
+		*)        ivs+=($arg);;
+		esac
+	done
+
+	if [[ "${#ivs[@]}" = 0 ]]; then
+		Usage >&2
+		return 1
+	fi
+
+	for iv in $ivs; do
+		run ip link add link $updev name ${iv} type ipvlan mode $mode
+	done
+}
+addipvlan "$@"
