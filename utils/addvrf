@@ -10,5 +10,6 @@ addvrf() {
 	}
 
 	ip link add dev $vrfname type vrf table $vrfid
+	ip link set dev $vrfname up
 }
 addvrf "$@"
