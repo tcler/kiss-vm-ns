@@ -184,6 +184,7 @@ Example from local image:
 Example [subcmd]:
   vm list              #list all VMs       //you can use ls,li,lis* instead list
   vm login [/c] [VM]   #login VM           //you can use l,lo,log* instead login
+  vm console [VM]      #log VM via console //you can use co,con,cons* instead console
   vm delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
   vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
   vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport

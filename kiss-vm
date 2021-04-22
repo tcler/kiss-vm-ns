@@ -507,13 +507,19 @@ vmcopyfrom() {
 	return $rc
 }
 
-vmlogin() {
-	local console=
-	[[ "$1" = /c ]] && {
-		console=yes
-		shift
+vmconsole() {
+	local _vmname=$1
+	shift
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-console $resf && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
 	}
+	virsh console "$_vmname"
+	return $?
+}
 
+vmlogin() {
 	local _vmname=$1
 	shift
 	[[ -z "$_vmname" ]] && {
@@ -526,15 +532,6 @@ vmlogin() {
 		[[ $# = 0 ]] && set "exit 0";
 		[[ "$VERBOSE" = yes ]] &&
 			echo "[root@$_vmname]> $*" | GREP_COLORS='ms=01;36' grep --color . >&2
-	}
-
-	[[ "$console" = yes ]] && {
-		if [[ "$EXEC" = yes ]]; then
-			:
-		else
-			virsh console "$_vmname"
-			return $?
-		fi
 	}
 
 	#sometimes there's bug in libnss. get more than one addr but some one
@@ -1281,7 +1278,8 @@ Usage() {
 
 	Example [subcmd]:
 	  $P list              #list all VMs       //you can use ls,li,lis* instead list
-	  $P login [/c] [VM]   #login VM           //you can use l,lo,log* instead login
+	  $P login [VM]        #login VM via ssh   //you can use l,lo,log* instead login
+	  $P console [VM]      #log VM via console //you can use co,con,cons* instead console
 	  $P delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
 	  $P ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
 	  $P vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
@@ -1604,6 +1602,7 @@ mkdir -p ${DownloadImagePath}
 	create|creat) shift;;
 	h|\?|help) Usage|less; exit;;
 	r|rm|d|de|del*) shift; [[ "$1" = -d ]] && shift; vmdelete "$@"; exit $?;;
+	co|con|cons*) shift; [[ "$1" = -d ]] && shift; vmconsole "$@"; exit $?;;
 	l|lo|log*) shift; [[ "$1" = -d ]] && shift; vmlogin "$@"; exit $?;;
 	cpfrom|cpf*) shift; [[ "$1" = -d ]] && shift; vmcopyfrom "$@"; exit $?;;
 	cpto|cpt*) shift; [[ "$1" = -d ]] && shift; vmcopyto "$@"; exit $?;;
