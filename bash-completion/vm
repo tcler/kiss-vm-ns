@@ -49,9 +49,13 @@ _vm()
                 COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
             fi
             ;;
-        del|delete|reboot|stop|start)
+        del|delete|stop|start)
             local vmlist=$(virsh list --name)
             COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            ;;
+        reboot)
+            local vmlist=$(virsh list --name)
+            COMPREPLY=( $( compgen -W "-w $vmlist" -- "$cur" ) )
             ;;
         lo|log|log*|co|con|cons|cons*|if|ifaddr|vnc|vncport|x|xm|xml|ed|edit)
             if [[ $narg -le 3 ]]; then

@@ -325,11 +325,6 @@ port_available() {
 }
 
 vmreboot() {
-	[[ "$1" = /w ]] && {
-		shift
-		local WAIT=yes
-	}
-
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
@@ -1230,6 +1225,9 @@ Usage() {
 	  -v,--verbose   #verbose mode
 	  -q             #quiet mode, intend suppress the outputs of command yum, curl
 
+	Options for sub-command reboot:
+	  -w,--wait      #wait util the 22 port(sshd) is available after reboot
+
 	Options for sub-command exec:
 	  -v,--verbose   #verbose mode
 	  -x[arg]        #expected return code of sub-command exec, if doesn't match output test fail msg
@@ -1286,7 +1284,7 @@ Usage() {
 	  $P xml [VM]          #dump vm xml file   //you can use x,xm instead xml
 	  $P edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
 	  $P exec [-v] [-x] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
-	  $P reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
+	  $P reboot [-w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
 	  $P stop [VM]         #stop/shutdonw VM   //nil
 	  $P start [VM]        #start VM           //nil
 
@@ -1352,7 +1350,7 @@ get_default_if() {
 }
 
 # command line parse
-_at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
+_at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long help \
 	--long prepare \
 	--long enable-nested-vm \
@@ -1407,6 +1405,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pq \
 	--long pxe \
 	--long diskless \
 	--long verbose \
+	--long wait \
     -a -n "$0" -- "$@"`
 [[ $? != 0 ]] && { exit 1; }
 eval set -- "$_at"
@@ -1485,6 +1484,7 @@ while true; do
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	-q)              QUIET=yes; shift 1;;
+	-w|--wait)       WAIT=yes; shift 1;;
 	--) shift; break;;
 	esac
 done

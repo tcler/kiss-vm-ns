@@ -139,6 +139,9 @@ Options for sub-command create:
   -v,--verbose   #verbose mode
   -q             #quiet mode, intend suppress the outputs of command yum, curl
 
+Options for sub-command reboot:
+  -w,--wait      #wait util the 22 port(sshd) is available after reboot
+
 Options for sub-command exec:
   -v,--verbose   #verbose mode
   -x[arg]        #expected return code of sub-command exec, if doesn't match output test fail msg
@@ -191,7 +194,7 @@ Example [subcmd]:
   vm xml [VM]          #dump vm xml file   //you can use x,xm instead xml
   vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
   vm exec [-v] [-x] "$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
-  vm reboot [/w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
+  vm reboot [-w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
   vm stop [VM]         #stop/shutdonw VM   //nil
   vm start [VM]        #start VM           //nil
 
