@@ -1,11 +1,11 @@
 #!ddif2bridge/bin/bash
 
-addif2bridge() {
+addif2br-vrf-and-so-on() {
 	local brname=$1
 	local if=$2
 
 	local fname=${FUNCNAME[0]}
-	Usage() { echo -e "Usage:\n  $fname <brname> <ifname>"; }
+	Usage() { echo -e "Usage:\n  $fname <net-dev-name> <ifname>"; }
 	[[ $# -lt 2 ]] && {
 		Usage >&2
 		return 1
@@ -14,4 +14,4 @@ addif2bridge() {
 	run ip link set dev $if master $brname
 	run ip link set dev $if up
 }
-addif2bridge "$@"
+addif2br-vrf-and-so-on "$@"
