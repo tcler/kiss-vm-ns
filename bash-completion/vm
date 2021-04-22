@@ -28,7 +28,7 @@ _vm()
         if [[ "$cur" == -* && $prev = create ]]; then
             COMPREPLY=( $( compgen -W "$opts -h" -- "$cur" ) )
         else
-            local subcommandList="--prepare --enable-nested-vm help h create ls list login delete ifaddr vncport xml edit exec reboot stop start net netinfo netdel netstart"
+            local subcommandList="--prepare --enable-nested-vm help h create ls list login delete ifaddr vncport xml edit exec reboot stop start netls netcreat netinfo netdel netstart"
             COMPREPLY=( $( compgen -W "$subcommandList" -- "$cur" ) )
         fi
     else

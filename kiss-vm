@@ -605,6 +605,7 @@ vmlogin() {
 
 vmexec() { EXEC=yes vmlogin "$@"; }
 vmlist() { virsh list --all; }
+netls() { virsh net-list; }
 netcreate() {
 	local netname=
 	local brname=
@@ -615,10 +616,10 @@ netcreate() {
 	Usage() {
 		cat <<-U
 		Example:
-		  vm net netname=net10 brname=virbr10 subnet=10  #means 192.168.10.0
-		  vm net netname=net10 brname=virbr10 subnet=172.25.252.0
-		  vm net netname=net10 brname=virbr10 subnet=172.25.252.0 forward=no
-		  vm net netname=net10 brname=virbr10 subnet=172.25.252.0 forward=nat [tftproot=/path] [bootpfile=]
+		  vm netcreat netname=net10 brname=virbr10 subnet=10  #means 192.168.10.0
+		  vm netcreat netname=net10 brname=virbr10 subnet=172.25.252.0
+		  vm netcreat netname=net10 brname=virbr10 subnet=172.25.252.0 forward=no
+		  vm netcreat netname=net10 brname=virbr10 subnet=172.25.252.0 forward=nat [tftproot=/path] [bootpfile=]
 		U
 	}
 	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile)=.* ]] || continue; eval "$opt"; done
@@ -1291,10 +1292,10 @@ Usage() {
 	  $P stop [VM]         #stop/shutdonw VM   //nil
 	  $P start [VM]        #start VM           //nil
 
-	  $P net               #list all virtual network
-	  $P net netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
-	  $P net netname=isolated-net brname=virbrN subnet=20 forward=no  #create network 'isolated-net' with subnet: 192.168.20.0
-	  $P net netname=pxe brname=virpxebrN subnet=172.25.250.0 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
+	  $P netls             #list all virtual network
+	  $P netcreat netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
+	  $P netcreat netname=isolated-net brname=virbrN subnet=20 forward=no  #create network 'isolated-net' with subnet: 192.168.20.0
+	  $P netcreat netname=pxe brname=virpxebrN subnet=172.25.250.0 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
 	  $P netinfo netname   #show detail info of virtual network 'netname'
 	  $P netstart netname  #start virtual network 'netname'
 	  $P netdel netname    #delete virtual network 'netname'
@@ -1616,7 +1617,8 @@ mkdir -p ${DownloadImagePath}
 	stop|sto*) shift; [[ "$1" = -d ]] && shift; vmstop "$@"; exit $?;;
 	start|sta*) shift; [[ "$1" = -d ]] && shift; vmstart "$@"; exit $?;;
 	clone) shift; [[ "$1" = -d ]] && shift; vmclone "$@"; exit $?;;
-	net|netcreate) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
+	netls) shift; [[ "$1" = -d ]] && shift; netls "$@"; exit $?;;
+	net|netcreat*) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
 	netinfo) shift; [[ "$1" = -d ]] && shift; netinfo "$@"; exit $?;;
 	netstart) shift; [[ "$1" = -d ]] && shift; netstart "$@"; exit $?;;
 	netdel|netdelete) shift; [[ "$1" = -d ]] && shift; netdelete "$@"; exit $?;;

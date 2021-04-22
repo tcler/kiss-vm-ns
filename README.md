@@ -194,10 +194,10 @@ Example [subcmd]:
   vm stop [VM]         #stop/shutdonw VM   //nil
   vm start [VM]        #start VM           //nil
 
-  vm net               #list all virtual network
-  vm net netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
-  vm net netname=isolated-net brname=virbrN subnet=20 forward=no  #create network 'isolated-net' with subnet: 192.168.20.0
-  vm net netname=pxe brname=virpxebrN subnet=172.25.250.0 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
+  vm netls             #list all virtual network
+  vm netcreat netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
+  vm netcreat netname=isolated-net brname=virbrN subnet=20 forward=no  #create network 'isolated-net' with subnet: 192.168.20.0
+  vm netcreat netname=pxe brname=virpxebrN subnet=172.25.250.0 tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
   vm netinfo netname   #show detail info of virtual network 'netname'
   vm netstart netname  #start virtual network 'netname'
   vm netdel netname    #delete virtual network 'netname'
