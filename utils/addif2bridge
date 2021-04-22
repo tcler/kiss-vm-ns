@@ -1,0 +1,17 @@
+#!ddif2bridge/bin/bash
+
+addif2bridge() {
+	local brname=$1
+	local if=$2
+
+	local fname=${FUNCNAME[0]}
+	Usage() { echo -e "Usage:\n  $fname <brname> <ifname>"; }
+	[[ $# -lt 2 ]] && {
+		Usage >&2
+		return 1
+	}
+
+	run ip link set dev $if master $brname
+	run ip link set dev $if up
+}
+addif2bridge "$@"
