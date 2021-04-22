@@ -1,7 +1,7 @@
 #!ddif2bridge/bin/bash
 
 addif2br-vrf-and-so-on() {
-	local brname=$1
+	local netdevname=$1
 	local if=$2
 
 	local fname=${FUNCNAME[0]}
@@ -11,7 +11,7 @@ addif2br-vrf-and-so-on() {
 		return 1
 	}
 
-	run ip link set dev $if master $brname
+	run ip link set dev $if master $netdevname
 	run ip link set dev $if up
 }
 addif2br-vrf-and-so-on "$@"
