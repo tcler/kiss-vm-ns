@@ -197,6 +197,8 @@ Example [subcmd]:
   vm reboot [-w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
   vm stop [VM]         #stop/shutdonw VM   //nil
   vm start [VM]        #start VM           //nil
+  vm cpfrom <VM> <file/dir_in_vm> <dst_dir/file_in_host>
+  vm cpto   <VM> <files/dirs_in_host ...> <dst_dir_in_vm>
 
   vm netls             #list all virtual network
   vm netcreat netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0

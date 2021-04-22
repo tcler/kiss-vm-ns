@@ -459,7 +459,7 @@ vmcopyto() {
 
 vmcopyfrom() {
 	[[ "$#" -lt 3 ]] && {
-		echo "Usage: vm cpfrom vmname <files/dirs> <dst dir>"
+		echo "Usage: vm cpfrom vmname <file/dir> <dst dir>"
 		return 1
 	}
 	local _vmname=$1
@@ -1287,6 +1287,8 @@ Usage() {
 	  $P reboot [-w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
 	  $P stop [VM]         #stop/shutdonw VM   //nil
 	  $P start [VM]        #start VM           //nil
+	  $P cpfrom <VM> <file/dir_in_vm> <dst_dir/file_in_host>
+	  $P cpto   <VM> <files/dirs_in_host ...> <dst_dir_in_vm>
 
 	  $P netls             #list all virtual network
 	  $P netcreat netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
