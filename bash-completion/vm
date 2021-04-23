@@ -57,12 +57,24 @@ _vm()
             local vmlist=$(virsh list --name)
             COMPREPLY=( $( compgen -W "-w $vmlist" -- "$cur" ) )
             ;;
-        lo|log|log*|co|con|cons|cons*|if|ifaddr|vnc|vncproc|x|xm|xml|ed|edit)
+        lo|log|log*|co|con|cons|cons*|if|ifaddr|x|xm|xml|ed|edit)
             if [[ $narg -le 3 ]]; then
                 local vmlist=$(virsh list --name)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             else
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            fi
+            ;;
+        v|vn|vnc*)
+            if [[ $narg -le 3 ]]; then
+                if [[ "$cur" == -* ]]; then
+                    COMPREPLY=( $( compgen -W "#<Enter> --get --put --putln" -- "$cur" ) )
+                else
+                    local vmlist=$(virsh list --name)
+                    COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+                fi
+            else
+                COMPREPLY=( $( compgen -W "#<Enter> --get --put --putln" -- "$cur" ) )
             fi
             ;;
         cpfrom)
