@@ -269,11 +269,11 @@ vncput() {
 	done
 }
 
-vmvncport() {
+vmvncproc() {
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
-		vmdialogradiolist vm-vncport $resf all && _vmname=$(sed 's/"//g' $resf)
+		vmdialogradiolist vm-vncproc $resf all && _vmname=$(sed 's/"//g' $resf)
 		[[ -z "$_vmname" ]] && { return; }
 	}
 
@@ -829,7 +829,7 @@ enable_libvirt() {
 		sudo yum $yumOpt --setopt=strict=0 install -y $pkglist
 	}
 
-	#install packages(gm,gocr,vncdo) required by -vncget -vncput options
+	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
 	_file=ggv-install.sh
 	if ! which $_file &>/dev/null; then
@@ -1281,7 +1281,8 @@ Usage() {
 	  $P console [VM]      #log VM via console //you can use co,con,cons* instead console
 	  $P delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
 	  $P ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
-	  $P vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
+	  $P vnc [VM]          #show vnc host:port //you can use v,vn instead
+	  $P vnc [-get|-put|-putln] [VM]           #read screen text or send string thru vnc
 	  $P xml [VM]          #dump vm xml file   //you can use x,xm instead xml
 	  $P edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
 	  $P exec [-v] [-x] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
@@ -1394,9 +1395,9 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long fips \
 	--long postrepo: \
 	--long nosshkey \
-	--long vncget \
-	--long vncput: \
-	--long vncputln: \
+	--long get --long vncget \
+	--long put: --long vncput: \
+	--long putln: --long vncputln: \
 	--long vncput-after-install: \
 	--long xml \
 	--long machine: \
@@ -1473,9 +1474,9 @@ while true; do
 	--postrepo)      POST_REPOS+=("$2"); shift 2;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
-	--vncget)        VNCGET=yes; shift 1;;
-	--vncput)        VNCPUTS+=("$2"); shift 2;;
-	--vncputln)      [[ -n "$2" ]] && VNCPUTS+=("$2" "key:enter") || VNCPUTS+=("key:enter"); shift 2;;
+	--get|--vncget)  VNCGET=yes; shift 1;;
+	--put|--vncput)  VNCPUTS+=("$2"); shift 2;;
+	--putln|--vncputln)     [[ -n "$2" ]] && VNCPUTS+=("$2" "key:enter") || VNCPUTS+=("key:enter"); shift 2;;
 	--vncput-after-install) VNCPUT_AFTER_INSTALL="$2"; shift 2;;
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
@@ -1614,10 +1615,7 @@ mkdir -p ${DownloadImagePath}
 	e|ex|ex*) shift; [[ "$1" = -d ]] && shift; vmexec "$@"; exit $?;;
 	ls|li|lis|list) shift; [[ "$1" = -d ]] && shift; vmlist "$@"; exit $?;;
 	i|if|if*) shift; [[ "$1" = -d ]] && shift; vmifaddr "$@"; exit $?;;
-	v|vn|vnc|vncport) shift; [[ "$1" = -d ]] && shift; vmvncport "$@"; exit $?;;
-	vncget) shift; [[ "$1" = -d ]] && shift; vmvncget "$@"; exit $?;;
-	vncput) shift; [[ "$1" = -d ]] && shift; vmvncput "$@"; exit $?;;
-	vncputln) shift; [[ "$1" = -d ]] && shift; vmvncputln "$@"; exit $?;;
+	v|vn|vnc|vncp*) shift; [[ "$1" = -d ]] && shift; vmvncproc "$@"; exit $?;;
 	x|xm*) shift; [[ "$1" = -d ]] && shift; vmxml "$@"; exit $?;;
 	ed|ed*) shift; [[ "$1" = -d ]] && shift; vmedit "$@"; exit $?;;
 	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
@@ -1631,7 +1629,7 @@ mkdir -p ${DownloadImagePath}
 	netdel|netdelete) shift; [[ "$1" = -d ]] && shift; netdelete "$@"; exit $?;;
 	esac
 }
-[[ -n "$VNCPUTS" || -n "$VNCGET" ]] && { vmvncport "$@"; exit $?; }
+[[ -n "$VNCPUTS" || -n "$VNCGET" ]] && { vmvncproc "$@"; exit $?; }
 
 declare -A distroInfo
 dbfile=/etc/kiss-vm/distro-db.bash
@@ -2309,9 +2307,9 @@ elif [[ "$InstallType" = import ]]; then
 			}
 		'
 		if [[ -n "$VNCPUT_AFTER_INSTALL" ]]; then
-			vm "$vmname" -vncput "$VNCPUT_AFTER_INSTALL"
+			vm vnc "$vmname" -put "$VNCPUT_AFTER_INSTALL"
 		else
-			vm "$vmname" -vncget
+			vm vnc "$vmname" -get
 		fi
 
 		echo -e "{VM:INFO} vnc info:"
@@ -2319,21 +2317,21 @@ elif [[ "$InstallType" = import ]]; then
 	else
 		if grep -i -q freebsd <<<"$Distro"; then
 			echo -e "{VM:INFO} waiting login: prompt ..."
-                        while ! grep "^login:" < <(vm "$vmname" -vncget); do sleep 10; done
-			vm "$vmname" -vncputln root
-			vm "$vmname" -vncputln "hostname ${vmname}" \
-				-vncputln "echo 'hostname=\"${vmname}\"' >>/etc/rc.conf" \
-				-vncputln "service syslogd reload" \
-				-vncputln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf" \
-				-vncputln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config" \
-				-vncputln "grep '^[^#]' /etc/rc.conf" \
-				-vncputln "grep '^[^#]' /etc/ssh/sshd_config"
-			timeout 5 vm "$vmname" -vncget
-			vm "$vmname" -vncputln "pw useradd foo -G wheel" \
-				-vncputln "passwd foo" -vncput "" -vncputln "$defaultPasswd" -vncput "" -vncputln "$defaultPasswd" \
-				-vncputln "passwd root" -vncput "" -vncputln "$defaultPasswd" -vncput "" -vncputln "$defaultPasswd" \
-				-vncputln "/etc/rc.d/sshd start"
-			timeout 5 vm "$vmname" -vncget
+                        while ! grep "^login:" < <(vm vnc "$vmname" -get); do sleep 10; done
+			vm vnc "$vmname" -putln root
+			vm vnc "$vmname" -putln "hostname ${vmname}" \
+				-putln "echo 'hostname=\"${vmname}\"' >>/etc/rc.conf" \
+				-putln "service syslogd reload" \
+				-putln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf" \
+				-putln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config" \
+				-putln "grep '^[^#]' /etc/rc.conf" \
+				-putln "grep '^[^#]' /etc/ssh/sshd_config"
+			timeout 5 vm vnc "$vmname" -get
+			vm vnc "$vmname" -putln "pw useradd foo -G wheel" \
+				-putln "passwd foo" -put "" -putln "$defaultPasswd" -put "" -putln "$defaultPasswd" \
+				-putln "passwd root" -put "" -putln "$defaultPasswd" -put "" -putln "$defaultPasswd" \
+				-putln "/etc/rc.d/sshd start"
+			timeout 5 vm vnc "$vmname" -get
 			expect -c "
 				spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$vmname
 				expect -re .*: {send \"$defaultPasswd\\r\"}
@@ -2427,21 +2425,21 @@ elif [[ "$InstallType" = pxe ]]; then
 	  --vnc --vnclisten 0.0.0.0
 
 	sleep 1
-	vm $vmname -vncget
+	vm vnc $vmname -get
 
 	if [[ "$NOAUTO" = yes ]]; then
 		echo -e "{VM:INFO} waiting boot: prompt ..."
-		while ! grep "^boot:" < <(vm "$vmname" -vncget); do sleep 1; done
-		vm $vmname -vncget
-		vm $vmname -vncputln "menu"
-		vm $vmname -vncput "key:down"
+		while ! grep "^boot:" < <(vm vnc "$vmname" -get); do sleep 1; done
+		vm vnc $vmname -get
+		vm vnc $vmname -putln "menu"
+		vm vnc $vmname -put "key:down"
 	else
 		sleep 10
-		vm $vmname -vncget
+		vm vnc $vmname -get
 	fi
 
 	echo -e "\n{VM:INFO} please connect vnc to continue install:"
-	for vncaddr in $(vmvncport $vmname); do
+	for vncaddr in $(vmvncproc $vmname); do
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
 	exit 0
@@ -2482,11 +2480,11 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  --vnc --vnclisten 0.0.0.0
 
 	sleep 2
-	vm $vmname -vncget
-	vm $vmname -vncput "key:down" -vncput "key:up"
+	vm vnc $vmname -get
+	vm vnc $vmname -put "key:down" -put "key:up"
 
 	echo -e "\n{VM:INFO} please connect vnc to continue install:"
-	for vncaddr in $(vmvncport $vmname); do
+	for vncaddr in $(vmvncproc $vmname); do
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
 	exit 0
@@ -2630,7 +2628,7 @@ COMM
 
 echo -e "\n{VM:INFO} you can try login $vmname again by using:"
 echo -e "  $ vm login $vmname          #from host"
-for vncaddr in $(vmvncport $vmname); do
+for vncaddr in $(vmvncproc $vmname); do
 	if [[ "$vncaddr" = localhost* ]]; then
 		echo -e "  $ vncviewer $vncaddr    #from localhost"
 	else
