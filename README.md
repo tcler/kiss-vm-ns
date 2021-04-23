@@ -42,10 +42,6 @@ Usage:
 Options:
   -h,--help      #Display this help.
 
-Options for host setup:
-  --prepare      #check/install/configure libvirt and other dependent packages
-  --enable-nested-vm  #enable nested on host
-
 Options for sub-command create:
   -I             #create VM by import existing disk image, auto search url according distro name
   -i <url/path>  #create VM by import existing disk image, value can be url or local path
@@ -147,7 +143,7 @@ Options for sub-command exec:
   -x[arg]        #expected return code of sub-command exec, if doesn't match output test fail msg
                  #`e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 
-Example Intranet:
+Examples for create vm from distro-db (Intranet):
   vm [create] # will enter a TUI show you all available distros that could auto generate source url
   vm [create] RHEL-7.7                           # install RHEL-7.7 from cloud-image(by default)
   vm [create] RHEL-6.10 -L                       # install RHEL-6.10 from Location(by -L option)
@@ -163,9 +159,7 @@ Example Intranet:
   vm [create] rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
   vm [create] rhel-8.2% -enable-guest-hypv -msize=$((8*1024)) -dsize=120  # enable hyper-v on guest
 
-  vm --enable-nested-vm  #enable nested on host, need sudo
-
-Example Internet:
+Examples for create vm from distro-db (Internet):
   vm [create] # will enter a TUI show you all available distros that could auto generate source url
   vm [create] CentOS-8-stream -b ftp://url/path/x.rpm
   vm [create] CentOS-8 -p "jimtcl vim git make gcc"
@@ -177,20 +171,22 @@ Example Internet:
   vm [create] openSUSE-leap-15.2
   vm [create] CentOS-7 -enable-guest-hypv -msize=$((8*1024)) -dsize=120  # enable hyper-v on guest
 
-  vm --enable-nested-vm  #enable nested on host, need sudo
+Examples for create vm from local image:
+  vm [create] rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
+  vm [create] debian-10 -i /mnt/vm-images/debian-10-openstack-amd64.qcow2
+  vm [create] openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
 
-Example from local image:
-  vm rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
-  vm debian-10 -i /mnt/vm-images/debian-10-openstack-amd64.qcow2
-  vm openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
+Examples for other sub-commands:
+  vm prepare           #check/install/configure libvirt and other dependent packages
+  vm enable-nested-vm  #enable nested on host
 
-Example [subcmd]:
   vm list              #list all VMs       //you can use ls,li,lis* instead list
-  vm login [/c] [VM]   #login VM           //you can use l,lo,log* instead login
+  vm login [VM]        #login VM via ssh   //you can use l,lo,log* instead login
   vm console [VM]      #log VM via console //you can use co,con,cons* instead console
   vm delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
   vm ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
-  vm vncport [VM]      #show vnc host:port //you can use v,vnc instead vncport
+  vm vnc [VM]          #show vnc host:port //you can use v,vn instead
+  vm vnc [-get|-put|-putln] [VM]           #read screen text or send string thru vnc
   vm xml [VM]          #dump vm xml file   //you can use x,xm instead xml
   vm edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
   vm exec [-v] [-x] "$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
