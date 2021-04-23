@@ -1134,10 +1134,6 @@ Usage() {
 	Options:
 	  -h,--help      #Display this help.
 
-	Options for host setup:
-	  --prepare      #check/install/configure libvirt and other dependent packages
-	  --enable-nested-vm  #enable nested on host
-
 	Options for sub-command create:
 	  -I             #create VM by import existing disk image, auto search url according distro name
 	  -i <url/path>  #create VM by import existing disk image, value can be url or local path
@@ -1241,7 +1237,7 @@ Usage() {
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
-	Example Intranet:
+	Examples for create vm from distro-db (Intranet):
 	  $P [create] # will enter a TUI show you all available distros that could auto generate source url
 	  $P [create] RHEL-7.7                           # install RHEL-7.7 from cloud-image(by default)
 	  $P [create] RHEL-6.10 -L                       # install RHEL-6.10 from Location(by -L option)
@@ -1257,11 +1253,9 @@ Usage() {
 	  $P [create] rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
 	  $P [create] rhel-8.2% -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
 
-	  $P --enable-nested-vm  #enable nested on host, need sudo
-
 	EOF
 	cat <<-EOF
-	Example Internet:
+	Examples for create vm from distro-db (Internet):
 	  $P [create] # will enter a TUI show you all available distros that could auto generate source url
 	  $P [create] CentOS-8-stream -b ftp://url/path/x.rpm
 	  $P [create] CentOS-8 -p "jimtcl vim git make gcc"
@@ -1273,14 +1267,15 @@ Usage() {
 	  $P [create] openSUSE-leap-15.2
 	  $P [create] CentOS-7 -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
 
-	  $P --enable-nested-vm  #enable nested on host, need sudo
+	Examples for create vm from local image:
+	  $P [create] rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
+	  $P [create] debian-10 -i /mnt/vm-images/debian-10-openstack-amd64.qcow2
+	  $P [create] openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
 
-	Example from local image:
-	  $P rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
-	  $P debian-10 -i /mnt/vm-images/debian-10-openstack-amd64.qcow2
-	  $P openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
+	Examples for other sub-commands:
+	  $P prepare           #check/install/configure libvirt and other dependent packages
+	  $P enable-nested-vm  #enable nested on host
 
-	Example [subcmd]:
 	  $P list              #list all VMs       //you can use ls,li,lis* instead list
 	  $P login [VM]        #login VM via ssh   //you can use l,lo,log* instead login
 	  $P console [VM]      #log VM via console //you can use co,con,cons* instead console
@@ -1607,8 +1602,10 @@ mkdir -p ${DownloadImagePath}
 [[ $P = vmc || $P = vm ]] || true && {
 	subcmd=$1
 	case "$subcmd" in
-	create|creat) shift;;
 	h|\?|help) Usage|less; exit;;
+	prepare) shift; [[ "$1" = -d ]] && shift; enable_libvirt force; exit $?;;
+	enable-nested-vm) shift; [[ "$1" = -d ]] && shift; enable_nested_kvm; exit $?;;
+	create|creat) shift;;
 	r|rm|d|de|del*) shift; [[ "$1" = -d ]] && shift; vmdelete "$@"; exit $?;;
 	co|con|cons*) shift; [[ "$1" = -d ]] && shift; vmconsole "$@"; exit $?;;
 	l|lo|log*) shift; [[ "$1" = -d ]] && shift; vmlogin "$@"; exit $?;;
@@ -1617,7 +1614,10 @@ mkdir -p ${DownloadImagePath}
 	e|ex|ex*) shift; [[ "$1" = -d ]] && shift; vmexec "$@"; exit $?;;
 	ls|li|lis|list) shift; [[ "$1" = -d ]] && shift; vmlist "$@"; exit $?;;
 	i|if|if*) shift; [[ "$1" = -d ]] && shift; vmifaddr "$@"; exit $?;;
-	v|v*) shift; [[ "$1" = -d ]] && shift; vmvncport "$@"; exit $?;;
+	v|vn|vnc|vncport) shift; [[ "$1" = -d ]] && shift; vmvncport "$@"; exit $?;;
+	vncget) shift; [[ "$1" = -d ]] && shift; vmvncget "$@"; exit $?;;
+	vncput) shift; [[ "$1" = -d ]] && shift; vmvncput "$@"; exit $?;;
+	vncputln) shift; [[ "$1" = -d ]] && shift; vmvncputln "$@"; exit $?;;
 	x|xm*) shift; [[ "$1" = -d ]] && shift; vmxml "$@"; exit $?;;
 	ed|ed*) shift; [[ "$1" = -d ]] && shift; vmedit "$@"; exit $?;;
 	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
