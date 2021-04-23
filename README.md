@@ -112,11 +112,6 @@ Options for sub-command create:
                  #`e.g: --postrepo=beaker-tasks:http://beaker.engineering.fedora.com/rpms
   --nosshkey     #don't inject sshkey
   --debug        #debug mode
-  --vncget       #get vnc screen and convert to text by gocr
-  --vncput <msg> #send string or key event to vnc server, could be specified multi-times
-                 #`e.g: --vncput root --vncput key:enter --vncput password --vncput key:enter
-  --vncputln <msg>
-                 #alias of: --vncput msg --vncput key:enter
   --vncput-after-install <msg>
                  #send string or key event ASAP after virt-intall
   --xml          #just generate xml
@@ -142,6 +137,14 @@ Options for sub-command exec:
   -v,--verbose   #verbose mode
   -x[arg]        #expected return code of sub-command exec, if doesn't match output test fail msg
                  #`e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
+
+Options for sub-command vncproc:
+  --get,--vncget #get vnc screen and convert to text by gocr
+  --put,--vncput <msg>
+		 #send string or key event to vnc server, could be specified multi-times
+		 #`e.g: --put root --put key:enter --put password --put key:enter
+  --putln,--vncputln <msg>
+		 #alias of: --put msg --put key:enter
 
 Examples for create vm from distro-db (Intranet):
   vm [create] # will enter a TUI show you all available distros that could auto generate source url
