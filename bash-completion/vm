@@ -68,13 +68,13 @@ _vm()
         v|vn|vnc*)
             if [[ $narg -le 3 ]]; then
                 if [[ "$cur" == -* ]]; then
-                    COMPREPLY=( $( compgen -W "#<Enter> --get --put --putln" -- "$cur" ) )
+                    COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln" -- "$cur" ) )
                 else
                     local vmlist=$(virsh list --name)
                     COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
                 fi
             else
-                COMPREPLY=( $( compgen -W "#<Enter> --get --put --putln" -- "$cur" ) )
+                COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln" -- "$cur" ) )
             fi
             ;;
         cpfrom)

@@ -195,6 +195,20 @@ vmifaddr() {
 	[[ -n "$addrs" ]] && echo "$addrs"
 }
 
+vncgetsc() {
+	local vncport=$1
+	local _vmname=$2
+
+	! which vncdo &>/dev/null && {
+		echo "{VM:WARN} command vncdo is needed by 'vncgetsc/vncgetscreen' function!" >&2
+		return 1
+	}
+	local fname=$_vmname-screen-$(date +%F_%T_%N).png
+	vncdo -s $vncport capture $RuntimeTmp/_screen.png
+	mv $RuntimeTmp/_screen.png ./$fname
+	ls -lh $fname
+}
+
 vncget() {
 	local vncport=$1
 	local ConvertCmd="gm convert"
@@ -278,8 +292,8 @@ vmvncproc() {
 	}
 
 	local port=$(virsh dumpxml "$_vmname" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}")
-	[[ -n "${port}" ]] && {
-		if [[ -z "${VNCPUTS}" && -z "${VNCGET}" ]]; then
+	if [[ -n "${port}" ]]; then
+		if [[ -z "${VNCPUTS}" && -z "${VNCGET}" && -z "${VNCGETSC}" ]]; then
 			for _host in $(hostname -A|xargs -n 1|sort -u); do
 				ping -c 2 $_host &>/dev/null || continue
 				echo $_host:$port
@@ -291,11 +305,15 @@ vmvncproc() {
 			vncput localhost::$port "${VNCPUTS[@]}"
 			echo "[vncput@$_vmname]> ${VNCPUTS[*]}"
 		fi
+		if [[ -n "${VNCGETSC}" ]]; then
+			echo "[vncgetsc@$_vmname]:"
+			vncgetsc localhost::$port $_vmname
+		fi
 		if [[ -n "${VNCGET}" ]]; then
 			echo "[vncget@$_vmname]:"
-			vncget localhost::$port
+			vncget localhost::$port $_vmname
 		fi
-	}
+	fi
 }
 
 vmxml() {
@@ -1232,6 +1250,8 @@ Usage() {
 
 	Options for sub-command vncproc:
 	  --get,--vncget #get vnc screen and convert to text by gocr
+	  --getsc,--vncgetsc
+	                 #get vnc screen
 	  --put,--vncput <msg>
 	                 #send string or key event to vnc server, could be specified multi-times
 	                 #`e.g: --put root --put key:enter --put password --put key:enter
@@ -1398,6 +1418,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long fips \
 	--long postrepo: \
 	--long nosshkey \
+	--long getsc --long vncgetsc \
 	--long get --long vncget \
 	--long put: --long vncput: \
 	--long putln: --long vncputln: \
@@ -1478,6 +1499,7 @@ while true; do
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
 	--get|--vncget)  VNCGET=yes; shift 1;;
+	--getsc|--vncgetsc) VNCGETSC=yes; shift 1;;
 	--put|--vncput)  VNCPUTS+=("$2"); shift 2;;
 	--putln|--vncputln)     [[ -n "$2" ]] && VNCPUTS+=("$2" "key:enter") || VNCPUTS+=("key:enter"); shift 2;;
 	--vncput-after-install) VNCPUT_AFTER_INSTALL="$2"; shift 2;;
@@ -1632,7 +1654,7 @@ mkdir -p ${DownloadImagePath}
 	netdel|netdelete) shift; [[ "$1" = -d ]] && shift; netdelete "$@"; exit $?;;
 	esac
 }
-[[ -n "$VNCPUTS" || -n "$VNCGET" ]] && { vmvncproc "$@"; exit $?; }
+[[ -n "$VNCPUTS" || -n "$VNCGET" || -n "$VNCGETSC" ]] && { vmvncproc "$@"; exit $?; }
 
 declare -A distroInfo
 dbfile=/etc/kiss-vm/distro-db.bash
