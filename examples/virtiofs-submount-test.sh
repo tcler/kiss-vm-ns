@@ -9,7 +9,7 @@ which vm &>/dev/null || {
 	echo -e "[WARN] you have not installed kiss-vm, please install kiss-vm first by run:"
 	echo -e " git clone https://github.com/tcler/kiss-vm-ns"
 	echo -e " sudo make -C kiss-vm-ns"
-	echo -e " vm --prepare"
+	echo -e " vm prepare"
 	exit 1
 }
 
