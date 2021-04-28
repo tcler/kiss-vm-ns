@@ -137,9 +137,6 @@ COMM
 
 echo -e "\n%post"
 
-# There's been repo files in CentOS by default, so clear Repos array
-[[ -z "${URL}" || ${URL} = *centos* ]] && Repos=()
-
 for repo in "${Repos[@]}"; do
 	read name url <<<"${repo/:/ }"
 	cat <<-EOF
