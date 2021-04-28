@@ -1006,6 +1006,10 @@ if [[ $Intranet = yes ]]; then
 		local Repos=()
 		local _cdnhost="cdn.stage.fedorahat.com"
 
+		if ! is_available_url $url; then
+			return 1
+		fi
+
 		shopt -s nocasematch
 		case $distro in
 		RHEL-5*|RHEL5*)
