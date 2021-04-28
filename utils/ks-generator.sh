@@ -45,34 +45,34 @@ while true; do
 	esac
 done
 
-[[ -z "$Distro" || -z "$URL" ]] && {
+[[ -z "$Distro" ]] && {
 	Usage
 	exit 1
 }
 
 shopt -s nocasematch
-case $Distro in
-RHEL-5*|RHEL5*|centos5*|centos-5*)
+case ${Distro,,} in
+rhel-5*|rhel5*|centos5*|centos-5*)
 	Packages="@base @cifs-file-server @nfs-file-server redhat-lsb-core vim-enhanced git iproute screen wget"
 
 	NetCommand="network --device=eth0 --bootproto=dhcp"
 	KeyCommand="key --skip"
 	Bootloader='bootloader --location=mbr --append="console=ttyS0,9600 rhgb quiet"'
 	;;
-RHEL-6*|RHEL6*|centos6*|centos-6*)
+rhel-6*|rhel6*|centos6*|centos-6*)
 	Packages="-iwl* @base @cifs-file-server @nfs-file-server redhat-lsb-core vim-enhanced git iproute screen wget"
 
 	NetCommand="network --device=eth0 --bootproto=dhcp"
 	KeyCommand="key --skip"
 	;;
-RHEL-7*|RHEL7*|centos7*|centos-7*)
+rhel-7*|rhel7*|centos7*|centos-7*)
 	Packages="-iwl* @base @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
 	;;
-RHEL-8*|RHEL8*|centos8*|centos-8*)
+rhel-8*|rhel8*|centos8*|centos-8*)
 	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
 	AuthConfigure=
 	;;
-RHEL-9*|RHEL9*|centos9*|centos-9*|Fedora-*)
+rhel-9*|rhel9*|centos9*|centos-9*|fedora-*)
 	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
 	AuthConfigure=
 	;;
@@ -95,7 +95,7 @@ user --name=bar --iscrypted --password=\$1\$zAwkhhNB\$rxjwuf7RLTuS6owGoL22I1
 reboot
 $NetCommand
 text
-url --url=$URL
+$([[ -n "${URL}" ]] && echo "url --url=${URL}")
 $KeyCommand
 bootloader --location=mbr --append="rhgb quiet crashkernel=auto"
 $Bootloader
@@ -138,7 +138,7 @@ COMM
 echo -e "\n%post"
 
 # There's been repo files in CentOS by default, so clear Repos array
-[[ $URL = *centos* ]] && Repos=()
+[[ -z "${URL}" || ${URL} = *centos* ]] && Repos=()
 
 for repo in "${Repos[@]}"; do
 	read name url <<<"${repo/:/ }"
