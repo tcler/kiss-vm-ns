@@ -16,6 +16,10 @@ _vm()
 {
     local cur prev words cword
     local narg
+    local subcommandList=
+    local distroList= dlist=
+    local vmlist=
+    local netparams= netlist=
     _init_completion || return
 
     for w in "${words[@]}"; do
@@ -28,7 +32,7 @@ _vm()
         if [[ "$cur" == -* && $prev = create ]]; then
             COMPREPLY=( $( compgen -W "$opts -h" -- "$cur" ) )
         else
-            local subcommandList="prepare enable-nested-vm help h create ls list login console delete ifaddr vncproc xml edit exec reboot stop start netls netcreat netinfo netdel netstart cpfrom cpto"
+            subcommandList="prepare enable-nested-vm help h create ls list login console delete ifaddr vncproc xml edit exec reboot stop start netls netcreat netinfo netdel netstart cpfrom cpto"
             COMPREPLY=( $( compgen -W "$subcommandList" -- "$cur" ) )
         fi
     else
@@ -38,11 +42,11 @@ _vm()
                 if [[ "$cur" == -* ]]; then
                     COMPREPLY=( $( compgen -W "$opts -h" -- "$cur" ) )
                 else
-                    local distroList=$(source /etc/kiss-vm/distro-db.bash; echo ${!distroInfo[@]})
+                    distroList=$(source /etc/kiss-vm/distro-db.bash; echo ${!distroInfo[@]})
                     if is_intranet; then
                         distroList+=" RHEL-9% RHEL-8% RHEL-7% RHEL-6%"
                     fi
-                    local dlist="$distroList #<aDistroFamilyName> #<Enter>"
+                    dlist="$distroList #<aDistroFamilyName> #<Enter>"
                     COMPREPLY=( $( compgen -W "$dlist" -- "$cur" ) )
                 fi
             else
@@ -50,16 +54,16 @@ _vm()
             fi
             ;;
         del|delete|stop|start)
-            local vmlist=$(virsh list --all --name)
+            vmlist=$(virsh list --all --name)
             COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             ;;
         reboot)
-            local vmlist=$(virsh list --all --name)
+            vmlist=$(virsh list --all --name)
             COMPREPLY=( $( compgen -W "-w $vmlist" -- "$cur" ) )
             ;;
         lo|log|log*|co|con|cons|cons*|if|ifaddr|x|xm|xml|ed|edit)
             if [[ $narg -le 3 ]]; then
-                local vmlist=$(virsh list --all --name)
+                vmlist=$(virsh list --all --name)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             else
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
@@ -70,7 +74,7 @@ _vm()
                 if [[ "$cur" == -* ]]; then
                     COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln" -- "$cur" ) )
                 else
-                    local vmlist=$(virsh list --name)
+                    vmlist=$(virsh list --name)
                     COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
                 fi
             else
@@ -79,7 +83,7 @@ _vm()
             ;;
         cpfrom)
             if [[ $narg -le 3 ]]; then
-                local vmlist=$(virsh list --name)
+                vmlist=$(virsh list --name)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 COMPREPLY=( $( compgen -W "# #<file-or-dir-in-vm>" -- "$cur" ) )
@@ -89,7 +93,7 @@ _vm()
             ;;
         cpto)
             if [[ $narg -le 3 ]]; then
-                local vmlist=$(virsh list --name)
+                vmlist=$(virsh list --name)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             else
                 COMPREPLY=( $( compgen -A file -- "$cur" ) )
@@ -97,7 +101,7 @@ _vm()
             ;;
         e|ex|exe|exec)
             if [[ $narg -le 3 ]]; then
-                local vmlist=$(virsh list --name --state-running)
+                vmlist=$(virsh list --name --state-running)
                 COMPREPLY=( $( compgen -W "-v -x $vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 COMPREPLY=( $( compgen -W "--" -- "$cur" ) )
@@ -109,15 +113,15 @@ _vm()
             COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             ;;
         net)
-            local netparams="netname=fixme brname=virbr-fixme subnet=192.168.fixme.0 subnet=172.25.fixme.0 forward=no forward=nat tftproot= bootpfile= #<Enter-for-list>"
+            netparams="netname=fixme brname=virbr-fixme subnet=192.168.fixme.0 subnet=172.25.fixme.0 forward=no forward=nat tftproot= bootpfile= #<Enter-for-list>"
             COMPREPLY=( $( compgen -W "$netparams" -- "$cur" ) )
             ;;
         netinfo)
-            local netlist="$(virsh net-list --name)"
+            netlist="$(virsh net-list --name)"
             COMPREPLY=( $( compgen -W "$netlist" -- "$cur" ) )
             ;;
         netdel|netstart)
-            local netlist="$(virsh net-list --name)"
+            netlist="$(virsh net-list --name)"
             COMPREPLY=( $( compgen -W "$netlist" -- "$cur" ) )
             ;;
         *)
