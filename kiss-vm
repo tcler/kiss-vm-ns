@@ -2333,6 +2333,11 @@ elif [[ "$InstallType" = import ]]; then
 			qemu-img resize ${imagefile} ${DSIZE}G
 		}
 	}
+
+	#workaround of debian-10 cloud image install fail on Fedora HOST
+	#`-> seems cloud-init in debian-10 image does not work while qemu machine type is q35
+	[[ ${vmname,,} =~ debian || ${imagefile,,} =~ debian ]] && MACHINE_OPT=--machine=pc
+
 	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
