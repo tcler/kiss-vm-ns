@@ -13,9 +13,8 @@ case ${OS,,} in
 centos*|red?hat*)
 	OSV=$(rpm -E %rhel)
 	if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
-		if [[ "$OSV" != "%rhel" ]]; then
+		[[ "$OSV" != "%rhel" ]] &&
 			yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
-		fi
 	fi
 	;;
 esac
