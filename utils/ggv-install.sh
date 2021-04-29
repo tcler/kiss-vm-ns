@@ -6,17 +6,37 @@
 	exit 126
 }
 
-OSV=$(rpm -E %rhel)
-if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
-	if [[ "$OSV" != "%rhel" ]]; then
-		yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
+. /etc/os-release
+OS=$NAME
+
+case ${OS,,} in
+centos*|red?hat*)
+	OSV=$(rpm -E %rhel)
+	if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
+		if [[ "$OSV" != "%rhel" ]]; then
+			yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
+		fi
 	fi
-fi
+	;;
+esac
 
 #install gm(GraphicsMagick/ImageMagick)
-! which gm &>/dev/null && ! which convert &>/dev/null && {
+! which gm 2>/dev/null && ! which convert 2>/dev/null && {
 	echo -e "\n{ggv-install} install GraphicsMagick/ImageMagick ..."
-	yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || yum $yumOpt install -y ImageMagick
+	case ${OS,,} in
+	centos*|red?hat*)
+		yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || yum $yumOpt install -y ImageMagick
+		;;
+	debian*|ubuntu*)
+		apt-get install -y graphicsmagick; which gm 2>/dev/null || apt-get install -y imagemagick
+		;;
+	opensuse*|sles*)
+		zypper install -y GraphicsMagick; which gm 2>/dev/null || zypper install -y ImageMagick
+		;;
+	*)
+		: #fixme add more platform
+		;;
+	esac
 
 	#if still install fail, try install from brew
 	! which gm &>/dev/null && ! which convert &>/dev/null && {
@@ -26,11 +46,34 @@ fi
 }
 
 #install gocr
-! which gocr &>/dev/null && {
+echo
+! which gocr 2>/dev/null && {
 	echo -e "\n{ggv-install} install gocr ..."
-	yum $yumOpt install -y gocr; which gocr 2>/dev/null || {
+
+	case ${OS,,} in
+	centos*|red?hat*)
+		yum $yumOpt install -y gocr;;
+	debian*|ubuntu*)
+		apt-get install -y gocr;;
+	opensuse*|sles*)
+		zypper install -y gocr;;
+	*)
+		:;; #fixme add more platform
+	esac
+
+	which gocr 2>/dev/null || {
 		echo -e "\n{ggv-install} install gocr from src ..."
-		yum install -y autoconf gcc make netpbm-progs
+		case ${OS,,} in
+		centos*|red?hat*)
+			yum $yumOpt install -y autoconf gcc make netpbm-progs;;
+		debian*|ubuntu*)
+			apt-get install -y autoconf gcc make netpbm;;
+		opensuse*|sles*)
+			zypper install -y autoconf gcc make netpbm;;
+		*)
+			:;; #fixme add more platform
+		esac
+
 		while true; do
 			rm -rf gocr
 			_url=https://github.com/tcler/gocr
@@ -48,11 +91,24 @@ fi
 }
 
 #install vncdotool
-! which vncdo &>/dev/null && {
+echo
+! which vncdo 2>/dev/null && {
 	echo -e "\n{ggv-install} install vncdotool ..."
-	yum $yumOpt install -y python-devel python-pip platform-python-devel python3-pip --setopt=strict=0
-	PIP=$(which --skip-alias --skip functions pip 2>/dev/null)
-	which pip &>/dev/null || PIP=$(which --skip-alias --skip functions pip3 2>/dev/null)
+	WHICH="which --skip-alias --skip-functions"
+	case ${OS,,} in
+	centos*|red?hat*)
+		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel python3-pip;;
+	debian*|ubuntu*)
+		WHICH="which"
+		apt-get install -y python-pip python3-pip;;
+	opensuse*|sles*)
+		zypper install -y python-pip python3-pip;;
+	*)
+		:;; #fixme add more platform
+	esac
+
+	PIP=$($WHICH pip3 2>/dev/null)
+	$WHICH pip3 &>/dev/null || PIP=$($WHICH pip 2>/dev/null)
 	$PIP --default-timeout=720 install --upgrade pip
 	$PIP --default-timeout=720 install --upgrade setuptools
 	$PIP --default-timeout=720 install vncdotool service_identity
