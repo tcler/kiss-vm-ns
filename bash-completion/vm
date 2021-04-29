@@ -50,7 +50,14 @@ _vm()
                     COMPREPLY=( $( compgen -W "$dlist" -- "$cur" ) )
                 fi
             else
-                COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
+                case $prev in
+                -i|-l)
+                    COMPREPLY=( $( compgen -A file -- "$cur" ) )
+                    ;;
+                *)
+                    COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
+                    ;;
+                esac
             fi
             ;;
         del|delete|stop|start)
