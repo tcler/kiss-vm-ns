@@ -1291,6 +1291,7 @@ Usage() {
 	  $P [create] CentOS-6
 	  $P [create] fedora-32
 	  $P [create] centos-5 -l http://vault.centos.org/5.11/os/x86_64/
+	  $P [create] RHEL-8.4.0 -l ~/myimages/download/RHEL-8.4.0-any-x86_64-dvd1.iso -n rhel84-from-iso
 	  $P [create] debian-10 -i https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2
 	  $P [create] openSUSE-leap-15.2
 	  $P [create] CentOS-7 -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest

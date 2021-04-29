@@ -46,7 +46,7 @@ Options for sub-command create:
   -I             #create VM by import existing disk image, auto search url according distro name
   -i <url/path>  #create VM by import existing disk image, value can be url or local path
   -L             #create VM by using location, auto search url according distro name
-  -l <url>       #create VM by using specified location url or local iso file path
+  -l <url/path>  #create VM by using specified location url or local iso file path
   -C <iso path>  #create VM by using ISO image
   --ks <file>    #kickstart file, will auto generate according distro name if omitting
   -n,--vmname <name>
@@ -170,6 +170,7 @@ Examples for create vm from distro-db (Internet):
   vm [create] CentOS-6
   vm [create] fedora-32
   vm [create] centos-5 -l http://vault.centos.org/5.11/os/x86_64/
+  vm [create] RHEL-8.4.0 -l ~/myimages/download/RHEL-8.4.0-any-x86_64-dvd1.iso -n rhel84-from-iso
   vm [create] debian-10 -i https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2
   vm [create] openSUSE-leap-15.2
   vm [create] CentOS-7 -enable-guest-hypv -msize=$((8*1024)) -dsize=120  # enable hyper-v on guest
