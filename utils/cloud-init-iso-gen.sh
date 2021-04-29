@@ -150,7 +150,9 @@ REBOOT
 )
 EOF
 
-genisoimage -output $isof -volid cidata -joliet -rock user-data meta-data
+GEN_ISO_CMD=genisoimage
+which $GEN_ISO_CMD 2>/dev/null || GEN_ISO_CMD=mkisofs
+$GEN_ISO_CMD -output $isof -volid cidata -joliet -rock user-data meta-data
 
 popd &>/dev/null
 
