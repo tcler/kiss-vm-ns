@@ -49,7 +49,7 @@ tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net student
 tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net classroom --net student -n bastion"
 tmux new -d "/usr/bin/vm create -f $distro -i $imagef --nointeract --net classroom --net-macvtap -n classroom"
 
-port_available() { nc $1 $2 </dev/null &>/dev/null; }
+port_available() { nc $(grep -q -- '-z\>' < <(nc -h 2>&1) && echo -z) $1 $2 </dev/null &>/dev/null; }
 for _vm in $vmlist; do
 	echo -e "\n{INFO} waiting VM($_vm) install finish ..."
 	until port_available $_vm 22; do sleep 2; done

@@ -340,7 +340,7 @@ vmedit() {
 }
 
 port_available() {
-	nc $1 $2 </dev/null &>/dev/null
+	nc $(grep -q -- '-z\>' < <(nc -h 2>&1) && echo -z) $1 $2 </dev/null &>/dev/null
 }
 
 vmreboot() {
@@ -441,7 +441,7 @@ vmcopyto() {
 	local dstdir=${@: -1}
 	local srcarray=("${@:1: $#-1}")
 
-	nc $_vmname 22 </dev/null &>/dev/null || {
+	port_available $_vmname 22 || {
 		echo -e "{VM:WARN} port $_vmname:22 is not available"
 		return 1
 	}
@@ -489,7 +489,7 @@ vmcopyfrom() {
 	local src=${1%/}
 	local dstdir=$2
 
-	nc $_vmname 22 </dev/null &>/dev/null || {
+	port_available $_vmname 22 || {
 		echo -e "{VM:WARN} port $_vmname:22 is not available"
 		return 1
 	}
@@ -555,7 +555,7 @@ vmlogin() {
 	}
 
 	#sometimes there's bug in libnss. get more than one addr but some one
-	#of them does not exist. use nc detect and ignore it/them
+	#of them does not exist. detect and ignore it/them
 	addrs=$(vmifaddr "$_vmname")
 	[[ -z "$addrs" ]] && {
 		echo -e "{VM:WARN} can not get ip info of $_vmname, try login with console ..."
@@ -569,7 +569,7 @@ vmlogin() {
 		[[ "$VERBOSE" = yes ]] &&
 			echo "[vmlogin] detect port ${addr}:22 ..." | GREP_COLORS='ms=01;36' grep --color . >&2
 
-		nc -z $addr 22 </dev/null &>/dev/null || {
+		port_available $addr 22 || {
 			echo -e "{VM:WARN} port $addr:22 is not available"
 			continue
 		}
