@@ -46,7 +46,7 @@ Options for sub-command create:
   -I             #create VM by import existing disk image, auto search url according distro name
   -i <url/path>  #create VM by import existing disk image, value can be url or local path
   -L             #create VM by using location, auto search url according distro name
-  -l <url>       #create VM by using location
+  -l <url>       #create VM by using specified location url or local iso file path
   -C <iso path>  #create VM by using ISO image
   --ks <file>    #kickstart file, will auto generate according distro name if omitting
   -n,--vmname <name>

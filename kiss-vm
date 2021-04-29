@@ -122,6 +122,7 @@ _vmdelete() {
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "- {VM:INFO} removing VM folder $_vmdir ..."
 		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
+		rm -f $_vmdir/*.cfg $_vmdir/*.ks
 		rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
 		rm -f $_vmdir/nvdimm-*.dev
 		rmdir $_vmdir 2>/dev/null
@@ -1160,7 +1161,7 @@ Usage() {
 	  -I             #create VM by import existing disk image, auto search url according distro name
 	  -i <url/path>  #create VM by import existing disk image, value can be url or local path
 	  -L             #create VM by using location, auto search url according distro name
-	  -l <url>       #create VM by using location
+	  -l <url/path>  #create VM by using specified location url or local iso file path
 	  -C <iso path>  #create VM by using ISO image
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  -n,--vmname <name>
@@ -2027,8 +2028,8 @@ esac
 if [[ "$InstallType" = location ]]; then
 	[[ -z "$KSPath" ]] && {
 		echo "{VM:INFO} generating kickstart file for $Distro ..."
-		ksauto=$RuntimeTmp/ks-$VM_OS_VARIANT-$$.cfg
-		postscript=$RuntimeTmp/postscript.ks
+		ksauto=$VMpath/ks-$VM_OS_VARIANT-$$.cfg
+		postscript=$VMpath/postscript.ks
 		KSPath=$ksauto
 		REPO_OPTS=$(distro2repos $Distro $Location | sed 's/^/--repo /')
 		_file=ks-generator.sh
@@ -2076,16 +2077,22 @@ if [[ "$InstallType" = location ]]; then
 			test -f /etc/yum.repo.d/cdn_os.repo && sed -i 's/enabled = 1/enabled = 0/' /etc/yum.repo.d/cdn_os.repo
 			END
 		}
+		if [[ ! -f $Location ]]; then
+			URL_OPT="-url $Location"
+		fi
 		if [[ "$NO_SSHKEY" = yes ]]; then
-			ks-generator.sh -d $Distro -url $Location $REPO_OPTS --post $postscript >$KSPath
+			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS --post $postscript >$KSPath
 		else
-			ks-generator.sh -d $Distro -url $Location $REPO_OPTS --post $postscript --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub >$KSPath
+			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS --post $postscript --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub >$KSPath
 		fi
 	}
 
 	echo -e "{VM:INFO} creating VM by using location:\n ->  $Location"
 	touch $VMpath/.kiss-vm
 	echo $Location >$VMpath/url
+	if [[ -f $Location ]]; then
+		cp $Location $VMpath/. && Location=$VMpath/${Location##*/}
+	fi
 
 	[[ "$GenerateImage" = yes ]] && {
 		sed -i '/^reboot$/s//poweroff/' ${KSPath}
