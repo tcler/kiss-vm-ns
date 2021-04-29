@@ -849,7 +849,7 @@ install_requires() {
 		sudo apt-get install --ignore-missing -y $pkglist
 		;;
 	opensuse*|sles*)
-		pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu iptables-nft"
+		pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools iptables-nft"
 		sudo zypper install -y $pkglist
 		;;
 	*)
@@ -1546,30 +1546,31 @@ while true; do
 	esac
 done
 
-libvirt_nvr=$(rpm -q libvirt)
-qemukvm=$(rpm -q qemu-kvm)
+libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
+QEMU_KVM=$(PATH=/usr/libexec:$PATH command which qemu-kvm qemu-system-x86 2>/dev/null)
+qemu_kvm() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
-	if ! grep -q nvdimm < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
-		echo -e "{VM:WARN} $qemukvm doesn't support nvdimm driver."
+	if ! grep -q nvdimm < <($QEMU_KVM -device help); then
+		echo -e "{VM:WARN} $(qemu_kvm) doesn't support nvdimm driver."
 		exit 1
 	fi
 fi
 if [[ "${#NVME_DEVS[@]}" -gt 0 ]]; then
-	if ! grep -q nvme < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
-		echo -e "{VM:WARN} $qemukvm doesn't support nvme driver."
+	if ! grep -q nvme < <($QEMU_KVM -device help); then
+		echo -e "{VM:WARN} $(qemu_kvm) doesn't support nvme driver."
 		exit 1
 	fi
 fi
 if [[ ${#SHARE_DIRS[@]} -gt 0 ]]; then
-	if vercmp "$libvirt_nvr" lt libvirt-6.2; then
-		echo -e "{VM:WARN} $libvirt_nvr doesn't support virtiofs driver that's required by --sharedir option."
+	if vercmp "$(libvrt_ver)" lt libvirt-6.2; then
+		echo -e "{VM:WARN} $(libvirt_nvr) doesn't support virtiofs driver that's required by --sharedir option."
 		exit 1
 	fi
 fi
 if [[ "$VTPM" = yes ]]; then
 	_dependpkgs=swtpm-tools
-	if ! grep -q tpm-crb < <(PATH=$PATH:/usr/libexec qemu-kvm -device help); then
-		echo -e "{VM:WARN} $qemukvm don't support tpm-crb driver that's required by --vtpm option"
+	if ! grep -q tpm-crb < <($QEMU_KVM -device help); then
+		echo -e "{VM:WARN} $(qemu_kvm) don't support tpm-crb driver that's required by --vtpm option"
 		exit 1
 	fi
 	if ! rpm -q $_dependpkgs; then
