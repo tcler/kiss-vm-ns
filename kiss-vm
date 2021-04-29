@@ -566,16 +566,16 @@ vmlogin() {
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
 	echo "$*" >$RuntimeTmp/sshcmd
 	for addr in $addrs; do
-		[[ "$VERBOSE" = yes ]] &&
-			echo "[vmlogin] detect port ${addr}:22 ..." | GREP_COLORS='ms=01;36' grep --color . >&2
+		[[ "$DEBUG" = yes ]] &&
+			echo "[vmlogin:debug] detect port ${addr}:22 ..." | GREP_COLORS='ms=01;36' grep --color . >&2
 
 		port_available $addr 22 || {
 			echo -e "{VM:WARN} port $addr:22 is not available"
 			continue
 		}
 
-		[[ "$VERBOSE" = yes ]] &&
-			echo "[vmlogin] port ${addr}:22 available ..." | GREP_COLORS='ms=01;36' grep --color . >&2
+		[[ "$DEBUG" = yes ]] &&
+			echo "[vmlogin:debug] port ${addr}:22 available ..." | GREP_COLORS='ms=01;36' grep --color . >&2
 
 		sshexec=no
 		ssh -n -o Batchmode=yes $sshOpts root@$addr &>$RuntimeTmp/sshtest
