@@ -828,25 +828,47 @@ curl_download() {
 
 #-------------------------------------------------------------------------------
 
+install_requires() {
+	. /etc/os-release
+	OS=$NAME
+
+	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
+	case ${OS,,} in
+	fedora*|centos*|red?hat*)
+		local pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img iptables-nft"
+		if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
+			OSV=$(rpm -E %rhel)
+			[[ "$OSV" != "%rhel" ]] && yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
+		fi
+		rpm -q $pkglist || {
+			sudo yum $yumOpt --setopt=strict=0 install -y $pkglist
+		}
+		;;
+	debian*|ubuntu*)
+		local pkglist="libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system qemu-kvm expect netcat tmux libguestfs-tools dialog qemu-utils nftables"
+		sudo apt-get install --ignore-missing -y $pkglist
+		;;
+	opensuse*|sles*)
+		pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu iptables-nft"
+		sudo zypper install -y $pkglist
+		;;
+	*)
+		: #fixme add more platform
+		echo -e "{VM:WARN} kiss-vm doesn't supported this platform($OS)"
+		return 2
+		;;
+	esac
+}
+
 enable_libvirt() {
 	local force=$1
-	local pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img iptables-nft"
 	local sudouser=${SUDO_USER:-$(whoami)}
 	eval sudouserhome=~$sudouser
 	[[ -z "$force" && -d $perConfDir ]] && return 0
 
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt start ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
-	if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
-		OSV=$(rpm -E %rhel)
-		if [[ "$OSV" != "%rhel" ]]; then
-			yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
-		fi
-	fi
-
-	rpm -q $pkglist || {
-		sudo yum $yumOpt --setopt=strict=0 install -y $pkglist
-	}
+	#install packages required by kiss-vm
+	install_requires; [[ $? = 2 ]] && return 1
 
 	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
