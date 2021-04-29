@@ -566,10 +566,17 @@ vmlogin() {
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
 	echo "$*" >$RuntimeTmp/sshcmd
 	for addr in $addrs; do
-		nc $addr 22 </dev/null &>/dev/null || {
+		[[ "$VERBOSE" = yes ]] &&
+			echo "[vmlogin] detect port ${addr}:22 ..." | GREP_COLORS='ms=01;36' grep --color . >&2
+
+		nc -z $addr 22 </dev/null &>/dev/null || {
 			echo -e "{VM:WARN} port $addr:22 is not available"
 			continue
 		}
+
+		[[ "$VERBOSE" = yes ]] &&
+			echo "[vmlogin] port ${addr}:22 available ..." | GREP_COLORS='ms=01;36' grep --color . >&2
+
 		sshexec=no
 		ssh -n -o Batchmode=yes $sshOpts root@$addr &>$RuntimeTmp/sshtest
 		[[ $? = 0 ]] && sshexec=yes
@@ -845,7 +852,7 @@ install_requires() {
 		}
 		;;
 	debian*|ubuntu*)
-		local pkglist="libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system qemu-kvm expect netcat tmux libguestfs-tools dialog qemu-utils nftables"
+		local pkglist="libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils nftables"
 		sudo apt-get install --ignore-missing -y $pkglist
 		;;
 	opensuse*|sles*)
@@ -924,11 +931,12 @@ enable_libvirt() {
 	}
 COMM
 
-	echo -e "{VM:INFO} setfacl -mu:qemu:rx $sudouserhome ..."
+	{ _user=qemu; id qemu 2>/dev/null || _user=libvirt-qemu; }
+	echo -e "{VM:INFO} setfacl -mu:${_user}:rx $sudouserhome ..."
 	mkdir -p $VMSHOME
-	setfacl -mu:qemu:rx $sudouserhome
-	setfacl -mu:qemu:rx -R $VMSHOME
-	setfacl -mu:qemu:rx -R $sudouserhome/.cache/virt-manager 2>/dev/null
+	setfacl -mu:${_user}:rx $sudouserhome
+	setfacl -mu:${_user}:rx -R $VMSHOME
+	setfacl -mu:${_user}:rx -R $sudouserhome/.cache/virt-manager 2>/dev/null
 	getfacl $sudouserhome
 	getfacl $VMSHOME
 
@@ -1989,6 +1997,7 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	format=${format:-qcow2}
 	devfile=nvme$c.$format
 	qemu-img create -f $format $VMpath/$devfile ${fsize}G
+	{ _user=qemu; id qemu 2>/dev/null || _user=libvirt-qemu; }
 	setfacl -mu:qemu:rwx -mg:qemu:rwx $VMpath/$devfile
 	chcon system_u:object_r:qemu_var_run_t:s0 $VMpath/$devfile #system_u:object_r:virt_cache_t:s0 also works
 	getfacl $VMpath/$devfile
