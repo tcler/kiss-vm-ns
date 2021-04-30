@@ -82,7 +82,6 @@ Options for sub-command create:
                  #attach macvtap interface over $sourceNIC, optional $model: virtio,e1000,...
   --macvtapmode <vepa|bridge>
                  #macvtap mode
-  -r,--ready     #virt config is ready, don't have to run enable_libvirt function
   --xdisk <size[,fstype]>
                  #add an extra disk, could be specified multi-times. size unit is G
                  #`e.g: --xdisk 10 --xdisk 20,xfs

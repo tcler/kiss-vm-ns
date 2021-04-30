@@ -865,13 +865,22 @@ install_requires() {
 	esac
 }
 
-enable_libvirt() {
+prepare_libvirt() {
 	local force=$1
 	local sudouser=${SUDO_USER:-$(whoami)}
 	eval sudouserhome=~$sudouser
-	[[ -z "$force" && -d $perConfDir ]] && return 0
+	if [[ -n "$force" ]]; then
+		echo -e "{VM:INFO} force re-prepare kiss-vm env"
+	else
+		if [[ -d $perConfDir ]]; then
+			echo -e "{VM:INFO} kiss-vm has been initialized."
+			return 0
+		fi
+	fi
 
-	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt start ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt start ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	test $(id -u) = 0 || { echo "{VM:Error} vm prepare need root permission, try: sudo $P prepare" >&2; exit 1; }
+
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
 
@@ -965,7 +974,7 @@ COMM
 	}
 
 	mkdir -p $perConfDir
-	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && printf '\33[H\33[2J'
 }
 
@@ -1234,7 +1243,6 @@ Usage() {
 	                 #attach macvtap interface over $sourceNIC, optional $model: virtio,e1000,...
 	  --macvtapmode <vepa|bridge>
 	                 #macvtap mode
-	  -r,--ready     #virt config is ready, don't have to run enable_libvirt function
 	  --xdisk <size[,fstype]>
 	                 #add an extra disk, could be specified multi-times. size unit is G
 	                 #`e.g: --xdisk 10 --xdisk 20,xfs
@@ -1496,7 +1504,7 @@ while true; do
 	--ks)      KSPath=$2; shift 2;;
 	--rm)      RM=yes; shift 1;;
 	--xzopt)          XZ="$2"; shift 2;;
-	-f|--force)       OVERWRITE="yes"; shift 1;;
+	-f|--force)       OVERWRITE="yes"; FORCE=yes; shift 1;;
 	-n|--vmname)      VMName="$2"; shift 2;;
 	-g|--genimage)    GenerateImage=yes; shift 1;;
 	--geturl)         OnlyGetUrl=yes; shift 1;;
@@ -1528,7 +1536,7 @@ while true; do
 		shift 2
 		;;
 	--downloadonly)  SAVE_IMAGE="yes"; DOWNLOAD_ONLY="yes"; InstallType=import; shift 1;;
-	-r|--ready)      VIRT_READY=yes; shift 1;;
+	-r|--ready)      KISS_VM_READY=yes; shift 1;;
 	--bus)           BOOT_DISK_BUS="$2"; shift 2;;
 	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
 	--disk)          DISKS+=("$2"); shift 2;;
@@ -1604,14 +1612,18 @@ fi
 
 # __main__
 if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo; then
-	[[ "$VIRT_READY" != yes ]] && {
+	[[ "$1" = prepare ]] && {
+		KISS_VM_READY=; ONLY_PREPARE=yes
+		FORCE_PREPARE=$FORCE
+	}
+	[[ "$KISS_VM_READY" != yes ]] && {
 		if [[ -t 1 ]]; then
-			enable_libvirt $ONLY_PREPARE &>/dev/tty
+			prepare_libvirt $FORCE_PREPARE &>/dev/tty
 		else
-			#echo -e "{VM:WARN} there's not /dev/tty file redirect enable_libvirt msg to stderr" >&2
-			enable_libvirt $ONLY_PREPARE >&2
+			#echo -e "{VM:WARN} there's not /dev/tty file redirect prepare_libvirt msg to stderr" >&2
+			prepare_libvirt $FORCE_PREPARE >&2
 		fi
-		[[ "$ONLY_PREPARE" = yes || "$1" = prepare ]] && exit
+		[[ "$ONLY_PREPARE" = yes ]] && exit
 	}
 else
 	echo -e "{VM:WARN} current machine doesn't support Virtualization, show help info with\n  $PROG -h"
@@ -1674,7 +1686,7 @@ mkdir -p ${DownloadImagePath}
 	subcmd=$1
 	case "$subcmd" in
 	h|\?|help) Usage|less; exit;;
-	prepare) shift; [[ "$1" = -d ]] && shift; enable_libvirt force; exit $?;;
+	prepare) shift; [[ "$1" = -d ]] && shift; prepare_libvirt force; exit $?;;
 	enable-nested-vm) shift; [[ "$1" = -d ]] && shift; enable_nested_kvm; exit $?;;
 	create|creat) shift;;
 	r|rm|d|de|del*) shift; [[ "$1" = -d ]] && shift; vmdelete "$@"; exit $?;;
