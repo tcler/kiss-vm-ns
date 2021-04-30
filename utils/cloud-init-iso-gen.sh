@@ -124,7 +124,7 @@ runcmd:
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
   - which yum && yum install -y curl wget $PKGS
   -   which apt-get && apt-get install -y curl wget $PKGS
-  -   which zypper && zypper install -y curl wget $PKGS
+  -   which zypper && zypper install --no-recommends -y curl wget $PKGS
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
   - which yum && curl -L -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&

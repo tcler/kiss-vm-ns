@@ -30,7 +30,7 @@ esac
 		apt-get install -y graphicsmagick; which gm 2>/dev/null || apt-get install -y imagemagick
 		;;
 	opensuse*|sles*)
-		zypper install -y GraphicsMagick; which gm 2>/dev/null || zypper install -y ImageMagick
+		zypper install --no-recommends -y GraphicsMagick; which gm 2>/dev/null || zypper install --no-recommends -y ImageMagick
 		;;
 	*)
 		: #fixme add more platform
@@ -55,7 +55,7 @@ echo
 	debian*|ubuntu*)
 		apt-get install -y gocr;;
 	opensuse*|sles*)
-		zypper install -y gocr;;
+		zypper install --no-recommends -y gocr;;
 	*)
 		:;; #fixme add more platform
 	esac
@@ -68,7 +68,7 @@ echo
 		debian*|ubuntu*)
 			apt-get install -y autoconf gcc make netpbm;;
 		opensuse*|sles*)
-			zypper install -y autoconf gcc make netpbm;;
+			zypper install --no-recommends -y autoconf gcc make netpbm;;
 		*)
 			:;; #fixme add more platform
 		esac
@@ -101,7 +101,7 @@ echo
 		WHICH="which"
 		apt-get install -y python-pip python3-pip;;
 	opensuse*|sles*)
-		zypper install -y python-pip python3-pip;;
+		zypper install --no-recommends -y python-pip python3-pip;;
 	*)
 		:;; #fixme add more platform
 	esac

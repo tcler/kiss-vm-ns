@@ -855,7 +855,7 @@ install_requires() {
 		;;
 	opensuse*|sles*)
 		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools mkisofs iptables-nft"
-		sudo zypper install -y $pkglist
+		sudo zypper install --no-recommends -y $pkglist
 		;;
 	*)
 		: #fixme add more platform

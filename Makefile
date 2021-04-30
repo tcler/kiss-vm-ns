@@ -12,7 +12,7 @@ i in ins inst install:
 	sudo cp -af distro-db.bash /etc/kiss-vm/.
 	@which yum &>/dev/null && sudo yum install -y bash-completion 2>/dev/null || :
 	@which apt-get &>/dev/null && sudo apt-get install -y bash-completion 2>/dev/null || :
-	@which zypper &>/dev/null && sudo zypper install -y bash-completion 2>/dev/null || :
+	@which zypper &>/dev/null && sudo zypper install --no-recommends -y bash-completion 2>/dev/null || :
 	sudo cp bash-completion/* ${completion_path}/.
 
 p pu pull u up update:
