@@ -955,6 +955,15 @@ COMM
 		fi
 	}
 
+	#re-define default network, if 192.168.122.0 has been used by other ifs
+	grep -q 'Network is already in use' < <(virsh net-start default 2>&1 >/dev/null) && {
+		default_xml=$(virsh net-dumpxml default|sed 's/\.122/.123/g')
+		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
+		virsh net-define --file <(echo "$default_xml")
+		virsh net-start default
+		virsh net-autostart default
+	}
+
 	mkdir -p $perConfDir
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ enable libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && printf '\33[H\33[2J'
