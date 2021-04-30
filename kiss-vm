@@ -842,7 +842,7 @@ install_requires() {
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
 	case ${OS,,} in
 	fedora*|centos*|red?hat*)
-		local pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img genisoimage iptables-nft"
+		local pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img genisoimage iptables-nft"
 		if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
 			OSV=$(rpm -E %rhel)
 			[[ "$OSV" != "%rhel" ]] && yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
@@ -852,11 +852,11 @@ install_requires() {
 		}
 		;;
 	debian*|ubuntu*)
-		local pkglist="libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables"
+		local pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables"
 		sudo apt-get install --ignore-missing -y $pkglist
 		;;
 	opensuse*|sles*)
-		pkglist="libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools mkisofs iptables-nft"
+		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools mkisofs iptables-nft"
 		sudo zypper install -y $pkglist
 		;;
 	*)
