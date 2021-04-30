@@ -142,7 +142,6 @@ vmdialogchecklist() {
 		echo -e "{VM:WARN} there is not any VM in your host .." >&2
 		return 1;
 	}
-	which dialog &>/dev/null || yum install -y dialog &>/dev/null
 	dialog --backtitle "$cmdinfo" --separate-output --checklist "${cmdinfo}: please select vms you want " 30 120 28 $vmList 2>$resfile; rc=$?
 	printf '\33[H\33[2J'
 	return $rc
@@ -158,7 +157,6 @@ vmdialogradiolist() {
 		echo -e "{VM:WARN} there is not any VM in your host .." >&2
 		return 1;
 	}
-	which dialog &>/dev/null || yum install -y dialog &>/dev/null
 	dialog --backtitle "$cmdinfo" --radiolist "${cmdinfo}: please select vm you want " 30 60 28 $vmList 2>$resfile; rc=$?
 	printf '\33[H\33[2J'
 	return $rc
@@ -1198,7 +1196,7 @@ Usage() {
 	                 #VM name, will auto generate according distro name if omitting
 	  -f,--force     #over write existing VM with same name
 	  -p,--pkginstall <pkgs>
-	                 #pkgs in default system repo, install by yum or apt-get
+	                 #pkgs in default system repo, install by yum/apt-get/zypper
 	  -b,--brewinstall <args>
 	                 #pkgs in brew system or specified by url, install by internal brewinstall.sh
 	                  `-> just could be used in Intranet
@@ -1577,11 +1575,12 @@ if [[ ${#SHARE_DIRS[@]} -gt 0 ]]; then
 fi
 if [[ "$VTPM" = yes ]]; then
 	_dependpkgs=swtpm-tools
+	_dependcmd=swtpm_setup
 	if ! grep -q tpm-crb < <($QEMU_KVM -device help); then
 		echo -e "{VM:WARN} $(qemu_kvm) don't support tpm-crb driver that's required by --vtpm option"
 		exit 1
 	fi
-	if ! rpm -q $_dependpkgs; then
+	if ! which $_dependcmd 2>/dev/null; then
 		echo -e "{VM:WARN} pkg $_dependpkgs is/are needed by vTPM function, please install $_dependpkgs first."
 		exit 1
 	fi
@@ -1741,7 +1740,6 @@ fi
 [[ -z "$Distro" ]] && Distro=$1
 [[ -z "$Distro" ]] && {
 	if [[ -z "$Location" && -z "$Imageurl" && -z "$Isourl" ]]; then
-		which dialog &>/dev/null || yum install -y dialog &>/dev/null
 		distropatternOut=$RuntimeTmp/distroPatternOut
 		distropatternIn=$RuntimeTmp/distroPatternIn
 		distrolist=$RuntimeTmp/distroList
