@@ -873,7 +873,7 @@ prepare_libvirt() {
 		echo -e "{VM:INFO} force re-prepare kiss-vm env"
 	else
 		if [[ -d $perConfDir ]]; then
-			echo -e "{VM:INFO} kiss-vm has been initialized."
+			[[ "$ONLY_PREPARE" = yes ]] && echo -e "{VM:INFO} kiss-vm has been initialized."
 			return 0
 		fi
 	fi
