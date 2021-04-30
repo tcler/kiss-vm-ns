@@ -166,18 +166,19 @@ Examples for create vm from distro-db (Internet):
   vm [create] CentOS-8-stream -b ftp://url/path/x.rpm
   vm [create] CentOS-8 -p "jimtcl vim git make gcc"
   vm [create] CentOS-7 -p "vim git wget make gcc"
-  vm [create] CentOS-6
-  vm [create] fedora-32
-  vm [create] centos-5 -l http://vault.centos.org/5.11/os/x86_64/
-  vm [create] RHEL-8.4.0 -l ~/myimages/download/RHEL-8.4.0-any-x86_64-dvd1.iso -n rhel84-from-iso
-  vm [create] debian-10 -i https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2
+  vm [create] FreeBSD-13.0
+  vm [create] debian-10
   vm [create] openSUSE-leap-15.2
-  vm [create] CentOS-7 -enable-guest-hypv -msize=$((8*1024)) -dsize=120  # enable hyper-v on guest
+  vm [create] fedora-32
+  vm [create] CentOS-8 -enable-guest-hypv -msize=$((8*1024)) -dsize=120  # enable hyper-v on guest
 
-Examples for create vm from local image:
-  vm [create] rhel-8-up -i ~/myimages/RHEL-8.1.0-20191015.0/rhel-8-upstream.qcow2.xz --nocloud-init
+Examples for create vm from local image or url:
+  vm [create] freebsd-130 -i ~/myimages/download/FreeBSD-13.0-RELEASE-amd64.qcow2.xz --nocloud-init
   vm [create] debian-10 -i /mnt/vm-images/debian-10-openstack-amd64.qcow2
-  vm [create] openSUSE-leap-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
+  vm [create] openSUSE-15.2 -i ~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
+  vm [create] debian-test -i https://cdimage.debian.org/cdimage/openstack/testing/debian-testing-openstack-amd64.qcow2
+  vm [create] centos-8 -l https://cloud.centos.org/centos/8/x86_64/images/
+  vm [create] rhel-8.4.0 -l ~/myimages/download/RHEL-8.4.0-any-x86_64-dvd1.iso -n rhel84-from-iso
 
 Examples for other sub-commands:
   vm prepare           #check/install/configure libvirt and other dependent packages
