@@ -3,7 +3,7 @@
 _bin=/usr/bin
 completion_path=/usr/share/bash-completion/completions
 
-install:
+i in ins inst install:
 	sudo cp -af utils/* $(_bin)/.
 	sudo cp -af kiss-vm $(_bin)/vm
 	sudo cp -af kiss-ns $(_bin)/ns
@@ -12,7 +12,7 @@ install:
 	sudo cp -af distro-db.bash /etc/kiss-vm/.
 	sudo cp bash-completion/* ${completion_path}/.
 
-pull:
+p pu pull u up update:
 	git pull --rebase || :
 	@echo
 
