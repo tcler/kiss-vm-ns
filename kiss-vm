@@ -20,8 +20,8 @@ ksauto=
 MacvtapMode=bridge
 VMName=
 InstallType=import
+
 ImagePath=~/myimages
-DownloadImagePath=$ImagePath/download
 VMSHOME=~/VMs
 perConfDir=~/.config/kiss-vm
 vmprefix=$(whoami)
@@ -31,6 +31,8 @@ vmprefix=$(whoami)
 	eval perConfDir=~$SUDO_USER/.config/kiss-vm
 	vmprefix=${SUDO_USER}
 }
+
+DownloadImagePath=$ImagePath/download
 RuntimeTmp=/tmp/vm-$$
 INTERACT=yes
 Intranet=yes
@@ -889,35 +891,34 @@ prepare_libvirt() {
 	_file=ggv-install.sh
 	if ! which $_file &>/dev/null; then
 		_url=$baseUrl/utils/$_file
-		mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
-		sudo cp ~/bin/$_file /usr/bin/.
+		curl_download /usr/bin/$_file $_url && chmod +x /usr/bin/$_file
 	fi
-	sudo ggv-install.sh
+	ggv-install.sh
 
 	echo -e "{VM:INFO} configure libvirt-nss ..."
 	grep -q '^hosts:.*libvirt libvirt_guest' /etc/nsswitch.conf || {
-		echo -e "{*INFO*} you have not configure /etc/nsswitch.conf, trying sudo sed ..."
-		sudo sed -ri '/^hosts:/s/files /&libvirt libvirt_guest /' /etc/nsswitch.conf
+		echo -e "{*INFO*} you have not configure /etc/nsswitch.conf, trying sed ..."
+		sed -ri '/^hosts:/s/files /&libvirt libvirt_guest /' /etc/nsswitch.conf
 	}
 
 	echo -e "{VM:INFO} checking if ${sudouser} has joined group libvirt ..."
-	[[ $(id -u) != 0 ]] && {
-		if ! id -Gn | egrep -q -w libvirt; then
+	[[ $(id -u $sudouser) != 0 ]] && {
+		if ! id -Gn $sudouser | egrep -q -w libvirt; then
 			if getent group libvirt|egrep -q -w $sudouser; then
 				: #do nothing
 			else
-				echo -e "{*INFO*} run: sudo usermod -a -G libvirt $sudouser ..."
-				sudo usermod -a -G libvirt $sudouser  #or sudo gpasswd -a $sudouser libvirt
+				echo -e "{*INFO*} run: usermod -a -G libvirt $sudouser ..."
+				usermod -a -G libvirt $sudouser  #or gpasswd -a $sudouser libvirt
 			fi
 		fi
 	}
 
 	virtdconf=/etc/libvirt/libvirtd.conf
 	echo -e "{VM:INFO} checking value of 'unix_sock_group' and 'unix_sock_rw_perms' in $virtdconf ..."
-	ls $virtdconf &>/dev/null || sudo chmod +x /etc/libvirt
+	ls $virtdconf &>/dev/null || chmod +x /etc/libvirt
 	awk '/^unix_sock_group = "libvirt"/{c++} /^unix_sock_rw_perms = "0770"/{c++} END {rc=1; if(c==2) rc=0; exit rc}' $virtdconf || {
 		echo -e "{*INFO*} confiure $virtdconf ..."
-		sudo -- sh -c "
+		sh -c "
 			sed -ri -e '/#unix_sock_group = \"libvirt\"/s/^#//' -e '/#unix_sock_rw_perms = \"0770\"/s/^#//' $virtdconf
 			egrep -e ^unix_sock_group -e ^unix_sock_rw_perms $virtdconf
 			systemctl restart libvirtd && systemctl restart virtlogd
@@ -925,7 +926,8 @@ prepare_libvirt() {
 	}
 
 	pvirtconf=$sudouserhome/.config/libvirt/libvirt.conf
-	virsh net-info default &>/dev/null && grep -q -w default <(virsh net-list --name) || {
+	su $sudouser bash -c "mkdir -p ${pvirtconf%/*}"
+	su $sudouser bash -c "virsh net-info default &>/dev/null && grep -q -w default <(virsh net-list --name)" || {
 		#export LIBVIRT_DEFAULT_URI=qemu:///system
 		echo 'uri_default = "qemu:///system"' >>$pvirtconf
 	}
@@ -933,14 +935,15 @@ prepare_libvirt() {
 : <<'COMM'
 	qemuconf=/etc/libvirt/qemu.conf
 	eval echo -e "{VM:INFO} checking if qemu can read image in ~$sudouser ..."
-	sudo egrep -q '^#(user|group) =' "$qemuconf" && {
-		sudo sed -i '/^#(user|group) =/s/^#//' "$qemuconf"
+	egrep -q '^#(user|group) =' "$qemuconf" && {
+		sed -i '/^#(user|group) =/s/^#//' "$qemuconf"
 	}
 COMM
 
+	su $sudouser bash -c "mkdir -p $VMSHOME"
+
 	{ _user=qemu; id qemu 2>/dev/null || _user=libvirt-qemu; }
 	echo -e "{VM:INFO} setfacl -mu:${_user}:rx $sudouserhome ..."
-	mkdir -p $VMSHOME && chown $sudouser:$sudouser $VMSHOME
 	setfacl -mu:${_user}:rx $sudouserhome
 	setfacl -mu:${_user}:rx -R $VMSHOME
 	setfacl -mu:${_user}:rx -R $sudouserhome/.cache/virt-manager 2>/dev/null
@@ -948,8 +951,8 @@ COMM
 	getfacl $VMSHOME
 
 	#first time
-	[[ $(id -u) != 0 ]] && {
-		if ! id -Gn | egrep -q -w libvirt; then
+	[[ $(id -u $sudouser) != 0 ]] && {
+		if ! id -Gn $sudouser | egrep -q -w libvirt; then
 			if getent group libvirt|egrep -q -w $sudouser; then
 				echo -e "{VM:WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
 				#echo -e "{VM:WARN} or run:  newgrp libvirt  #without re-login"
@@ -973,7 +976,7 @@ COMM
 		virsh net-autostart default
 	}
 
-	mkdir -p $perConfDir
+	su $sudouser bash -c "mkdir -p $perConfDir"
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && printf '\33[H\33[2J'
 }
