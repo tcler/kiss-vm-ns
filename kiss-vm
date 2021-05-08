@@ -940,7 +940,7 @@ COMM
 
 	{ _user=qemu; id qemu 2>/dev/null || _user=libvirt-qemu; }
 	echo -e "{VM:INFO} setfacl -mu:${_user}:rx $sudouserhome ..."
-	mkdir -p $VMSHOME
+	mkdir -p $VMSHOME && chown $sudouser:$sudouser $VMSHOME
 	setfacl -mu:${_user}:rx $sudouserhome
 	setfacl -mu:${_user}:rx -R $VMSHOME
 	setfacl -mu:${_user}:rx -R $sudouserhome/.cache/virt-manager 2>/dev/null
