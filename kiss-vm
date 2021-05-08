@@ -907,18 +907,6 @@ prepare_libvirt() {
 		sed -ri '/^hosts:/s/files /&libvirt libvirt_guest /' /etc/nsswitch.conf
 	}
 
-	echo -e "{VM:INFO} checking if ${sudouser} has joined group libvirt ..."
-	[[ $(id -u $sudouser) != 0 ]] && {
-		if ! id -Gn $sudouser | egrep -q -w libvirt; then
-			if getent group libvirt|egrep -q -w $sudouser; then
-				: #do nothing
-			else
-				echo -e "{*INFO*} run: usermod -a -G libvirt $sudouser ..."
-				usermod -a -G libvirt $sudouser  #or gpasswd -a $sudouser libvirt
-			fi
-		fi
-	}
-
 	virtdconf=/etc/libvirt/libvirtd.conf
 	echo -e "{VM:INFO} checking value of 'unix_sock_group' and 'unix_sock_rw_perms' in $virtdconf ..."
 	ls $virtdconf &>/dev/null || chmod +x /etc/libvirt
@@ -956,20 +944,15 @@ COMM
 	getfacl $sudouserhome
 	getfacl $VMSHOME
 
-	#first time
+	echo -e "{VM:INFO} checking if ${sudouser} has joined group libvirt ..."
 	[[ $(id -u $sudouser) != 0 ]] && {
 		if ! id -Gn $sudouser | egrep -q -w libvirt; then
 			if getent group libvirt|egrep -q -w $sudouser; then
-				echo -e "{VM:WARN} you just joined group libvirt, but still need re-login to enable the change set ..."
-				#echo -e "{VM:WARN} or run:  newgrp libvirt  #without re-login"
-				grep -q "newgrp libvirt" $sudouserhome/.bashrc ||
-					echo 'if ! id -Gn|grep -qw libvirt && groups $USER|grep -qw libvirt; then newgrp libvirt; exit; fi #kiss-vm' >> $sudouserhome/.bashrc
+				: #do nothing
 			else
-				echo -e "{VM:WARN} you have not joined group libvirt. please check the warning msg above ^^^"
+				echo -e "{*INFO*} run: usermod -a -G libvirt $sudouser ..."
+				usermod -a -G libvirt $sudouser  #or gpasswd -a $sudouser libvirt
 			fi
-			exit 1
-		else
-			sed -i "/newgrp libvirt; exit; *#kiss-vm$/d" $sudouserhome/.bashrc
 		fi
 	}
 
@@ -1634,6 +1617,15 @@ if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo
 			prepare_libvirt $FORCE_PREPARE >&2
 		fi
 		[[ "$ONLY_PREPARE" = yes ]] && exit
+	}
+
+	#first time
+	[[ $(id -u) != 0 ]] && {
+		if ! id | egrep -qw libvirt; then
+			exec newgrp libvirt <<-CMD
+			$P "$@"
+			CMD
+		fi
 	}
 else
 	echo -e "{VM:WARN} current machine doesn't support Virtualization, show help info with\n  $PROG -h"
