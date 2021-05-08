@@ -1623,7 +1623,7 @@ if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo
 	[[ $(id -u) != 0 ]] && {
 		if ! id | egrep -qw libvirt; then
 			exec newgrp libvirt <<-CMD
-			$P "$@"
+			$P  ${@}
 			CMD
 		fi
 	}
