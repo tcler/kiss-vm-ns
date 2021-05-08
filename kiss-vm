@@ -189,7 +189,7 @@ vmifaddr() {
 	if [[ "$GETENT" = yes ]]; then
 		addrs=$(getent hosts "$_vmname"|awk '{print $1}'|tac)
 	else
-		addrs=$(virsh domifaddr "$_vmname" | awk '$3=="ipv4" {print gensub("/.*","",1,$4)}')
+		addrs=$(virsh --quiet domifaddr "$_vmname" | awk '{print gensub("/.*","",1,$4)}')
 	fi
 	[[ -n "$addrs" ]] && echo "$addrs"
 }
