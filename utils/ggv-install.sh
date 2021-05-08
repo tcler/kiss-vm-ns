@@ -10,7 +10,7 @@
 OS=$NAME
 
 case ${OS,,} in
-centos*|red?hat*)
+red?hat|centos*|rocky*)
 	OSV=$(rpm -E %rhel)
 	if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
@@ -23,7 +23,7 @@ esac
 ! which gm 2>/dev/null && ! which convert 2>/dev/null && {
 	echo -e "\n{ggv-install} install GraphicsMagick/ImageMagick ..."
 	case ${OS,,} in
-	centos*|red?hat*|fedora*|rocky*)
+	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || yum $yumOpt install -y ImageMagick
 		;;
 	debian*|ubuntu*)
@@ -50,7 +50,7 @@ echo
 	echo -e "\n{ggv-install} install gocr ..."
 
 	case ${OS,,} in
-	centos*|red?hat*|fedora*|rocky*)
+	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y gocr;;
 	debian*|ubuntu*)
 		apt-get install -y gocr;;
@@ -63,7 +63,7 @@ echo
 	which gocr 2>/dev/null || {
 		echo -e "\n{ggv-install} install gocr from src ..."
 		case ${OS,,} in
-		centos*|red?hat*|fedora*|rocky*)
+		fedora*|red?hat*|centos*|rocky*)
 			yum $yumOpt install -y autoconf gcc make netpbm-progs;;
 		debian*|ubuntu*)
 			apt-get install -y autoconf gcc make netpbm;;
@@ -95,7 +95,7 @@ echo
 	echo -e "\n{ggv-install} install vncdotool ..."
 	WHICH="which --skip-alias --skip-functions"
 	case ${OS,,} in
-	centos*|red?hat*|fedora*|rocky*)
+	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel python3-pip;;
 	debian*|ubuntu*)
 		WHICH="which"

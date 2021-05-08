@@ -839,7 +839,7 @@ install_requires() {
 
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
 	case ${OS,,} in
-	centos*|red?hat*|fedora*|rocky*)
+	fedora*|red?hat*|centos*|rocky*)
 		local pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img genisoimage iptables-nft"
 		if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
 			OSV=$(rpm -E %rhel)
@@ -1058,8 +1058,8 @@ if [[ $Intranet = yes ]]; then
 		fi
 
 		shopt -s nocasematch
-		case $distro in
-		RHEL-5*|RHEL5*)
+		case ${distro,,} in
+		rhel-5*|rhel5*)
 			{ read; read os arch verytag verxosv _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug}
 			osv=${verxosv#RHEL-5-}
@@ -1074,7 +1074,7 @@ if [[ $Intranet = yes ]]; then
 			)
 			;;
 
-		RHEL-6*|RHEL6*|centos6*|centos-6*)
+		rhel-6*|rhel6*|centos6*|centos-6*)
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug}
 			Repos+=(
@@ -1089,7 +1089,7 @@ if [[ $Intranet = yes ]]; then
 				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$(arch)/os
 			)
 			;;
-		RHEL-7*|RHEL7*|centos7*|centos-7*)
+		rhel-7*|rhel7*|centos7*|centos-7*)
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug\/tree}
 			Repos+=(
@@ -1111,7 +1111,7 @@ if [[ $Intranet = yes ]]; then
 				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux7
 			)
 			;;
-		RHEL-8*|RHEL8*)
+		rhel-8*|rhel8*)
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug\/tree}
 			read dtype distro <<< $(awk -F/+ '{
@@ -1147,7 +1147,7 @@ if [[ $Intranet = yes ]]; then
 				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux8
 			)
 			;;
-		RHEL-9*|RHEL9*)
+		rhel-9*|rhel9*)
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug\/tree}
 			read dtype distro <<< $(awk -F/+ '{
@@ -2066,14 +2066,14 @@ fi
 
 MEM_OPTS=${MEM_OPTS:---memory=${MSIZE}}
 
-case $Distro in
-RHEL-5*|RHEL5*|centos5*|centos-5*)
+case ${Distro,,} in
+rhel-5*|rhel5*|centos5*|centos-5*)
 	EPEL=http://archive.fedoraproject.org/pub/archive/epel/epel-release-latest-5.noarch.rpm;;
-RHEL-6*|RHEL6*|centos6*|centos-6*)
+rhel-6*|rhel6*|centos6*|centos-6*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm;;
-RHEL-7*|RHEL7*|centos7*|centos-7*)
+rhel-7*|rhel7*|centos7*|centos-7*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;;
-RHEL-8*|RHEL8*|centos8*|centos-8*)
+rhel-8*|rhel8*|centos8*|centos-8*|rocky-8*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm;;
 esac
 [[ -n "$EPEL" ]] && PKGS="$EPEL $PKGS"
