@@ -839,7 +839,7 @@ install_requires() {
 
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
 	case ${OS,,} in
-	fedora*|centos*|red?hat*)
+	centos*|red?hat*|fedora*|rocky*)
 		local pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img genisoimage iptables-nft"
 		if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
 			OSV=$(rpm -E %rhel)
