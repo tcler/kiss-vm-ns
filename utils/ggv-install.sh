@@ -27,7 +27,7 @@ esac
 		yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || yum $yumOpt install -y ImageMagick
 		;;
 	debian*|ubuntu*)
-		apt-get install -y graphicsmagick; which gm 2>/dev/null || apt-get install -y imagemagick
+		apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; which gm 2>/dev/null || apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
 		;;
 	opensuse*|sles*)
 		zypper install --no-recommends -y GraphicsMagick; which gm 2>/dev/null || zypper install --no-recommends -y ImageMagick
@@ -53,7 +53,7 @@ echo
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y gocr;;
 	debian*|ubuntu*)
-		apt-get install -y gocr;;
+		apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr;;
 	opensuse*|sles*)
 		zypper install --no-recommends -y gocr;;
 	*)
@@ -66,7 +66,7 @@ echo
 		fedora*|red?hat*|centos*|rocky*)
 			yum $yumOpt install -y autoconf gcc make netpbm-progs;;
 		debian*|ubuntu*)
-			apt-get install -y autoconf gcc make netpbm;;
+			apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y autoconf gcc make netpbm;;
 		opensuse*|sles*)
 			zypper install --no-recommends -y autoconf gcc make netpbm;;
 		*)
@@ -99,7 +99,7 @@ echo
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel python3-pip;;
 	debian*|ubuntu*)
 		WHICH="which"
-		apt-get install -y python-pip python3-pip;;
+		apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python-pip python3-pip;;
 	opensuse*|sles*)
 		zypper install --no-recommends -y python-pip python3-pip;;
 	*)

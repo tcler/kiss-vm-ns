@@ -858,8 +858,8 @@ install_requires() {
 		}
 		;;
 	debian*|ubuntu*)
-		local pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables"
-		sudo apt-get install --ignore-missing -y $pkglist
+		local pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables"
+		sudo apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y $pkglist
 		;;
 	opensuse*|sles*)
 		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools mkisofs iptables-nft"
@@ -932,8 +932,8 @@ prepare_libvirt() {
 	}
 
 	pvirtconf=$sudouserhome/.config/libvirt/libvirt.conf
-	su $sudouser bash -c "mkdir -p ${pvirtconf%/*}"
-	su $sudouser bash -c "virsh net-info default &>/dev/null && grep -q -w default <(virsh net-list --name)" || {
+	su $sudouser -s /bin/bash -c "mkdir -p ${pvirtconf%/*}"
+	su $sudouser -s /bin/bash -c "virsh net-info default &>/dev/null && grep -q -w default <(virsh net-list --name)" || {
 		#export LIBVIRT_DEFAULT_URI=qemu:///system
 		echo 'uri_default = "qemu:///system"' >>$pvirtconf
 	}
@@ -946,7 +946,7 @@ prepare_libvirt() {
 	}
 COMM
 
-	su $sudouser bash -c "mkdir -p $VMSHOME"
+	su $sudouser -s /bin/bash -c "mkdir -p $VMSHOME"
 
 	{ _user=qemu; id qemu 2>/dev/null || _user=libvirt-qemu; }
 	echo -e "{VM:INFO} setfacl -mu:${_user}:rx $sudouserhome ..."
@@ -982,7 +982,7 @@ COMM
 		virsh net-autostart default
 	}
 
-	su $sudouser bash -c "mkdir -p $perConfDir"
+	su $sudouser -s /bin/bash -c "mkdir -p $perConfDir"
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && printf '\33[H\33[2J'
 }

@@ -11,7 +11,7 @@ i in ins inst install:
 	sudo mkdir -p /etc/kiss-vm
 	sudo cp -af distro-db.bash /etc/kiss-vm/.
 	@which yum &>/dev/null && sudo yum install -y bash-completion 2>/dev/null || :
-	@which apt-get &>/dev/null && sudo apt-get install -y bash-completion 2>/dev/null || :
+	@which apt-get &>/dev/null && sudo apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion 2>/dev/null || :
 	@which zypper &>/dev/null && sudo zypper install --no-recommends -y bash-completion 2>/dev/null || :
 	sudo cp bash-completion/* ${completion_path}/.
 
