@@ -1622,9 +1622,15 @@ if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo
 	#first time
 	[[ $(id -u) != 0 ]] && {
 		if ! id | egrep -qw libvirt; then
-			exec newgrp libvirt <<-CMD
-			$P  ${@}
-			CMD
+			expect <(cat <<-EOF
+			set timeout -1
+			spawn -noecho newgrp libvirt
+			expect "*\[>\$]" { send "$P ${@}; exit \$?\r"; interact; }
+			foreach {pid spawnid os_error_flag value} [wait] break
+			exit \$value
+			EOF
+			)
+			exit $?
 		fi
 	}
 else
