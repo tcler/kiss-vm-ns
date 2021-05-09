@@ -1421,6 +1421,7 @@ get_default_if() {
 }
 
 # command line parse
+orig_at=("$@")
 _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long help \
 	--long prepare \
@@ -1624,8 +1625,9 @@ if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo
 		if ! id | egrep -qw libvirt; then
 			expect <(cat <<-EOF
 			set timeout -1
+			log_user 0
 			spawn -noecho newgrp libvirt
-			expect "*\[>\$]" { send "$P ${@}; exit \$?\r"; interact; }
+			expect "*\[>\$]" { send ": newgrp libvirt; $P ${orig_at[@]}; exit \$?\r"; interact; }
 			foreach {pid spawnid os_error_flag value} [wait] break
 			exit \$value
 			EOF
