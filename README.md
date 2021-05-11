@@ -53,7 +53,7 @@ Options for sub-command create:
                  #VM name, will auto generate according distro name if omitting
   -f,--force     #over write existing VM with same name
   -p,--pkginstall <pkgs>
-                 #pkgs in default system repo, install by yum or apt-get
+                 #pkgs in default system repo, install by yum/apt/zypper
   -b,--brewinstall <args>
                  #pkgs in brew system or specified by url, install by internal brewinstall.sh
                   `-> just could be used in Intranet

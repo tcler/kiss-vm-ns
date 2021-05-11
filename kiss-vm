@@ -859,11 +859,11 @@ install_requires() {
 		;;
 	debian*|ubuntu*)
 		local pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables"
-		sudo apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y $pkglist
+		sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y $pkglist
 		;;
 	opensuse*|sles*)
 		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools mkisofs iptables-nft"
-		sudo zypper install --no-recommends -y $pkglist
+		sudo zypper in --no-recommends -y $pkglist
 		;;
 	*)
 		: #fixme add more platform
@@ -1206,7 +1206,7 @@ Usage() {
 	                 #VM name, will auto generate according distro name if omitting
 	  -f,--force     #over write existing VM with same name
 	  -p,--pkginstall <pkgs>
-	                 #pkgs in default system repo, install by yum/apt-get/zypper
+	                 #pkgs in default system repo, install by yum/apt/zypper
 	  -b,--brewinstall <args>
 	                 #pkgs in brew system or specified by url, install by internal brewinstall.sh
 	                  `-> just could be used in Intranet

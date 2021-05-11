@@ -27,10 +27,10 @@ esac
 		yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || yum $yumOpt install -y ImageMagick
 		;;
 	debian*|ubuntu*)
-		apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; which gm 2>/dev/null || apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
+		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; which gm 2>/dev/null || apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
 		;;
 	opensuse*|sles*)
-		zypper install --no-recommends -y GraphicsMagick; which gm 2>/dev/null || zypper install --no-recommends -y ImageMagick
+		zypper in --no-recommends -y GraphicsMagick; which gm 2>/dev/null || zypper in --no-recommends -y ImageMagick
 		;;
 	*)
 		: #fixme add more platform
@@ -53,9 +53,9 @@ echo
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y gocr;;
 	debian*|ubuntu*)
-		apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr;;
+		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr;;
 	opensuse*|sles*)
-		zypper install --no-recommends -y gocr;;
+		zypper in --no-recommends -y gocr;;
 	*)
 		:;; #fixme add more platform
 	esac
@@ -66,9 +66,9 @@ echo
 		fedora*|red?hat*|centos*|rocky*)
 			yum $yumOpt install -y autoconf gcc make netpbm-progs;;
 		debian*|ubuntu*)
-			apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y autoconf gcc make netpbm;;
+			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y autoconf gcc make netpbm;;
 		opensuse*|sles*)
-			zypper install --no-recommends -y autoconf gcc make netpbm;;
+			zypper in --no-recommends -y autoconf gcc make netpbm;;
 		*)
 			:;; #fixme add more platform
 		esac
@@ -99,9 +99,9 @@ echo
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel python3-pip;;
 	debian*|ubuntu*)
 		WHICH="which"
-		apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python-pip python3-pip;;
+		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python-pip python3-pip;;
 	opensuse*|sles*)
-		zypper install --no-recommends -y python-pip python3-pip;;
+		zypper in --no-recommends -y python-pip python3-pip;;
 	*)
 		:;; #fixme add more platform
 	esac

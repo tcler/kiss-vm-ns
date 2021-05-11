@@ -123,8 +123,8 @@ runcmd:
   - sed -ri -e '/^#?PasswordAuthentication /{s/no/yes/;s/^#//}' -e 's/^#?(PermitRootLogin) .*$/\1 yes/' /etc/ssh/sshd_config && service sshd restart
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
   - which yum && yum install -y curl wget $PKGS
-  -   which apt-get && apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y curl wget $PKGS
-  -   which zypper && zypper install --no-recommends -y curl wget $PKGS
+  -   which apt && apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y curl wget $PKGS
+  -   which zypper && zypper in --no-recommends -y curl wget $PKGS
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
   - which yum && curl -L -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
