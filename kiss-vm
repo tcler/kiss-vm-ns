@@ -2435,8 +2435,9 @@ elif [[ "$InstallType" = import ]]; then
 				-putln "passwd root" -put "" -putln "$defaultPasswd" -put "" -putln "$defaultPasswd" \
 				-putln "/etc/rc.d/sshd start"
 			timeout 5 vm vnc "$vmname" -get
+			read _vmaddr < <(vmifaddr $vmname)
 			expect -c "
-				spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$vmname
+				spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$_vmaddr
 				expect -re .*: {send \"$defaultPasswd\\r\"}
 				expect eof
 			"
