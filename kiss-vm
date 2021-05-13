@@ -2348,7 +2348,7 @@ elif [[ "$InstallType" = import ]]; then
 			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" $DEBUG_OPT $REPO_OPTS \
 				$FIPS_OPT $KDUMP_OPT --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub
 		fi
-		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom"
+		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom,bus=scsi"
 	}
 
 	echo -e "{VM:INFO} creating VM by import $imagefile"
@@ -2362,10 +2362,6 @@ elif [[ "$InstallType" = import ]]; then
 			qemu-img resize ${imagefile} ${DSIZE}G
 		}
 	}
-
-	#workaround of debian-10 cloud image install fail on Fedora HOST
-	#`-> seems cloud-init in debian-10 image does not work while qemu machine type is q35
-	[[ ${vmname,,} =~ debian || ${imagefile,,} =~ debian ]] && MACHINE_OPT=--machine=pc
 
 	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
