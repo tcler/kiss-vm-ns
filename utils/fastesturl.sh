@@ -8,7 +8,6 @@ fastesturl() {
 		read p host path <<<"${url//\// }";
 		cavg=$(ping -w 4 -c 2 $host | awk -F / 'END {print $5}')
 		: ${minavg:=$cavg}
-		fast=${fast:-$url}
 
 		if [[ -z "$cavg" ]]; then
 			echo -e " -> $host\t 100% packet loss." >&2
@@ -17,6 +16,7 @@ fastesturl() {
 			echo -e " -> $host\t $cavg  \t$minavg" >&2
 		fi
 
+		fast=${fast:-$url}
 		if awk "BEGIN{exit !($cavg<$minavg)}"; then
 			minavg=$cavg
 			fast=$url
