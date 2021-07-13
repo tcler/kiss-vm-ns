@@ -1503,8 +1503,8 @@ while true; do
 	-g|--genimage)    GenerateImage=yes; shift 1;;
 	--geturl)         OnlyGetUrl=yes; shift 1;;
 	--getvmname)      OnlyGetVMName=yes; shift 1;;
-	-b|--brewinstall) BPKGS="$2"; shift 2;;
-	-p|--pkginstall)  PKGS="$2"; shift 2;;
+	-b|--brewinstall) BPKGS+=" $2"; shift 2;;
+	-p|--pkginstall)  PKGS+=" $2"; shift 2;;
 	--osv|--os-variant) VM_OS_VARIANT="$2"; shift 2;;
 	--nocloud*)      NO_CLOUD_INIT="yes"; shift 1;;
 	--dsize)         dsizeflag=1; DSIZE="$2"; shift 2;;
