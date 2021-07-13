@@ -1544,7 +1544,7 @@ while true; do
 	--kdump)         kdump=yes; shift 1;;
 	--fips)          fips=yes; shift 1;;
 	--postrepo)      POST_REPOS+=("$2"); shift 2;;
-	--repo)          _REPO_OPTS+=(--repo "$2"); shift 2;;
+	--repo)          _REPO_OPTS+=" --repo $2"; shift 2;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
 	--get|--vncget)  VNCGET=yes; shift 1;;
