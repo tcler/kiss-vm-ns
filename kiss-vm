@@ -1283,6 +1283,8 @@ Usage() {
 	                 #`e.g: vm fedora-32 -n f32-diskless --net pxenet --pxe --diskless -f
 	  -v,--verbose   #verbose mode
 	  -q             #quiet mode, intend suppress the outputs of command yum, curl
+	  --reboot       #reboot after vm create/install. for kernel update or ...
+	                 #`e.g: vm create RHEL-8.4 -n nfs-client --repo=rname:url -p kernel-4.18.0-306.el8.bz9527
 
 	Options for sub-command reboot:
 	  -w,--wait      #wait util the 22 port(sshd) is available after reboot
@@ -1481,6 +1483,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long pxe \
 	--long diskless \
 	--long verbose \
+	--long reboot \
 	--long wait \
     -a -n "$0" -- "$@"`
 [[ $? != 0 ]] && { exit 1; }
@@ -1562,6 +1565,7 @@ while true; do
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	-q)              QUIET=yes; shift 1;;
+	--reboot)        REBOOT=yes; shift 1;;
 	-w|--wait)       WAIT=yes; shift 1;;
 	--) shift; break;;
 	esac
@@ -2737,6 +2741,8 @@ read addr < <(vmifaddr $vmname)
 	echo -e "  $ ssh foo@$addr  #password: $defaultPasswd"
 }
 COMM
+
+[[ "$REBOOT" = yes ]] && vm reboot -w $vmname
 
 echo -e "\n{VM:INFO} you can try login $vmname again by using:"
 echo -e "  $ vm login $vmname          #from host"
