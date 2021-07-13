@@ -2597,7 +2597,15 @@ if ! virsh desc $vmname &>/dev/null; then
 fi
 
 for postrepo in "${POST_REPOS[@]}"; do
-	read _name _url _ <<<"${postrepo/:/ }"
+	_name=
+	_url=
+	if [[ "$postrepo" =~ ^[^:]+:(https|http|ftp|file):// ]]; then
+		read _name _url _ <<<"${postrepo/:/ }"
+	elif [[ "$postrepo" =~ ^(https|http|ftp|file):// ]]; then
+		_name=repo-$RADOM
+		_url=$postrepo
+	fi
+
 	[[ -z "$_name" || -z "$_url" ]] && continue
 
 	repofpath=$VMpath/$_name.repo
