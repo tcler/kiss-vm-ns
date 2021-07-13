@@ -1262,6 +1262,8 @@ Usage() {
 	  --postrepo <name:url>
 	                 #add dnf/yum <repo> after install, only for CentOS/RHEL/Fedora
 	                 #`e.g: --postrepo=beaker-tasks:http://beaker.engineering.fedora.com/rpms
+	  --repo <name:url>
+	                 #add dnf/yum <repo> before install, only for CentOS/RHEL/Fedora
 	  --nosshkey     #don't inject sshkey
 	  --debug        #debug mode
 	  --vncput-after-install <msg>
@@ -1462,6 +1464,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long kdump \
 	--long fips \
 	--long postrepo: \
+	--long repo: \
 	--long nosshkey \
 	--long getsc --long vncgetsc \
 	--long get --long vncget \
@@ -1541,6 +1544,7 @@ while true; do
 	--kdump)         kdump=yes; shift 1;;
 	--fips)          fips=yes; shift 1;;
 	--postrepo)      POST_REPOS+=("$2"); shift 2;;
+	--repo)          _REPO_OPTS+=(--repo "$2"); shift 2;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
 	--get|--vncget)  VNCGET=yes; shift 1;;
@@ -2143,9 +2147,9 @@ if [[ "$InstallType" = location ]]; then
 			URL_OPT="-url $Location"
 		fi
 		if [[ "$NO_SSHKEY" = yes ]]; then
-			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS --post $postscript >$KSPath
+			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript >$KSPath
 		else
-			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS --post $postscript --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub >$KSPath
+			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub >$KSPath
 		fi
 	}
 
@@ -2343,10 +2347,10 @@ elif [[ "$InstallType" = import ]]; then
 		[[ "$DEBUG" = yes ]] && DEBUG_OPT=--debug
 		if [[ "$NO_SSHKEY" = yes ]]; then
 			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" $DEBUG_OPT $REPO_OPTS \
-				$FIPS_OPT $KDUMP_OPT
+				 $_REPO_OPTS $FIPS_OPT $KDUMP_OPT
 		else
 			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" $DEBUG_OPT $REPO_OPTS \
-				$FIPS_OPT $KDUMP_OPT --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub
+				 $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub
 		fi
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom,bus=scsi"
 	}
