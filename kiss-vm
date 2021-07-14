@@ -1284,7 +1284,10 @@ Usage() {
 	  -v,--verbose   #verbose mode
 	  -q             #quiet mode, intend suppress the outputs of command yum, curl
 	  --reboot       #reboot after vm create/install. for kernel update or ...
-	                 #`e.g: vm create RHEL-8.4 -n nfs-client --repo=rname:url -p kernel-4.18.0-306.el8.bz9527
+	                 #`e.g: vm create RHEL-8.4 -n nfs-client --repo=rname:url -p kernel-4.18.0-306.el8.bz9527 --reboot
+	  --default-kernel <regex-pattern>
+	                 #set default kernel, and reboot
+	                 #`e.g: vm create RHEL-8.4 -n nfs-client --repo=rname:url -p kernel-4.18.0-306.el8.bz9527 --default-kernel=bz9527
 
 	Options for sub-command reboot:
 	  -w,--wait      #wait util the 22 port(sshd) is available after reboot
@@ -1484,6 +1487,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long diskless \
 	--long verbose \
 	--long reboot \
+	--long default-kernel: \
 	--long wait \
     -a -n "$0" -- "$@"`
 [[ $? != 0 ]] && { exit 1; }
@@ -1566,6 +1570,7 @@ while true; do
 	-v|--verbose)    VERBOSE=yes; shift 1;;
 	-q)              QUIET=yes; shift 1;;
 	--reboot)        REBOOT=yes; shift 1;;
+	--default-kernel) DEFAULT_KERNEL="$2"; shift 2;;
 	-w|--wait)       WAIT=yes; shift 1;;
 	--) shift; break;;
 	esac
@@ -2742,6 +2747,21 @@ read addr < <(vmifaddr $vmname)
 }
 COMM
 
+[[ -n "$DEFAULT_KERNEL" ]] && {
+	vm exec -v $vmname -- uname -r
+	vm exec -v $vmname -- grubby --default-kernel
+
+	pat=${DEFAULT_KERNEL#kernel-}
+	if ! vm exec $vmname -- grubby --default-kernel | grep "$pat"; then
+		kindex=$(vm exec $vmname -- grubby --info=ALL | sed 's/^index=/\n/' |
+			awk 'BEGIN{RS=""; FS="\n"} '"/$pat/"'{print $1}')
+		vm exec -v $vmname -- grubby --set-default-index=$kindex
+		REBOOT=yes
+	fi
+	if ! vm exec $vmname -- uname -r | grep "$pat"; then
+		REBOOT=yes
+	fi
+}
 [[ "$REBOOT" = yes ]] && vm reboot -w $vmname
 
 echo -e "\n{VM:INFO} you can try login $vmname again by using:"
