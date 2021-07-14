@@ -138,7 +138,13 @@ COMM
 echo -e "\n%post"
 
 for repo in "${Repos[@]}"; do
-	read name url <<<"${repo/:/ }"
+	if [[ "$repo" =~ ^[^:]+:(https|http|ftp|file):// ]]; then
+		read name url _ <<<"${repo/:/ }"
+	elif [[ "$repo" =~ ^(https|http|ftp|file):// ]]; then
+		name=repo$((R++))
+		url=$repo
+	fi
+
 	cat <<-EOF
 	cat <<'REPO' >/etc/yum.repos.d/$name.repo
 	[$name]

@@ -103,9 +103,13 @@ $(
 [[ ${#Repos[@]} -gt 0 ]] && echo yum_repos:
 
 for repo in "${Repos[@]}"; do
-read name url <<<"${repo/:/ }"
-[[ ${url:0:1} = / ]] && { name=; url=$repo; }
-name=${name:-repo$((i++))}
+if [[ "$repo" =~ ^[^:]+:(https|http|ftp|file):// ]]; then
+  read name url _ <<<"${repo/:/ }"
+elif [[ "$repo" =~ ^(https|http|ftp|file):// ]]; then
+  name=repo-$((R++))
+  url=$repo
+fi
+
 cat <<REPO
   ${name}:
     name: $name
