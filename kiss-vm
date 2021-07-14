@@ -2750,19 +2750,26 @@ COMM
 [[ -n "$DEFAULT_KERNEL" ]] && {
 	vm exec -v $vmname -- uname -r
 	vm exec -v $vmname -- grubby --default-kernel
+	vm exec -v $vmname -- grubby --default-index
+	vm exec -v $vmname -- grubby --info=ALL
 
 	pat=${DEFAULT_KERNEL#kernel-}
-	if ! vm exec $vmname -- grubby --default-kernel | grep "$pat"; then
-		kindex=$(vm exec $vmname -- grubby --info=ALL | sed 's/^index=/\n/' |
-			awk 'BEGIN{RS=""; FS="\n"} '"/$pat/"'{print $1}')
-		vm exec -v $vmname -- grubby --set-default-index=$kindex
+	defaultIndex=$(vm exec $vmname -- grubby --default-index)
+	expectedIndex=$(vm exec $vmname -- grubby --info=ALL | sed 's/^index=/\n/' |
+		awk 'BEGIN{RS=""; FS="\n"} '"/$pat/"'{print $1}')
+
+	if [[ "$defaultIndex" != "$expectedIndex" ]]; then
+		vm exec -v $vmname -- grubby --set-default-index=$expectedIndex
 		REBOOT=yes
 	fi
 	if ! vm exec $vmname -- uname -r | grep "$pat"; then
 		REBOOT=yes
 	fi
 }
-[[ "$REBOOT" = yes ]] && vm reboot -w $vmname
+[[ "$REBOOT" = yes ]] && {
+	vm exec -v $vmname -- "reboot; exit"
+	until port_available ${vmname} 22; do sleep 1; done
+}
 
 echo -e "\n{VM:INFO} you can try login $vmname again by using:"
 echo -e "  $ vm login $vmname          #from host"
