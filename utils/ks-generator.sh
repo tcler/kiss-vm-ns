@@ -140,7 +140,7 @@ echo -e "\n%post"
 for repo in "${Repos[@]}"; do
 	read name url <<<"${repo/:/ }"
 	cat <<-EOF
-	cat <<REPO >/etc/yum.repos.d/$name.repo
+	cat <<'REPO' >/etc/yum.repos.d/$name.repo
 	[$name]
 	name=$name
 	baseurl=$url
