@@ -132,7 +132,7 @@ runcmd:
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
   - which yum && curl -L -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
-    chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $BPKGS -noreboot
+    chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo "'$b' "; done) -noreboot
 IntranetCMD
 )
 $(
