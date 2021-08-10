@@ -1888,6 +1888,7 @@ if [[ "$InstallType" = import ]]; then
 				: #do nothing
 			fi
 		fi
+		Location=$(distro2location $Distro)
 	else
 		if [[ $Intranet != yes ]]; then
 			echo "{VM:WARN} can not find imageUrl of '$Distro' in database." >&2
