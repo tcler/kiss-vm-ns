@@ -1011,6 +1011,8 @@ if [[ $Intranet = yes ]]; then
 		local arch=$(arch)
 
 		distrotrees=$(fetch_distro_trees $distro $arch)
+		[[ -z "$distrotrees" ]] && return 1
+
 		urls=$(echo "$distrotrees" | awk '$3 ~ /https?:.*'"(${variant}|BaseOS|Everything)"'/{print $3}' | sort -u)
 		echo -e "\n====\n$urls\n====\n" >&2
 
