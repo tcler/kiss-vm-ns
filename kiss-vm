@@ -1792,7 +1792,7 @@ fi
 		dialogres=$RuntimeTmp/dialogRes
 		touch $distropatternOut $distropatternIn
 
-		echo -e "CentOS\nfedora\ndebian\nopenSUSE\nFreeBSD" >>$distropatternOut
+		echo -e "CentOS\nfedora\ndebian\nopenSUSE\narchlinux\nFreeBSD" >>$distropatternOut
 		for dname in "${!distroInfo[@]}"; do echo "$dname"; done >>$distrolist
 
 		[[ "$Intranet" = yes ]] && {
@@ -1801,7 +1801,7 @@ fi
 		}
 
 		familys=$(sed -e 's/.*/"&" "" 1/' $distropatternIn $distropatternOut)
-		dialog --backtitle "$0" --radiolist "please selet distro family/pattern:" 16 40 12 $familys 2>$dialogres || { Usage; exit 0; }
+		dialog --backtitle "$0" --radiolist "please selet distro family/pattern:" 20 40 16 $familys 2>$dialogres || { Usage; exit 0; }
 		pattern=$(head -n1 $dialogres|sed 's/"//g')
 		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|egrep "$pattern")
 		[[ "$Intranet" = yes ]] && grep -F "$pattern" $distropatternIn && {
