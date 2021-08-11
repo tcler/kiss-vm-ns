@@ -1208,7 +1208,7 @@ Usage() {
 	                 #VM name, will auto generate according distro name if omitting
 	  -f,--force     #over write existing VM with same name
 	  -p,--pkginstall <pkgs>
-	                 #pkgs in default system repo, install by yum/apt/zypper
+	                 #pkgs in default system repo, install by yum/apt/zypper/pacman
 	  -b,--brewinstall <args>
 	                 #pkgs in brew system or specified by url, install by internal brewinstall.sh
 	                  `-> just could be used in Intranet
@@ -1890,7 +1890,7 @@ if [[ "$InstallType" = import ]]; then
 				: #do nothing
 			fi
 		fi
-		Location=$(distro2location $Distro)
+		Location=$(distro2location $Distro 2>/dev/null)
 	else
 		if [[ $Intranet != yes ]]; then
 			echo "{VM:WARN} can not find imageUrl of '$Distro' in database." >&2
