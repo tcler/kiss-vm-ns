@@ -1029,12 +1029,32 @@ if [[ $Intranet = yes ]]; then
 		local rc=1
 
 		local imagenames=$(curl -L -s ${parenturl} | sed -nr '/.*"([^"]+'"${suffix_pattern}"')".*/{s//\1/;p}')
+		local qcow2Imgs= rawImgs= otherImgs=
+
+		local arch=$(arch)
+		[[ $arch = aarch64 || $arch = arm64 ]] && arch="(aarch64|arm64)"
+		[[ $arch = x86_64 || $arch = amd64 ]] && arch="(x86_64|amd64)"
+		imgs=$(egrep "$arch" <<< "$imagenames")
+		[[ -n "$imgs" ]] && imagenames="$imgs"
+
 		for imagename in $imagenames; do
-			echo -e "{VM:INFO} imagename: $imagename" >&2
-			if [[ -n "${imagename}" ]]; then
-				[[ "${imagename}" = *Atomic* ]] && continue
-				[[ "${imagename}" = CentOS*-ec2* ]] && continue
-				echo ${parenturl%/}/${imagename}
+			case $imagename in
+			*qcow2*) qcow2Imgs+=$imagename$'\n';;
+			*raw*)   rawImgs+=$imagename$'\n';;
+			*)       otherImgs+=$imagename$'\n';;
+			esac
+		done
+
+		[[ -n "$qcow2Imgs" ]] && rawImgs=
+		[[ -n "$rawImgs" ]] && otherImgs=
+
+		for image in $qcow2Imgs $rawImgs $otherImgs; do
+			echo -e "{VM:INFO} image: $image" >&2
+			if [[ -n "${image}" ]]; then
+				[[ "${image}" = *Atomic* ]] && continue
+				[[ "${image}" = *-ec2* ]] && continue
+				[[ "${image}" = *-nocloud* ]] && continue
+				echo ${parenturl%/}/${image}
 				rc=0
 			fi
 		done
