@@ -1941,7 +1941,7 @@ if [[ "$InstallType" = import ]]; then
 	# if not swithed to Location mode
 	if [[ "$InstallType" = import ]]; then
 		if [[ ! -f "$Imageurl" ]]; then
-			if ! egrep -q '(qcow2c|qcow2|qcow2.xz|raw|img)' <<<"$Imageurl"; then
+			if ! egrep -q '\.(qcow2c|qcow2|qcow2.xz|raw|img)$' <<<"$Imageurl"; then
 				read Imageurl _ < <(getimageurls ${Imageurl} "${_Imagepattern}"|sort -Vr)
 			fi
 		fi
