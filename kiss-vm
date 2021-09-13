@@ -1987,7 +1987,7 @@ if [[ "$InstallType" = pxe ]]; then
 fi
 
 MSIZE=${MSIZE:-$_MSIZE}
-
+[[ "$MSIZE" = *[Gg] ]] && MSIZE=$((${MSIZE%[Gg]} * 1024))
 
 echo "{VM:INFO} guess/verify os-variant ..."
 [[ -z "$VM_OS_VARIANT" ]] && {
