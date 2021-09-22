@@ -5,7 +5,7 @@ vmname=vm-virtiofs-submount
 distro=${1:-rhel-8.3%}
 user=$LOGNAME
 
-which vm &>/dev/null || {
+command -v vm >/dev/null || {
 	echo -e "[WARN] you have not installed kiss-vm, please install kiss-vm first by run:"
 	echo -e " git clone https://github.com/tcler/kiss-vm-ns"
 	echo -e " sudo make -C kiss-vm-ns"

@@ -471,8 +471,8 @@ done
 
 switchroot
 # __prepare__
-which tmux &>/dev/null || dep+=\ tmux
-which dhclient &>/dev/null || dep+=\ dhclient
+command -v tmux >/dev/null || dep+=\ tmux
+command -v dhclient >/dev/null || dep+=\ dhclient
 [[ -n "$dep" ]] && {
 	echo -e "{NETNS:INFO} install dependences ..."
 	sudo yum install -y $dep >&2

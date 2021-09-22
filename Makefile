@@ -10,9 +10,9 @@ i in ins inst install:
 	sudo cp -af kiss-netns $(_bin)/netns
 	sudo mkdir -p /etc/kiss-vm
 	sudo cp -af distro-db.bash /etc/kiss-vm/.
-	@which yum &>/dev/null && sudo yum install -y bash-completion 2>/dev/null || :
-	@which apt &>/dev/null && sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion 2>/dev/null || :
-	@which zypper &>/dev/null && sudo zypper in --no-recommends -y bash-completion 2>/dev/null || :
+	@command -v yum >/dev/null && sudo yum install -y bash-completion 2>/dev/null || :
+	@command -v apt >/dev/null && sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion 2>/dev/null || :
+	@command -v zypper >/dev/null && sudo zypper in --no-recommends -y bash-completion 2>/dev/null || :
 	sudo cp bash-completion/* ${completion_path}/.
 
 p pu pull u up update:

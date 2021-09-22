@@ -20,17 +20,17 @@ red?hat|centos*|rocky*)
 esac
 
 #install gm(GraphicsMagick/ImageMagick)
-! which gm 2>/dev/null && ! which convert 2>/dev/null && {
+! command -v gm && ! command -v convert && {
 	echo -e "\n{ggv-install} install GraphicsMagick/ImageMagick ..."
 	case ${OS,,} in
 	fedora*|red?hat*|centos*|rocky*)
-		yum $yumOpt install -y GraphicsMagick; which gm 2>/dev/null || yum $yumOpt install -y ImageMagick
+		yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
 		;;
 	debian*|ubuntu*)
-		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; which gm 2>/dev/null || apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
+		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; command -v gm || apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
 		;;
 	opensuse*|sles*)
-		zypper in --no-recommends -y GraphicsMagick; which gm 2>/dev/null || zypper in --no-recommends -y ImageMagick
+		zypper in --no-recommends -y GraphicsMagick; command -v gm || zypper in --no-recommends -y ImageMagick
 		;;
 	*)
 		: #fixme add more platform
@@ -38,15 +38,15 @@ esac
 	esac
 
 	#if still install fail, try install from brew
-	! which gm &>/dev/null && ! which convert &>/dev/null && {
+	! command -v gm >/dev/null && ! command -v convert >/dev/null && {
 		export PATH=/usr/local/bin:$PATH
-		which brewinstall.sh 2>/dev/null && brewinstall.sh latest-GraphicsMagick
+		command -v brewinstall.sh && brewinstall.sh latest-GraphicsMagick
 	}
 }
 
 #install gocr
 echo
-! which gocr 2>/dev/null && {
+! command -v gocr && {
 	echo -e "\n{ggv-install} install gocr ..."
 
 	case ${OS,,} in
@@ -60,7 +60,7 @@ echo
 		:;; #fixme add more platform
 	esac
 
-	which gocr 2>/dev/null || {
+	command -v gocr || {
 		echo -e "\n{ggv-install} install gocr from src ..."
 		case ${OS,,} in
 		fedora*|red?hat*|centos*|rocky*)
@@ -81,7 +81,7 @@ echo
 			cd gocr
 			./configure --prefix=/usr && make && make install
 			)
-			which gocr && break
+			command -v gocr && break
 
 			sleep 5
 			echo -e " {ggv-install} installing gocr fail, try again ..."
@@ -91,14 +91,12 @@ echo
 
 #install vncdotool
 echo
-! which vncdo 2>/dev/null && {
+! command -v vncdo && {
 	echo -e "\n{ggv-install} install vncdotool ..."
-	WHICH="which --skip-alias --skip-functions"
 	case ${OS,,} in
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel python3-pip;;
 	debian*|ubuntu*)
-		WHICH="which"
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python-pip python3-pip;;
 	opensuse*|sles*)
 		zypper in --no-recommends -y python-pip python3-pip;;
@@ -106,8 +104,8 @@ echo
 		:;; #fixme add more platform
 	esac
 
-	PIP=$($WHICH pip3 2>/dev/null)
-	$WHICH pip3 &>/dev/null || PIP=$($WHICH pip 2>/dev/null)
+	PIP=$(command -v pip3)
+	command -v pip3 || PIP=$(command -v pip)
 	$PIP --default-timeout=720 install --upgrade pip
 	$PIP --default-timeout=720 install --upgrade setuptools
 	$PIP --default-timeout=720 install vncdotool service_identity

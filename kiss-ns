@@ -277,7 +277,7 @@ chroot_install() {
 	rm -rf $rootfs/etc/yum.repos.d
 
 	echo -e "{NS:INFO} chroot($rootfs) and install pkgs ..."
-	if which dnf &>/dev/null; then
+	if command -v dnf >/dev/null; then
 		releasever=$(rpm -q --qf "%{version}" -f /etc/os-release)
 		read repo < <(LANG=C dnf whatprovides bash|awk '$1 == "Repo" && $3 != "@System" {print $3}')
 		dnf $yumOpt --setopt=strict=0 --disablerepo=* --enablerepo=$repo --nogpg --installroot=$rootfs --releasever=$releasever install -y "$@"
@@ -401,10 +401,10 @@ while true; do
 done
 
 # __prepare__
-which tmux &>/dev/null || dep+=\ tmux
-which firewall-cmd &>/dev/null || dep+=\ firewalld
-which rsync &>/dev/null || dep+=\ rsync
-which systemd-nspawn &>/dev/null || dep+=\ systemd-container
+command -v tmux >/dev/null || dep+=\ tmux
+command -v firewall-cmd >/dev/null || dep+=\ firewalld
+command -v rsync >/dev/null || dep+=\ rsync
+command -v systemd-nspawn >/dev/null || dep+=\ systemd-container
 [[ -n "$dep" ]] && {
 	echo -e "{NS:INFO} install dependences ..."
 	sudo yum install -y $dep >&2

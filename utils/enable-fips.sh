@@ -6,7 +6,7 @@ yum install -y /usr/bin/fips-mode-setup
 yum install -y /usr/sbin/grubby
 
 ## rhel-8 or later
-if which fips-mode-setup; then
+if command -v fips-mode-setup; then
 	fips-mode-setup --enable
 	fips-mode-setup --check
 ## rhel-7
@@ -18,7 +18,7 @@ else
 	# blkid > /var/tmp/blkid_bkp_`date`
 	# df -h > /var/tmp/df_bkp_`date`
 
-	which prelink &>/dev/null && {
+	command -v prelink >/dev/null && {
 		sed -i 's/PRELINKING=.*/PRELINKING=yes/g' /etc/sysconfig/prelink
 		prelink -a
 	}

@@ -206,7 +206,7 @@ vncgetsc() {
 	local vncport=$1
 	local _vmname=$2
 
-	! which vncdo &>/dev/null && {
+	! command -v vncdo >/dev/null && {
 		echo "{VM:WARN} command vncdo is needed by 'vncgetsc/vncgetscreen' function!" >&2
 		return 1
 	}
@@ -220,19 +220,19 @@ vncget() {
 	local vncport=$1
 	local ConvertCmd="gm convert"
 
-	! which vncdo &>/dev/null && {
+	! command -v vncdo >/dev/null && {
 		echo "{VM:WARN} command vncdo is needed by 'vncget' function!" >&2
 		return 1
 	}
-	! which gm &>/dev/null && {
-		if ! which convert &>/dev/null; then
+	! command -v gm >/dev/null && {
+		if ! command -v convert >/dev/null; then
 			echo "{VM:WARN} command gm or convert are needed by 'vncget' function!" >&2
 			return 1
 		else
 			ConvertCmd=convert
 		fi
 	}
-	! which gocr &>/dev/null && {
+	! command -v gocr >/dev/null && {
 		echo "{VM:WARN} command gocr is needed by 'vncget' function!" >&2
 		return 1
 	}
@@ -245,7 +245,7 @@ vncput() {
 	local vncport=$1
 	shift
 
-	which vncdo >/dev/null || {
+	command -v vncdo || {
 		echo "{VM:WARN} vncdo is needed by 'vncput' function!" >&2
 		return 1
 	}
@@ -895,7 +895,7 @@ prepare_libvirt() {
 	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
 	_file=ggv-install.sh
-	if ! which $_file &>/dev/null; then
+	if ! command -v $_file >/dev/null; then
 		_url=$baseUrl/utils/$_file
 		curl_download /usr/bin/$_file $_url && chmod +x /usr/bin/$_file
 	fi
@@ -983,7 +983,7 @@ is_intranet() {
 if [[ $Intranet = yes ]]; then
 	install_distro_compose() {
 		local _file=distro-compose
-		which $_file &>/dev/null || {
+		command -v $_file >/dev/null || {
 			_url=$bkrClientImprovedUrl/utils/$_file
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
@@ -1017,7 +1017,7 @@ if [[ $Intranet = yes ]]; then
 		echo -e "\n====\n$urls\n====\n" >&2
 
 		local _file=fastesturl.sh
-		which $_file &>/dev/null || {
+		command -v $_file >/dev/null || {
 			_url=$baseUrl/utils/$_file
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
@@ -1599,7 +1599,7 @@ while true; do
 done
 
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
-QEMU_KVM=$(PATH=/usr/libexec:$PATH command which qemu-kvm qemu-system-x86 2>/dev/null)
+QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
 qemu_kvm() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
 	if ! grep -q nvdimm < <($QEMU_KVM -device help); then
@@ -1626,7 +1626,7 @@ if [[ "$VTPM" = yes ]]; then
 		echo -e "{VM:WARN} $(qemu_kvm) don't support tpm-crb driver that's required by --vtpm option"
 		exit 1
 	fi
-	if ! which $_dependcmd 2>/dev/null; then
+	if ! command -v $_dependcmd 2>/dev/null; then
 		echo -e "{VM:WARN} pkg $_dependpkgs is/are needed by vTPM function, please install $_dependpkgs first."
 		exit 1
 	fi
@@ -2131,7 +2131,7 @@ if [[ "$InstallType" = location ]]; then
 		KSPath=$ksauto
 		REPO_OPTS=$(distro2repos $Distro $Location | sed 's/^/--repo /')
 		_file=ks-generator.sh
-		which $_file &>/dev/null || {
+		command -v $_file >/dev/null || {
 			_url=$baseUrl/utils/$_file
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
@@ -2365,7 +2365,7 @@ elif [[ "$InstallType" = import ]]; then
 	[[ "$NO_CLOUD_INIT" != yes ]] && {
 		echo -e "{VM:INFO} creating cloud-init iso"
 		_file=cloud-init-iso-gen.sh
-		which $_file &>/dev/null || {
+		command -v $_file >/dev/null || {
 			_url=$baseUrl/utils/$_file
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
