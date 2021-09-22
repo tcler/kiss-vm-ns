@@ -124,27 +124,27 @@ done
 
 runcmd:
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; }
-  - sed -ri -e '/^#?PasswordAuthentication /{s/no/yes/;s/^#//}' -e 's/^#?(PermitRootLogin) .*$/\1 yes/' /etc/ssh/sshd_config && service sshd restart
+  - sed -ri -e '/^#?PasswordAuthentication /{s/no/yes/;s/^#//}' -e 's/^#?(PermitRootLogin) .*$/\1 yes/' /etc/ssh/sshd_config && service sshd restart || systemctl restart sshd
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
-  - which yum && yum install -y curl wget $PKGS
-  -   which apt && apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y curl wget $PKGS
-  -   which zypper && zypper in --no-recommends -y curl wget $PKGS
-  -   test -f /bin/pacman && pacman -S --needed --noconfirm curl wget $PKGS
+  - command -v yum && yum install -y curl wget $PKGS
+  -   command -v apt && apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y curl wget $PKGS
+  -   command -v zypper && zypper in --no-recommends -y curl wget $PKGS
+  -   command -v pacman && pacman -Syy; pacman -S --needed --noconfirm curl wget $PKGS
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
-  - which yum && curl -L -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
+  - command -v yum && curl -L -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
     chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo "'$b' "; done) -noreboot
 IntranetCMD
 )
 $(
 [[ "$fips" = yes ]] && cat <<FIPS
-  - which yum && curl -L -m 30 -o /usr/bin/enable-fips.sh "$baseUrl/utils/enable-fips.sh" &&
+  - command -v yum && curl -L -m 30 -o /usr/bin/enable-fips.sh "$baseUrl/utils/enable-fips.sh" &&
     chmod +x /usr/bin/enable-fips.sh && enable-fips.sh
 FIPS
 )
 $(
 [[ "$kdump" = yes ]] && cat <<KDUMP
-  - which yum && curl -L -m 30 -o /usr/bin/kdump-setup.sh "$baseUrl/utils/kdump-setup.sh" &&
+  - command -v yum && curl -L -m 30 -o /usr/bin/kdump-setup.sh "$baseUrl/utils/kdump-setup.sh" &&
     chmod +x /usr/bin/kdump-setup.sh && kdump-setup.sh
 KDUMP
 )
@@ -156,7 +156,7 @@ REBOOT
 EOF
 
 GEN_ISO_CMD=genisoimage
-which $GEN_ISO_CMD 2>/dev/null || GEN_ISO_CMD=mkisofs
+command -v $GEN_ISO_CMD 2>/dev/null || GEN_ISO_CMD=mkisofs
 $GEN_ISO_CMD -output $isof -volid cidata -joliet -rock user-data meta-data
 
 popd &>/dev/null
