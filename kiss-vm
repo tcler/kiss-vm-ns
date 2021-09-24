@@ -2218,7 +2218,7 @@ if [[ "$InstallType" = location ]]; then
 	  $DISK_OPTS \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --initrd-inject $KSPath \
-	  --extra-args="ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
+	  --extra-args="inst.ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
 	  --noautoconsole \
 	  $VTPM_OPT \
 	  --vnc --vnclisten 0.0.0.0 $NOREBOOT &>$VMpath/nohup.log &
