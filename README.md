@@ -8,20 +8,14 @@ Thereby focusing more on the verification and testing of business functions.
 
 ```
 vm:
-    功能: 快速创建、登陆、重启、删除 libvirt 虚拟机(VMs)，以及构建虚拟网络(Virtual lab);
-    用途: 自动化测试 网络协议、网络文件系统、本地文件系统、nvdimm 等模块功能（硬件无关的功能都可以）
         vm create $distro -n $vmname [other options]
         vm exec $vmname -- command line
 
 ns:
-    功能: 快速创建基于 systemd-nspawn 的容器(Container)网络
-    用途: 自动化测试 网络协议、网络文件系统 功能
         ns create $ns [other options]
         ns exec $ns -- command line
 
 netns:
-    功能: 快速创建基于 ip-netns 的 network namespace 网络拓扑
-    用途: 自动化测试 网络协议、以及部分网络文件系统 功能
         netns host,$vethX,$addr---$netns0,$vethX_peer,$addr  $netns0,$vnic_ifname[,$addr][?updev=$if,mode=$mode]
         netns exec $netns -- command line
 ```
