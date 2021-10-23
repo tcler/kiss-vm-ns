@@ -37,11 +37,20 @@ esac
 		;;
 	esac
 
-	#if still install fail, try install from brew
-	! command -v gm >/dev/null && ! command -v convert >/dev/null && {
+	#if still install fail, try install from brew(only for RHEL intranet)
+	if ! command -v gm >/dev/null && ! command -v convert >/dev/null; then
 		export PATH=/usr/local/bin:$PATH
-		command -v brewinstall.sh && brewinstall.sh latest-GraphicsMagick
-	}
+		if command -v brewinstall.sh; then
+			brewinstall.sh latest-GraphicsMagick
+			yum install -y lcms2 freetype libXext libSM libtool-ltdl
+
+			rpm_list="libwmf-lite-0.2.12-5.el9.x86_64.rpm"
+			for rpmf in $rpm_list; do
+				brew download-build --rpm $rpmf
+			done
+			rpm -ivh --force --nodeps
+		fi
+	fi
 }
 
 #install gocr
