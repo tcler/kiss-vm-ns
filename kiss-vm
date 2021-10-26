@@ -216,6 +216,28 @@ vncgetsc() {
 	ls -lh $fname
 }
 
+image_binarize() {
+	local srcf=${1}
+	local dstf=${2:-new-${srcf}}
+
+	if command -v anytopnm >/dev/null; then
+		anytopnm $srcf | ppmtopgm | pgmtopbm -threshold > $dstf
+	else
+		local ConvertCmd="gm convert"
+		! command -v gm >/dev/null && {
+			if ! command -v convert >/dev/null; then
+				echo "{VM:WARN} command gm or convert are needed by 'vncget' function!" >&2
+				return 1
+			else
+				ConvertCmd=convert
+			fi
+		}
+		$ConvertCmd $srcf -threshold 30% $dstf
+	fi
+
+	return 0
+}
+
 vncget() {
 	local vncport=$1
 	local ConvertCmd="gm convert"
@@ -224,20 +246,12 @@ vncget() {
 		echo "{VM:WARN} command vncdo is needed by 'vncget' function!" >&2
 		return 1
 	}
-	! command -v gm >/dev/null && {
-		if ! command -v convert >/dev/null; then
-			echo "{VM:WARN} command gm or convert are needed by 'vncget' function!" >&2
-			return 1
-		else
-			ConvertCmd=convert
-		fi
-	}
 	! command -v gocr >/dev/null && {
 		echo "{VM:WARN} command gocr is needed by 'vncget' function!" >&2
 		return 1
 	}
 	vncdo -s $vncport capture $RuntimeTmp/_screen.png
-	$ConvertCmd $RuntimeTmp/_screen.png -threshold 30% $RuntimeTmp/_screen2.png
+	image_binarize $RuntimeTmp/_screen.png $RuntimeTmp/_screen2.png || return 1
 	gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=01;30;47' grep --color .
 }
 
@@ -1914,7 +1928,12 @@ if [[ "$InstallType" = import ]]; then
 				: #do nothing
 			fi
 		fi
-		Location=$(distro2location $Distro 2>/dev/null)
+
+		if [[ $Intranet = yes ]]; then
+			if [[ $Distro = RHEL-* || $Distro = Fedora-* ]]; then
+				Location=$(distro2location $Distro 2>/dev/null)
+			fi
+		fi
 	else
 		if [[ $Intranet != yes ]]; then
 			echo "{VM:WARN} can not find imageUrl of '$Distro' in database." >&2

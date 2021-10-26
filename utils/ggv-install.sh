@@ -19,7 +19,7 @@ red?hat|centos*|rocky*)
 	;;
 esac
 
-#install gm(GraphicsMagick/ImageMagick)
+#install gm(GraphicsMagick/ImageMagick) or netpbm-progs
 ! command -v gm && ! command -v convert && {
 	echo -e "\n{ggv-install} install GraphicsMagick/ImageMagick ..."
 	case ${OS,,} in
@@ -37,19 +37,22 @@ esac
 		;;
 	esac
 
-	#if still install fail, try install from brew(only for RHEL intranet)
+	#if install GraphicsMagick/ImageMagick fail, use netpbm instead
 	if ! command -v gm >/dev/null && ! command -v convert >/dev/null; then
-		export PATH=/usr/local/bin:$PATH
-		if command -v brewinstall.sh; then
-			brewinstall.sh latest-GraphicsMagick
-			yum install -y lcms2 freetype libXext libSM libtool-ltdl
-
-			rpm_list="libwmf-lite-0.2.12-5.el9.x86_64.rpm"
-			for rpmf in $rpm_list; do
-				brew download-build --rpm $rpmf
-			done
-			rpm -ivh --force --nodeps
-		fi
+		case ${OS,,} in
+		fedora*|red?hat*|centos*|rocky*)
+			yum $yumOpt install -y netpbm-progs
+			;;
+		debian*|ubuntu*)
+			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y netpbm
+			;;
+		opensuse*|sles*)
+			zypper in --no-recommends -y netpbm
+			;;
+		*)
+			: #fixme add more platform
+			;;
+		esac
 	fi
 }
 
