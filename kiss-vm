@@ -240,7 +240,6 @@ image_binarize() {
 
 vncget() {
 	local vncport=$1
-	local ConvertCmd="gm convert"
 
 	! command -v vncdo >/dev/null && {
 		echo "{VM:WARN} command vncdo is needed by 'vncget' function!" >&2
