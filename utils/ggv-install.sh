@@ -19,35 +19,36 @@ red?hat|centos*|rocky*)
 	;;
 esac
 
-#install gm(GraphicsMagick/ImageMagick) or netpbm-progs
-! command -v gm && ! command -v convert && {
-	echo -e "\n{ggv-install} install GraphicsMagick/ImageMagick ..."
+#install netpbm/netpbm-progs or gm(GraphicsMagick/ImageMagick)
+#! command -v gm && ! command -v convert && {
+! command -v anytopnm && {
+	echo -e "\n{ggv-install} install netpbm or GraphicsMagick/ImageMagick ..."
 	case ${OS,,} in
 	fedora*|red?hat*|centos*|rocky*)
-		yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
+		yum $yumOpt install -y netpbm-progs
 		;;
 	debian*|ubuntu*)
-		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; command -v gm || apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
+		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y netpbm
 		;;
 	opensuse*|sles*)
-		zypper in --no-recommends -y GraphicsMagick; command -v gm || zypper in --no-recommends -y ImageMagick
+		zypper in --no-recommends -y netpbm
 		;;
 	*)
 		: #fixme add more platform
 		;;
 	esac
 
-	#if install GraphicsMagick/ImageMagick fail, use netpbm instead
-	if ! command -v gm >/dev/null && ! command -v convert >/dev/null; then
+	#if install netpbm failed, use GraphicsMagick/ImageMagick instead
+	if ! command -v anytopnm >/dev/null; then
 		case ${OS,,} in
 		fedora*|red?hat*|centos*|rocky*)
-			yum $yumOpt install -y netpbm-progs
+			yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
 			;;
 		debian*|ubuntu*)
-			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y netpbm
+			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; command -v gm || apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
 			;;
 		opensuse*|sles*)
-			zypper in --no-recommends -y netpbm
+			zypper in --no-recommends -y GraphicsMagick; command -v gm || zypper in --no-recommends -y ImageMagick
 			;;
 		*)
 			: #fixme add more platform
