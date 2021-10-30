@@ -221,7 +221,7 @@ image_binarize() {
 	local dstf=${2:-new-${srcf}}
 
 	if command -v anytopnm >/dev/null; then
-		anytopnm $srcf | ppmtopgm | pgmtopbm -threshold > $dstf
+		anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnmtopng > $dstf
 	else
 		local ConvertCmd="gm convert"
 		! command -v gm >/dev/null && {
