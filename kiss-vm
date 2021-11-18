@@ -1309,7 +1309,7 @@ Usage() {
 	  --hostdev,--host-device <device from "virsh nodedev-list">
 	                 #passthrough host device to KVM Guest
 	                 #see also: virt-install --hostdev=?
-	  --hostnic,--hostif,--host-nic <NIC name from "ip link show">
+	  --hostif,--hostnic,--host-nic <NIC name from "ip -br -c a show">
 	                 #passthrough host (pci) NIC to KVM Guest
 	  --virt-install-opts #Pass-through virt-install options
 	  --qemu-opts    #Pass-through qemu options
@@ -1519,7 +1519,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long xml \
 	--long machine: \
 	--long hostdev: --long host-device: \
-	--long hostnic: --long hostif: --long host-nic: \
+	--long hostif: --long hostnic: --long host-nic: \
 	--long virt-install-opts: \
 	--long qemu-opts: \
 	--long qemu-env: \
@@ -1604,7 +1604,7 @@ while true; do
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
 	--hostdev|--host-device)    HOST_DEV_LIST+=("$2"); shift 2;;
-	--hostnic|--hostif|--host-nic)  HOST_NIC_LIST+=("$2"); shift 2;;
+	--hostif|--hostnic|--host-nic)  HOST_NIC_LIST+=("$2"); shift 2;;
 	--virt-install-opts)    VIRT_INSTALL_OPTS+=("$2"); shift 2;;
 	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
