@@ -1308,8 +1308,9 @@ Usage() {
 	                 #specify machine type #get supported type by: qemu-kvm -machine help
 	  --hostdev,--host-device <device from "virsh nodedev-list">
 	                 #passthrough host device to KVM Guest
+	                 #see also: virt-install --hostdev=?
 	  --hostnic,--hostif,--host-nic <NIC name from "ip link show">
-	                 #passthrough host NIC to KVM Guest
+	                 #passthrough host (pci) NIC to KVM Guest
 	  --virt-install-opts #Pass-through virt-install options
 	  --qemu-opts    #Pass-through qemu options
 	  --qemu-env     #Pass-through qemu env[s]
