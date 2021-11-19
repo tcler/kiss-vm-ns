@@ -851,6 +851,7 @@ curl_download() {
 
 	return $rc
 }
+curl_download_x() { until curl_download "$@"; do sleep 1; done; }
 
 #-------------------------------------------------------------------------------
 
@@ -2389,14 +2390,14 @@ elif [[ "$InstallType" = import ]]; then
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
 	if [[ $Imageurl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl_download ${DownloadImagePath}/${imagefilename} $Imageurl; do sleep 1; done
+			curl_download_x ${DownloadImagePath}/${imagefilename} $Imageurl
 			[[ "$DOWNLOAD_ONLY" = yes ]] && {
 				ls -l ${DownloadImagePath}/${imagefilename}
 				exit 0
 			}
 			cp ${DownloadImagePath}/${imagefilename} $imagefile
 		else
-			until curl_download $imagefile $Imageurl; do sleep 1; done
+			curl_download_x $imagefile $Imageurl
 		fi
 	else
 		cp -f ${Imageurl#file://} $imagefile
@@ -2638,14 +2639,14 @@ elif [[ "$InstallType" = cdrom ]]; then
 	echo "{VM:INFO} downloading iso file of $Distro to $isofile ..."
 	if [[ $Isourl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			until curl_download ${DownloadImagePath}/${isofilename} $Isourl; do sleep 1; done
+			curl_download_x ${DownloadImagePath}/${isofilename} $Isourl
 			[[ "$DOWNLOAD_ONLY" = yes ]] && {
 				ls -l ${DownloadImagePath}/${isofilename}
 				exit 0
 			}
 			cp ${DownloadImagePath}/${isofilename} $isofile
 		else
-			until curl_download $isofile $Isourl; do sleep 1; done
+			curl_download $isofile $Isourl
 		fi
 	else
 		cp -f ${Isourl#file://} $isofile
