@@ -28,6 +28,7 @@ distroInfo[debian-10]="https://cdimage.debian.org/cdimage/openstack/current-10/d
 distroInfo[debian-9]="https://cdimage.debian.org/cdimage/openstack/current-9/debian-9-openstack-amd64.qcow2"
 
 #### OpenSUSE
+distroInfo[openSUSE-leap-15.3]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.3/images/openSUSE-Leap-15.3.x86_64-NoCloud.qcow2"
 distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2"
 
 #### FreeBSD
