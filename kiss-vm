@@ -1835,7 +1835,7 @@ fi
 		dialogres=$RuntimeTmp/dialogRes
 		touch $distropatternInter $distropatternIntra
 
-		echo -e "RockyLinux\nCentOS\nfedora\ndebian\nopenSUSE\narchlinux\nFreeBSD" >>$distropatternInter
+		echo -e "Rocky\nCentOS\nfedora\ndebian\nopenSUSE\narchlinux\nFreeBSD" >>$distropatternInter
 		for dname in "${!distroInfo[@]}"; do echo "$dname"; done >>$distrolist
 
 		[[ "$Intranet" = yes ]] && {
@@ -2167,8 +2167,10 @@ rhel-6*|rhel6*|centos6*|centos-6*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm;;
 rhel-7*|rhel7*|centos7*|centos-7*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;;
-rhel-8*|rhel8*|centos8*|centos-8*|rocky-8*)
+rhel-8*|rhel8*|centos-8*|centos8*|rocky-8*|rocky8*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm;;
+rhel-9*|rhel9*|rocky-9*|rocky9*)
+	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm;;
 esac
 [[ -n "$EPEL" ]] && PKGS="$EPEL $PKGS"
 
