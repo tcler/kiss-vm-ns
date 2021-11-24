@@ -2422,6 +2422,7 @@ elif [[ "$InstallType" = import ]]; then
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
 		cloudinitiso=$VMpath/$vmname-cloud-init.iso
+		iso_bus_type=,bus=usb
 
 		[[ "$fips" = yes ]] && FIPS_OPT=--fips
 		[[ "$kdump" = yes ]] && KDUMP_OPT=--kdump
@@ -2436,7 +2437,7 @@ elif [[ "$InstallType" = import ]]; then
 			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" $DEBUG_OPT $REPO_OPTS \
 				 $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub
 		fi
-		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom,bus=scsi"
+		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom$iso_bus_type"
 	}
 
 	echo -e "{VM:INFO} creating VM by import $imagefile"
@@ -2588,9 +2589,9 @@ elif [[ "$InstallType" = import ]]; then
 
 			echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
 
-			[[ -f "$cloudinitiso" ]] && {
+			[[ -f "$cloudinitiso" && "$iso_bus_type" != *=usb ]] && {
 				echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
-				virsh change-media $vmname $cloudinitiso --eject
+				virsh change-media $vmname $cloudinitiso --eject 2>/dev/null
 			}
 		fi
 	fi
