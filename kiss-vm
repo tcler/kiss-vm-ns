@@ -2422,7 +2422,8 @@ elif [[ "$InstallType" = import ]]; then
 			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
 		}
 		cloudinitiso=$VMpath/$vmname-cloud-init.iso
-		iso_bus_type=,bus=usb
+		iso_bus_type=
+		[[ "${Distro,,}" = debian* ]] && iso_bus_type=,bus=scsi
 
 		[[ "$fips" = yes ]] && FIPS_OPT=--fips
 		[[ "$kdump" = yes ]] && KDUMP_OPT=--kdump
