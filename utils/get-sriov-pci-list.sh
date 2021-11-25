@@ -1,6 +1,6 @@
 #!/bin/bash
 
-get_pci_nic_list() {
+get_pci_if_list() {
 	for ifdir in /sys/class/net/*; do
 		ueventf=$ifdir/device/uevent
 		if [[ -e $ueventf ]]; then
@@ -22,7 +22,7 @@ get_sriov_pci_list() {
 		'
 }
 
-pci_if_list=$(get_pci_nic_list)
+pci_if_list=$(get_pci_if_list)
 for pci in $(get_sriov_pci_list); do
 	if ! echo "$pci_if_list" | grep $pci; then
 		echo $pci
