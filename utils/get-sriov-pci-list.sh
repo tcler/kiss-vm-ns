@@ -11,21 +11,24 @@ get_pci_if_list() {
 }
 
 get_sriov_pci_list() {
-	lspci -vmm |
-		awk '
-			BEGIN {
-				RS=""
-			}
-			/ConnectX.*Virtual Function/ {
-				print "0000:" $2
-			}
-		'
+        lspci -vmm |
+                awk '
+                        BEGIN {
+                                IGNORECASE=1
+                                RS=""
+                        }
+                        {
+                                if (match($0, /Slot:.([^\n]+)\nClass:.(network [^\n]+)/, A)) {
+                                        print ("0000:" A[1] "\t" gensub(/ /, "_", "g", A[2]))
+                                }
+                        }
+                '
 }
 
 pci_if_list=$(get_pci_if_list)
-for pci in $(get_sriov_pci_list); do
-	if ! echo "$pci_if_list" | grep $pci; then
-		echo $pci
+while read slot class; do
+	if ! echo "$pci_if_list" | grep $slot; then
+		echo -e "${slot}\t${class}"
 	fi
-done
+done < <(get_sriov_pci_list)
 
