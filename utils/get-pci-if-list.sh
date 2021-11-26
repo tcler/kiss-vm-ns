@@ -10,4 +10,4 @@ get_pci_if_list() {
 	done
 }
 
-get_pci_if_list
+get_pci_if_list | sed -e 's/^/pci_/' -e 's/[:.]/_/g'

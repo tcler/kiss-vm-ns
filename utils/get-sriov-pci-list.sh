@@ -27,10 +27,10 @@ get_sriov_pci_list() {
                 '
 }
 
-pci_if_list=$(get_pci_if_list)
+pci_if_list=$(get_pci_if_list | sed -e 's/^/pci_/' -e 's/[:.]/_/g')
 while read slot class; do
 	if ! echo "$pci_if_list" | grep $slot; then
 		echo -e "${slot}\t${class}"
 	fi
-done < <(get_sriov_pci_list)
+done < <(get_sriov_pci_list "$@" | sed -e 's/^/pci_/' -e 's/[:.]/_/g')
 
