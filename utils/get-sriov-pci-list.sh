@@ -11,14 +11,16 @@ get_pci_if_list() {
 }
 
 get_sriov_pci_list() {
+	local pat=${1:-"Virtual Function"}
+
         lspci -vmm |
-                awk '
+                awk -v pattern="${pat}" '
                         BEGIN {
                                 IGNORECASE=1
                                 RS=""
                         }
-                        {
-                                if (match($0, /Slot:.([^\n]+)\nClass:.(network [^\n]+)/, A)) {
+                        $0 ~ pattern {
+                                if (match($0, /Slot:.([^\n]+)\nClass:.([^\n]+)/, A)) {
                                         print ("0000:" A[1] "\t" gensub(/ /, "_", "g", A[2]))
                                 }
                         }
