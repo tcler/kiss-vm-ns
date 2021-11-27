@@ -1750,7 +1750,6 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 	amd) QEMU_OPTS+=("--qemu-commandline=-cpu host,+svm");;
 	esac
 }
-virt-install -h | grep -q -- --qemu-commandline || QEMU_OPTS=()
 
 mkdir -p $RuntimeTmp
 mkdir -p ${DownloadImagePath}
@@ -2125,6 +2124,7 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	QEMU_OPTS+=("--qemu-commandline=-drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c")
 	let c++
 done
+virt-install -h | grep -q -- --qemu-commandline || QEMU_OPTS=()
 
 ### nvdimm option
 CONTROLLER_OPTS=
@@ -2459,7 +2459,7 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	}
 
-	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
+	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2607,7 +2607,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
 
-	run virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
+	run virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2663,7 +2663,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	fi
 	[[ -f ${isofile} ]] || exit 1
 
-	run virt-install --connect=qemu:///system --hvm --accelerate $XML "$QEMU_OPTS" "${QEMU_ENV[@]}" \
+	run virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
