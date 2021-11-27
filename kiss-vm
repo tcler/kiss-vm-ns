@@ -51,9 +51,14 @@ defaultPasswd=redhat
 
 Cleanup() {
 	cd ~
-	#echo "{DEBUG} Removing $RuntimeTmp"
+	echo -e "\n\n{VM:clean} Removing tmpdir: $RuntimeTmp"
 	rm -rf $RuntimeTmp
-	[[ -n "$VMpath" ]] && { rmdir "$VMpath" && rmdir "${VMpath%/*}"; } 2>/dev/null
+
+	if [[ -n "$VMpath" ]]; then
+		echo "{VM:clean} Removing VM dir: $VMpath"
+		rm -rfv "$VMpath"
+		rmdir -v "${VMpath%/*}" 2>/dev/null
+	fi
 	exit
 }
 trap Cleanup EXIT #SIGINT SIGQUIT SIGTERM
