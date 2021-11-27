@@ -40,7 +40,7 @@ VIRT_READY=unkown
 _MSIZE=1536
 DSIZE=27
 baudrate=115200
-QEMU_OPTS=--qemu-commandline=
+QEMU_OPTS=()
 QEMU_ENV=()
 _downhostname="download.devel.fedorahat.com"
 downhostname=${_downhostname/fedora/red}
@@ -872,7 +872,12 @@ install_requires() {
 		}
 		;;
 	debian*|ubuntu*)
-		local pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables"
+		local pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables acl"
+		read -d . verx 2>/dev/null </etc/debian_version
+		[[ "$verx" = 9 ]] && {
+			sudo apt -y update; sudo apt -y upgrade
+			sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 busybox-static
+		}
 		sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y $pkglist
 		;;
 	opensuse*|sles*)
@@ -1607,7 +1612,7 @@ while true; do
 	--hostdev|--host-device)    HOST_DEV_LIST+=("$2"); shift 2;;
 	--hostif|--hostnic|--host-nic)  HOST_NIC_LIST+=("$2"); shift 2;;
 	--virt-install-opts)    VIRT_INSTALL_OPTS+=("$2"); shift 2;;
-	--qemu-opts)     QEMU_OPTS="--qemu-commandline=$2"; shift 2;;
+	--qemu-opts)     QEMU_OPTS+=("--qemu-commandline=$2"); shift 2;;
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--enable-guest-hy*) ENABLE_L2VM=yes; shift 1;;
 	--disable-guest-hy*) ENABLE_L2VM=no; shift 1;;
@@ -1741,10 +1746,11 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 	vendor=${kmodule#kvm_}
 	case $vendor in
-	intel) QEMU_OPTS+=" -cpu host,+vmx";;
-	amd) QEMU_OPTS+=" -cpu host,+svm";;
+	intel) QEMU_OPTS+=("--qemu-commandline=-cpu host,+vmx");;
+	amd) QEMU_OPTS+=("--qemu-commandline=-cpu host,+svm");;
 	esac
 }
+virt-install -h | grep -q -- --qemu-commandline || QEMU_OPTS=()
 
 mkdir -p $RuntimeTmp
 mkdir -p ${DownloadImagePath}
@@ -2116,7 +2122,7 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	chcon system_u:object_r:qemu_var_run_t:s0 $VMpath/$devfile #system_u:object_r:virt_cache_t:s0 also works
 	getfacl $VMpath/$devfile
 	ls -lZ $VMpath/$devfile
-	QEMU_OPTS+=" -drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c"
+	QEMU_OPTS+=("--qemu-commandline=-drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c")
 	let c++
 done
 
