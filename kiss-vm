@@ -73,6 +73,14 @@ vmname_gen() {
 	echo -n $name
 }
 
+_vmsrcfiles() {
+	local _vmname=$1
+	local _pat=${2:-qcow}
+	[[ -z "$_vmname" ]] && { return 1; }
+
+	virsh dumpxml --domain $_vmname | sed -rn "/^.*source file='([^']*${_pat}[^']*)'.*/{ s//\1/; p; }"
+}
+
 _vmdelete() {
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
@@ -109,8 +117,8 @@ _vmdelete() {
 		:
 	fi
 
-	local _vmdir=
-	local _image=$(virsh dumpxml --domain $_vmname | sed -n "/source file=.*qcow/{s|^.*='||; s|'/>$||; p; q}")
+	local _vmdir= _image=
+	read _image < <(_vmsrcfiles $_vmname '\.(qcow2|qcow|raw)')
 	if test -n "$_image"; then
 		_vmdir=$(dirname $_image)
 	else
@@ -128,7 +136,7 @@ _vmdelete() {
 	fi
 
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
-		echo -e "- {VM:INFO} removing VM folder $_vmdir ..."
+		echo -e "\n{VM:INFO} removing VM folder $_vmdir ..."
 		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
 		rm -f $_vmdir/*.cfg $_vmdir/*.ks
 		rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
@@ -431,7 +439,7 @@ vmclone() {
 	is_invalid_vmname "$dstname" && return 1
 
 	#get src vm path
-	read image < <(virsh dumpxml --domain ${srcname} | sed -n "/source file=/{s|^.*='||; s|'/>$||; p}")
+	read image < <(_vmsrcfiles $srcname '\.(qcow2|qcow|raw)')
 	local srcpath=${image%/*}
 	[[ ! -f ${srcpath}/.kiss-vm || ${srcpath##*/} != ${srcname} ]] && {
 		echo -e "{VM:WARN} seems $srcname was not created by kiss-vm, can not use vm-clone; please use virt-clone instead ..."
@@ -2730,7 +2738,7 @@ done
 
 if [[ "$GenerateImage" = yes ]]; then
 	mkdir -p $ImagePath/$Distro
-	read image < <(virsh dumpxml --domain $vmname | sed -n "/source file=/{s|^.*='||; s|'/>$||; p}")
+	read image < <(_vmsrcfiles $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
 	imgfilename=${imgfilename#${vmprefix}-}
 	newimage=$ImagePath/$Distro/${imgfilename}
