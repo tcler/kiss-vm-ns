@@ -2019,8 +2019,16 @@ if [[ "$InstallType" = pxe ]]; then
 	_MSIZE=2048
 fi
 
+available_msize=$(free -m | awk '/^Mem:/{print $NF}')
+[[ "$_MSIZE" -gt "$available_msize" ]] && _MSIZE=$((available_msize-8))
+
 MSIZE=${MSIZE:-$_MSIZE}
 [[ "$MSIZE" = *[Gg] ]] && MSIZE=$((${MSIZE%[Gg]} * 1024))
+
+[[ "$MSIZE" -gt "$available_msize" ]] && {
+	echo "{VM:ERR} the available mem size is less than your required."
+	exit 132
+}
 
 echo "{VM:INFO} guess/verify os-variant ..."
 [[ -z "$VM_OS_VARIANT" ]] && {
