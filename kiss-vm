@@ -51,11 +51,11 @@ defaultPasswd=redhat
 
 Cleanup() {
 	cd ~
-	echo -e "\n\n{VM:clean} Removing tmpdir: $RuntimeTmp"
+	#echo -e "\n\n{VM:debug} Removing tmpdir: $RuntimeTmp"
 	rm -rf $RuntimeTmp
 
 	if [[ -n "$VMpath" ]]; then
-		echo "{VM:clean} Removing VM dir: $VMpath"
+		echo "\n{VM:clean} Removing VM dir: $VMpath"
 		rm -rfv "$VMpath"
 		rmdir -v "${VMpath%/*}" 2>/dev/null
 	fi
