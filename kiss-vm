@@ -80,10 +80,17 @@ vmname_gen() {
 
 _vmsrcfiles() {
 	local _vmname=$1
-	local _pat=${2:-qcow}
-	[[ -z "$_vmname" ]] && { return 1; }
+	local _pat=${2:-.}
+	[[ -z "$_vmname" ]] && {
+		echo "Usage: vmsrcfiles <vmname> [pattern]"
+		return 1
+	}
 
-	virsh dumpxml --domain $_vmname | sed -rn "/^.*source file='([^']*${_pat}[^']*)'.*/{ s//\1/; p; }"
+	local srcfilelist=$(virsh dumpxml --domain $_vmname |
+		sed -rn "/^.*source file='([^']+)'.*/{ s//\1/; p; }")
+
+	echo "$srcfilelist" | egrep "/$_vmname/"     | grep "$_pat"
+	echo "$srcfilelist" | egrep -v "/$_vmname/"  | grep "$_pat"
 }
 
 _vmdelete() {
@@ -1789,6 +1796,7 @@ mkdir -p ${DownloadImagePath}
 	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
 	stop|sto*) shift; [[ "$1" = -d ]] && shift; vmstop "$@"; exit $?;;
 	start|sta*) shift; [[ "$1" = -d ]] && shift; vmstart "$@"; exit $?;;
+	srcfiles) shift; [[ "$1" = -d ]] && shift; _vmsrcfiles "$@"; exit $?;;
 	clone) shift; [[ "$1" = -d ]] && shift; vmclone "$@"; exit $?;;
 	netls) shift; [[ "$1" = -d ]] && shift; netls "$@"; exit $?;;
 	net|netcreat*) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
