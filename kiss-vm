@@ -55,7 +55,7 @@ Cleanup() {
 	rm -rf $RuntimeTmp
 
 	if [[ -n "$VMpath" ]]; then
-		echo "\n{VM:clean} Removing VM dir: $VMpath"
+		echo -e "\n{VM:clean} Removing VM dir: $VMpath"
 		rm -rfv "$VMpath"
 		rmdir -v "${VMpath%/*}" 2>/dev/null
 	fi
