@@ -1,8 +1,8 @@
 declare -A distroInfo
 
 #### CentOS stream and CentOS
-distroInfo[Rocky-8]="https://mirrors.aliyun.com/rockylinux/8/images/ https://mirrors.aliyun.com/rockylinux/8/BaseOS/$(arch)/os/"
 distroInfo[Rocky-8]="https://mirrors.nju.edu.cn/rocky/8/images/ https://mirrors.nju.edu.cn/rocky/8/BaseOS/$(arch)/os/"
+distroInfo[CentOS-9-stream]="https://cloud.centos.org/centos/9-stream/$(arch)/images/ http://mirror.stream.centos.org/9-stream/BaseOS/$(arch)/os/"
 distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/x86_64/images/ http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/"
 distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/x86_64/images/ http://mirror.centos.org/centos/8/BaseOS/x86_64/os/"
 distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/%%GenericCloud-.{4}.qcow2c http://mirror.centos.org/centos/7/os/x86_64/"
