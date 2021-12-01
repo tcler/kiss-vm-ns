@@ -2081,7 +2081,7 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=virtio"
 	else
-		NETWORK_OPTS="--network=network=default,model=virtio --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=virtio"
+		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=virtio --network=network=default,model=virtio"
 	fi
 }
 
