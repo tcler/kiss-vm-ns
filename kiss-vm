@@ -890,6 +890,11 @@ install_requires() {
 		rpm -q $pkglist || {
 			sudo yum $yumOpt --setopt=strict=0 install -y $pkglist
 		}
+
+		#install virtio driver for Windows Guest
+		#see: https://github.com/virtio-win/virtio-win-pkg-scripts/blob/master/README.md
+		sudo wget https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo   -O /etc/yum.repos.d/virtio-win.repo
+		sudo yum install -y virtio-win
 		;;
 	debian*|ubuntu*)
 		local pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables acl"
