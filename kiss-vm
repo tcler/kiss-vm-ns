@@ -134,7 +134,7 @@ _vmdelete() {
 	if test -n "$_image"; then
 		_vmdir=$(dirname $_image)
 	else
-		_vmdir=$homedir/VMs/PXE/$_vmname
+		echo "{VM:WARN} VM dir is empty, something is wrong!" >&2
 	fi
 
 	echo -e "\n{VM:INFO} => dist removing VM $_vmname .."
