@@ -49,11 +49,11 @@ bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
 VCPUS=4
 defaultPasswd=redhat
 
-Cleanup() {
-	cd ~
+at_exit() {
 	#echo -e "\n\n{VM:debug} Removing tmpdir: $RuntimeTmp"
 	rm -rf $RuntimeTmp
-
+}
+cleanup() {
 	if [[ -n "$VMpath" ]]; then
 		echo -e "\n{VM:clean} Removing VM dir: $VMpath"
 		rm -rfv "$VMpath"
@@ -61,7 +61,8 @@ Cleanup() {
 	fi
 	exit
 }
-trap Cleanup EXIT #SIGINT SIGQUIT SIGTERM
+trap cleanup SIGINT SIGQUIT SIGTERM
+trap at_exit EXIT
 #-------------------------------------------------------------------------------
 
 vmname_gen() {
@@ -112,7 +113,7 @@ _vmdelete() {
 				echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
 				cat <<-EOF
 				  virsh destroy $_vmname
-				  virsh undefine $_vmname --remove-all-storage --nvram
+				  virsh undefine $_vmname #--remove-all-storage --nvram
 				EOF
 				return 1
 			}
@@ -121,7 +122,7 @@ _vmdelete() {
 			echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
 			cat <<-EOF
 			  virsh destroy $_vmname
-			  virsh undefine $_vmname --remove-all-storage --nvram
+			  virsh undefine $_vmname #--remove-all-storage --nvram
 			EOF
 			return 1
 		fi
@@ -139,20 +140,15 @@ _vmdelete() {
 
 	echo -e "\n{VM:INFO} => dist removing VM $_vmname .."
 	virsh destroy $_vmname 2>/dev/null; sleep 0.5
-	_std=$(virsh undefine $_vmname --remove-all-storage --nvram 2>&1)
-	if grep -q "error: Refusing to undefine while domain managed save image exists" <(echo "$_std"); then
-		virsh managedsave-remove $_vmname 2>/dev/null
-		virsh undefine $_vmname --remove-all-storage --nvram
-	else
-		echo "$_std"
-	fi
+	virsh undefine $_vmname
 
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
-		echo -e "\n{VM:INFO} removing VM folder $_vmdir ..."
+		echo -e "{VM:INFO} removing VM folder $_vmdir ..."
 		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
 		rm -f $_vmdir/*.cfg $_vmdir/*.ks
 		rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
 		rm -f $_vmdir/nvdimm-*.dev
+		rm -f $_vmdir/*
 		rmdir $_vmdir 2>/dev/null
 		rmdir ${_vmdir%/*} 2>/dev/null
 	fi
