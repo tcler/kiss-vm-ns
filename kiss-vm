@@ -119,6 +119,7 @@ vmhomedir() {
 	pwd
 	ls -lA
 	popd >/dev/null
+	test -f $_vmdir/.kiss-vm || echo "{VM:NOTE} seems this VM is not created by kiss-vm($(command -v vm))" >&2
 }
 
 _vmdelete() {
