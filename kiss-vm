@@ -94,6 +94,33 @@ _vmsrcfiles() {
 	echo "$srcfilelist" | egrep -v "/$_vmname/"  | egrep "$_pat"
 }
 
+vmrootdir() {
+	pushd $VMSHOME >/dev/null
+	pwd
+	ls -l
+	popd >/dev/null
+}
+
+vmhomedir() {
+	local _vmname=$1
+	local _vmdir= _image=
+
+	read _image < <(_vmsrcfiles $_vmname '\.(qcow2|qcow|raw)')
+	if test -n "$_image"; then
+		_vmdir=$(dirname $_image)
+	elif test -d $VMSHOME/PXE/$_vmname; then
+		_vmdir=$VMSHOME/PXE/$_vmname
+	else
+		echo "{VM:WARN} VM dir is empty, something is wrong!" >&2
+		return 1
+	fi
+
+	pushd $_vmdir >/dev/null
+	pwd
+	ls -l
+	popd >/dev/null
+}
+
 _vmdelete() {
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
@@ -134,6 +161,8 @@ _vmdelete() {
 	read _image < <(_vmsrcfiles $_vmname '\.(qcow2|qcow|raw)')
 	if test -n "$_image"; then
 		_vmdir=$(dirname $_image)
+	elif test -d $VMSHOME/PXE/$_vmname; then
+		_vmdir=$VMSHOME/PXE/$_vmname
 	else
 		echo "{VM:WARN} VM dir is empty, something is wrong!" >&2
 	fi
@@ -1798,6 +1827,8 @@ mkdir -p ${DownloadImagePath}
 	stop|sto*) shift; [[ "$1" = -d ]] && shift; vmstop "$@"; exit $?;;
 	start|sta*) shift; [[ "$1" = -d ]] && shift; vmstart "$@"; exit $?;;
 	srcfiles) shift; [[ "$1" = -d ]] && shift; _vmsrcfiles "$@"; exit $?;;
+	rootdir) shift; [[ "$1" = -d ]] && shift; vmrootdir "$@"; exit $?;;
+	homedir) shift; [[ "$1" = -d ]] && shift; vmhomedir "$@"; exit $?;;
 	clone) shift; [[ "$1" = -d ]] && shift; vmclone "$@"; exit $?;;
 	netls) shift; [[ "$1" = -d ]] && shift; netls "$@"; exit $?;;
 	net|netcreat*) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
