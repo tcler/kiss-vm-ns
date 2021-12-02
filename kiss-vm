@@ -117,7 +117,7 @@ vmhomedir() {
 
 	pushd $_vmdir >/dev/null
 	pwd
-	ls -l
+	ls -lA
 	popd >/dev/null
 }
 
