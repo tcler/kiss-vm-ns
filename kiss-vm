@@ -2725,6 +2725,8 @@ elif [[ "$InstallType" = cdrom ]]; then
 	fi
 	[[ -f ${isofile} ]] || exit 1
 
+	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
+
 	run virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
@@ -2734,7 +2736,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
 	  --cdrom $isofile \
-	  $DISK_OPTS \
+	  --disk path=$VMpath/${vmname}.qcow2 \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --noautoconsole \
 	  $VTPM_OPT \
