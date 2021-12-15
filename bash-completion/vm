@@ -54,6 +54,9 @@ _vm()
                 -i|-l|-C)
                     COMPREPLY=( $( compgen -A file -- "$cur" ) )
                     ;;
+                --if-model)
+                    COMPREPLY=( $( compgen -W "e1000 rtl8139 virtio" -- "$cur" ) )
+                    ;;
                 *)
                     COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
                     ;;

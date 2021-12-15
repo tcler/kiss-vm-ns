@@ -1319,6 +1319,7 @@ Usage() {
 	  --cpus <N>     #number of virtual cpus, default 4
 	  --msize <size> #memory size, default 2048
 	  --dsize <size> #disk size, default 16
+	  --if-model <>  #change default model(virtio) of virtual NICs: e1000,rtl8139 
 	  --net <$name[,$model]>
 	                 #attach tun dev(vnetN) and connect to net $name, optional $model: virtio,e1000,...
 	  --net-br <$brname[,$model]>
@@ -1547,6 +1548,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long cpus: \
 	--long msize: \
 	--long dsize: \
+	--long if-model: \
 	--long net: \
 	--long net-br: \
 	--long net-macvtap:: --long netmacvtap:: \
@@ -1621,6 +1623,7 @@ while true; do
 	--cpus)          VCPUS="$2"; shift 2;;
 	--nointeract)    INTERACT="no"; shift 1;;
 	--noauto)        NOAUTO="yes"; shift 1;;
+	--if-model)      NIC_MODEL="$2"; shift 2;;
 	--net)
 		read netname model <<<"${2/,/ }"
 		NETWORK_OPTS+=" --network=network=$netname,model=${model:-virtio}"; shift 2;;
@@ -2109,12 +2112,13 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	echo -e 'y\n' | ssh-keygen -q -t ecdsa -f ~/.ssh/id_ecdsa -N ''
 }
 # prepare network option
+NIC_MODEL=${NIC_MODEL:-virtio}
 [[ -z "$NETWORK_OPTS" ]] && {
 	srcif=$(get_default_if)
 	if [[ "$InstallType" = pxe ]]; then
-		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=virtio"
+		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${NIC_MODEL}"
 	else
-		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=virtio --network=network=default,model=virtio"
+		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${NIC_MODEL} --network=network=default,model=${NIC_MODEL}"
 	fi
 }
 
