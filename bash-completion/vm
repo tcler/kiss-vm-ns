@@ -51,7 +51,7 @@ _vm()
                 fi
             else
                 case $prev in
-                -i|-l)
+                -i|-l|-C)
                     COMPREPLY=( $( compgen -A file -- "$cur" ) )
                     ;;
                 *)
