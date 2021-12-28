@@ -2118,7 +2118,7 @@ NIC_MODEL=${NIC_MODEL:-virtio}
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${NIC_MODEL}"
 	else
-		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${NIC_MODEL} --network=network=default,model=${NIC_MODEL}"
+		NETWORK_OPTS="--network=network=default,model=${NIC_MODEL} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${NIC_MODEL}"
 	fi
 }
 
