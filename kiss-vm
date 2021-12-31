@@ -170,7 +170,7 @@ _vmdelete() {
 
 	echo -e "\n{VM:INFO} => dist removing VM $_vmname .."
 	virsh destroy $_vmname 2>/dev/null; sleep 0.5
-	virsh undefine $_vmname
+	virsh undefine $_vmname 2>/dev/null || virsh undefine $_vmname --nvram
 
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "{VM:INFO} removing VM folder $_vmdir ..."
@@ -1328,11 +1328,13 @@ Usage() {
 	                 #attach macvtap interface over $sourceNIC, optional $model: virtio,e1000,...
 	  --macvtapmode <vepa|bridge>
 	                 #macvtap mode
+	  --disk <img[,bus=]>
+	                 #add exist disk file, could be specified multi-times.
 	  --xdisk <size[,fstype]>
 	                 #add an extra disk, could be specified multi-times. size unit is G
 	                 #`e.g: --xdisk 10 --xdisk 20,xfs
-	  --disk <img[,bus=]>
-	                 #add exist disk file, could be specified multi-times.
+	  --xcdrom <path>
+	                 #add extra cdrom
 	  --bus <$boot_disk_bus>
 	  --sharedir <shpath[:target]>
 	                 #share path between host and guest
@@ -1559,8 +1561,9 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long downloadonly \
 	--long ready \
 	--long bus: \
-	--long xdisk: \
 	--long disk: \
+	--long xdisk: \
+	--long xcdrom: \
 	--long sharedir: \
 	--long nvdimm: \
 	--long nvme: \
@@ -1644,8 +1647,9 @@ while true; do
 	--downloadonly)  SAVE_IMAGE="yes"; DOWNLOAD_ONLY="yes"; InstallType=import; shift 1;;
 	-r|--ready)      KISS_VM_READY=yes; shift 1;;
 	--bus)           BOOT_DISK_BUS="$2"; shift 2;;
-	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
 	--disk)          DISKS+=("$2"); shift 2;;
+	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
+	--xcdrom)        EXTRA_CDROMS+=("$2"); shift 2;;
 	--sharedir)      SHARE_DIRS+=("$2"); shift 2;;
 	--nvdimm)        NVDIMM_LIST+=($2); shift 2;;
 	--nvme)          NVME_DEVS+=($2); shift 2;;
@@ -2168,6 +2172,11 @@ for disk in "${DISKS[@]}"; do
 	fi
 	cp -f $img $VMpath/.
 	DISK_OPTS+=" --disk path=$VMpath/$img,${arg:-bus=ide}"
+done
+
+### xcdrom option
+for _iso in "${EXTRA_CDROMS[@]}"; do
+	DISK_OPTS+=" --disk $_iso,device=cdrom,${iso_bus_type:-bus=ide}"
 done
 
 ### nvme option
@@ -2741,6 +2750,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $MEM_OPTS \
 	  --cdrom $isofile \
 	  --disk path=$VMpath/${vmname}.qcow2 \
+	  $DISK_OPTS \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --noautoconsole \
 	  $VTPM_OPT \

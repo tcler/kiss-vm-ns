@@ -51,7 +51,7 @@ _vm()
                 fi
             else
                 case $prev in
-                -i|-l|-C)
+                -i|-l|-C|--xcdrom|--disk)
                     COMPREPLY=( $( compgen -A file -- "$cur" ) )
                     ;;
                 --if-model)
