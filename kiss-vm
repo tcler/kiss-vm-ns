@@ -2171,12 +2171,12 @@ for disk in "${DISKS[@]}"; do
 		continue
 	fi
 	cp -f $img $VMpath/.
-	DISK_OPTS+=" --disk path=$VMpath/$img,${arg:-bus=ide}"
+	DISK_OPTS+=" --disk path=$VMpath/$img,${arg:-bus=sata}"
 done
 
 ### xcdrom option
 for _iso in "${EXTRA_CDROMS[@]}"; do
-	DISK_OPTS+=" --disk $_iso,device=cdrom,${iso_bus_type:-bus=ide}"
+	DISK_OPTS+=" --disk $_iso,device=cdrom,${iso_bus_type:-bus=sata}"
 done
 
 ### nvme option
