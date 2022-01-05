@@ -6,7 +6,7 @@ fastesturl() {
 
 	for url; do
 		read p host path <<<"${url//\// }";
-		cavg=$(ping -w 4 -c 2 $host | awk -F / 'END {print $5}')
+		cavg=$(ping -4 -w 4 -c 2 $host | awk -F / 'END {print $5}')
 		: ${minavg:=$cavg}
 
 		if [[ -z "$cavg" ]]; then
