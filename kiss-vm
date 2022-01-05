@@ -2749,7 +2749,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  --vcpus ${VCPUS} \
 	  $MEM_OPTS \
 	  --cdrom $isofile \
-	  --disk path=$VMpath/${vmname}.qcow2 \
+	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --noautoconsole \
