@@ -2722,6 +2722,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	for vncaddr in $(vmvncproc $vmname); do
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
+	[[ -n $DISPLAY ]] && virt-viewer $vmname &
 	exit 0
 elif [[ "$InstallType" = cdrom ]]; then
 	[[ -f $Isourl ]] && Isourl=file://$(readlink -f ${Isourl})
@@ -2772,6 +2773,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	for vncaddr in $(vmvncproc $vmname); do
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
+	[[ -n $DISPLAY ]] && virt-viewer $vmname &
 	exit 0
 fi
 
