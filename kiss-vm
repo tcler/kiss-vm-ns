@@ -1317,6 +1317,8 @@ Usage() {
 	                 #save image in path if install with import mode
 	  --downloadonly #download image only if there is qcow* image
 	  --cpus <N>     #number of virtual cpus, default 4
+	  --video <type> #video device model, options for recent kvm are: cirrus, vga, qxl, virtio
+	                 #see also: `virt-install --video=?`
 	  --msize <size> #memory size, default 2048
 	  --dsize <size> #disk size, default 16
 	  --if-model <>  #change default model(virtio) of virtual NICs: e1000,rtl8139 
@@ -1548,6 +1550,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long getvmname \
 	--long nocloud-init --long nocloud \
 	--long cpus: \
+	--long video: \
 	--long msize: \
 	--long dsize: \
 	--long if-model: \
@@ -1624,6 +1627,7 @@ while true; do
 	--dsize)         dsizeflag=1; DSIZE="$2"; shift 2;;
 	--msize)         MSIZE="$2"; shift 2;;
 	--cpus)          VCPUS="$2"; shift 2;;
+	--video)         VIDEO_OPT="$2"; shift 2;;
 	--nointeract)    INTERACT="no"; shift 1;;
 	--noauto)        NOAUTO="yes"; shift 1;;
 	--if-model)      NIC_MODEL="$2"; shift 2;;
@@ -2346,6 +2350,7 @@ if [[ "$InstallType" = location ]]; then
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
+	  --video ${VIDEO_OPT:-virtio} \
 	  $MEM_OPTS \
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
@@ -2541,6 +2546,7 @@ elif [[ "$InstallType" = import ]]; then
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
+	  --video ${VIDEO_OPT:-virtio} \
 	  $MEM_OPTS \
 	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
@@ -2689,6 +2695,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
+	  --video ${VIDEO_OPT:-virtio} \
 	  $MEM_OPTS \
 	  --pxe \
 	  --disk $diskOpt \
@@ -2747,6 +2754,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
+	  --video ${VIDEO_OPT:-virtio} \
 	  $MEM_OPTS \
 	  --cdrom $isofile \
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \

@@ -57,6 +57,9 @@ _vm()
                 --if-model)
                     COMPREPLY=( $( compgen -W "e1000 rtl8139 virtio" -- "$cur" ) )
                     ;;
+                --video)
+                    COMPREPLY=( $( compgen -W "virtio vga qxl cirrus" -- "$cur" ) )
+                    ;;
                 *)
                     COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
                     ;;
