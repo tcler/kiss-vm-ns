@@ -48,9 +48,11 @@ baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
 bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
 VCPUS=4
 defaultPasswd=redhat
+orig_disable_ipv6=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
 
 at_exit() {
 	#echo -e "\n\n{VM:debug} Removing tmpdir: $RuntimeTmp"
+	sysctl -w net.ipv6.conf.all.disable_ipv6=$orig_disable_ipv6 2>/dev/null
 	rm -rf $RuntimeTmp
 }
 cleanup() {
@@ -958,6 +960,9 @@ prepare_libvirt() {
 
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt start ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	test $(id -u) = 0 || { echo "{VM:Error} vm prepare need root permission, try: sudo $P prepare" >&2; exit 1; }
+
+	#disable ipv6
+	sysctl -w net.ipv6.conf.all.disable_ipv6=1
 
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
