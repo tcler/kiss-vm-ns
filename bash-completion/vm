@@ -46,7 +46,7 @@ _vm()
                     if is_intranet; then
                         distroList+=" RHEL-9% RHEL-8% RHEL-7% RHEL-6%"
                     fi
-                    dlist="$distroList #<aDistroFamilyName> #<Enter>"
+                    dlist="$distroList Windows-11 Windows-10 Windows-7 #<aDistroFamilyName> #<Enter>"
                     COMPREPLY=( $( compgen -W "$dlist" -- "$cur" ) )
                 fi
             else
