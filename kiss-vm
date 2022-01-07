@@ -311,7 +311,7 @@ vncput() {
 	local vncport=$1
 	shift
 
-	command -v vncdo || {
+	command -v vncdo >/dev/null || {
 		echo "{VM:WARN} vncdo is needed by 'vncput' function!" >&2
 		return 1
 	}
