@@ -2738,6 +2738,7 @@ elif [[ "$InstallType" = pxe ]]; then
 			{</domain>} { exit }
 		}
 	"
+	cat $VMpath/nohup.log
 
 	sleep 1
 	vm vnc $vmname -get
@@ -2810,6 +2811,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			{</domain>} { exit }
 		}
 	"
+	cat $VMpath/nohup.log
 
 	sleep 2
 	vm vnc $vmname -get
