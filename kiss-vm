@@ -2714,7 +2714,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
 
-	run virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2725,10 +2725,19 @@ elif [[ "$InstallType" = pxe ]]; then
 	  $MEM_OPTS \
 	  --pxe \
 	  --disk $diskOpt \
-	  --noautoconsole \
+	  --noautoconsole --wait=-1 \
 	  $VTPM_OPT \
 	  ${NETWORK_OPTS%,model=virtio} \
-	  --vnc --vnclisten 0.0.0.0
+	  --vnc --vnclisten 0.0.0.0 &>$VMpath/nohup.log &
+
+	while true; do test -s $VMpath/nohup.log && break; done
+	expect -c "spawn tail -f $VMpath/nohup.log
+		expect {
+			{* to complete the installation process.} { exit }
+			{*\r} { exp_continue }
+			{</domain>} { exit }
+		}
+	"
 
 	sleep 1
 	vm vnc $vmname -get
@@ -2748,7 +2757,9 @@ elif [[ "$InstallType" = pxe ]]; then
 	for vncaddr in $(vmvncproc $vmname); do
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
-	[[ -n $DISPLAY ]] && virt-viewer -v $vmname &
+	if [[ -n $DISPLAY ]]; then
+		virt-viewer -v $vmname;
+	fi
 	exit 0
 elif [[ "$InstallType" = cdrom ]]; then
 	[[ -f $Isourl ]] && Isourl=file://$(readlink -f ${Isourl})
@@ -2774,7 +2785,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 
 	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
 
-	run virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2787,9 +2798,18 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
-	  --noautoconsole \
+	  --noautoconsole --wait=-1 \
 	  $VTPM_OPT \
-	  --vnc --vnclisten 0.0.0.0
+	  --vnc --vnclisten 0.0.0.0 &>$VMpath/nohup.log &
+
+	while true; do test -s $VMpath/nohup.log && break; done
+	expect -c "spawn tail -f $VMpath/nohup.log
+		expect {
+			{* to complete the installation process.} { exit }
+			{*\r} { exp_continue }
+			{</domain>} { exit }
+		}
+	"
 
 	sleep 2
 	vm vnc $vmname -get
@@ -2799,7 +2819,9 @@ elif [[ "$InstallType" = cdrom ]]; then
 	for vncaddr in $(vmvncproc $vmname); do
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
-	[[ -n $DISPLAY ]] && virt-viewer -v $vmname &
+	if [[ -n $DISPLAY ]]; then
+		virt-viewer -v $vmname;
+	fi
 	exit 0
 fi
 
