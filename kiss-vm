@@ -250,6 +250,11 @@ vmifaddr() {
 	[[ -n "$addrs" ]] && echo "$addrs"
 }
 
+vmviewer() {
+	echo "{VM:INFO} redirect to: virt-viewer $*"
+	virt-viewer -v "$@"
+}
+
 vncgetsc() {
 	local vncport=$1
 	local _vmname=$2
@@ -1476,7 +1481,8 @@ Usage() {
 	  $P console [VM]      #log VM via console //you can use co,con,cons* instead console
 	  $P delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
 	  $P ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
-	  $P vnc [VM]          #show vnc host:port //you can use v,vn instead
+	  $P viewer [VM]       #call virt-viewer   //you can use vi,vie,view instead
+	  $P vnc [VM]          #show vnc host:port //you can use vn instead
 	  $P vnc [-get|-put|-putln] [VM]           #read screen text or send string thru vnc
 	  $P xml [VM]          #dump vm xml file   //you can use x,xm instead xml
 	  $P edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
@@ -1851,7 +1857,8 @@ mkdir -p ${DownloadImagePath}
 	e|ex|ex*) shift; [[ "$1" = -d ]] && shift; vmexec "$@"; exit $?;;
 	ls|li|lis|list) shift; [[ "$1" = -d ]] && shift; vmlist "$@"; exit $?;;
 	i|if|if*) shift; [[ "$1" = -d ]] && shift; vmifaddr "$@"; exit $?;;
-	v|vn|vnc|vncp*) shift; [[ "$1" = -d ]] && shift; vmvncproc "$@"; exit $?;;
+	vi|vie|view*) shift; [[ "$1" = -d ]] && shift; vmviewer "$@"; exit $?;;
+	vn|vnc|vncp*) shift; [[ "$1" = -d ]] && shift; vmvncproc "$@"; exit $?;;
 	x|xm*) shift; [[ "$1" = -d ]] && shift; vmxml "$@"; exit $?;;
 	ed|ed*) shift; [[ "$1" = -d ]] && shift; vmedit "$@"; exit $?;;
 	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
@@ -2741,7 +2748,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	for vncaddr in $(vmvncproc $vmname); do
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
-	[[ -n $DISPLAY ]] && virt-viewer $vmname &
+	[[ -n $DISPLAY ]] && virt-viewer -v $vmname &
 	exit 0
 elif [[ "$InstallType" = cdrom ]]; then
 	[[ -f $Isourl ]] && Isourl=file://$(readlink -f ${Isourl})
@@ -2792,7 +2799,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	for vncaddr in $(vmvncproc $vmname); do
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
-	[[ -n $DISPLAY ]] && virt-viewer $vmname &
+	[[ -n $DISPLAY ]] && virt-viewer -v $vmname &
 	exit 0
 fi
 
