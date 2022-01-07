@@ -2762,8 +2762,10 @@ elif [[ "$InstallType" = pxe ]]; then
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
 	if [[ -n $DISPLAY ]]; then
-		virt-viewer -v $vmname; virt-viewer -v $vmname &
+		virt-viewer -v $vmname; nohup virt-viewer -v $vmname &>/dev/null &
 	fi
+
+	echo -e "\n{VM:INFO} guest $vmname install finished"
 	exit 0
 elif [[ "$InstallType" = cdrom ]]; then
 	[[ -f $Isourl ]] && Isourl=file://$(readlink -f ${Isourl})
@@ -2833,8 +2835,10 @@ elif [[ "$InstallType" = cdrom ]]; then
 		echo -e "  $ vncviewer $vncaddr    #from remote"
 	done
 	if [[ -n $DISPLAY ]]; then
-		virt-viewer -v $vmname; virt-viewer -v $vmname &
+		virt-viewer -v $vmname; nohup virt-viewer -v $vmname &>/dev/null &
 	fi
+
+	echo -e "\n{VM:INFO} guest $vmname install finished"
 	exit 0
 fi
 
