@@ -907,16 +907,24 @@ install_requires() {
 	. /etc/os-release
 	OS=$NAME
 
+	local pkglist=
+	local recommend_pkglist=
+
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
 	case ${OS,,} in
 	fedora*|red?hat*|centos*|rocky*)
-		local pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img genisoimage iptables-nft"
+		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img genisoimage iptables-nft"
+		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
+
 		if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
 			OSV=$(rpm -E %rhel)
 			[[ "$OSV" != "%rhel" ]] && yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
 		fi
 		rpm -q $pkglist || {
 			sudo yum $yumOpt --setopt=strict=0 install -y $pkglist
+		}
+		rpm -q $recommend_pkglist || {
+			sudo yum $yumOpt --setopt=strict=0 install -y $recommend_pkglist
 		}
 
 		#install virtio driver for Windows Guest
@@ -925,17 +933,23 @@ install_requires() {
 		sudo yum install -y virtio-win
 		;;
 	debian*|ubuntu*)
-		local pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables acl"
+		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables acl"
+		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
+
 		read -d . verx 2>/dev/null </etc/debian_version
 		[[ "$verx" = 9 ]] && {
 			sudo apt -y update; sudo apt -y upgrade
 			sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y busybox-static iptables ebtables
 		}
 		sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y $pkglist
+		sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y $recommend_pkglist
 		;;
 	opensuse*|sles*)
 		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools mkisofs iptables-nft"
+		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
+
 		sudo zypper in --no-recommends -y $pkglist
+		sudo zypper in --no-recommends -y $recommend_pkglist
 		;;
 	*)
 		: #fixme add more platform
