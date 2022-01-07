@@ -2368,7 +2368,7 @@ if [[ "$InstallType" = location ]]; then
 
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
-	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2565,7 +2565,7 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	}
 
-	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2714,7 +2714,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
 
-	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2733,12 +2733,11 @@ elif [[ "$InstallType" = pxe ]]; then
 	while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
 		expect {
-			{* to complete the installation process.} { exit }
+			{Waiting for the installation to complete} { exit }
 			{*\r} { exp_continue }
 			{</domain>} { exit }
 		}
 	"
-	cat $VMpath/nohup.log
 
 	sleep 1
 	vm vnc $vmname -get
@@ -2786,7 +2785,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 
 	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
 
-	run nohup virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2806,12 +2805,11 @@ elif [[ "$InstallType" = cdrom ]]; then
 	while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
 		expect {
-			{* to complete the installation process.} { exit }
+			{Waiting for the installation to complete} { exit }
 			{*\r} { exp_continue }
 			{</domain>} { exit }
 		}
 	"
-	cat $VMpath/nohup.log
 
 	sleep 2
 	vm vnc $vmname -get
