@@ -2757,15 +2757,16 @@ elif [[ "$InstallType" = pxe ]]; then
 		vm vnc $vmname -get
 	fi
 
-	echo -e "\n{VM:INFO} please connect vnc to continue install:"
-	for vncaddr in $(vmvncproc $vmname); do
-		echo -e "  $ vncviewer $vncaddr    #from remote"
-	done
 	if [[ -n $DISPLAY ]]; then
 		virt-viewer -v $vmname; nohup virt-viewer -v $vmname &>/dev/null &
+		echo -e "\n{VM:INFO} guest $vmname install finished"
+	else
+		echo -e "\n{VM:INFO} please connect vnc to continue install:"
+		for vncaddr in $(vmvncproc $vmname); do
+			echo -e "  $ vncviewer $vncaddr    #from remote"
+		done
 	fi
 
-	echo -e "\n{VM:INFO} guest $vmname install finished"
 	exit 0
 elif [[ "$InstallType" = cdrom ]]; then
 	[[ -f $Isourl ]] && Isourl=file://$(readlink -f ${Isourl})
@@ -2830,15 +2831,16 @@ elif [[ "$InstallType" = cdrom ]]; then
 		vm vnc "$vmname" -put "$VNCPUT_AFTER_INSTALL"
 	fi
 
-	echo -e "\n{VM:INFO} please connect vnc to continue install:"
-	for vncaddr in $(vmvncproc $vmname); do
-		echo -e "  $ vncviewer $vncaddr    #from remote"
-	done
 	if [[ -n $DISPLAY ]]; then
 		virt-viewer -v $vmname; nohup virt-viewer -v $vmname &>/dev/null &
+		echo -e "\n{VM:INFO} guest $vmname install finished"
+	else
+		echo -e "\n{VM:INFO} please connect vnc to continue install:"
+		for vncaddr in $(vmvncproc $vmname); do
+			echo -e "  $ vncviewer $vncaddr    #from remote"
+		done
 	fi
 
-	echo -e "\n{VM:INFO} guest $vmname install finished"
 	exit 0
 fi
 
