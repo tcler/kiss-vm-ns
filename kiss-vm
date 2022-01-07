@@ -1387,10 +1387,10 @@ Usage() {
 	                 #add dnf/yum <repo> before install, only for CentOS/RHEL/Fedora
 	  --nosshkey     #don't inject sshkey
 	  --debug        #debug mode
+	  --vncwait,--vncwait-after-install <pattern,send>
+	                 #wait string:$pattern, then send string:$send
 	  --vncput-after-install <msg>
 	                 #send string or key event ASAP after virt-intall
-	  --vncwait-after-install <pattern,send>
-	                 #wait string:$pattern, then send string:$send
 	  --xml          #just generate xml
 	  --machine <machine type>
 	                 #specify machine type #get supported type by: qemu-kvm -machine help
@@ -1607,7 +1607,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long get --long vncget \
 	--long put: --long vncput: \
 	--long putln: --long vncputln: \
-	--long vncwait-after-install: \
+	--long vncwait: --long vncwait-after-install: \
 	--long vncput-after-install: \
 	--long xml \
 	--long machine: \
@@ -1696,7 +1696,7 @@ while true; do
 	--getsc|--vncgetsc) VNCGETSC=yes; shift 1;;
 	--put|--vncput)  VNCPUTS+=("$2"); shift 2;;
 	--putln|--vncputln)     [[ -n "$2" ]] && VNCPUTS+=("$2" "key:enter") || VNCPUTS+=("key:enter"); shift 2;;
-	--vncwait-after-install) VNCWAIT_AFTER_INSTALL="$2"; shift 2;;
+	--vncwait|--vncwait-after-install) VNCWAIT_AFTER_INSTALL="$2"; shift 2;;
 	--vncput-after-install) VNCPUT_AFTER_INSTALL="$2"; shift 2;;
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
