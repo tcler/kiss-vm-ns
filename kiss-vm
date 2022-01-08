@@ -2434,7 +2434,8 @@ if [[ "$InstallType" = location ]]; then
 		}
 	"
 	[[ -n "$XML" ]] && {
-		cp $VMpath/nohup.log $VMpath/vm.xml
+		#cp $VMpath/nohup.log $VMpath/vm.xml
+		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		rm -f $VMpath/*
 		exit
@@ -2629,7 +2630,8 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	"
 	[[ -n "$XML" ]] && {
-		cp $VMpath/nohup.log $VMpath/vm.xml
+		#cp $VMpath/nohup.log $VMpath/vm.xml
+		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		exit
 	}
@@ -2776,7 +2778,8 @@ elif [[ "$InstallType" = pxe ]]; then
 		}
 	"
 	[[ -n "$XML" ]] && {
-		cp $VMpath/nohup.log $VMpath/vm.xml
+		#cp $VMpath/nohup.log $VMpath/vm.xml
+		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		exit
 	}
@@ -2856,7 +2859,8 @@ elif [[ "$InstallType" = cdrom ]]; then
 		}
 	"
 	[[ -n "$XML" ]] && {
-		cp $VMpath/nohup.log $VMpath/vm.xml
+		#cp $VMpath/nohup.log $VMpath/vm.xml
+		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		exit
 	}
