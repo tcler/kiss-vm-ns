@@ -1361,6 +1361,8 @@ Usage() {
 	                 #number of virtual cpus, default: sockets=1,cores=2,threads=2
 	                 #see also: virt-install --vcpus=?
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
+	  --boot <arg>   #pass thru to virt-install's --boot options
+	                 #see also: `virt-install --boot=?`
 	  --video <type> #video device model, options for recent kvm are: cirrus, vga, qxl, virtio
 	                 #see also: `virt-install --video=?`
 	  --msize <size> #memory size, default 2048
@@ -1609,6 +1611,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long getvmname \
 	--long nocloud-init --long nocloud \
 	--long cpus: --long vcpus: \
+	--long boot: \
 	--long video: \
 	--long msize: \
 	--long dsize: \
@@ -1687,6 +1690,7 @@ while true; do
 	--dsize)         dsizeflag=1; DSIZE="$2"; shift 2;;
 	--msize)         MSIZE="$2"; shift 2;;
 	--cpus|--vcpus)  VCPUS="$2"; shift 2;;
+	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
 	--video)         VIDEO_OPT="$2"; shift 2;;
 	--nointeract)    INTERACT="no"; shift 1;;
 	--noauto)        NOAUTO="yes"; shift 1;;
@@ -2414,6 +2418,7 @@ if [[ "$InstallType" = location ]]; then
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
+	  "${BOOT_OPTS[@]}" \
 	  --video ${VIDEO_OPT:-virtio} \
 	  $MEM_OPTS \
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
@@ -2610,6 +2615,7 @@ elif [[ "$InstallType" = import ]]; then
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
+	  "${BOOT_OPTS[@]}" \
 	  --video ${VIDEO_OPT:-virtio} \
 	  $MEM_OPTS \
 	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
@@ -2760,6 +2766,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
+	  "${BOOT_OPTS[@]}" \
 	  --video ${VIDEO_OPT:-virtio} \
 	  $MEM_OPTS \
 	  --pxe \
@@ -2840,6 +2847,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $OS_VARIANT_OPT \
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
+	  "${BOOT_OPTS[@]}" \
 	  --video ${VIDEO_OPT:-virtio} \
 	  $MEM_OPTS \
 	  --cdrom $isofile \
