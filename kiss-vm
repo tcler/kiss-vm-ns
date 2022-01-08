@@ -188,8 +188,8 @@ _vmdelete() {
 	fi
 
 	echo -e "\n{VM:INFO} => dist removing VM $_vmname .."
-	virsh destroy $_vmname 2>/dev/null; sleep 0.5
-	virsh undefine $_vmname 2>/dev/null || virsh undefine $_vmname --nvram
+	{ virsh destroy $_vmname 2>/dev/null; sleep 0.5
+	  virsh undefine $_vmname 2>/dev/null || virsh undefine $_vmname --nvram; } | sed '/^$/d'
 
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "{VM:INFO} removing VM folder $_vmdir ..."
@@ -2879,7 +2879,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 
 	if [[ -n "$VNCWAIT_AFTER_INSTALL" ]]; then
 		read _pattern _send <<<"${VNCWAIT_AFTER_INSTALL/,/ }"
-		until vm vnc "$vmname" -get | grep "$_pattern"; do sleep 1; done
+		until vm vnc "$vmname" -get | GREP_COLORS='ms=01;30;46' grep --color "$_pattern"; do sleep 1; done
 		vm vnc "$vmname" -put "$_send"
 	fi
 	if [[ -n "$VNCPUT_AFTER_INSTALL" ]]; then
