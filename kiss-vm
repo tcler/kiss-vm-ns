@@ -1526,10 +1526,22 @@ Usage() {
 }
 
 run() {
-	[[ $# -eq 0 ]] && return 0
+	local _nohup= _nohuplogf=
 
-	[[ "$DEBUG" = yes ]] && echo "[sys]" "$@"
-	"$@"
+	[[ $# -eq 0 ]] && return 0
+	[[ $1 = -nohup* || $1 = nohup* ]] && {
+		_nohup=\ nohup
+		[[ $1 = *=* ]] && _nohuplogf=${1#*=}
+		_nohuplogf=${_nohuplogf:-$VMpath/nohup.log}
+		shift
+	}
+
+	[[ "$DEBUG" = yes ]] && echo "[sys]$_nohup" "$@" | GREP_COLORS='ms=01;30;47' grep --color .
+	if [[ -n "$_nohup" ]]; then
+		nohup "$@" &>${_nohuplogf} &
+	else
+		"$@"
+	fi
 }
 
 expandrc() {
@@ -2394,7 +2406,7 @@ if [[ "$InstallType" = location ]]; then
 
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
-	run nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2411,7 +2423,7 @@ if [[ "$InstallType" = location ]]; then
 	  --extra-args="inst.ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
 	  --noautoconsole \
 	  $VTPM_OPT \
-	  --vnc --vnclisten 0.0.0.0 $NOREBOOT &>$VMpath/nohup.log &
+	  --vnc --vnclisten 0.0.0.0 $NOREBOOT
 
 	while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2591,7 +2603,7 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	}
 
-	run nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2607,7 +2619,7 @@ elif [[ "$InstallType" = import ]]; then
 	  --import \
 	  --noautoconsole \
 	  $VTPM_OPT \
-	  --vnc --vnclisten 0.0.0.0 &>$VMpath/nohup.log &
+	  --vnc --vnclisten 0.0.0.0
 
 	while true; do test -f $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2740,7 +2752,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
 
-	run nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2754,7 +2766,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  --noautoconsole --wait=-1 \
 	  $VTPM_OPT \
 	  ${NETWORK_OPTS%,model=virtio} \
-	  --vnc --vnclisten 0.0.0.0 &>$VMpath/nohup.log &
+	  --vnc --vnclisten 0.0.0.0
 
 	while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2814,7 +2826,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 
 	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
 
-	run nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  --name $vmname \
@@ -2829,7 +2841,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --noautoconsole --wait=-1 \
 	  $VTPM_OPT \
-	  --vnc --vnclisten 0.0.0.0 &>$VMpath/nohup.log &
+	  --vnc --vnclisten 0.0.0.0
 
 	while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
