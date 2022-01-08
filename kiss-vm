@@ -2425,7 +2425,7 @@ if [[ "$InstallType" = location ]]; then
 	  $VTPM_OPT \
 	  --vnc --vnclisten 0.0.0.0 $NOREBOOT
 
-	while true; do test -s $VMpath/nohup.log && break; done
+	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
 		expect {
 			{* to complete the installation process.} { exit }
@@ -2433,7 +2433,6 @@ if [[ "$InstallType" = location ]]; then
 			{</domain>} { exit }
 		}
 	"
-
 	[[ -n "$XML" ]] && {
 		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
@@ -2621,7 +2620,7 @@ elif [[ "$InstallType" = import ]]; then
 	  $VTPM_OPT \
 	  --vnc --vnclisten 0.0.0.0
 
-	while true; do test -f $VMpath/nohup.log && break; done
+	[[ -z "$XML" ]] && while true; do test -f $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
 		expect {
 			{*Domain creation completed.} { exit }
@@ -2768,7 +2767,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  ${NETWORK_OPTS%,model=virtio} \
 	  --vnc --vnclisten 0.0.0.0
 
-	while true; do test -s $VMpath/nohup.log && break; done
+	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
 		expect {
 			{Waiting for the installation to complete} { exit }
@@ -2776,6 +2775,11 @@ elif [[ "$InstallType" = pxe ]]; then
 			{</domain>} { exit }
 		}
 	"
+	[[ -n "$XML" ]] && {
+		cp $VMpath/nohup.log $VMpath/vm.xml
+		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
+		exit
+	}
 
 	sleep 1
 	vm vnc $vmname -get
@@ -2843,7 +2847,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $VTPM_OPT \
 	  --vnc --vnclisten 0.0.0.0
 
-	while true; do test -s $VMpath/nohup.log && break; done
+	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
 		expect {
 			{Waiting for the installation to complete} { exit }
@@ -2851,6 +2855,11 @@ elif [[ "$InstallType" = cdrom ]]; then
 			{</domain>} { exit }
 		}
 	"
+	[[ -n "$XML" ]] && {
+		cp $VMpath/nohup.log $VMpath/vm.xml
+		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
+		exit
+	}
 
 	sleep 2
 	vm vnc $vmname -get
