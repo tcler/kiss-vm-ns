@@ -2759,6 +2759,9 @@ elif [[ "$InstallType" = pxe ]]; then
 	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
 
+	echo -e "{VM:INFO} creating VM from pxe"
+	touch $VMpath/.kiss-vm
+
 	run -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
@@ -2839,6 +2842,9 @@ elif [[ "$InstallType" = cdrom ]]; then
 	[[ -f ${isofile} ]] || exit 1
 
 	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
+
+	echo -e "{VM:INFO} creating VM install from cdrom($isofile)"
+	touch $VMpath/.kiss-vm
 
 	run -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
