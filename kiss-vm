@@ -72,10 +72,10 @@ vcpuN() {
 	local _vcpun= _sockets=1 _cores=2 _threads=2
 	for _item in ${_vcpus//,/ }; do
 		case $_item in
-		[0-9]+$) && _vcpun=$_item;;
-		sockets=*) _sockets=${_item#*=}
-		cores=*) _cores=${_item#*=}
-		threads=*) _threads=${_item#*=}
+		[0-9]*) _vcpun=$_item;;
+		sockets=*) _sockets=${_item#*=};;
+		cores=*) _cores=${_item#*=};;
+		threads=*) _threads=${_item#*=};;
 		esac
 	done
 
