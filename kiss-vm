@@ -2809,8 +2809,13 @@ elif [[ "$InstallType" = pxe ]]; then
 	fi
 
 	if [[ -n $DISPLAY ]]; then
-		virt-viewer -v $vmname; nohup virt-viewer -v $vmname &>/dev/null &
-		echo -e "\n{VM:INFO} guest $vmname install finished"
+		virt-viewer -v $vmname |& tee $VMpath/virt-viewer.log
+		if grep -iq "server closed the connection" $VMpath/virt-viewer.log; then
+			nohup virt-viewer -v $vmname &>/dev/null &
+			echo -e "\n{VM:INFO} guest $vmname install finished"
+		else
+			echo -e "\n{VM:INFO} virt-viewer disconnected, run: 'virt-viewer $vmname' to finish install"
+		fi
 	else
 		echo -e "\n{VM:INFO} please connect vnc to continue install:"
 		for vncaddr in $(vmvncproc $vmname); do
@@ -2893,8 +2898,13 @@ elif [[ "$InstallType" = cdrom ]]; then
 	fi
 
 	if [[ -n $DISPLAY ]]; then
-		virt-viewer -v $vmname; nohup virt-viewer -v $vmname &>/dev/null &
-		echo -e "\n{VM:INFO} guest $vmname install finished"
+		virt-viewer -v $vmname |& tee $VMpath/virt-viewer.log
+		if grep -iq "server closed the connection" $VMpath/virt-viewer.log; then
+			nohup virt-viewer -v $vmname &>/dev/null &
+			echo -e "\n{VM:INFO} guest $vmname install finished"
+		else
+			echo -e "\n{VM:INFO} virt-viewer disconnected, run: 'virt-viewer $vmname' to finish install"
+		fi
 	else
 		echo -e "\n{VM:INFO} please connect vnc to continue install:"
 		for vncaddr in $(vmvncproc $vmname); do
