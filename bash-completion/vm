@@ -60,6 +60,9 @@ _vm()
                 --video)
                     COMPREPLY=( $( compgen -W "virtio vga qxl cirrus" -- "$cur" ) )
                     ;;
+                --video)
+                    COMPREPLY=( $( compgen -W "ich6 ich9 ac97 es1370 sb16 pcspk default" -- "$cur" ) )
+                    ;;
                 *)
                     COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
                     ;;

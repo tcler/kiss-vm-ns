@@ -1375,8 +1375,10 @@ Usage() {
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
 	  --boot <arg>   #pass thru to virt-install's --boot options
 	                 #see also: `virt-install --boot=?`
-	  --video <type> #video device model, options for recent kvm are: cirrus, vga, qxl, virtio
+	  --video <type> #video device model, Possible value for recent kvm are: cirrus, vga, qxl, virtio
 	                 #see also: `virt-install --video=?`
+	  --sound <type> #sound MODEL, Possible values are ich6, ich9, ac97, es1370, sb16, pcspk, or default
+	                 #see also: `virt-install --sound=?`
 	  --msize <size> #memory size, default 2048
 	  --dsize <size> #disk size, default 16
 	  --if-model <>  #change default model(virtio) of virtual NICs: e1000,rtl8139 
@@ -1626,6 +1628,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long cpus: --long vcpus: \
 	--long boot: \
 	--long video: \
+	--long sound: \
 	--long msize: \
 	--long dsize: \
 	--long if-model: \
@@ -1705,6 +1708,7 @@ while true; do
 	--cpus|--vcpus)  VCPUS="$2"; shift 2;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
 	--video)         VIDEO_OPT="$2"; shift 2;;
+	--sound)         SOUND_OPT="$2"; shift 2;;
 	--nointeract)    INTERACT="no"; shift 1;;
 	--noauto)        NOAUTO="yes"; shift 1;;
 	--if-model)      NIC_MODEL="$2"; shift 2;;
@@ -2434,6 +2438,7 @@ if [[ "$InstallType" = location ]]; then
 	  --vcpus ${VCPUS} \
 	  "${BOOT_OPTS[@]}" \
 	  --video ${VIDEO_OPT:-virtio} \
+	  --sound ${SOUND_OPT:-default} \
 	  $MEM_OPTS \
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
@@ -2631,6 +2636,7 @@ elif [[ "$InstallType" = import ]]; then
 	  --vcpus ${VCPUS} \
 	  "${BOOT_OPTS[@]}" \
 	  --video ${VIDEO_OPT:-virtio} \
+	  --sound ${SOUND_OPT:-default} \
 	  $MEM_OPTS \
 	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
@@ -2785,6 +2791,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  --vcpus ${VCPUS} \
 	  "${BOOT_OPTS[@]}" \
 	  --video ${VIDEO_OPT:-virtio} \
+	  --sound ${SOUND_OPT:-default} \
 	  $MEM_OPTS \
 	  --pxe \
 	  --disk $diskOpt \
@@ -2874,6 +2881,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  --vcpus ${VCPUS} \
 	  "${BOOT_OPTS[@]}" \
 	  --video ${VIDEO_OPT:-virtio} \
+	  --sound ${SOUND_OPT:-default} \
 	  $MEM_OPTS \
 	  --cdrom $isofile \
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
