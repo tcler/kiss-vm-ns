@@ -2904,7 +2904,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	if [[ -n "$VNCWAIT_AFTER_INSTALL" ]]; then
 		read _pattern _msgs <<<"${VNCWAIT_AFTER_INSTALL/,/ }"
 		for ((i=0; i<60; i++)) do
-			sleep 1; vm vnc "$vmname" -get | GREP_COLORS='ms=01;30;46' grep --color "$_pattern" && break
+			sleep 1; vm vnc "$vmname" -get | GREP_COLORS='ms=01;30;46' grep -i --color "$_pattern" && break
 		done && for _send in $_msgs; do vm vnc "$vmname" -put "$_send"; done
 	fi
 	if [[ -n "$VNCPUT_AFTER_INSTALL" ]]; then
