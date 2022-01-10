@@ -472,6 +472,18 @@ vmstart() {
 	for vm; do virsh start "$vm"; done
 }
 
+vmstat() {
+	local _vmname=$1
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogchecklist vm-stat $resf all && vmList=$(< $resf)
+		[[ -z "$vmList" ]] && { return; }
+		eval set $vmList
+	}
+
+	for vm; do virsh domstate "$vm"; done
+}
+
 vmclone() {
 	[[ "$1" = /a ]] && {
 		shift
@@ -1514,6 +1526,7 @@ Usage() {
 	  $P reboot [-w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
 	  $P stop [VM]         #stop/shutdonw VM   //nil
 	  $P start [VM]        #start VM           //nil
+	  $P stat [VM]         #get VM state       //see also: virsh domstate <domain>
 	  $P cpfrom <VM> <file/dir_in_vm> <dst_dir/file_in_host>
 	  $P cpto   <VM> <files/dirs_in_host ...> <dst_dir_in_vm>
 
@@ -1905,7 +1918,8 @@ mkdir -p ${DownloadImagePath}
 	ed|ed*) shift; [[ "$1" = -d ]] && shift; vmedit "$@"; exit $?;;
 	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
 	stop|sto*) shift; [[ "$1" = -d ]] && shift; vmstop "$@"; exit $?;;
-	start|sta*) shift; [[ "$1" = -d ]] && shift; vmstart "$@"; exit $?;;
+	start|star*) shift; [[ "$1" = -d ]] && shift; vmstart "$@"; exit $?;;
+	stat) shift; [[ "$1" = -d ]] && shift; vmstat "$@"; exit $?;;
 	srcfiles) shift; [[ "$1" = -d ]] && shift; _vmsrcfiles "$@"; exit $?;;
 	rootdir) shift; [[ "$1" = -d ]] && shift; vmrootdir "$@"; exit $?;;
 	homedir) shift; [[ "$1" = -d ]] && shift; vmhomedir "$@"; exit $?;;
