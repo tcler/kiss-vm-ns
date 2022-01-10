@@ -2898,14 +2898,14 @@ elif [[ "$InstallType" = cdrom ]]; then
 		exit
 	}
 
-	sleep 2
-	vm vnc $vmname -get
-	vm vnc $vmname -put "key:down" -put "key:up"
+	vm vnc $vmname -put "key:shift"
+	vm vnc $vmname -get | tee $RuntimeTmp/std.log
 
 	if [[ -n "$VNCWAIT_AFTER_INSTALL" ]]; then
-		read _pattern _send <<<"${VNCWAIT_AFTER_INSTALL/,/ }"
-		until vm vnc "$vmname" -get | GREP_COLORS='ms=01;30;46' grep --color "$_pattern"; do sleep 1; done
-		vm vnc "$vmname" -put "$_send"
+		read _pattern _msgs <<<"${VNCWAIT_AFTER_INSTALL/,/ }"
+		for ((i=0; i<60; i++)) do
+			sleep 1; vm vnc "$vmname" -get | GREP_COLORS='ms=01;30;46' grep --color "$_pattern" && break
+		done && for _send in $_msgs; do vm vnc "$vmname" -put "$_send"; done
 	fi
 	if [[ -n "$VNCPUT_AFTER_INSTALL" ]]; then
 		vm vnc "$vmname" -put "$VNCPUT_AFTER_INSTALL"
