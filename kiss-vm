@@ -1380,6 +1380,10 @@ Usage() {
 	  --sound <type> #sound MODEL, Possible values are ich6, ich9, ac97, es1370, sb16, pcspk, or default
 	                 #see also: `virt-install --sound=?`
 	                 #Note: vnc server doesn't support audio well, please enable RDP(Remote Desktop Protocol) in your Guest for sound
+	  --graphics <TYPE,opt1=arg1,opt2=arg2,...>
+	                 #Possible TYPE values are: vnc, spice, none
+	                 #Possible sub-options are: port, listen, tlsPort, websocket, password, gl.enable, gl.rendernode ..
+	                 #see also: `virt-install --graphics=?`
 	  --msize <size> #memory size, default 2048
 	  --dsize <size> #disk size, default 16
 	  --if-model <>  #change default model(virtio) of virtual NICs: e1000,rtl8139 
@@ -2448,7 +2452,8 @@ if [[ "$InstallType" = location ]]; then
 	  --extra-args="inst.ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
 	  --noautoconsole \
 	  $VTPM_OPT \
-	  --vnc --vnclisten 0.0.0.0 $NOREBOOT
+	  $NOREBOOT \
+	  --graphics=vnc,listen=0.0.0.0
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2646,7 +2651,7 @@ elif [[ "$InstallType" = import ]]; then
 	  --import \
 	  --noautoconsole \
 	  $VTPM_OPT \
-	  --vnc --vnclisten 0.0.0.0
+	  --graphics=vnc,listen=0.0.0.0
 
 	[[ -z "$XML" ]] && while true; do test -f $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2799,7 +2804,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  --noautoconsole --wait=-1 \
 	  $VTPM_OPT \
 	  ${NETWORK_OPTS%,model=virtio} \
-	  --vnc --vnclisten 0.0.0.0
+	  --graphics=vnc,listen=0.0.0.0
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2890,7 +2895,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --noautoconsole --wait=-1 \
 	  $VTPM_OPT \
-	  --vnc --vnclisten 0.0.0.0
+	  --graphics=vnc,listen=0.0.0.0
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
