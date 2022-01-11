@@ -2447,9 +2447,6 @@ if [[ "$InstallType" = location ]]; then
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
 	  "${BOOT_OPTS[@]}" \
-	  ${VIDEO_OPT} \
-	  ${SOUND_OPT} \
-	  ${GRAPHICS_OPT} \
 	  $MEM_OPTS \
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
@@ -2458,8 +2455,10 @@ if [[ "$InstallType" = location ]]; then
 	  --extra-args="inst.ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
 	  --noautoconsole \
 	  $VTPM_OPT \
+	  ${VIDEO_OPT} \
+	  ${SOUND_OPT} \
 	  $NOREBOOT \
-	  --graphics=vnc,listen=0.0.0.0
+	  ${GRAPHICS_OPT}
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2647,9 +2646,6 @@ elif [[ "$InstallType" = import ]]; then
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
 	  "${BOOT_OPTS[@]}" \
-	  ${VIDEO_OPT} \
-	  ${SOUND_OPT} \
-	  ${GRAPHICS_OPT} \
 	  $MEM_OPTS \
 	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
 	  $DISK_OPTS \
@@ -2658,7 +2654,9 @@ elif [[ "$InstallType" = import ]]; then
 	  --import \
 	  --noautoconsole \
 	  $VTPM_OPT \
-	  --graphics=vnc,listen=0.0.0.0
+	  ${VIDEO_OPT} \
+	  ${SOUND_OPT} \
+	  ${GRAPHICS_OPT}
 
 	[[ -z "$XML" ]] && while true; do test -f $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2803,16 +2801,15 @@ elif [[ "$InstallType" = pxe ]]; then
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
 	  "${BOOT_OPTS[@]}" \
-	  ${VIDEO_OPT} \
-	  ${SOUND_OPT} \
-	  ${GRAPHICS_OPT} \
 	  $MEM_OPTS \
 	  --pxe \
 	  --disk $diskOpt \
 	  --noautoconsole --wait=-1 \
 	  $VTPM_OPT \
 	  ${NETWORK_OPTS%,model=virtio} \
-	  --graphics=vnc,listen=0.0.0.0
+	  ${VIDEO_OPT} \
+	  ${SOUND_OPT} \
+	  ${GRAPHICS_OPT}
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -2894,9 +2891,6 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $MACHINE_OPT \
 	  --vcpus ${VCPUS} \
 	  "${BOOT_OPTS[@]}" \
-	  ${VIDEO_OPT} \
-	  ${SOUND_OPT} \
-	  ${GRAPHICS_OPT} \
 	  $MEM_OPTS \
 	  --cdrom $isofile \
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
@@ -2904,7 +2898,9 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $NETWORK_OPTS $CONTROLLER_OPTS \
 	  --noautoconsole --wait=-1 \
 	  $VTPM_OPT \
-	  --graphics=vnc,listen=0.0.0.0
+	  ${VIDEO_OPT} \
+	  ${SOUND_OPT} \
+	  ${GRAPHICS_OPT}
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
