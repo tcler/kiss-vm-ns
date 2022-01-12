@@ -2004,13 +2004,15 @@ fi
 		echo -e "Rocky\nCentOS\nfedora\ndebian\nopenSUSE\narchlinux\nFreeBSD" >>$distropatternInter
 		for dname in "${!distroInfo[@]}"; do echo "$dname"; done >>$distrolist
 
+		dialogTitle="vm-create"
 		[[ "$Intranet" = yes ]] && {
 			echo -e "Fedora\nRHEL-9\nRHEL-8\nRHEL-7\nRHEL-6\nRHEL5" >>$distropatternIntra
 			fetch_distro_list >>$distrolist
+			dialogTitle+=" Intranet"
 		}
 
 		familys=$(sed -e 's/.*/"&" "" 1/' $distropatternIntra $distropatternInter)
-		dialog --backtitle "$0" --radiolist "please selet distro family/pattern:" 20 40 16 $familys 2>$dialogres || { Usage; exit 0; }
+		dialog --backtitle "$dialogTitle" --radiolist "please selet distro family/pattern:" 20 40 16 $familys 2>$dialogres || { Usage; exit 0; }
 		pattern=$(head -n1 $dialogres|sed 's/"//g')
 		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|egrep "$pattern")
 		[[ "$Intranet" = yes ]] && grep -F "$pattern" $distropatternIntra && {
@@ -2019,7 +2021,7 @@ fi
 				--yesno "Do you want nightly build distros?" 7 60
 			[[ $? = 1 ]] && dList=$(echo "$dList"|grep -v '\.n\.[0-9]"')
 		}
-		dialog --backtitle "$0" --radiolist "please select distro:" 30 60 28 $dList 2>$dialogres || { Usage; exit 0; }
+		dialog --backtitle "$dialogTitle" --radiolist "please select distro:" 30 60 28 $dList 2>$dialogres || { Usage; exit 0; }
 		Distro=$(head -n1 $dialogres|sed 's/"//g')
 		printf '\33[H\33[2J'
 	else
