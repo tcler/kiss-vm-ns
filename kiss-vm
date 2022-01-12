@@ -49,7 +49,7 @@ _downhostname="download.devel.fedorahat.com"
 downhostname=${_downhostname/fedora/red}
 baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
 bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
-VCPUS=sockets=1,cores=2,threads=2
+VCPUS=4,sockets=1
 defaultPasswd=redhat
 orig_disable_ipv6=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
 
