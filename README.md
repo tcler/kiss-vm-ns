@@ -32,20 +32,20 @@ sudo make -C kiss-vm-ns install && sudo vm prepare
 ![kiss-vm](https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/Images/kiss-vm.gif)
 
 example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/multipath/multipath-vm.sh  
-example: https://github.com/tcler/freebsd-pnfsserver-in-kvm  
+example: https://github.com/tcler/freebsd-pnfsserver-in-kvm/blob/main/make-pnfsserver-demo.sh  
 ```
 [me@ws ~]$ vm help  #get usage/help info
 ```
 
 ## kiss-ns
-example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/labelled-nfs/labelled-nfs.sh  
+example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/labelled-nfs/labelled-nfs-ns.sh  
 ```
 [me@ws ~]$ ns -h  #get usage/help info
 ```
 
 ## kiss-netns
-example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/nfs-stress/nfs-stress.sh#L85  
-example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/multipath/multipath-netns.sh#L23  
+example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/nfs-stress/nfs-stress.sh#L176  
+example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/multipath/multipath-netns.sh#L38  
 ```
 [me@ws ~]$ netns -h  #get usage/help info
 ```
