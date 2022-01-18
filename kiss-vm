@@ -1501,14 +1501,10 @@ Usage() {
 	cat <<-EOF
 	Examples for create vm from distro-db (Internet):
 	  $P [create] # will enter a TUI show you all available distros that could auto generate source url
+	  $P [create] <FreeBSD-13.0 | Rocky-8 | fedora-35 | debian-10 | openSUSE-leap-15.3>
 	  $P [create] CentOS-8-stream -b ftp://url/path/x.rpm
-	  $P [create] CentOS-8 -p "jimtcl vim git make gcc"
-	  $P [create] CentOS-7 -p "vim git wget make gcc"
-	  $P [create] FreeBSD-13.0
-	  $P [create] debian-10
-	  $P [create] openSUSE-leap-15.2
-	  $P [create] fedora-32
-	  $P [create] CentOS-8 -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
+	  $P [create] Rocky-8 -p "jimtcl vim git make gcc"
+	  $P [create] Rocky-8 -enable-guest-hypv -msize=8G -dsize=120  # enable hyper-v on guest
 
 	Examples for create vm from local image or url:
 	  $P [create] freebsd-130 -i ~/myimages/download/FreeBSD-13.0-RELEASE-amd64.qcow2.xz --nocloud-init
@@ -1517,6 +1513,12 @@ Usage() {
 	  $P [create] debian-test -i https://cdimage.debian.org/cdimage/openstack/testing/debian-testing-openstack-amd64.qcow2
 	  $P [create] centos-8 -l https://cloud.centos.org/centos/8/x86_64/images/
 	  $P [create] rhel-8.4.0 -l ~/myimages/download/RHEL-8.4.0-any-x86_64-dvd1.iso -n rhel84-from-iso
+
+	Examples for create vm from local iso file:
+	  $P create Windows-11 -n win11-virtio -C win11_english_x64.iso --xcdrom virtio-win-0.1.208.iso \
+	      --machine q35 --boot=firmware=efi,loader_secure=yes -msize 8G -dsize 80 --vtpm \
+	      --video=qxl --hostdev=00:1b.0
+	  $P create OpenIndiana -n opensolaris -C OI-hipster-text-20211031.iso -msize 8G -dsize 120
 
 	Examples for other sub-commands:
 	  $P prepare           #check/install/configure libvirt and other dependent packages
