@@ -49,7 +49,7 @@ _downhostname="download.devel.fedorahat.com"
 downhostname=${_downhostname/fedora/red}
 baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
 bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
-VCPUS=4,sockets=1
+VCPUS=4,sockets=1,cores=4
 defaultPasswd=redhat
 orig_disable_ipv6=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
 
@@ -72,7 +72,7 @@ trap at_exit EXIT
 
 vcpuN() {
 	local _vcpus=$1
-	local _vcpun= _sockets=1 _cores=2 _threads=2
+	local _vcpun= _sockets=1 _cores=4 _threads=1
 	for _item in ${_vcpus//,/ }; do
 		case $_item in
 		[0-9]*) _vcpun=$_item;;
@@ -85,6 +85,8 @@ vcpuN() {
 	if [[ -z "$_vcpun" ]]; then
 		_vcpun=$((_sockets * _cores * _threads))
 	fi
+
+	echo -n $_vcpun
 }
 
 vmname_gen() {
@@ -1405,7 +1407,7 @@ Usage() {
 	                 #`e.g: --xdisk 10 --xdisk 20,xfs
 	  --xcdrom <path>
 	                 #add extra cdrom
-	  --bus <$boot_disk_bus>
+	  --diskbus <$boot_disk_bus>
 	  --sharedir <shpath[:target]>
 	                 #share path between host and guest
 	  --nvdimm <nvdimm list>
@@ -1661,7 +1663,7 @@ _at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long saveimage:: --long sa:: \
 	--long downloadonly \
 	--long ready \
-	--long bus: \
+	--long diskbus: --long bus: \
 	--long disk: \
 	--long xdisk: \
 	--long xcdrom: \
@@ -1752,7 +1754,7 @@ while true; do
 		;;
 	--downloadonly)  SAVE_IMAGE="yes"; DOWNLOAD_ONLY="yes"; InstallType=import; shift 1;;
 	-r|--ready)      KISS_VM_READY=yes; shift 1;;
-	--bus)           BOOT_DISK_BUS="$2"; shift 2;;
+	--diskbus|--bus) DEFAULT_DISK_BUS="$2"; shift 2;;
 	--disk)          DISKS+=("$2"); shift 2;;
 	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
 	--xcdrom)        EXTRA_CDROMS+=("$2"); shift 2;;
@@ -1994,12 +1996,12 @@ for disk in "${EXTRA_DISKS[@]}"; do
 done
 
 Imageurl=
-BOOT_DISK_BUS=${BOOT_DISK_BUS:-virtio}
+DEFAULT_DISK_BUS=${DEFAULT_DISK_BUS:-virtio}
 [[ -n "$ImportImageInfo" ]] && read Imageurl BOOT_DISK_ATTRS <<<"${ImportImageInfo/,/ }"
 if [[ -n "$BOOT_DISK_ATTRS" ]]; then
-	[[ "$BOOT_DISK_ATTRS" =~ bus= ]] || BOOT_DISK_ATTRS+=,bus=$BOOT_DISK_BUS
+	[[ "$BOOT_DISK_ATTRS" =~ bus= ]] || BOOT_DISK_ATTRS+=,bus=$DEFAULT_DISK_BUS
 else
-	BOOT_DISK_ATTRS=bus=$BOOT_DISK_BUS
+	BOOT_DISK_ATTRS=bus=$DEFAULT_DISK_BUS
 fi
 
 # Phase-0 get distro name

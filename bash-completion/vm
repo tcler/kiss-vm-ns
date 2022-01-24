@@ -54,6 +54,9 @@ _vm()
                 -i|-l|-C|--xcdrom|--disk)
                     COMPREPLY=( $( compgen -A file -- "$cur" ) )
                     ;;
+                --diskbus|--bus)
+                    COMPREPLY=( $( compgen -W "ide sata scsi virtio" -- "$cur" ) )
+                    ;;
                 --if-model)
                     COMPREPLY=( $( compgen -W "e1000 rtl8139 virtio" -- "$cur" ) )
                     ;;
