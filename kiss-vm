@@ -2826,7 +2826,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  --disk $diskOpt \
 	  --noautoconsole --wait=-1 \
 	  $VTPM_OPT \
-	  ${NETWORK_OPTS%,model=virtio} \
+	  ${NETWORK_OPTS} \
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
 	  ${GRAPHICS_OPT}
