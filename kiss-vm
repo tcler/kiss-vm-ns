@@ -2959,9 +2959,9 @@ elif [[ "$InstallType" = cdrom ]]; then
 	fi
 
 	if [[ -n $DISPLAY ]]; then
-		virt-viewer -v $vmname |& tee $VMpath/virt-viewer.log
+		run -debug virt-viewer -v $vmname |& tee $VMpath/virt-viewer.log
 		if grep -iq "server closed the connection" $VMpath/virt-viewer.log; then
-			nohup virt-viewer -v $vmname &>/dev/null &
+			run -debug -nohup=/dev/null virt-viewer -v $vmname
 			echo -e "\n{VM:INFO} guest $vmname install finished"
 		else
 			echo -e "\n{VM:INFO} virt-viewer exit, but seems install has not finished; you can run: 'virt-viewer $vmname' to finish install later"
