@@ -275,8 +275,10 @@ vmifaddr() {
 }
 
 vmviewer() {
-	echo "{VM:INFO} redirect to: virt-viewer $*"
-	virt-viewer -v "$@"
+	echo "{VM:INFO} redirect to: virt-viewer ..."
+	local logf=$RuntimeTmp/vmviewer-$$.log
+	run -debug -nohup=$logf virt-viewer -v "$@"
+	sleep 1; cat $logf 2>/dev/null
 }
 
 vncgetsc() {
