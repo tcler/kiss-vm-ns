@@ -1,0 +1,37 @@
+#!/bin/bash
+
+echo ---------------------------------
+echo -e "C: argc=\E[45m$(($#+1))\E[0m | Bash: \$#=\E[45m$#\E[0m"
+echo
+echo ---------------------------------
+AT=($0 "$@")
+for ((i=0; i<=$#; i++)); do echo -ne "argv[$i] | \${$i}: \E[44m"; printf %s "${AT[$i]}"; echo -e "\E[0m"; done
+
+[[ $# = 0 ]] && {
+	echo -en "\E[35m"
+	cat <<-'EOF'
+
+	# this program is used for learning how do bash parse command line argument
+	# try:
+	  args  "" '' a b c "x  y   z"  '$var' "$var" \  \" \\ "'" \$ "${empty[@]}" . "${empty[*]}"
+	  set i j k l m n; args "$*"
+	  set i j k l m n; args "$@"
+	  set i j k l m n; args "abc $@  xyz"
+	  args  sh -c 'echo xyz'
+	  args  sh -c "'echo xyz'"
+	EOF
+	echo -en "\E[0m"
+	exit
+}
+
+echo
+echo '[echo "$*"]'
+echo -ne "\E[44m"; echo -n "$*"; echo -e "\E[0m"
+
+echo
+echo '[echo "$@"]'
+echo -ne "\E[44m"; echo -n "$@"; echo -e "\E[0m"
+
+echo
+echo '[echo "${@@Q}"]'
+echo -ne "\E[44m"; echo -n "${@@Q}"; echo -e "\E[0m"
