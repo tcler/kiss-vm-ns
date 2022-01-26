@@ -2469,25 +2469,26 @@ if [[ "$InstallType" = location ]]; then
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
-	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
+	  $OS_VARIANT_OPT \
 	  --name $vmname \
 	  --location $Location \
-	  $OS_VARIANT_OPT \
-	  $MACHINE_OPT \
-	  --vcpus ${VCPUS} \
-	  "${BOOT_OPTS[@]}" \
-	  $MEM_OPTS \
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
+	  $MACHINE_OPT \
+	  "${BOOT_OPTS[@]}" \
+	  --vcpus ${VCPUS} \
+	  $MEM_OPTS \
 	  $DISK_OPTS \
-	  $NETWORK_OPTS $CONTROLLER_OPTS \
+	  $NETWORK_OPTS \
+	  $CONTROLLER_OPTS \
+	  "${HOST_DEV_OPTS[@]}" \
 	  --initrd-inject $KSPath \
 	  --extra-args="inst.ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
-	  --noautoconsole \
 	  $VTPM_OPT \
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
 	  $NOREBOOT \
+	  --noautoconsole \
 	  ${GRAPHICS_OPT}
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
@@ -2669,23 +2670,24 @@ elif [[ "$InstallType" = import ]]; then
 	}
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
-	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
-	  --name $vmname \
 	  $OS_VARIANT_OPT \
-	  $MACHINE_OPT \
-	  --vcpus ${VCPUS} \
-	  "${BOOT_OPTS[@]}" \
-	  $MEM_OPTS \
+	  --name $vmname \
+	  --import \
 	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
+	  $MACHINE_OPT \
+	  "${BOOT_OPTS[@]}" \
+	  --vcpus ${VCPUS} \
+	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  $CLOUD_INIT_OPT \
-	  $NETWORK_OPTS $CONTROLLER_OPTS \
-	  --import \
-	  --noautoconsole \
+	  $NETWORK_OPTS \
+	  $CONTROLLER_OPTS \
+	  "${HOST_DEV_OPTS[@]}" \
 	  $VTPM_OPT \
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
+	  --noautoconsole \
 	  ${GRAPHICS_OPT}
 
 	[[ -z "$XML" ]] && while true; do test -f $VMpath/nohup.log && break; done
@@ -2824,21 +2826,21 @@ elif [[ "$InstallType" = pxe ]]; then
 	touch $VMpath/.kiss-vm
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
-	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
-	  --name $vmname \
 	  $OS_VARIANT_OPT \
-	  $MACHINE_OPT \
-	  --vcpus ${VCPUS} \
-	  "${BOOT_OPTS[@]}" \
-	  $MEM_OPTS \
+	  --name $vmname \
 	  --pxe \
 	  --disk $diskOpt \
-	  --noautoconsole --wait=-1 \
-	  $VTPM_OPT \
+	  $MACHINE_OPT \
+	  "${BOOT_OPTS[@]}" \
+	  --vcpus ${VCPUS} \
+	  $MEM_OPTS \
 	  ${NETWORK_OPTS} \
+	  "${HOST_DEV_OPTS[@]}" \
+	  $VTPM_OPT \
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
+	  --noautoconsole --wait=-1 \
 	  ${GRAPHICS_OPT}
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
@@ -2914,22 +2916,23 @@ elif [[ "$InstallType" = cdrom ]]; then
 	touch $VMpath/.kiss-vm
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
-	  "${HOST_DEV_OPTS[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
-	  --name $vmname \
 	  $OS_VARIANT_OPT \
-	  $MACHINE_OPT \
-	  --vcpus ${VCPUS} \
-	  "${BOOT_OPTS[@]}" \
-	  $MEM_OPTS \
+	  --name $vmname \
 	  --cdrom $isofile \
 	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
+	  $MACHINE_OPT \
+	  "${BOOT_OPTS[@]}" \
+	  --vcpus ${VCPUS} \
+	  $MEM_OPTS \
 	  $DISK_OPTS \
-	  $NETWORK_OPTS $CONTROLLER_OPTS \
-	  --noautoconsole --wait=-1 \
+	  $NETWORK_OPTS \
+	  $CONTROLLER_OPTS \
+	  "${HOST_DEV_OPTS[@]}" \
 	  $VTPM_OPT \
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
+	  --noautoconsole --wait=-1 \
 	  ${GRAPHICS_OPT}
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
