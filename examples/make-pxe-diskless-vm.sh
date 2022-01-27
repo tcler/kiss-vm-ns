@@ -51,8 +51,8 @@ echo "$password" | sudo -S cp /usr/share/syslinux/ldlinux.c32 /var/lib/tftpboot/
 #---------------------------------------------------------------
 #create virt network pxenet
 netaddr=200
-vm net netname=pxenet brname=virpxebr0 subnet=$netaddr tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
-
+vm netcreate netname=pxenet brname=virpxebr0 subnet=$netaddr tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
+vm netls
 
 #---------------------------------------------------------------
 #create nfs root

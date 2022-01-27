@@ -34,8 +34,9 @@ echo -e "\e[4m$(ls -l $imagef)\e[0m"
 
 #__main__
 echo -e "\n{INFO} creating virtual network ..."
-vm net netname=student brname=virbr-student subnet=172.25.250.0 forward=no 
-vm net netname=classroom brname=virbr-classroom subnet=172.25.252.0 forward=no 
+vm netcreate netname=student brname=virbr-student subnet=172.25.250.0 forward=no
+vm netcreate netname=classroom brname=virbr-classroom subnet=172.25.252.0 forward=no
+vm netls
 
 echo -e "\n{INFO} remove existing VMs ..."
 vmlist="workstation servera serverb utility bastion classroom"
