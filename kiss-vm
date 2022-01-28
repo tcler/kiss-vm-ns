@@ -878,35 +878,6 @@ create_vdisk() {
 	losetup -d $dev
 }
 
-mount_vdisk() {
-	local path=$1
-	local mp=$2
-	local partN=${3:-1}
-	local offset=$(fdisk -l -o Start "$path" |
-		awk -v N=$partN '
-			/^Units:/ { unit=$(NF-1); offset=0; }
-			/^Start/ {
-				for(i=0;i<N;i++)
-					if(getline == 0) { $0=""; break; }
-				offset=$1*unit;
-			}
-			END { print offset; }'
-	)
-	echo "offset: $offset"
-
-	[[ -d "$mp" ]] || {
-		echo "{warn} mount_vdisk: dir '$mp' not exist"
-		return 1
-	}
-
-	if [[ "$offset" -ne 0 || "$partN" -eq 1 ]]; then
-		mount $MNT_OPT -oloop,offset=$offset $path $mp
-	else
-		echo "{warn} mount_vdisk: there's not part($partN) on disk $path"
-		return 1
-	fi
-}
-
 curl_download() {
 	local filename=$1
 	local url=$2
