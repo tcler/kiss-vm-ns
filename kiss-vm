@@ -1756,7 +1756,7 @@ while true; do
 		read srcif _arg <<<"${2/,/ }"
 		[[ "$srcif" = - || "$srcif" = default ]] && srcif=
 		srcif=${srcif:-$(get_default_if)}
-		_arg=$(_netarg $arg)
+		_arg=$(_netarg $_arg)
 		[[ "$_arg" != *source_mode=* ]] && _arg=source_mode=$MacvtapMode,$_arg
 		NETWORK_OPTS+=" --network=type=direct,source=$srcif,$_arg"; shift 2;;
 	--macvtapmode)   MacvtapMode="$2"; shift 2;;
