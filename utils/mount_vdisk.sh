@@ -7,31 +7,33 @@ mount_vdisk() {
 	local offset=
 
 	if fdisk -l -o Start "$path" &>/dev/null; then
-		offset=$(fdisk -l -o Start "$path" |
+		read offset sizelimit < <(fdisk -l -o Start,Sectors "$path" |
 			awk -v N=$partN '
 				/^Units:/ { unit=$(NF-1); offset=0; }
 				/^Start/ {
 					for(i=0;i<N;i++)
 						if(getline == 0) { $0=""; break; }
 					offset=$1*unit;
+					sizelimit=$2*unit;
 				}
-				END { print offset; }'
+				END { print offset, sizelimit; }'
 		)
 	else
-		offset=$(fdisk -l "$path" |
+		read offset sizelimit < <(fdisk -l "$path" |
 			awk -v N=$partN '
 				/^Units/ { unit=$(NF-1); offset=0; }
 				$3 == "Start" {
 					for(i=0;i<N;i++)
 						if(getline == 0) { $0=""; break; }
-					offset=$2*unit;
-					if ($2 == "*")
-						offset=$3*unit
+					offset=$2*unit; sizelimit=($3-$2)*unit;
+					if ($2 == "*") {
+						offset=$3*unit; end=($4-$3)*unit;
+					}
 				}
-				END { print offset; }'
+				END { print offset, sizelimit; }'
 		)
 	fi
-	echo "offset: $offset"
+	echo "offset: $offset, sizelimit: $sizelimit"
 
 	[[ -d "$mp" ]] || {
 		echo "{warn} mount_vdisk: dir '$mp' not exist"
@@ -39,7 +41,7 @@ mount_vdisk() {
 	}
 
 	if [[ "$offset" -ne 0 || "$partN" -eq 1 ]]; then
-		mount $MNT_OPT -oloop,offset=$offset $path $mp
+		mount $MNT_OPT -oloop,offset=$offset,sizelimit=$sizelimit $path $mp
 	else
 		echo "{warn} mount_vdisk: there's not part($partN) on disk $path"
 		return 1
