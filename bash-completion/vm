@@ -1,5 +1,7 @@
 # vm(1) completion                                         -*- shell-script -*-
 
+. /etc/profile.d/bash_completion.sh || :
+
 prog=$(basename $BASH_SOURCE)
 
 is_available_url() {
