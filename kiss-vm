@@ -926,6 +926,26 @@ install_requires() {
 
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
 	case ${OS,,} in
+	slackware*)
+		pkglist="python3"
+		for pkg in $sbopkglist; do
+			sudo slackpkg -batch=on -default_answer=y -orig_backups=off install $pkg
+		done
+
+		if ! command -v sbopkg; then
+			urlpath=$(curl -s -L https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | tail -n1)
+			wget https://github.com/$urlpath
+			installpkg ${urlpath##*/}
+			rm -f ${urlpath##*/}
+		fi
+		sbopkglist="qemu libvirt virt-manager virt-viewer gocr"
+		for pkg in $sbopkglist; do
+			if ! ls /var/log/packages/${pkg}-[0-9]* 2>/dev/null; then
+				sqg -p $pkg
+				echo -e "Q\nY" | sudo sbopkg -B -i $pkg
+			fi
+		done
+		;;
 	fedora*|red?hat*|centos*|rocky*)
 		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img genisoimage iptables-nft"
 		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"

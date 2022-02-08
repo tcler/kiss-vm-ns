@@ -17,6 +17,14 @@ red?hat|centos*|rocky*)
 			yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
 	fi
 	;;
+slackware*)
+	if ! command -v sbopkg; then
+		urlpath=$(curl -s -L https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | tail -n1)
+		wget https://github.com/$urlpath
+		installpkg ${urlpath##*/}
+		rm -f ${urlpath##*/}
+	fi
+	;;
 esac
 
 #install netpbm/netpbm-progs or gm(GraphicsMagick/ImageMagick)
@@ -24,6 +32,9 @@ esac
 ! command -v anytopnm && {
 	echo -e "\n{ggv-install} install netpbm or GraphicsMagick/ImageMagick ..."
 	case ${OS,,} in
+	slackware*)
+		slackpkg -batch=on -default_answer=y -orig_backups=off install netpbm
+		;;
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y netpbm-progs
 		;;
@@ -41,6 +52,9 @@ esac
 	#if install netpbm failed, use GraphicsMagick/ImageMagick instead
 	if ! command -v anytopnm >/dev/null; then
 		case ${OS,,} in
+		slackware*)
+			slackpkg -batch=on -default_answer=y -orig_backups=off install imagemagick
+			;;
 		fedora*|red?hat*|centos*|rocky*)
 			yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
 			;;
@@ -63,6 +77,10 @@ echo
 	echo -e "\n{ggv-install} install gocr ..."
 
 	case ${OS,,} in
+	slackware*)
+		sqg -p gocr
+		echo -e "Q\nY" | sudo sbopkg -B -i gocr
+		;;
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y gocr;;
 	debian*|ubuntu*)
@@ -107,6 +125,8 @@ echo
 ! command -v vncdo && {
 	echo -e "\n{ggv-install} install vncdotool ..."
 	case ${OS,,} in
+	slackware*)
+		slackpkg -batch=on -default_answer=y -orig_backups=off install python3;;
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel python3-pip;;
 	debian*|ubuntu*)
