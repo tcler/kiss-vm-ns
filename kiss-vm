@@ -1804,18 +1804,18 @@ while true; do
 done
 
 is_slackware() { grep -iq slackware /etc/os-release; }
-libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
-qemu_kvm() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
+qemu_kvm_nvr() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
+libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
 	if ! grep -q nvdimm < <($QEMU_KVM -device help); then
-		echo -e "{VM:WARN} $(qemu_kvm) doesn't support nvdimm driver."
+		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvdimm driver."
 		exit 1
 	fi
 fi
 if [[ "${#NVME_DEVS[@]}" -gt 0 ]]; then
 	if ! grep -q nvme < <($QEMU_KVM -device help); then
-		echo -e "{VM:WARN} $(qemu_kvm) doesn't support nvme driver."
+		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvme driver."
 		exit 1
 	fi
 fi
@@ -1829,7 +1829,7 @@ if [[ "$VTPM" = yes ]]; then
 	_dependpkgs=swtpm-tools
 	_dependcmd=swtpm_setup
 	if ! grep -q tpm-crb < <($QEMU_KVM -device help); then
-		echo -e "{VM:WARN} $(qemu_kvm) don't support tpm-crb driver that's required by --vtpm option"
+		echo -e "{VM:WARN} $(qemu_kvm_nvr) don't support tpm-crb driver that's required by --vtpm option"
 		exit 1
 	fi
 	if ! command -v $_dependcmd 2>/dev/null; then
