@@ -1030,6 +1030,12 @@ prepare_libvirt() {
 		sed -ri '/^hosts:/s/files /&libvirt libvirt_guest /' /etc/nsswitch.conf
 	}
 
+	echo -e "{VM:INFO} start libvirtd service ..."
+	test -x /etc/rc.d/rc.libvirt && /etc/rc.d/rc.libvirt start
+	if command -v systemctl >/dev/null; then
+		systemctl start libvirtd && systemctl start virtlogd
+	fi
+
 	virtdconf=/etc/libvirt/libvirtd.conf
 	echo -e "{VM:INFO} checking value of 'unix_sock_group' and 'unix_sock_rw_perms' in $virtdconf ..."
 	ls $virtdconf &>/dev/null || chmod +x /etc/libvirt
@@ -1797,6 +1803,7 @@ while true; do
 	esac
 done
 
+is_slackware() { grep -iq slackware /etc/os-release; }
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
 qemu_kvm() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
@@ -1857,7 +1864,7 @@ if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo
 	}
 
 	#first time
-	[[ $(id -u) != 0 ]] && {
+	[[ $(id -u) != 0 ]] && ! is_slackware && {
 		if ! id | egrep -qw libvirt; then
 			expect <(cat <<-EOF
 			set timeout -1
