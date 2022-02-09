@@ -10,19 +10,21 @@
 OS=$NAME
 
 case ${OS,,} in
+slackware*)
+	export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
+	if ! command -v sbopkg; then
+		urlpath=$(curl -s -L https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | head -n1)
+		wget https://github.com/$urlpath
+		installpkg ${urlpath##*/}
+		rm -f ${urlpath##*/}
+		echo C | sudo sbopkg -r -V SBo-git/current
+	fi
+	;;
 red?hat|centos*|rocky*)
 	OSV=$(rpm -E %rhel)
 	if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
 			yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
-	fi
-	;;
-slackware*)
-	if ! command -v sbopkg; then
-		urlpath=$(curl -s -L https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | tail -n1)
-		wget https://github.com/$urlpath
-		installpkg ${urlpath##*/}
-		rm -f ${urlpath##*/}
 	fi
 	;;
 esac
