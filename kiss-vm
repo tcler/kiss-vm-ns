@@ -937,6 +937,7 @@ install_requires() {
 			wget https://github.com/$urlpath
 			installpkg ${urlpath##*/}
 			rm -f ${urlpath##*/}
+			sudo sbopkg -V SBo-git/current -B
 		fi
 		sbopkglist="qemu libvirt virt-manager virt-viewer gocr"
 		for pkg in $sbopkglist; do
