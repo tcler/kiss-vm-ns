@@ -927,6 +927,7 @@ install_requires() {
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
 	case ${OS,,} in
 	slackware*)
+		export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
 		pkglist="python3"
 		for pkg in $sbopkglist; do
 			sudo slackpkg -batch=on -default_answer=y -orig_backups=off install $pkg
@@ -935,7 +936,7 @@ install_requires() {
 		if ! command -v sbopkg; then
 			urlpath=$(curl -s -L https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | head -n1)
 			wget https://github.com/$urlpath
-			installpkg ${urlpath##*/}
+			sudo installpkg ${urlpath##*/}
 			rm -f ${urlpath##*/}
 			echo C | sudo sbopkg -V SBo-git/current -B
 		fi
