@@ -41,7 +41,7 @@ _MSIZE=1536
 DSIZE=27
 baudrate=115200
 GRAPHICS_OPT="--graphics=vnc,listen=0.0.0.0"
-VIDIO_OPT="--video=virtio"
+VIDIO_OPT="--video=qxl"
 SOUND_OPT=""
 QEMU_OPTS=()
 QEMU_ENV=()
