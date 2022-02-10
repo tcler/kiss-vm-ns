@@ -2788,6 +2788,7 @@ elif [[ "$InstallType" = import ]]; then
 						send "\r\n"
 						expect {
 							"or cloud-init done ~~~~~~~~d" {send "\r\r# Now you can take over the keyboard\r\r"}
+							"Cloud-init*finished" {send "\r\r# Now you can take over the keyboard\r\r"}
 							"* login:" {
 								send "root\r"
 								expect "Password:" {
