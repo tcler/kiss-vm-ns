@@ -2977,7 +2977,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 		done
 	fi
 
-	exit 0
+	#exit 0
 fi
 
 if ! virsh desc $vmname &>/dev/null; then
@@ -2986,30 +2986,34 @@ if ! virsh desc $vmname &>/dev/null; then
 	exit 1
 fi
 
-for postrepo in "${POST_REPOS[@]}"; do
-	_name=
-	_url=
-	if [[ "$postrepo" =~ ^[^:]+:(https|http|ftp|file):// ]]; then
-		read _name _url _ <<<"${postrepo/:/ }"
-	elif [[ "$postrepo" =~ ^(https|http|ftp|file):// ]]; then
-		_name=repo-$RADOM
-		_url=$postrepo
-	fi
+#only for Fedora/RHEL/CentOS/RockyLinux
+case ${Distro,,} in
+fedora*|rhel*|centos*|rocky*)
+	for postrepo in "${POST_REPOS[@]}"; do
+		_name=
+		_url=
+		if [[ "$postrepo" =~ ^[^:]+:(https|http|ftp|file):// ]]; then
+			read _name _url _ <<<"${postrepo/:/ }"
+		elif [[ "$postrepo" =~ ^(https|http|ftp|file):// ]]; then
+			_name=repo-$RADOM
+			_url=$postrepo
+		fi
 
-	[[ -z "$_name" || -z "$_url" ]] && continue
+		[[ -z "$_name" || -z "$_url" ]] && continue
 
-	repofpath=$VMpath/$_name.repo
-	cat <<-REPO >$repofpath
-	[$_name]
-	name=$_name
-	baseurl=$_url
-	enabled=1
-	gpgcheck=0
-	skip_if_unavailable=1
-	REPO
-	vm cpto $vmname $repofpath /etc/yum.repos.d
-	rm -f $repofpath
-done
+		repofpath=$VMpath/$_name.repo
+		cat <<-REPO >$repofpath
+		[$_name]
+		name=$_name
+		baseurl=$_url
+		enabled=1
+		gpgcheck=0
+		skip_if_unavailable=1
+		REPO
+		vm cpto $vmname $repofpath /etc/yum.repos.d
+		rm -f $repofpath
+	done
+esac
 
 if [[ "$GenerateImage" = yes ]]; then
 	mkdir -p $ImagePath/$Distro
@@ -3055,6 +3059,7 @@ if [[ "$RM" = yes ]]; then
 	exit 0
 fi
 
+#only for linux virtiofs
 [[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
 	vm stop $vmname
 
@@ -3124,6 +3129,7 @@ read addr < <(vmifaddr $vmname)
 }
 COMM
 
+#only for linux
 [[ -n "$DEFAULT_KERNEL" ]] && {
 	vm exec -v $vmname -- uname -r
 	vm exec -v $vmname -- grubby --default-kernel
