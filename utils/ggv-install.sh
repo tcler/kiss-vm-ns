@@ -12,6 +12,11 @@ OS=$NAME
 case ${OS,,} in
 slackware*)
 	install-sbopkg.sh
+	sbopkg_install() {
+		local pkg=$1
+		sudo /usr/sbin/sqg -p $pkg
+		yes $'P\nQ\nY\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
+	}
 	;;
 red?hat|centos*|rocky*)
 	OSV=$(rpm -E %rhel)
@@ -73,8 +78,7 @@ echo
 
 	case ${OS,,} in
 	slackware*)
-		sudo /usr/sbin/sqg -p gocr
-		yes $'P\nQ\nY\nC' | sudo /usr/sbin/sbopkg -B -i gocr
+		sbopkg_install gocr
 		;;
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y gocr;;
