@@ -73,7 +73,7 @@ echo
 
 	case ${OS,,} in
 	slackware*)
-		sudo sqg -p gocr
+		sudo /usr/sbin/sqg -p gocr
 		yes $'P\nQ\nY\nC' | sudo /usr/sbin/sbopkg -B -i gocr
 		;;
 	fedora*|red?hat*|centos*|rocky*)
