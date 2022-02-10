@@ -28,7 +28,7 @@ esac
 	echo -e "\n{ggv-install} install netpbm or GraphicsMagick/ImageMagick ..."
 	case ${OS,,} in
 	slackware*)
-		slackpkg -batch=on -default_answer=y -orig_backups=off install netpbm
+		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install netpbm
 		;;
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y netpbm-progs
@@ -48,7 +48,7 @@ esac
 	if ! command -v anytopnm >/dev/null; then
 		case ${OS,,} in
 		slackware*)
-			slackpkg -batch=on -default_answer=y -orig_backups=off install imagemagick
+			/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install imagemagick
 			;;
 		fedora*|red?hat*|centos*|rocky*)
 			yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
@@ -121,7 +121,7 @@ echo
 	echo -e "\n{ggv-install} install vncdotool ..."
 	case ${OS,,} in
 	slackware*)
-		slackpkg -batch=on -default_answer=y -orig_backups=off install python3;;
+		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install python3;;
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel python3-pip;;
 	debian*|ubuntu*)
