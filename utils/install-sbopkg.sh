@@ -8,6 +8,7 @@ if [[ "${osname,,}" != slackware* ]]; then
 	echo "{WARN} your os is not slackware" >&2
 else
 	export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
+	sudo slackpkg -batch=on update
 	if ! command -v sbopkg; then
 		#install sbopkg
 		urlpath=$(curl -s -L https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | head -n1)
