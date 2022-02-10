@@ -15,7 +15,7 @@ slackware*)
 	sbopkg_install() {
 		local pkg=$1
 		sudo /usr/sbin/sqg -p $pkg
-		yes $'P\nQ\nY\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
+		yes $'Q\nY\nP\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
 	}
 	;;
 red?hat|centos*|rocky*)
