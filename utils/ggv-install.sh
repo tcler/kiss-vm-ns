@@ -11,14 +11,7 @@ OS=$NAME
 
 case ${OS,,} in
 slackware*)
-	export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
-	if ! command -v sbopkg; then
-		urlpath=$(curl -s -L https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | head -n1)
-		wget https://github.com/$urlpath
-		installpkg ${urlpath##*/}
-		rm -f ${urlpath##*/}
-		echo C | sudo sbopkg -r -V SBo-git/current
-	fi
+	install-sbopkg.sh
 	;;
 red?hat|centos*|rocky*)
 	OSV=$(rpm -E %rhel)
@@ -81,7 +74,7 @@ echo
 	case ${OS,,} in
 	slackware*)
 		sqg -p gocr
-		echo -e "Q\nY" | sudo sbopkg -B -i gocr
+		echo -e "Q\nY" | sudo /usr/sbin/sbopkg -B -i gocr
 		;;
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y gocr;;
