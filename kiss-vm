@@ -1849,6 +1849,7 @@ fi
 VCPUN=$(vcpuN "$VCPUS")
 
 # __main__
+is_slackware && export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
 if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo; then
 	[[ "$1" = prepare ]] && {
 		KISS_VM_READY=; ONLY_PREPARE=yes
