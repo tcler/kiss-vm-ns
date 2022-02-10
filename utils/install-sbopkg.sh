@@ -22,6 +22,7 @@ else
 		read rname rbranch <<<"${repo/\// }"
 		sudo sed -ri -e 's#(^REPO_BRANCH)=.*#\1=${\1:-'"$rbranch"'}#' \
 			-e 's#(^REPO_NAME)=.*#\1=${\1:-'"$rname"'}#' /etc/sbopkg/sbopkg.conf
+		sudo sed -ri '/^REPO_(NAME|BRANCH)=/d' /usr/sbin/sqg
 		sudo /usr/sbin/sbopkg -r
 	fi
 fi
