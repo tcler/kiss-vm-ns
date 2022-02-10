@@ -53,11 +53,11 @@ VCPUS=4,sockets=1,cores=4
 DEFAULT_DISK_BUS=virtio
 DEFAULT_IF_MODEL=virtio
 defaultPasswd=redhat
-orig_disable_ipv6=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
+orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6)
 
 at_exit() {
 	#echo -e "\n\n{VM:debug} Removing tmpdir: $RuntimeTmp"
-	sysctl -w net.ipv6.conf.all.disable_ipv6=$orig_disable_ipv6 &>/dev/null
+	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=$orig_disable_ipv6 &>/dev/null
 	rm -rf $RuntimeTmp
 }
 cleanup() {
@@ -1007,7 +1007,7 @@ prepare_libvirt() {
 	test $(id -u) = 0 || { echo "{VM:Error} vm prepare need root permission, try: sudo $P prepare" >&2; exit 1; }
 
 	#disable ipv6
-	sysctl -w net.ipv6.conf.all.disable_ipv6=1
+	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1
 
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
