@@ -938,8 +938,8 @@ install_requires() {
 		sbopkglist="qemu libvirt virt-manager virt-viewer gocr"
 		for pkg in $sbopkglist; do
 			if ! ls /var/log/packages/${pkg}-[0-9]* 2>/dev/null; then
-				sudo sqg -p $pkg &&
-					echo -e "Q\nY" | sudo /usr/sbin/sbopkg -B -i $pkg
+				sudo sqg -p $pkg
+				yes $'P\nQ\nY\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
 			fi
 		done
 		;;

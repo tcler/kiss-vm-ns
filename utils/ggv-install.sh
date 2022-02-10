@@ -73,8 +73,8 @@ echo
 
 	case ${OS,,} in
 	slackware*)
-		sqg -p gocr
-		echo -e "Q\nY" | sudo /usr/sbin/sbopkg -B -i gocr
+		sudo sqg -p gocr
+		yes $'P\nQ\nY\nC' | sudo /usr/sbin/sbopkg -B -i gocr
 		;;
 	fedora*|red?hat*|centos*|rocky*)
 		yum $yumOpt install -y gocr;;
