@@ -654,7 +654,7 @@ getSafeCommandLine() {
                 if [[ -z "$at" ]]; then
                         echo -n "'' "
                 elif [[ "$at" =~ \' ]]; then
-                        echo -n "$at" | sed -r -e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" -e "s/^''//" -e "s/'' $/ /"
+                        echo -n "$at" | sed -r -e ':a;$!{N;ba};' -e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" -e "s/^''//" -e "s/'' $/ /"
                 else
                         echo -n "'$at' "
                 fi
