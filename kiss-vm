@@ -649,6 +649,19 @@ vmconsole() {
 	return $?
 }
 
+getSafeCommandLine() {
+        for at; do
+                if [[ -z "$at" ]]; then
+                        echo -n "'' "
+                elif [[ "$at" =~ \' ]]; then
+                        echo -n "$at" | sed -r -e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" -e "s/^''//" -e "s/'' $/ /"
+                else
+                        echo -n "'$at' "
+                fi
+        done
+        echo
+}
+
 vmlogin() {
 	local _vmname=$1
 	shift
@@ -674,7 +687,8 @@ vmlogin() {
 	}
 
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
-	echo "$*" >$RuntimeTmp/sshcmd
+	local sshCommand=$(getSafeCommandLine "$@")
+	echo "$sshCommand" >$RuntimeTmp/sshcmd
 	for addr in $addrs; do
 		[[ "$DEBUG" = yes ]] &&
 			echo "[vmlogin:debug] detect port ${addr}:22 ..." | GREP_COLORS='ms=01;36' grep --color . >&2
@@ -691,7 +705,7 @@ vmlogin() {
 		ssh -n -o Batchmode=yes $sshOpts root@$addr &>$RuntimeTmp/sshtest
 		[[ $? = 0 ]] && sshexec=yes
 		if [[ $sshexec = yes ]]; then
-			ssh $sshOpts root@$addr "$*"
+			ssh $sshOpts root@$addr "$sshCommand"
 			rc=$?
 		else
 			if grep -q -w password $RuntimeTmp/sshtest; then
