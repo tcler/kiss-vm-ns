@@ -650,7 +650,9 @@ vmconsole() {
 }
 
 getSafeCommandLine() {
+	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
+
         for at; do
                 if [[ -z "$at" ]]; then
                         echo -n "'' "
