@@ -223,6 +223,7 @@ ns_pstree() {
 }
 
 getSafeCommandLine() {
+	[[ $# = 1 ]] && { echo "$1"; return; }
         for at; do
                 if [[ -z "$at" ]]; then
                         echo -n "'' "
@@ -240,7 +241,7 @@ _nsexec() {
 	shift
 	local _cmdline=$(getSafeCommandLine "$@")
 
-	nsenter --target "$initpid" --mount --uts --ipc --net --pid -- bash -c "eval $_cmdline"
+	nsenter --target "$initpid" --mount --uts --ipc --net --pid -- bash -c "$_cmdline"
 }
 
 nsexec() {

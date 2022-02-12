@@ -650,6 +650,7 @@ vmconsole() {
 }
 
 getSafeCommandLine() {
+	[[ $# = 1 ]] && { echo "$1"; return; }
         for at; do
                 if [[ -z "$at" ]]; then
                         echo -n "'' "
@@ -705,7 +706,7 @@ vmlogin() {
 		ssh -n -o Batchmode=yes $sshOpts root@$addr &>$RuntimeTmp/sshtest
 		[[ $? = 0 ]] && sshexec=yes
 		if [[ $sshexec = yes ]]; then
-			ssh $sshOpts root@$addr "eval $sshCommand"
+			ssh $sshOpts root@$addr "$sshCommand"
 			rc=$?
 		else
 			if grep -q -w password $RuntimeTmp/sshtest; then
@@ -713,7 +714,7 @@ vmlogin() {
 				set timeout 120
 				set sshcmd [exec cat $RuntimeTmp/sshcmd]
 				log_user 0
-				spawn ssh $sshOpts root@$addr eval \$sshcmd
+				spawn ssh $sshOpts root@$addr \$sshcmd
 				log_user 1
 				if {\$argc == 0} {
 					expect {
