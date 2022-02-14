@@ -181,6 +181,8 @@ getSafeCommandLine() {
                         echo -n "'' "
                 elif [[ "$at" =~ $shpattern ]]; then
                         echo -n "$at "
+		elif [[ "$at" =~ [^[:print:]]+ ]]; then
+			echo -n "$(builtin printf %q "$at") "
                 else
                         echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
 				-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
