@@ -174,13 +174,17 @@ getSafeCommandLine() {
 	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
 
+	local shpattern='^[][0-9a-zA-Z~@%^_+=:,./-]+$'
+
         for at; do
                 if [[ -z "$at" ]]; then
                         echo -n "'' "
-                elif [[ "$at" =~ \' ]]; then
-                        echo -n "$at" | sed -r -e ':a;$!{N;ba};' -e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" -e "s/^''//" -e "s/'' $/ /"
+                elif [[ "$at" =~ $shpattern ]]; then
+                        echo -n "$at "
                 else
-                        echo -n "'$at' "
+                        echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
+				-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
+				-e "s/^''//" -e "s/'' $/ /"
                 fi
         done
         echo
@@ -198,7 +202,7 @@ netnsexec() {
 	local ns=$1
 	shift
 	local initpid=$(netns_init_pid $ns)
-	[[ "$VERBOSE" = yes ]] && echo "[NETNS:$ns]> $@" | GREP_COLORS='ms=01;36' grep --color . >&2
+	[[ "$VERBOSE" = yes ]] && echo "[NETNS:$ns]> $(getSafeCommandLine "$@")" | GREP_COLORS='ms=01;36' grep --color . >&2
 	_netnsexec "$initpid" "$@"
 	rc=$?
 
