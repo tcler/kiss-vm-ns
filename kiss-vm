@@ -1600,11 +1600,12 @@ run() {
 		esac
 	done
 
+	local _cmdline=$(getSafeCommandLine "$@")
 	if [[ -n "$_nohup" ]]; then
-		[[ "$DEBUG" = yes ]] && echo "[sys]" nohup "$@" "&>${_nohuplogf} &" | GREP_COLORS='ms=01;30;47' grep --color .
+		[[ "$DEBUG" = yes ]] && echo "[sys]" nohup "$_cmdline" "&>${_nohuplogf} &" | GREP_COLORS='ms=01;30;47' grep --color .
 		nohup "$@" &>${_nohuplogf} &
 	else
-		[[ "$DEBUG" = yes ]] && echo "[sys]" "$@" | GREP_COLORS='ms=01;30;47' grep --color .
+		[[ "$DEBUG" = yes ]] && echo "[sys]" "$_cmdline" | GREP_COLORS='ms=01;30;47' grep --color .
 		"$@"
 	fi
 }
