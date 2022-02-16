@@ -964,7 +964,7 @@ install_requires() {
 		echo -e "{VM:INFO} install sbopkg ..."
 		install-sbopkg.sh
 
-		sbopkglist="qemu libvirt virt-manager virt-viewer"
+		sbopkglist="qemu libvirt virt-manager virt-viewer ovmf"
 		for pkg in $sbopkglist; do
 			if ! ls /var/log/packages/${pkg}-[0-9]* 2>/dev/null; then
 				sbopkg_install $pkg
