@@ -24,6 +24,8 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
+    subcommandList="prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat srcfiles netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir"
+
     for w in "${words[@]}"; do
         [[ $w =~ ^-.* && $w != "--" ]] || let narg++
     done
@@ -34,7 +36,6 @@ _vm()
         if [[ "$cur" == -* && $prev = create ]]; then
             COMPREPLY=( $( compgen -W "$opts -h" -- "$cur" ) )
         else
-            subcommandList="prepare enable-nested-vm help h create ls list login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat srcfiles netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir"
             COMPREPLY=( $( compgen -W "$subcommandList" -- "$cur" ) )
         fi
     else
@@ -84,6 +85,16 @@ _vm()
         reboot)
             vmlist=$(virsh list --all --name)
             COMPREPLY=( $( compgen -W "-w $vmlist" -- "$cur" ) )
+            ;;
+        clone)
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --all --name)
+                COMPREPLY=( $( compgen -W "-w $vmlist" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                COMPREPLY=( $( compgen -W "#new-vm-name" -- "$cur" ) )
+            else
+                COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            fi
             ;;
         vi|vie|view*|lo|log|log*|co|con|cons|cons*|if|ifaddr|x|xm|xml|ed|edit)
             if [[ $narg -le 3 ]]; then
