@@ -89,7 +89,7 @@ _vm()
         clone)
             if [[ $narg -le 3 ]]; then
                 vmlist=$(virsh list --all --name)
-                COMPREPLY=( $( compgen -W "-w $vmlist" -- "$cur" ) )
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 COMPREPLY=( $( compgen -W "#new-vm-name" -- "$cur" ) )
             else
