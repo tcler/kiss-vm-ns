@@ -59,4 +59,9 @@ mount_vdisk() {
 	COMM
 	exit 1
 }
+test $(id -u) = 0 || {
+	echo "{Warn} mount_vdisk need root permission" >&2
+	exit 1
+}
+
 mount_vdisk "$@"
