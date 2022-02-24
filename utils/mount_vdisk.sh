@@ -1,5 +1,8 @@
 #!/bin/bash
 
+LANG=C
+PROG=${0##*/}
+
 mount_vdisk() {
 	local path=$1
 	local mp=$2
@@ -60,7 +63,7 @@ mount_vdisk() {
 	exit 1
 }
 test $(id -u) = 0 || {
-	echo "{Warn} mount_vdisk need root permission" >&2
+	echo "{Warn} ${PROG} need root permission, try: sudo ${PROG} ..." >&2
 	exit 1
 }
 
