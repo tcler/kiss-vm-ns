@@ -2328,7 +2328,9 @@ for disk in "${EXTRA_DISKS[@]}"; do
 		ximage=$_ximage.$_format
 		sudo bash -c "$(declare -f create_vdisk); create_vdisk $VMpath/${ximage} ${size}G $fstype"
 	fi
-	DISK_OPTS+=" --disk path=$VMpath/${ximage},format=$_format,${_args:-bus=${DEFAULT_DISK_BUS}}"  #bus=scsi
+	[[ -z "$_args" ]] && _args=bus=${DEFAULT_DISK_BUS}
+	[[ "$_args" = *bus=usb* && "$_args" != *removable=* ]] && _args+=,removable=on
+	DISK_OPTS+=" --disk path=$VMpath/${ximage},format=$_format,${_args}"  #bus=scsi
 done
 
 ### disk option
@@ -2339,11 +2341,14 @@ for disk in "${DISKS[@]}"; do
 		continue
 	fi
 	cp -f $img $VMpath/.
+
+	[[ -z "$_args" ]] && _args=bus=${DEFAULT_DISK_BUS}
+	[[ "$_args" = *bus=usb* && "$_args" != *removable=* ]] && _args+=,removable=on
 	[[ "$_args" != *format=* ]] && {
 		_fmt=$(qemu-img info $img|awk '/file.format:/{print $NF}')
 		[[ -n "$_fmt" ]] && _fmt=",format=$_fmt"
 	}
-	DISK_OPTS+=" --disk path=$VMpath/$img,${_args:-bus=${DEFAULT_DISK_BUS}}${_fmt}"
+	DISK_OPTS+=" --disk path=$VMpath/$img,${_args}${_fmt}"
 done
 
 ### xcdrom option
