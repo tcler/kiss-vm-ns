@@ -2135,6 +2135,10 @@ fi
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
 	mkdir -p $VMpath
 }
+[[ "${VMpath,,}" = *windows* ]] && {
+	_MSIZE=4096
+	DSIZE=80
+}
 
 # Phase-1: get distro's Location or Image url
 _Imagepattern='(qcow2c|qcow2|qcow2.xz|raw|img)'
