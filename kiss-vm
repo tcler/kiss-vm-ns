@@ -2137,7 +2137,7 @@ fi
 }
 [[ "${VMpath,,}" = *windows* ]] && {
 	_MSIZE=4096
-	DSIZE=80
+	[[ "$dsizeflag" -ne 1 ]] && DSIZE=80
 }
 
 # Phase-1: get distro's Location or Image url
