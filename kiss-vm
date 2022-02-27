@@ -567,19 +567,21 @@ vmcopyto() {
 
 	local sshexec=no
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
-	ssh -n -o Batchmode=yes $sshOpts root@$_vmname &>$RuntimeTmp/sshtest
+	local U=root
+	vmhomedir $_vmname | grep -q -i windows && U=Administrator
+	ssh -n -o Batchmode=yes $sshOpts $U@$_vmname &>$RuntimeTmp/sshtest
 	[[ $? = 0 ]] && sshexec=yes
 	if [[ $sshexec = yes ]]; then
-		scp $sshOpts -r "${srcarray[@]}" root@${_vmname}:$dstdir/.
+		scp $sshOpts -r "${srcarray[@]}" $U@${_vmname}:$dstdir/.
 		rc=$?
 		[[ $rc = 0 ]] && {
-			ssh $sshOpts root@${_vmname} ls -l $dstdir
+			ssh $sshOpts $U@${_vmname} ls -l $dstdir
 		}
 	else
 		if grep -q -w password $RuntimeTmp/sshtest; then
 			expect <(cat <<-EOF
 			set timeout 120
-			spawn scp $sshOpts -r "${srcarray[@]}" root@${_vmname}:$dstdir/.
+			spawn scp $sshOpts -r "${srcarray[@]}" $U@${_vmname}:$dstdir/.
 			expect {
 				"password:" { send "$defaultPasswd\r"; exp_continue }
 				"Password for" { send "$defaultPasswd\r"; exp_continue }
@@ -615,10 +617,12 @@ vmcopyfrom() {
 
 	local sshexec=no
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
-	ssh -n -o Batchmode=yes $sshOpts root@$_vmname &>$RuntimeTmp/sshtest
+	local U=root
+	vmhomedir $_vmname | grep -q -i windows && U=Administrator
+	ssh -n -o Batchmode=yes $sshOpts $U@$_vmname &>$RuntimeTmp/sshtest
 	[[ $? = 0 ]] && sshexec=yes
 	if [[ $sshexec = yes ]]; then
-		scp $sshOpts -r root@${_vmname}:$src $dstdir/.
+		scp $sshOpts -r $U@${_vmname}:$src $dstdir/.
 		rc=$?
 		[[ $rc = 0 ]] && {
 			ls -l -d $dstdir/${src##*/}
@@ -627,7 +631,7 @@ vmcopyfrom() {
 		if grep -q -w password $RuntimeTmp/sshtest; then
 			expect <(cat <<-EOF
 			set timeout 120
-			spawn scp -r root@${_vmname}:$src $dstdir/.
+			spawn scp -r $U@${_vmname}:$src $dstdir/.
 			expect {
 				"password:" { send "$defaultPasswd\r"; exp_continue }
 				"Password for" { send "$defaultPasswd\r"; exp_continue }
@@ -690,10 +694,12 @@ vmlogin() {
 	}
 
 	local sshCommand=$(getSafeCommandLine "$@")
+	local U=root
+	vmhomedir $_vmname | grep -q -i windows && U=Administrator
 	[[ "${EXEC}" = yes ]] && {
 		[[ $# = 0 ]] && set "exit 0";
 		[[ "$VERBOSE" = yes ]] &&
-			echo "[root@$_vmname]> $sshCommand" | GREP_COLORS='ms=01;36' grep --color . >&2
+			echo "[$U@$_vmname]> $sshCommand" | GREP_COLORS='ms=01;36' grep --color . >&2
 	}
 
 	#sometimes there's bug in libnss. get more than one addr but some one
@@ -720,10 +726,10 @@ vmlogin() {
 			echo "[vmlogin:debug] port ${addr}:22 available ..." | GREP_COLORS='ms=01;36' grep --color . >&2
 
 		sshexec=no
-		ssh -n -o Batchmode=yes $sshOpts root@$addr &>$RuntimeTmp/sshtest
+		ssh -n -o Batchmode=yes $sshOpts $U@$addr &>$RuntimeTmp/sshtest
 		[[ $? = 0 ]] && sshexec=yes
 		if [[ $sshexec = yes ]]; then
-			ssh $sshOpts root@$addr "$sshCommand"
+			ssh $sshOpts $U@$addr "$sshCommand"
 			rc=$?
 		else
 			if grep -q -w password $RuntimeTmp/sshtest; then
@@ -731,7 +737,7 @@ vmlogin() {
 				set timeout 120
 				set sshcmd [exec cat $RuntimeTmp/sshcmd]
 				log_user 0
-				spawn ssh $sshOpts root@$addr \$sshcmd
+				spawn ssh $sshOpts $U@$addr \$sshcmd
 				log_user 1
 				if {\$argc == 0} {
 					expect {
@@ -752,7 +758,7 @@ vmlogin() {
 				) "$@"
 				rc=$?
 			else
-				echo -e "{VM:WARN} ssh root@$addr is not available, try login with console ..."
+				echo -e "{VM:WARN} ssh $U@$addr is not available, try login with console ..."
 				virsh console "$_vmname"
 				rc=$?
 			fi
