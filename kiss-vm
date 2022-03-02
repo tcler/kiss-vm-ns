@@ -1598,32 +1598,38 @@ Usage() {
 }
 
 run() {
+	local _runtype= _debug=yes
 	local _nohup= _nohuplogf=
+	local _defaultlogf=$VMpath/nohup.log
 
-	[[ $# -eq 0 ]] && return 0
-	for ((i=0; i<2; i++)); do
-		case $1 in
-		-nohup*|nohup*)
-			_nohup=\ nohup
+	while true; do
+		case "$1" in
+		-nohu*) _nohup=yes
 			[[ $1 = *=* ]] && _nohuplogf=${1#*=}
-			_nohuplogf=${_nohuplogf:-$VMpath/nohup.log}
-			shift
-			;;
-		-debug*)
-			DEBUG=yes
-			shift
-			;;
+			_nohuplogf=${_nohuplogf:-$_defaultlogf}
+			shift;;
+		-debug) _debug=yes; shift;;
+		-eval*) _runtype=eval; shift;;
+		-bash*) _runtype=bash; shift;;
+		-*)     shift;;
+		*)      break;;
 		esac
 	done
 
-	local _cmdline=$(getSafeCommandLine "$@")
-	if [[ -n "$_nohup" ]]; then
-		[[ "$DEBUG" = yes ]] && echo "[sys]" nohup "$_cmdline" "&>${_nohuplogf} &" | GREP_COLORS='ms=01;30;47' grep --color .
-		nohup "$@" &>${_nohuplogf} &
-	else
-		[[ "$DEBUG" = yes ]] && echo "[sys]" "$_cmdline" | GREP_COLORS='ms=01;30;47' grep --color .
-		"$@"
-	fi
+	[[ $# -eq 0 ]] && return 0
+	[[ $# -eq 1 && -z "$_runtype" ]] && _runtype=eval
+	local _cmdl=$(getSafeCommandLine "$@")
+
+	if [[ "$_debug" = yes ]]; then
+		[[ "$_nohup" = yes ]] && _cmdl="nohup $_cmdl &>${_nohuplogf} &"
+		echo "[${_runtype:-direct} run]" "$_cmdl"
+	fi | GREP_COLORS='ms=01;30;47' grep --color .
+
+	case ${_runtype:-direct} in
+	direct) [[ -n "$_nohup" ]] && nohup "$@" &>${_nohuplogf} & || "$@";;
+	eval)   eval "$_cmdl";;
+	bash)   bash -c "$_cmdl";;
+	esac
 }
 
 expandrc() {
