@@ -1626,7 +1626,7 @@ run() {
 	fi | GREP_COLORS='ms=01;30;47' grep --color .
 
 	case ${_runtype:-direct} in
-	direct) [[ -n "$_nohup" ]] && nohup "$@" &>${_nohuplogf} & || "$@";;
+	direct) if [[ -n "$_nohup" ]]; then nohup "$@" &>${_nohuplogf} & else "$@"; fi;;
 	eval)   eval "$_cmdl";;
 	bash)   bash -c "$_cmdl";;
 	esac
