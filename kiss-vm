@@ -1598,7 +1598,7 @@ Usage() {
 }
 
 run() {
-	local _runtype= _debug=yes
+	local _runtype= _debug=yes _rc=0
 	local _nohup= _nohuplogf=
 	local _defaultlogf=$VMpath/nohup.log
 
@@ -1626,10 +1626,12 @@ run() {
 	fi | GREP_COLORS='ms=01;30;47' grep --color .
 
 	case ${_runtype:-direct} in
-	direct) if [[ -n "$_nohup" ]]; then nohup "$@" &>${_nohuplogf} & else "$@"; fi;;
-	eval)   eval "$_cmdl";;
-	bash)   bash -c "$_cmdl";;
+	direct) if [[ -n "$_nohup" ]]; then nohup "$@" &>${_nohuplogf} & else "$@"; _rc=$?; fi;;
+	eval)   eval "$_cmdl"; _rc=$?;;
+	bash)   bash -c "$_cmdl"; _rc=$?;;
 	esac
+
+	return $_rc
 }
 
 expandrc() {
