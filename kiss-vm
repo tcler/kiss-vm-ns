@@ -529,7 +529,7 @@ vmclone() {
 
 	# do clone
 	local dstpath=${srcpath%/*}/$dstname
-	mkdir -p $dstpath && touch $dstpath/.kiss-vm
+	sudo -i -u $VMUSER bash <<<"mkdir -p $dstdir && touch $dstpath/.kiss-vm"
 	chcon --reference=${srcpath%/*} -R $dstpath
 	virt-clone --original ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2
 
@@ -1991,8 +1991,7 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 	esac
 }
 
-mkdir -p $RuntimeTmp
-mkdir -p ${DownloadImagePath}
+sudo -i -u $VMUSER bash <<< "mkdir -p $RuntimeTmp ${DownloadImagePath}"
 
 # sub-command
 [[ $P = vmc || $P = vm ]] || true && {
@@ -2157,7 +2156,7 @@ fi
 
 	VMpath=$VMSHOME/$Distro/$vmname
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
-	mkdir -p $VMpath
+	sudo -i -u $VMUSER bash <<< "mkdir -p $VMpath"
 }
 [[ "${VMpath,,}" = *windows* ]] && {
 	_MSIZE=4096
@@ -3089,7 +3088,7 @@ fedora*|rhel*|centos*|rocky*)
 esac
 
 if [[ "$GenerateImage" = yes ]]; then
-	mkdir -p $ImagePath/$Distro
+	sudo -i -u $VMUSER bash <<< "mkdir -p $ImagePath/$Distro"
 	read image < <(_vmsrcfiles $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
 	imgfilename=${imgfilename#${vmprefix}-}
@@ -3140,7 +3139,7 @@ fi
 		read srcdir rtarget _ <<< "${SHARE_DIRS[$idx]//:/ }"
 		rtarget=${rtarget:-tag$idx}
 		target=virtiofs-tag-$rtarget
-		mkdir -p $srcdir
+		sudo -i -u $VMUSER bash <<< "mkdir -p $srcdir"
 		cat >virtiofs.xml <<-EOF
 		<filesystem type='mount' accessmode='passthrough'>
 			<binary path='/usr/libexec/virtiofsd' xattr='on'/>
