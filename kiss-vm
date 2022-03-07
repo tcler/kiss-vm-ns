@@ -21,18 +21,13 @@ MacvtapMode=bridge
 VMName=
 InstallType=import
 
-ImagePath=~/myimages
-VMSHOME=~/VMs
-perConfDir=~/.config/kiss-vm
-vmprefix=$(whoami)
-[[ -n "$SUDO_USER" ]] && {
-	eval ImagePath=~$SUDO_USER/myimages
-	eval VMSHOME=~$SUDO_USER/VMs
-	eval perConfDir=~$SUDO_USER/.config/kiss-vm
-	vmprefix=${SUDO_USER}
-}
+VMUSER=$(whoami)
+[[ -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
+vmprefix=$VMUSER
+eval VMSHOME=~$VMUSER/VMs
+eval ImagePath=~$VMUSER/myimages
+eval perConfDir=~$VMUSER/.config/kiss-vm
 
-DownloadImagePath=$ImagePath/download
 RuntimeTmp=/tmp/vm-$$
 INTERACT=yes
 Intranet=yes
@@ -1003,8 +998,10 @@ install_requires() {
 
 		#install virtio driver for Windows Guest
 		#see: https://github.com/virtio-win/virtio-win-pkg-scripts/blob/master/README.md
-		sudo wget https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo   -O /etc/yum.repos.d/virtio-win.repo
-		sudo yum install -y virtio-win
+		rpm -q virtio-win &>/dev/null || {
+			sudo wget https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo   -O /etc/yum.repos.d/virtio-win.repo
+			sudo yum install -y virtio-win
+		}
 		;;
 	debian*|ubuntu*)
 		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils genisoimage nftables acl"
@@ -1035,8 +1032,8 @@ install_requires() {
 
 prepare_libvirt() {
 	local force=$1
-	local sudouser=${SUDO_USER:-$(whoami)}
-	eval sudouserhome=~$sudouser
+	local vmuser=${VMUSER}
+	eval vmuserhome=~$vmuser
 	if [[ -n "$force" ]]; then
 		echo -e "{VM:INFO} force re-prepare kiss-vm env"
 	else
@@ -1088,39 +1085,39 @@ prepare_libvirt() {
 		"
 	}
 
-	pvirtconf=$sudouserhome/.config/libvirt/libvirt.conf
-	su $sudouser -s /bin/bash -c "mkdir -p ${pvirtconf%/*}"
-	su $sudouser -s /bin/bash -c "virsh net-info default &>/dev/null && grep -q -w default <(virsh net-list --name)" || {
+	pvirtconf=$vmuserhome/.config/libvirt/libvirt.conf
+	su $vmuser -s /bin/bash -c "mkdir -p ${pvirtconf%/*}"
+	su $vmuser -s /bin/bash -c "virsh net-info default &>/dev/null && grep -q -w default <(virsh net-list --name)" || {
 		#export LIBVIRT_DEFAULT_URI=qemu:///system
 		echo 'uri_default = "qemu:///system"' >>$pvirtconf
 	}
 
 : <<'COMM'
 	qemuconf=/etc/libvirt/qemu.conf
-	eval echo -e "{VM:INFO} checking if qemu can read image in ~$sudouser ..."
+	eval echo -e "{VM:INFO} checking if qemu can read image in ~$vmuser ..."
 	egrep -q '^#(user|group) =' "$qemuconf" && {
 		sed -i '/^#(user|group) =/s/^#//' "$qemuconf"
 	}
 COMM
 
-	su $sudouser -s /bin/bash -c "mkdir -p $VMSHOME"
+	su $vmuser -s /bin/bash -c "mkdir -p $VMSHOME"
 
 	{ _user=qemu; id qemu 2>/dev/null || _user=libvirt-qemu; }
-	echo -e "{VM:INFO} setfacl -mu:${_user}:rx $sudouserhome ..."
-	setfacl -mu:${_user}:rx $sudouserhome
+	echo -e "{VM:INFO} setfacl -mu:${_user}:rx $vmuserhome ..."
+	setfacl -mu:${_user}:rx $vmuserhome
 	setfacl -mu:${_user}:rx -R $VMSHOME
-	setfacl -mu:${_user}:rx -R $sudouserhome/.cache/virt-manager 2>/dev/null
-	getfacl $sudouserhome
+	setfacl -mu:${_user}:rx -R $vmuserhome/.cache/virt-manager 2>/dev/null
+	getfacl $vmuserhome
 	getfacl $VMSHOME
 
-	echo -e "{VM:INFO} checking if ${sudouser} has joined group libvirt ..."
-	[[ $(id -u $sudouser) != 0 ]] && {
-		if ! id -Gn $sudouser | egrep -q -w libvirt; then
-			if getent group libvirt|egrep -q -w $sudouser; then
+	echo -e "{VM:INFO} checking if ${vmuser} has joined group libvirt ..."
+	[[ $(id -u $vmuser) != 0 ]] && {
+		if ! id -Gn $vmuser | egrep -q -w libvirt; then
+			if getent group libvirt|egrep -q -w $vmuser; then
 				: #do nothing
 			else
-				echo -e "{*INFO*} run: usermod -a -G libvirt $sudouser ..."
-				usermod -a -G libvirt $sudouser  #or gpasswd -a $sudouser libvirt
+				echo -e "{*INFO*} run: usermod -a -G libvirt $vmuser ..."
+				usermod -a -G libvirt $vmuser  #or gpasswd -a $vmuser libvirt
 			fi
 		fi
 	}
@@ -1134,7 +1131,7 @@ COMM
 		virsh net-autostart default
 	}
 
-	su $sudouser -s /bin/bash -c "mkdir -p $perConfDir"
+	su $vmuser -s /bin/bash -c "mkdir -p $perConfDir"
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && printf '\33[H\33[2J'
 }
@@ -1523,6 +1520,10 @@ Usage() {
 	  --putln,--vncputln <msg>
 	                 #alias of: --put msg --put key:enter
 
+	Options for sub-command prepare:
+	  -u,--user      #prepare configure libvirt for other user
+	                 #`e.g: sudo vm prepare -u bar
+
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
 	Examples for create vm from distro-db (Intranet):
@@ -1565,7 +1566,7 @@ Usage() {
 	  $P create OpenIndiana -n opensolaris -C OI-hipster-text-20211031.iso -msize 8G -dsize 120
 
 	Examples for other sub-commands:
-	  $P prepare           #check/install/configure libvirt and other dependent packages
+	  $P prepare [-u user] #check/install/configure libvirt and other dependent packages
 	  $P enable-nested-vm  #enable nested on host
 
 	  $P list              #list all VMs       //you can use ls,li,lis* instead list
@@ -1680,9 +1681,10 @@ get_default_if() {
 
 # command line parse
 orig_at=("$@")
-_at=`getopt -o hd:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
+_at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long help \
 	--long prepare \
+	--long user: \
 	--long enable-nested-vm \
 	--long debug \
 	--long ks: \
@@ -1762,6 +1764,12 @@ while true; do
 	case "$1" in
 	-h|--help) Usage; shift 1; exit 0;;
 	--prepare) ONLY_PREPARE=yes; shift 1;;
+	-u|--user) VMUSER=$2; shift 2;
+		vmprefix=$VMUSER
+		eval VMSHOME=~$VMUSER/VMs
+		eval ImagePath=~$VMUSER/myimages
+		eval perConfDir=~$VMUSER/.config/kiss-vm
+		;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
 	-C)        InstallType=cdrom; Isourl=$2; shift 2;;
@@ -1809,7 +1817,7 @@ while true; do
 	--macvtapmode)   MacvtapMode="$2"; shift 2;;
 	--saveimage|--sa)
 		SAVE_IMAGE="yes"
-		DownloadImagePath=${2:-$ImagePath/download}
+		DownloadImagePath=${2}
 		shift 2
 		;;
 	--downloadonly)  SAVE_IMAGE="yes"; DOWNLOAD_ONLY="yes"; InstallType=import; shift 1;;
@@ -1852,6 +1860,8 @@ while true; do
 	--) shift; break;;
 	esac
 done
+
+DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
 qemu_kvm_nvr() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
