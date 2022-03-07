@@ -156,7 +156,14 @@ _vm()
             netlist="$(virsh net-list --name --all)"
             COMPREPLY=( $( compgen -W "$netlist" -- "$cur" ) )
             ;;
-        ls|list|netls|prepare|enable-nested-vm|h|help|rootdir)
+        prepare)
+            COMPREPLY=( $( compgen -W "#<Enter> --user" -- "$cur" ) )
+            if [[ "$prev" == -u || "$prev" == --user ]]; then
+                users=$(awk -F: '$NF ~ /.*bash/ {print $1}' /etc/passwd)
+                COMPREPLY=( $( compgen -W "$users" -- "$cur" ) )
+            fi
+            ;;
+        ls|list|netls|enable-nested-vm|h|help|rootdir)
             COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             ;;
         *)
