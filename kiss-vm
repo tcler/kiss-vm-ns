@@ -1618,10 +1618,15 @@ run() {
 		echo "[${_runtype:-direct} run]" "$_cmdl"
 	fi | GREP_COLORS='ms=01;30;47' grep --color .
 
-	sudo -i -u $VMUSER bash <<< "touch ${_nohuplogf}"
-
 	case ${_runtype:-direct} in
-	direct) if [[ -n "$_nohup" ]]; then nohup "$@" &>${_nohuplogf} & else "$@"; _rc=$?; fi;;
+	direct)
+		if [[ -n "$_nohup" ]]; then
+			sudo -i -u "$VMUSER" bash <<< "touch ${_nohuplogf}"
+			nohup "$@" &>${_nohuplogf} &
+		else
+			"$@"; _rc=$?
+		fi
+		;;
 	eval)   eval "$_cmdl"; _rc=$?;;
 	bash)   bash -c "$_cmdl"; _rc=$?;;
 	esac
