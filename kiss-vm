@@ -529,7 +529,7 @@ vmclone() {
 
 	# do clone
 	local dstpath=${srcpath%/*}/$dstname
-	sudo -i -u $VMUSER bash <<<"mkdir -p $dstdir && touch $dstpath/.kiss-vm"
+	sudo -i -u $VMUSER bash <<<"mkdir -p $dstpath && touch $dstpath/.kiss-vm"
 	chcon --reference=${srcpath%/*} -R $dstpath
 	virt-clone --original ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2
 
@@ -934,7 +934,9 @@ curl_download() {
 	fi
 
 	echo "{VM:INFO} run: curl -o $filename \$url $curlopts $curlOpt $@"
-	curl -o $filename $url $curlopts $curlOpt "$@"
+	sudo -i -u $VMUSER bash <<-EOF
+		curl -o $filename $url $curlopts $curlOpt "$@"
+	EOF
 	rc=$?
 	if [[ $rc != 0 && -s $filename ]]; then
 		fsizel=$(stat --printf %s $filename)
@@ -1615,6 +1617,8 @@ run() {
 		[[ "$_nohup" = yes ]] && _cmdl="nohup $_cmdl &>${_nohuplogf} &"
 		echo "[${_runtype:-direct} run]" "$_cmdl"
 	fi | GREP_COLORS='ms=01;30;47' grep --color .
+
+	sudo -i -u $VMUSER bash <<< "touch ${_nohuplogf}"
 
 	case ${_runtype:-direct} in
 	direct) if [[ -n "$_nohup" ]]; then nohup "$@" &>${_nohuplogf} & else "$@"; _rc=$?; fi;;
@@ -2503,8 +2507,8 @@ if [[ "$InstallType" = location ]]; then
 	}
 
 	echo -e "{VM:INFO} creating VM by using location:\n ->  $Location"
-	touch $VMpath/.kiss-vm
-	echo $Location >$VMpath/url
+	sudo -i -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
+	sudo -i -u $VMUSER bash <<< "echo $Location >$VMpath/url"
 	if [[ -f $Location ]]; then
 		cp $Location $VMpath/. && Location=$VMpath/${Location##*/}
 	fi
@@ -2708,8 +2712,8 @@ elif [[ "$InstallType" = import ]]; then
 	}
 
 	echo -e "{VM:INFO} creating VM by import $imagefile"
-	touch $VMpath/.kiss-vm
-	echo $Imageurl >$VMpath/url
+	sudo -i -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
+	sudo -i -u $VMUSER bash <<< "echo $Imageurl >$VMpath/url"
 
 	[[ "$dsizeflag" = 1 || "$NOAUTO" != yes ]] && {
 		_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
@@ -2874,7 +2878,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
 
 	echo -e "{VM:INFO} creating VM from pxe"
-	touch $VMpath/.kiss-vm
+	sudo -i -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
@@ -2964,7 +2968,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
 
 	echo -e "{VM:INFO} creating VM install from cdrom($isofile)"
-	touch $VMpath/.kiss-vm
+	sudo -i -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
