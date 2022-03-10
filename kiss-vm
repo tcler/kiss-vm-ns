@@ -899,32 +899,6 @@ vercmp() {
 	return $res
 }
 
-create_vdisk() {
-	local path=$1
-	local size=$2
-	local fstype=$3
-
-	OrigUSER=$(whoami)
-	[[ -n "$SUDO_USER" ]] && OrigUSER=$SUDO_USER
-
-	sudo -u "$OrigUSER" bash <<-EOF
-	dd if=/dev/null of=$path bs=1${size//[0-9]/} seek=${size//[^0-9]/}
-	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$path"
-	partprobe "$path"
-	udisksctl loop-setup -f $path
-	EOF
-
-	local dev=$(sudo -u "$OrigUSER" bash <<<"losetup -j $path" | awk -F: '{print $1}')
-	[[ -z "$dev" ]] && {
-		echo "{err} 'losetup -j $path' got fail, I don't know why" >&2
-		return 1
-	}
-	ls -l ${dev}p1
-
-	mkfs.$fstype $MKFS_OPT "${dev}p1"  #need root privileges
-	sudo -u "$OrigUSER" bash <<< "udisksctl loop-delete -b $dev"
-}
-
 curl_download() {
 	local filename=$1
 	local url=$2
@@ -2362,7 +2336,7 @@ for disk in "${EXTRA_DISKS[@]}"; do
 	else
 		_format=raw
 		ximage=$_ximage.$_format
-		sudo bash -c "$(declare -f create_vdisk); create_vdisk $VMpath/${ximage} ${size}G $fstype"
+		create-vdisk.sh $VMpath/${ximage} ${size}G $fstype
 	fi
 	[[ -z "$_args" ]] && _args=bus=${DEFAULT_DISK_BUS}
 	[[ "$_args" = *bus=usb* && "$_args" != *removable=* ]] && _args+=,removable=on
