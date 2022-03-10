@@ -27,19 +27,19 @@ create_vdiskn() {
 	local imgtail=img-tail-$$
 	local fn=${FUNCNAME[0]}
 
-	echo "{$fn:info} creating disk and partition"
+	echo -e "\n[$fn:info] creating disk and partition"
 	dd if=/dev/null of=$path bs=1${dsize//[0-9]/} seek=${dsize//[^0-9]/}
 	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$path"
 	partprobe "$path"
 
-	echo "{$fn:info} making fs($fstype)"
+	echo -e "\n[$fn:info] making fs($fstype)"
 	read pstart psize < <( parted -s $path unit B print | sed 's/B//g' |
 		awk -v P=1 '/^Number/{start=1;next}; start {if ($1==P) {print $2, $4}}' )
 	dd if=$path of=$imghead bs=${pstart} count=1
 	dd_range $path $imgtail $((pstart)) ${psize}
 	mkfs.$fstype $MKFS_OPT "$imgtail"
 
-	echo "{$fn:info} concat image-head and partition"
+	echo -e "\n[$fn:info] concat image-head and partition"
 	cat $imghead $imgtail >$path
 	rm -vf $imghead $imgtail
 }
