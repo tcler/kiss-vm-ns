@@ -904,20 +904,25 @@ create_vdisk() {
 	local size=$2
 	local fstype=$3
 
+	OrigUSER=$(whoami)
+	[[ -n "$SUDO_USER" ]] && OrigUSER=$SUDO_USER
+
+	sudo -u "$OrigUSER" bash <<-EOF
 	dd if=/dev/null of=$path bs=1${size//[0-9]/} seek=${size//[^0-9]/}
 	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$path"
 	partprobe "$path"
-
 	udisksctl loop-setup -f $path
-	local dev=$(losetup -j $path|awk -F: '{print $1}')
+	EOF
+
+	local dev=$(sudo -u "$OrigUSER" bash <<<"losetup -j $path" | awk -F: '{print $1}')
 	[[ -z "$dev" ]] && {
 		echo "{err} 'losetup -j $path' got fail, I don't know why" >&2
 		return 1
 	}
-	while ! ls -l ${dev}p1 2>/dev/null; do sleep 1; done
-	ls -l ${dev}
-	mkfs.$fstype $MKFS_OPT "${dev}p1"
-	udisksctl loop-delete -b $dev
+	ls -l ${dev}p1
+
+	mkfs.$fstype $MKFS_OPT "${dev}p1"  #need root privileges
+	sudo -u "$OrigUSER" bash <<< "udisksctl loop-delete -b $dev"
 }
 
 curl_download() {
