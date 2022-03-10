@@ -6,18 +6,19 @@ create_vdisk() {
 	local fstype=$3
 
 	dd if=/dev/null of=$path bs=1${size//[0-9]/} seek=${size//[^0-9]/}
-	local dev=$(losetup --partscan --show --find $path)
+	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$path"
+	partprobe "$path"
+
+	udisksctl loop-setup -f $path
+	local dev=$(losetup -j $path|awk -F: '{print $1}')
 	[[ -z "$dev" ]] && {
-		echo "{err} 'losetup --partscan --show --find' got fail, try running by root user" >&2
-		rm -vf $path
+		echo "{err} 'losetup -j $path' got fail, I don't know why" >&2
 		return 1
 	}
-
-	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$dev"
-	partprobe "$dev"
-	while ! ls ${dev}p1 2>/dev/null; do sleep 1; done
+	while ! ls -l ${dev}p1 2>/dev/null; do sleep 1; done
+	ls -l ${dev}
 	mkfs.$fstype $MKFS_OPT "${dev}p1"
-	losetup -d $dev
+	udisksctl loop-delete -b $dev
 }
 
 [[ $# -lt 3 ]] && {
