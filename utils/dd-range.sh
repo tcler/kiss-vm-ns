@@ -17,10 +17,10 @@ dd_range() {
 	if [[ -z "$SIZE" ]]; then
 		dd if=$if bs=$BS skip=$((Q+1))
 	else
-		Q=$((SIZE/BS))  #quotient
-		R=$((SIZE%BS))  #residue
-		((Q>0)) && dd if=$if bs=$BS skip=1 count=$Q
-		((R>0)) && dd if=$if bs=$BS skip=$((Q+1)) count=1 | head -c $R
+		Q2=$((SIZE/BS))  #quotient
+		R2=$((SIZE%BS))  #residue
+		((Q2>0)) && dd if=$if bs=$BS skip=$((Q+1)) count=$Q2
+		((R2>0)) && dd if=$if bs=$BS skip=$((Q+1+Q2)) count=1 | head -c $R2
 	fi
 	} >>$of
 }
