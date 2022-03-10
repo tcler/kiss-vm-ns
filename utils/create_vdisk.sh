@@ -21,19 +21,19 @@ dd_range() {
 
 create_vdisk() {
 	local path=$1
-	local size=$2
+	local dsize=$2
 	local fstype=$3
 	local imghead=img-head-$$
 	local imgtail=img-tail-$$
 
-	dd if=/dev/null of=$path bs=1${size//[0-9]/} seek=${size//[^0-9]/}
+	dd if=/dev/null of=$path bs=1${dsize//[0-9]/} seek=${dsize//[^0-9]/}
 	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$path"
 	partprobe "$path"
 
-	read start size < <( parted -s $path unit B print | sed 's/B//g' |
+	read pstart psize < <( parted -s $path unit B print | sed 's/B//g' |
 		awk -v P=1 '/^Number/{start=1;next}; start {if ($1==P) {print $2, $4}}' )
-	dd if=$path of=$imghead bs=${start} count=1
-	dd_range $path $imgtail $((start)) ${size}
+	dd if=$path of=$imghead bs=${pstart} count=1
+	dd_range $path $imgtail $((pstart)) ${psize}
 	mkfs.$fstype $MKFS_OPT "$imgtail"
 	cat $imghead $imgtail >$path
 	rm -f $imghead $imgtail
