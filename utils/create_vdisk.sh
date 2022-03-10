@@ -7,6 +7,12 @@ create_vdisk() {
 
 	dd if=/dev/null of=$path bs=1${size//[0-9]/} seek=${size//[^0-9]/}
 	local dev=$(losetup --partscan --show --find $path)
+	[[ -z "$dev" ]] && {
+		echo "{err} 'losetup --partscan --show --find' got fail, try running by root user" >&2
+		rm -vf $path
+		return 1
+	}
+
 	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$dev"
 	partprobe "$dev"
 	while ! ls ${dev}p1 2>/dev/null; do sleep 1; done
@@ -16,7 +22,7 @@ create_vdisk() {
 
 [[ $# -lt 3 ]] && {
 	cat <<-COMM
-	Usage: [MKFS_OPT=xxx] $0 <image> <size> <fstype>
+	Usage: [MKFS_OPT=xxx] sudo $0 <image> <size> <fstype>
 
 	Examples:
 	  $0 usb.img 256M vfat

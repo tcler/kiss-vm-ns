@@ -53,7 +53,7 @@ mount_vdisk() {
 
 [[ $# -lt 2 ]] && {
 	cat <<-COMM
-	Usage: [MNT_OPT=xxx] $0 <image> <mountpoint> [partition Number]
+	Usage: [MNT_OPT=xxx] sudo $0 <image> <mountpoint> [partition Number]
 
 	Examples:
 	  $0 usb.img /mnt/usb
