@@ -1020,7 +1020,7 @@ install_requires() {
 	esac
 }
 
-prepare_libvirt() {
+prepare_kiss_vm() {
 	local force=$1
 	local vmuser=${VMUSER}
 	eval vmuserhome=~$vmuser
@@ -1041,6 +1041,9 @@ prepare_libvirt() {
 
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
+
+	#fix org.freedesktop.UDisks2.policy
+	: fixme /usr/share/polkit-1/actions/org.freedesktop.UDisks2.policy
 
 	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
@@ -1902,10 +1905,10 @@ if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo
 	}
 	[[ "$KISS_VM_READY" != yes ]] && {
 		if [[ -t 1 ]]; then
-			prepare_libvirt $FORCE_PREPARE &>/dev/tty
+			prepare_kiss_vm $FORCE_PREPARE &>/dev/tty
 		else
-			#echo -e "{VM:WARN} there's not /dev/tty file redirect prepare_libvirt msg to stderr" >&2
-			prepare_libvirt $FORCE_PREPARE >&2
+			#echo -e "{VM:WARN} there's not /dev/tty file redirect prepare_kiss_vm msg to stderr" >&2
+			prepare_kiss_vm $FORCE_PREPARE >&2
 		fi
 		[[ "$ONLY_PREPARE" = yes ]] && exit
 	}
@@ -1985,7 +1988,7 @@ sudo -u $VMUSER bash <<< "mkdir -p $RuntimeTmp ${DownloadImagePath}"
 	subcmd=$1
 	case "$subcmd" in
 	h|\?|help) Usage|less; exit;;
-	prepare) shift; [[ "$1" = -d ]] && shift; prepare_libvirt force; exit $?;;
+	prepare) shift; [[ "$1" = -d ]] && shift; prepare_kiss_vm force; exit $?;;
 	enable-nested-vm) shift; [[ "$1" = -d ]] && shift; enable_nested_kvm; exit $?;;
 	create|creat) shift;;
 	r|rm|d|de|del*) shift; [[ "$1" = -d ]] && shift; vmdelete "$@"; exit $?;;
