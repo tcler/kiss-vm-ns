@@ -4,7 +4,6 @@ create_vdisk() {
 	local path=$1
 	local size=$2
 	local fstype=$3
-	local dev=
 
 	OrigUSER=$(whoami)
 	[[ -n "$SUDO_USER" ]] && OrigUSER=$SUDO_USER
@@ -16,7 +15,7 @@ create_vdisk() {
 	udisksctl loop-setup -f $path
 	EOF
 
-	dev=$(sudo -u "$OrigUSER" bash <<<"losetup -j $path" | awk -F: '{print $1}')
+	local dev=$(sudo -u "$OrigUSER" bash <<<"losetup -j $path" | awk -F: '{print $1}')
 	[[ -z "$dev" ]] && {
 		echo "{err} 'losetup -j $path' got fail, I don't know why" >&2
 		return 1
