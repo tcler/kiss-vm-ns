@@ -2045,11 +2045,6 @@ fi
 
 for disk in "${EXTRA_DISKS[@]}"; do
 	read size fstype _ <<<"${disk//,/ }"
-	[[ -n "$fstype" && $(id -u) -ne 0 ]] && {
-		echo "{WARN} creating extra disk($disk) need super user permission, try:"
-		echo "  sudo $0 ${_at[@]} $@"
-		exit 1
-	}
 done
 
 Imageurl=
