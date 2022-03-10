@@ -9,14 +9,20 @@ dd_range() {
 
 	[[ -z "$of" ]] && return 1
 
-	dd if=$if bs=$BS count=1 | dd iflag=fullblock,skip_bytes ibs=$SKIP skip=1 >$of
+	Q=$((SKIP/BS))  #quotient
+	R=$((SKIP%BS))  #residue
+	dd if=$if ibs=$BS skip=$Q count=1 | tail -c $((BS-R)) >$of
+
+	{
 	if [[ -z "$SIZE" ]]; then
-		dd if=$if bs=$BS skip=1 >>$of
+		dd if=$if bs=$BS skip=$((Q+1))
 	else
-		CNT=$((SIZE/BS + 1))
-		dd if=$if bs=$BS skip=1 count=$CNT >>$of
-		truncate --size=${SIZE} $of
+		Q=$((SIZE/BS))  #quotient
+		R=$((SIZE%BS))  #residue
+		((Q>0)) && dd if=$if bs=$BS skip=1 count=$Q
+		((R>0)) && dd if=$if bs=$BS skip=$((Q+1)) count=1 | head -c $R
 	fi
+	} >>$of
 }
 
 dd_range "$@"
