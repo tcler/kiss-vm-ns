@@ -19,7 +19,7 @@ dd_range() {
 	fi
 }
 
-create_vdisk() {
+create_vdiskn() {
 	local path=$1
 	local dsize=$2
 	local fstype=$3
@@ -50,4 +50,4 @@ create_vdisk() {
 	COMM
 	exit 1
 }
-create_vdisk "$@"
+create_vdiskn "$@"
