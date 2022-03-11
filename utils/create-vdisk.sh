@@ -1,5 +1,7 @@
 #!/bin/bash
 
+LANG=C
+
 dd_range() {
 	local if=$1
 	local of=$2
@@ -38,11 +40,13 @@ create_vdiskn() {
 	printf "o\nn\np\n1\n\n\nw\n" | fdisk "$path"
 	partprobe "$path"
 
-	echo -e "\n[$fn:info] making fs($fstype)"
-	read pstart psize < <( parted -s $path unit B print | sed 's/B//g' |
+	read pstart psize < <( LANG=C parted -s $path unit B print | sed 's/B//g' |
 		awk -v P=1 '/^Number/{start=1;next}; start {if ($1==P) {print $2, $4}}' )
+	echo -e "\n[$fn:info] split disk head and partition($pstart:$psize)"
 	dd if=$path of=$imghead bs=${pstart} count=1
 	dd_range $path $imgtail $((pstart)) ${psize}
+
+	echo -e "\n[$fn:info] making fs($fstype)"
 	mkfs.$fstype $MKFS_OPT "$imgtail"
 
 	echo -e "\n[$fn:info] concat image-head and partition"
