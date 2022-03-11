@@ -27,6 +27,7 @@ mount_vdisk2() {
 	}
 
 	mntdev=${dev}p${partN}
+	ls ${dev}p* &>/dev/null || mntdev=$dev
 	{ ls -l ${mntdev}; } >&2
 
 	mntinfo=$(mount | awk -v d=$mntdev '$1 == d')
