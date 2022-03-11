@@ -4,6 +4,14 @@ LANG=C
 PROG=${0##*/}
 
 mount_vdisk2() {
+	local fn=${FUNCNAME[0]}
+	local CNT=$(sed -rn -e '/(filesystem-mount"|loop-setup)/,/<\/action>/{/<allow_any>yes/p}' \
+		/usr/share/polkit-1/actions/org.freedesktop.UDisks2.policy | wc -l)
+	if [[ "$CNT" -lt 2 && $(id -u) -ne 0 ]]; then
+		echo "{$fn:err} udisks2 policy does not support non-root user loop-setup,mount yet" >&2
+		return 1
+	fi
+
 	local path=$1
 	local partN=${2:-1}
 	local dev= mntdev= mntopt= mntinfo=
@@ -14,7 +22,7 @@ mount_vdisk2() {
 		read dev _ < <(losetup -j $path|awk -F'[: ]+' '{print $1, $2}')
 	fi
 	[[ -z "$dev" ]] && {
-		echo "{err} 'losetup -j $path' got fail, I don't know why" >&2
+		echo "{$fn:err} 'losetup -j $path' got fail, I don't know why" >&2
 		return 1
 	}
 
@@ -27,7 +35,7 @@ mount_vdisk2() {
 		mntopt=$([[ -n "$MNT_OPT" ]] && echo --options=$MNT_OPT)
 		udisksctl mount -b $mntdev $mntopt >&2
 	else
-		echo -e "{warn} '$path' has been already mounted:\n  $mntinfo" >&2
+		echo -e "{$fn:warn} '$path' has been already mounted:\n  $mntinfo" >&2
 	fi
 
 	echo -e "  $loinfo" >&2
