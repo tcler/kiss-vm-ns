@@ -1042,10 +1042,10 @@ prepare_kiss_vm() {
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
 
-	#fix default org.freedesktop.UDisks2.policy
+	#fix policy org.freedesktop.UDisks2.policy or org.freedesktop.udisks2.policy on debian
 	#see also: https://lists.debian.org/debian-devel/2017/01/msg00081.html
 	sed -ri -e '/(filesystem-mount"|loop-setup|loop-delete)/,/<\/action>/{s/auth_admin\>/yes/}' \
-		/usr/share/polkit-1/actions/org.freedesktop.UDisks2.policy
+		/usr/share/polkit-1/actions/org.freedesktop.??isks2.policy
 
 	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."

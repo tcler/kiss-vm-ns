@@ -6,7 +6,7 @@ PROG=${0##*/}
 mount_vdisk2() {
 	local fn=${FUNCNAME[0]}
 	local CNT=$(sed -rn -e '/(filesystem-mount"|loop-setup)/,/<\/action>/{/<allow_any>yes/p}' \
-		/usr/share/polkit-1/actions/org.freedesktop.UDisks2.policy | wc -l)
+		/usr/share/polkit-1/actions/org.freedesktop.??isks2.policy | wc -l)
 	if [[ "$CNT" -lt 2 && $(id -u) -ne 0 ]]; then
 		echo "{$fn:err} udisks2 policy does not support non-root user loop-setup,mount yet" >&2
 		[[ -z "$DISPLAY" ]] && return 1
