@@ -6,7 +6,7 @@ umount_vdisk2() {
 		/usr/share/polkit-1/actions/org.freedesktop.UDisks2.policy | wc -l)
 	if [[ "$CNT" -lt 1 && $(id -u) -ne 0 ]]; then
 		echo "{$fn:err} udisks2 policy does not support non-root user loop-delete yet" >&2
-		return 1
+		[[ -z "$DISPLAY" ]] && return 1
 	fi
 
 	local mp=$1

@@ -9,7 +9,7 @@ mount_vdisk2() {
 		/usr/share/polkit-1/actions/org.freedesktop.UDisks2.policy | wc -l)
 	if [[ "$CNT" -lt 2 && $(id -u) -ne 0 ]]; then
 		echo "{$fn:err} udisks2 policy does not support non-root user loop-setup,mount yet" >&2
-		return 1
+		[[ -z "$DISPLAY" ]] && return 1
 	fi
 
 	local path=$1
