@@ -9,18 +9,37 @@ umount_vdisk2() {
 		[[ -z "$DISPLAY" ]] && return 1
 	fi
 
-	local mp=$1
-	local mntinfo=$(mount | awk -v mp=$mp '$3 == mp {print $0}')
-	if ! grep udisks2 <<<"$mntinfo"; then
-		echo "{$fn:warn} $mp is not mounted by udisks2"
-		return 1
-	fi
+	_umount_mp() {
+		local _mp=$1
+		local mntinfo=$(mount | awk -v mp=$_mp '$3 == mp {print $0}')
+		if ! grep udisks2 <<<"$mntinfo"; then
+			echo "{$fn:warn} $_mp is not mounted by udisks2"
+			return 1
+		fi
 
-	local mntdev=${mntinfo%% *}
-	local lodev=${mntdev%p*}
+		local mntdev=${mntinfo%% *}
+		local lodev=${mntdev%p*}
 
-	udisksctl unmount -b $mntdev
-	udisksctl loop-delete -b $lodev
+		udisksctl unmount -b $mntdev
+		udisksctl loop-delete -b $lodev
+	}
+
+	local mp=
+	for mp; do
+		if [[ ! -f "$mp" ]]; then
+			_umount_mp $mp
+		else
+			local lodev= lodevs=
+			lodevs=$(losetup -j $mp|awk -F: '{print $1}')
+			for lodev in $lodevs; do
+				local _mps _mp
+				_mps=$(mount|awk "/^${lodev//\//.}(|p[0-9]+) /"'{print $3}')
+				for _mp in $_mps; do
+					_umount_mp $_mp
+				done
+			done
+		fi
+	done
 }
 
 umount_vdisk2 "$@"
