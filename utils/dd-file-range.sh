@@ -103,6 +103,7 @@ for arg; do
 	-seek=*) _seek=${arg/*=/};;
 	-len=*)  _len=${arg/*=/};;
 	-log=*)  _logLevel=${arg/*=/};;
+	-ver=*)  _ver=${arg/*=/};;
 	-*)      :;;
 	*)       args+=($arg);;
 	esac
@@ -137,8 +138,12 @@ skip=${skip:-${_skip:-0}}
 seek=${seek:-${_seek:-0}}
 len=${len:-${_len}}
 LogOpt=status=${_logLevel:-none}
-
-if dd --help|grep -q skip_bytes; then
+if [[ -n "$_ver" ]]; then
+	case "$_ver" in
+	o*) dd_file_range_old "$if" "$of" $skip $seek $len;;
+	*)  dd_file_range "$if" "$of" $skip $seek $len;;
+	esac
+elif dd --help|grep -q skip_bytes; then
 	dd_file_range "$if" "$of" $skip $seek $len
 else
 	dd_file_range_old "$if" "$of" $skip $seek $len
