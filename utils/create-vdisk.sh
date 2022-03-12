@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+#for creating disk image with partition and filesystem as non-root user
+#
+#update 2022-03-11: just found out that 'virt-make-fs' has already implemented
+#same function. please use 'virt-make-fs' instead for most cases:
+#$ virt-make-fs -s $size -t $fstype $dir_or_tar $image --partition
+#
+#still keep this script as a souvenir
 
 LANG=C
 
