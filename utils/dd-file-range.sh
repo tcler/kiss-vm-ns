@@ -9,16 +9,17 @@ dd_file_range_old() {
 	local len=$5
 	local BS=$((16*1024))
 	local fn=${FUNCNAME[0]}
+	local logOpt=${LogOpt:-status=none}
 
 	local fsize=$(stat -c%s "$if") || return $?
 	(((skip+len) > fsize)) && {
-		echo "{$fn:err} (skip+len) beyond the EOF of $if" >&2
+		echo "[$fn:err] (skip+len) beyond the EOF of $if" >&2
 	}
 	[[ -z "$of" ]] && return 1
 	touch "$of" || return $?
 	((seek > 0)) && {
 		local orig_of=$of
-		local tmpof=/tmp/.of.tmp-$$
+		local tmpof=$(mktemp)
 		of=$tmpof
 	}
 
@@ -28,10 +29,10 @@ dd_file_range_old() {
 	Q=$((skip/BS))  #quotient
 	R=$((skip%BS))  #residue
 	NREAD=$((BS-R))
-	dd if="$if" ibs=$BS skip=$Q count=1 | tail -c $NREAD >"$of"
+	dd if="$if" ibs=$BS skip=$Q count=1 $logOpt | tail -c $NREAD >"$of"
 
 	if [[ -z "$len" ]]; then
-		dd if="$if" ibs=$BS skip=$((Q+1)) oflag=append conv=notrunc of="$of"
+		dd if="$if" ibs=$BS skip=$((Q+1)) oflag=append conv=notrunc of="$of" $logOpt
 	else
 		if ((NREAD > len)); then
 			truncate --size=${len} "$of"
@@ -39,17 +40,19 @@ dd_file_range_old() {
 			let len-=$NREAD
 			Q2=$((len/BS))  #quotient
 			R2=$((len%BS))  #residue
-			((Q2>0)) && dd if="$if" ibs=$BS skip=$((Q+1)) count=$Q2 oflag=append conv=notrunc of="$of"
-			((R2>0)) && dd if="$if" ibs=$BS skip=$((Q+1+Q2)) count=1 | head -c $R2 >>"$of"
+			((Q2>0)) && dd if="$if" ibs=$BS skip=$((Q+1)) count=$Q2 oflag=append conv=notrunc of="$of" $logOpt
+			((R2>0)) && dd if="$if" ibs=$BS skip=$((Q+1+Q2)) count=1 $logOpt | head -c $R2 >>"$of"
 		fi
 	fi
 
 	((seek > 0)) && {
 		Q=$((seek/BS))
 		R=$((seek%BS))
-		{ dd if="$orig_of" ibs=$BS skip=$Q count=1 | head -c $R; dd if="$of" bs=$BS; } |
-			dd of="$orig_of" obs=$BS seek=$Q conv=notrunc
-		rm -vf "$tmpof"
+		{
+		dd if="$orig_of" ibs=$BS skip=$Q count=1 $logOpt | head -c $R
+		dd if="$of" bs=$BS $logOpt
+		} | dd of="$orig_of" obs=$BS seek=$Q conv=notrunc $logOpt
+		rm -f "$tmpof"
 	}
 }
 
@@ -62,22 +65,23 @@ dd_file_range() {
 	local len=$5
 	local BS=$((64*1024))
 	local fn=${FUNCNAME[0]}
+	local logOpt=${LogOpt:-status=none}
 
 	local fsize=$(stat -c%s "$if") || return $?
 	(((skip+len) > fsize)) && {
-		echo "{$fn:err} (skip+len) beyond the EOF of $if" >&2
+		echo "[$fn:err] (skip+len) beyond the EOF of $if" >&2
 	}
 	[[ -z "$of" ]] && return 1
 	touch "$of" || return $?
 
 	if [[ -z "$len" ]]; then
-		dd if="$if" of="$of" bs=${BS}c skip=$skip seek=$seek iflag=skip_bytes oflag=seek_bytes conv=notrunc
+		dd if="$if" of="$of" bs=${BS}c skip=$skip seek=$seek iflag=skip_bytes oflag=seek_bytes conv=notrunc $logOpt
 	else
 		local Q R
 		Q=$((len/BS))
 		R=$((len%BS))
-		((Q>0)) && dd if="$if" of="$of" bs=${BS}c count=$Q skip=$skip seek=$seek iflag=skip_bytes oflag=seek_bytes conv=notrunc
-		((R>0)) && dd if="$if" of="$of" bs=${R}c count=1 skip=$((skip+BS*Q)) seek=$((seek+BS*Q)) iflag=skip_bytes oflag=seek_bytes conv=notrunc
+		((Q>0)) && dd if="$if" of="$of" bs=${BS}c count=$Q skip=$skip seek=$seek iflag=skip_bytes oflag=seek_bytes conv=notrunc $logOpt
+		((R>0)) && dd if="$if" of="$of" bs=${R}c count=1 skip=$((skip+BS*Q)) seek=$((seek+BS*Q)) iflag=skip_bytes oflag=seek_bytes conv=notrunc $logOpt
 	fi
 }
 
@@ -87,14 +91,15 @@ for arg; do
 	-skip=*) _skip=${arg/*=/};;
 	-seek=*) _seek=${arg/*=/};;
 	-len=*)  _len=${arg/*=/};;
-	-*)      : echo "{warn} unkown option '${arg}'";;
+	-log=*)  _logLevel=${arg/*=/};;
+	-*)      :;;
 	*)       args+=($arg);;
 	esac
 done
 eval set -- "${args[@]}"
 [[ $# -lt 2 ]] && {
 	cat <<-COMM
-	Usage: $0 <ifile> <ofile> [[-skip= | -seek= | -len=]...] [skip [seek [len]]]
+	Usage: $0 <ifile> <ofile> [skip [seek [len]]] [[-skip=|-seek=|-len=|-log=<noxfer|progress>]...]
 
 	Examples:
 	  $0 ifile ofile 4096 -len=\$((64*1024))
@@ -102,14 +107,14 @@ eval set -- "${args[@]}"
 
 	Tests:
 	  echo -n "0123456789abcdef" >a; echo -n "^*******************************" >b
-	  $0 a b 3 8  4  2>/dev/null; sed "s/$/\n/" b
-	  $0 a b 3 8  6  2>/dev/null; sed "s/$/\n/" b
-	  $0 a b 3 8  8  2>/dev/null; sed "s/$/\n/" b
-	  $0 a b 3 8  10 2>/dev/null; sed "s/$/\n/" b
-	  $0 a b 3 8  12 2>/dev/null; sed "s/$/\n/" b
-	  $0 a b 3 8  14 2>/dev/null; sed "s/$/\n/" b
-	  $0 a b 3 8  16 2>/dev/null; sed "s/$/\n/" b
-	  $0 a b 3 64 13 2>/dev/null; sed "s/$/\n/" b
+	  $0 a b 3 8  4;  sed "s/$/\n/" b
+	  $0 a b 3 8  6;  sed "s/$/\n/" b
+	  $0 a b 3 8  8;  sed "s/$/\n/" b
+	  $0 a b 3 8  10; sed "s/$/\n/" b
+	  $0 a b 3 8  12; sed "s/$/\n/" b
+	  $0 a b 3 8  14; sed "s/$/\n/" b
+	  $0 a b 3 8  16; sed "s/$/\n/" b
+	  $0 a b 3 64 13; sed "s/$/\n/" b
 	  rm -f a b
 	COMM
 	exit 1
@@ -120,6 +125,7 @@ read skip seek len <<<"$*"
 skip=${skip:-${_skip:-0}}
 seek=${seek:-${_seek:-0}}
 len=${len:-${_len}}
+LogOpt=status=${_logLevel:-none}
 
 if dd --help|grep -q skip_bytes; then
 	dd_file_range "$if" "$of" $skip $seek $len
