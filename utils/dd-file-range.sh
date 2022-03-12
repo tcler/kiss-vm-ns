@@ -104,5 +104,8 @@ skip=${skip:-${_skip:-0}}
 seek=${seek:-${_seek:-0}}
 len=${len:-${_len}}
 
-#dd_file_range_old "$if" "$of" $skip $seek $len
-dd_file_range "$if" "$of" $skip $seek $len
+if dd --help|grep -q skip_bytes; then
+	dd_file_range "$if" "$of" $skip $seek $len
+else
+	dd_file_range_old "$if" "$of" $skip $seek $len
+fi
