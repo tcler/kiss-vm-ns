@@ -94,6 +94,16 @@ eval set -- "${args[@]}"
 	Examples:
 	  $0 ifile ofile 4096 -len=\$((64*1024))
 	  $0 ifile ofile -seek=\$((8*1024))
+
+	Tests:
+	  echo "0123456789abcdef" >a; echo "*******************************" >b
+	  $0 a b 3 8  4  2>/dev/null; cat b
+	  $0 a b 3 8  6  2>/dev/null; cat b
+	  $0 a b 3 8  8  2>/dev/null; cat b
+	  $0 a b 3 8  10 2>/dev/null; cat b
+	  $0 a b 3 8  12 2>/dev/null; cat b
+	  $0 a b 3 8  14 2>/dev/null; cat b
+	  rm -f a b
 	COMM
 	exit 1
 }
