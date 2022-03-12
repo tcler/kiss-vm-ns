@@ -1,5 +1,6 @@
 #!/bin/bash
 # create a virtual disk with a partion
+# deprecated, see create-vdisk.sh
 
 create_vdisk() {
 	local path=$1

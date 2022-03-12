@@ -1,4 +1,5 @@
 #!/bin/bash
+#deprecated, see mount-vdisk.sh
 
 LANG=C
 PROG=${0##*/}
