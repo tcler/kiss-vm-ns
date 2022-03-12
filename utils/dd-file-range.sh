@@ -12,48 +12,53 @@ dd_file_range_old() {
 	local logOpt=${LogOpt:-status=none}
 
 	local fsize=$(stat -c%s "$if") || return $?
-	(((skip+len) > fsize)) && {
+	((skip >= fsize)) && {
+		echo "[$fn:err] skip beyond the EOF of $if" >&2
+		return 1
+	}
+	local alen=$((fsize-skip))
+	((len > alen)) && {
+		len=$alen
 		echo "[$fn:err] (skip+len) beyond the EOF of $if" >&2
 	}
 	[[ -z "$of" ]] && return 1
 	touch "$of" || return $?
-	((seek > 0)) && {
-		local orig_of=$of
-		local tmpof=$(mktemp)
-		of=$tmpof
-	}
 
+	local tmpof=$(mktemp)
 	local Q= R= Q2= R2= NREAD=
 
 	((fsize <= BS)) && BS=$skip
 	Q=$((skip/BS))  #quotient
 	R=$((skip%BS))  #residue
 	NREAD=$((BS-R))
-	dd if="$if" ibs=$BS skip=$Q count=1 $logOpt | tail -c $NREAD >"$of"
+	dd if="$if" ibs=$BS skip=$Q count=1 $logOpt | tail -c $NREAD >$tmpof
 
 	if [[ -z "$len" ]]; then
-		dd if="$if" ibs=$BS skip=$((Q+1)) oflag=append conv=notrunc of="$of" $logOpt
+		((alen > NREAD)) &&
+			dd if="$if" ibs=$BS skip=$((Q+1)) oflag=append conv=notrunc of="$tmpof" $logOpt
 	else
-		if ((NREAD > len)); then
-			truncate --size=${len} "$of"
-		else
+		if ((len > NREAD)); then
 			let len-=$NREAD
 			Q2=$((len/BS))  #quotient
 			R2=$((len%BS))  #residue
-			((Q2>0)) && dd if="$if" ibs=$BS skip=$((Q+1)) count=$Q2 oflag=append conv=notrunc of="$of" $logOpt
-			((R2>0)) && dd if="$if" ibs=$BS skip=$((Q+1+Q2)) count=1 $logOpt | head -c $R2 >>"$of"
+			((Q2>0)) && dd if="$if" ibs=$BS skip=$((Q+1)) count=$Q2 oflag=append conv=notrunc of="$tmpof" $logOpt
+			((R2>0)) && dd if="$if" ibs=$BS skip=$((Q+1+Q2)) count=1 $logOpt | head -c $R2 >>"$tmpof"
+		else
+			truncate --size=${len} "$tmpof"
 		fi
 	fi
 
-	((seek > 0)) && {
+	if ((seek > 0)); then
 		Q=$((seek/BS))
 		R=$((seek%BS))
 		{
-		dd if="$orig_of" ibs=$BS skip=$Q count=1 $logOpt | head -c $R
-		dd if="$of" bs=$BS $logOpt
-		} | dd of="$orig_of" obs=$BS seek=$Q conv=notrunc $logOpt
-		rm -f "$tmpof"
-	}
+		dd if="$of" ibs=$BS skip=$Q count=1 $logOpt | head -c $R
+		dd if="$tmpof" bs=$BS $logOpt
+		} | dd of="$of" obs=$BS seek=$Q conv=notrunc $logOpt
+	else
+		dd if="$tmpof" of="$of" bs=$BS conv=notrunc $logOpt
+	fi
+	rm -f "$tmpof"
 }
 
 dd_file_range() {
@@ -68,7 +73,13 @@ dd_file_range() {
 	local logOpt=${LogOpt:-status=none}
 
 	local fsize=$(stat -c%s "$if") || return $?
-	(((skip+len) > fsize)) && {
+	((skip >= fsize)) && {
+		echo "[$fn:err] skip beyond the EOF of $if" >&2
+		return 1
+	}
+	local alen=$((fsize-skip))
+	((len > alen)) && {
+		len=$alen
 		echo "[$fn:err] (skip+len) beyond the EOF of $if" >&2
 	}
 	[[ -z "$of" ]] && return 1
