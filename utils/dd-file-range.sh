@@ -8,8 +8,12 @@ dd_file_range_old() {
 	local seek=${4:-0}
 	local len=$5
 	local BS=$((16*1024))
+	local fn=${FUNCNAME[0]}
 
 	local fsize=$(stat -c%s "$if") || return $?
+	(((skip+len) > fsize)) && {
+		echo "{$fn:err} (skip+len) beyond the EOF of $if" >&2
+	}
 	[[ -z "$of" ]] && return 1
 	touch "$of" || return $?
 	((seek > 0)) && {
@@ -41,9 +45,6 @@ dd_file_range_old() {
 	fi
 
 	((seek > 0)) && {
-		echo 0000000000000000000000000000000000000000000
-		cat $of
-		echo 0000000000000000000000000000000000000000000
 		Q=$((seek/BS))
 		R=$((seek%BS))
 		{ dd if="$orig_of" ibs=$BS skip=$Q count=1 | head -c $R; dd if="$of" bs=$BS; } |
@@ -60,8 +61,12 @@ dd_file_range() {
 	local seek=${4:-0}
 	local len=$5
 	local BS=$((64*1024))
+	local fn=${FUNCNAME[0]}
 
 	local fsize=$(stat -c%s "$if") || return $?
+	(((skip+len) > fsize)) && {
+		echo "{$fn:err} (skip+len) beyond the EOF of $if" >&2
+	}
 	[[ -z "$of" ]] && return 1
 	touch "$of" || return $?
 
@@ -96,13 +101,15 @@ eval set -- "${args[@]}"
 	  $0 ifile ofile -seek=\$((8*1024))
 
 	Tests:
-	  echo "0123456789abcdef" >a; echo "*******************************" >b
-	  $0 a b 3 8  4  2>/dev/null; cat b
-	  $0 a b 3 8  6  2>/dev/null; cat b
-	  $0 a b 3 8  8  2>/dev/null; cat b
-	  $0 a b 3 8  10 2>/dev/null; cat b
-	  $0 a b 3 8  12 2>/dev/null; cat b
-	  $0 a b 3 8  14 2>/dev/null; cat b
+	  echo -n "0123456789abcdef" >a; echo -n "^*******************************" >b
+	  $0 a b 3 8  4  2>/dev/null; sed "s/$/\n/" b
+	  $0 a b 3 8  6  2>/dev/null; sed "s/$/\n/" b
+	  $0 a b 3 8  8  2>/dev/null; sed "s/$/\n/" b
+	  $0 a b 3 8  10 2>/dev/null; sed "s/$/\n/" b
+	  $0 a b 3 8  12 2>/dev/null; sed "s/$/\n/" b
+	  $0 a b 3 8  14 2>/dev/null; sed "s/$/\n/" b
+	  $0 a b 3 8  16 2>/dev/null; sed "s/$/\n/" b
+	  $0 a b 3 64 13 2>/dev/null; sed "s/$/\n/" b
 	  rm -f a b
 	COMM
 	exit 1
