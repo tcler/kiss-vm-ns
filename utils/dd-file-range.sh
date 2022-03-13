@@ -11,23 +11,24 @@ dd_file_range_old() {
 	local fn=${FUNCNAME[0]}
 	local logOpt=${LogOpt:-status=none}
 
-	local fsize=$(stat -c%s "$if") || return $?
-	((skip >= fsize)) && {
+	local ifsize=$(stat -c%s "$if") || return $?
+	((skip >= ifsize)) && {
 		echo "[$fn:err] skip beyond the EOF of $if" >&2
 		return 1
 	}
-	local alen=$((fsize-skip))
+	local alen=$((ifsize-skip))
 	((len > alen)) && {
 		len=$alen
 		echo "[$fn:err] (skip+len) beyond the EOF of $if" >&2
 	}
 	[[ -z "$of" ]] && return 1
 	touch "$of" || return $?
+	local ofsize=$(stat -c%s "$of") || return $?
 
 	local tmpof=$(mktemp)
 	local Q= R= Q2= R2= NREAD=
 
-	((fsize <= BS)) && BS=$skip
+	((ifsize <= BS)) && BS=$skip
 	Q=$((skip/BS))  #quotient
 	R=$((skip%BS))  #residue
 	NREAD=$((BS-R))
@@ -49,6 +50,7 @@ dd_file_range_old() {
 	fi
 
 	if ((seek > 0)); then
+		((seek > ofsize)) && dd if=/dev/zero bs=1c seek=$seek count=0 of="$of" $logOpt
 		Q=$((seek/BS))
 		R=$((seek%BS))
 		{
@@ -72,12 +74,12 @@ dd_file_range() {
 	local fn=${FUNCNAME[0]}
 	local logOpt=${LogOpt:-status=none}
 
-	local fsize=$(stat -c%s "$if") || return $?
-	((skip >= fsize)) && {
+	local ifsize=$(stat -c%s "$if") || return $?
+	((skip >= ifsize)) && {
 		echo "[$fn:err] skip beyond the EOF of $if" >&2
 		return 1
 	}
-	local alen=$((fsize-skip))
+	local alen=$((ifsize-skip))
 	((len > alen)) && {
 		len=$alen
 		echo "[$fn:err] (skip+len) beyond the EOF of $if" >&2
