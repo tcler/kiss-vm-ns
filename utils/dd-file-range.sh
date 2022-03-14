@@ -19,7 +19,7 @@ dd_file_range_old() {
 	local alen=$((ifsize-skip))
 	((len > alen)) && {
 		len=$alen
-		echo "[$fn:err] (skip+len) beyond the EOF of $if" >&2
+		echo "[$fn:warn] (skip+len) beyond the EOF of $if" >&2
 	}
 	[[ -z "$of" ]] && return 1
 	touch "$of" || return $?
@@ -29,7 +29,7 @@ dd_file_range_old() {
 	local Q= R= Q2= R2= NREAD=
 
 	local iBS=$BS
-	((ifsize <= BS)) && iBS=$skip
+	((ifsize <= BS)) && iBS=$ifsize
 	Q=$((skip/iBS))  #quotient
 	R=$((skip%iBS))  #residue
 	NREAD=$((iBS-R))
@@ -61,7 +61,7 @@ dd_file_range_old() {
 	else
 		dd if="$tmpof" of="$of" bs=$BS conv=notrunc $logOpt
 	fi
-	rm -f "$tmpof"
+	rm -f -- "$tmpof"
 }
 
 dd_file_range() {
@@ -130,7 +130,7 @@ eval set -- "${args[@]}"
 	  $0 a b 3 8  14; sed "s/$/\n/" b
 	  $0 a b 3 8  16; sed "s/$/\n/" b
 	  $0 a b 3 64 13; sed "s/$/\n/" b
-	  rm -f a b
+	  rm -f -- a b
 	COMM
 	exit 1
 }
