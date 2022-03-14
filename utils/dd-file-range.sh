@@ -83,7 +83,7 @@ dd_file_range() {
 	local alen=$((ifsize-skip))
 	((len > alen)) && {
 		len=$alen
-		echo "[$fn:err] (skip+len) beyond the EOF of $if" >&2
+		echo "[$fn:warn] (skip+len) beyond the EOF of $if" >&2
 	}
 	[[ -z "$of" ]] && return 1
 	touch "$of" || return $?
