@@ -28,22 +28,23 @@ dd_file_range_old() {
 	local tmpof=$(mktemp)
 	local Q= R= Q2= R2= NREAD=
 
-	((ifsize <= BS)) && BS=$skip
-	Q=$((skip/BS))  #quotient
-	R=$((skip%BS))  #residue
-	NREAD=$((BS-R))
-	dd if="$if" ibs=$BS skip=$Q count=1 $logOpt | tail -c $NREAD >$tmpof
+	local iBS=$BS
+	((ifsize <= BS)) && iBS=$skip
+	Q=$((skip/iBS))  #quotient
+	R=$((skip%iBS))  #residue
+	NREAD=$((iBS-R))
+	dd if="$if" ibs=$iBS skip=$Q count=1 $logOpt | tail -c $NREAD >$tmpof
 
 	if [[ -z "$len" ]]; then
 		((alen > NREAD)) &&
-			dd if="$if" ibs=$BS skip=$((Q+1)) oflag=append conv=notrunc of="$tmpof" $logOpt
+			dd if="$if" ibs=$iBS skip=$((Q+1)) oflag=append conv=notrunc of="$tmpof" $logOpt
 	else
 		if ((len > NREAD)); then
 			let len-=$NREAD
-			Q2=$((len/BS))  #quotient
-			R2=$((len%BS))  #residue
-			((Q2>0)) && dd if="$if" ibs=$BS skip=$((Q+1)) count=$Q2 oflag=append conv=notrunc of="$tmpof" $logOpt
-			((R2>0)) && dd if="$if" ibs=$BS skip=$((Q+1+Q2)) count=1 $logOpt | head -c $R2 >>"$tmpof"
+			Q2=$((len/iBS))  #quotient
+			R2=$((len%iBS))  #residue
+			((Q2>0)) && dd if="$if" ibs=$iBS skip=$((Q+1)) count=$Q2 oflag=append conv=notrunc of="$tmpof" $logOpt
+			((R2>0)) && dd if="$if" ibs=$iBS skip=$((Q+1+Q2)) count=1 $logOpt | head -c $R2 >>"$tmpof"
 		else
 			truncate --size=${len} "$tmpof"
 		fi
