@@ -7,13 +7,12 @@
 #distributions instead
 
 dd_file_range_old() {
-	maxInt() { bc <<<"$(printf %u -1)/2"; }
 	#assume dd has not supported skip_bytes,seek_bytes flag
 	local if=$1
 	local of=$2
 	local skip=${3:-0}
 	local seek=${4:-0}
-	local len=${5:-$(maxInt)}
+	local len=${5}
 	local BS=$((16*1024))
 	local fn=${FUNCNAME[0]}
 	local logOpt=${LogOpt:-status=none}
@@ -24,12 +23,13 @@ dd_file_range_old() {
 		return 1
 	}
 	local alen=$((ifsize-skip))
+	len=${len:-$alen}
 	((len > alen)) && {
 		len=$alen
 		echo "[$fn:warn] (skip+len) beyond the EOF of $if" >&2
 	}
-	local ofarg=of=$of
-	if [[ -z "$of" ]]; then ofarg=; seek=0; else touch "$of" || return $?; fi
+	local ofarg="of=$of"
+	if [[ -n "$of" ]]; then touch "$of" || return $?; else ofarg=; seek=0; fi
 
 	local tmpof=$(mktemp)
 	local Q= R= Q2= R2= NREAD=
@@ -61,19 +61,18 @@ dd_file_range_old() {
 		dd if="$tmpof" bs=$BS $logOpt
 		} | dd of="$of" obs=$BS seek=$Q conv=notrunc $logOpt
 	else
-		dd if="$tmpof" $ofarg bs=$BS conv=notrunc $logOpt
+		eval dd if="$tmpof" "$ofarg" bs=$BS conv=notrunc $logOpt
 	fi
 	rm -f -- "$tmpof"
 }
 
 dd_file_range() {
-	maxInt() { bc <<<"$(printf %u -1)/2"; }
 	#assume dd has supported skip_bytes,seek_bytes flag
 	local if=$1
 	local of=$2
 	local skip=${3:-0}
 	local seek=${4:-0}
-	local len=${5:-$(maxInt)}
+	local len=${5}
 	local BS=$((64*1024))
 	local fn=${FUNCNAME[0]}
 	local logOpt=${LogOpt:-status=none}
@@ -84,18 +83,23 @@ dd_file_range() {
 		return 1
 	}
 	local alen=$((ifsize-skip))
+	len=${len:-$alen}
 	((len > alen)) && {
 		len=$alen
 		echo "[$fn:warn] (skip+len) beyond the EOF of $if" >&2
 	}
-	local ofarg=of=$of
-	if [[ -z "$of" ]]; then ofarg=; seek=0; else touch "$of" || return $?; fi
+	if [[ -n "$of" ]]; then touch "$of" || return $?; fi
 
 	local Q R
 	Q=$((len/BS))
 	R=$((len%BS))
-	((Q>0)) && dd if="$if" $ofarg bs=${BS}c count=$Q skip=$skip seek=$seek iflag=skip_bytes oflag=seek_bytes conv=notrunc $logOpt
-	((R>0)) && dd if="$if" $ofarg bs=${R}c count=1 skip=$((skip+BS*Q)) seek=$((seek+BS*Q)) iflag=skip_bytes oflag=seek_bytes conv=notrunc $logOpt
+	if [[ -n "$of" ]]; then
+		((Q>0)) && dd if="$if" of="$of" bs=${BS}c count=$Q skip=$skip seek=$seek iflag=skip_bytes oflag=seek_bytes conv=notrunc $logOpt
+		((R>0)) && dd if="$if" of="$of" bs=${R}c count=1 skip=$((skip+BS*Q)) seek=$((seek+BS*Q)) iflag=skip_bytes oflag=seek_bytes conv=notrunc $logOpt
+	else
+		((Q>0)) && dd if="$if" bs=${BS}c count=$Q skip=$skip iflag=skip_bytes $logOpt
+		((R>0)) && dd if="$if" bs=${R}c count=1 skip=$((skip+BS*Q)) iflag=skip_bytes $logOpt
+	fi
 }
 
 args=()
