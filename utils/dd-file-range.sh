@@ -118,19 +118,21 @@ eval set -- "${args[@]}"
 	Usage: $0 <ifile[:offset[:len]]> [ofile[:offset]] [-sep=<seperator>] [-log=<0|1|2>]
 
 	Examples:
-	  $0 ifile:8192:\$((32*1024))  ofile
-	  $0 ifile::4096              ofile:\$((8*1024))
+	  $0 ifile:8192:512  ofile
+	  $0 ifile::4096     ofile:1024
+	  $0 ifile:4                     #output to stdout
+	  $0 <(cat):4  ofile             #read from stdin
+	  $0 ifile::4  ifile:10          #copy data within same file
 
 	Tests:
 	  echo -n "0123456789abcdef" >a; echo -n "^*******************************" >b
 	  $0 a::4   b:8;  sed "s/$/\n/" b
-	  $0 a:3:6  b:8;  sed "s/$/\n/" b
 	  $0 a:3:8  b:8;  sed "s/$/\n/" b
-	  $0 a:3:10 b:8;  sed "s/$/\n/" b
 	  $0 a:3:12 b:8;  sed "s/$/\n/" b
 	  $0 a:3:14 b:8;  sed "s/$/\n/" b
 	  $0 a:3:16 b:8;  sed "s/$/\n/" b
 	  $0 a:3:16 b:64; sed "s/$/\n/" b
+	  $0 a::4   a:10; sed "s/$/\n/" a
 	  rm -f -- a b
 	COMM
 	exit 1
