@@ -123,6 +123,7 @@ set -- "${args[@]}"
 	  $0 ifile:4                     #output to stdout
 	  $0 <(cat):4  ofile             #read from stdin
 	  $0 ifile::4  ifile:10          #copy data within same file
+	  $0 ifile:1:9 ifile:6           #copy data within same file overlap
 
 	Tests:
 	  echo -n "0123456789abcdef" >a; echo -n "^*******************************" >b
