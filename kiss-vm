@@ -542,7 +542,7 @@ vmclone() {
 	virsh start $dstname
 
 	#virsh resume "$srcname"
-	virsh start "$srcname"
+	#virsh start "$srcname"
 }
 
 vmcopyto() {
