@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-#this program is used to copy part of src file into somewhere in dst file
-#like syscall copy_file_range(2) on linux kernel-5.3
+#this program is used to copy a range of data from one file to another
+#like syscall copy_file_range(2) on linux kernel-5.3 and later
 #
-#you could also use the xfs_io -> 'copy_range' sub-command in newer linux
+#and could also use the xfs_io->copy_range sub-command in newer linux
 #distributions instead
 
 dd_file_range_old() {
