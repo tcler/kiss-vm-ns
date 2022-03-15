@@ -517,8 +517,7 @@ vmclone() {
 	is_invalid_vmname "$dstname" && return 1
 
 	#get src vm path
-	read image < <(_vmsrcfiles $srcname '\.(qcow2|qcow|raw)')
-	local srcpath=${image%/*}
+	srcpath=$(vmhomedir $srcname|head -n1)
 	[[ ! -f ${srcpath}/.kiss-vm || ${srcpath##*/} != ${srcname} ]] && {
 		echo -e "{VM:WARN} seems $srcname was not created by kiss-vm, can not use vm-clone; please use virt-clone instead ..."
 		return 1
@@ -534,7 +533,7 @@ vmclone() {
 	virt-clone --original ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2
 
 	#virt-sysprep need sudo or add '%user ALL=NOPASSWD: /usr/bin/virt-sysprep' in /etc/sudoers
-	LIBGUESTFS_BACKEND=direct sudo virt-sysprep -d ${dstname} \
+	LIBGUESTFS_BACKEND=direct virt-sysprep -d ${dstname} \
 		--enable customize,user-account,ssh-hostkeys,net-hostname,net-hwaddr,machine-id \
 		--hostname $dstname \
 		--remove-user-accounts bar \
@@ -2511,12 +2510,17 @@ if [[ "$InstallType" = location ]]; then
 		NOREBOOT=--noreboot
 	}
 	ksfile=${KSPath##*/}
-	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
+
+	imagefile=$VMpath/${vmname}.qcow2
+	qemu-img create -f qcow2 ${imagefile} ${DSIZE}G
 
 	[[ "$DEBUG" = yes ]] && {
 		echo "#[debug] kickstart:"
 		cat ${KSPath}
 	}
+
+	ls -l ${imagefile}
+	setfacl -mu:${VMUSER}:rwx -R ${VMpath}
 
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
@@ -2525,7 +2529,7 @@ if [[ "$InstallType" = location ]]; then
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
 	  --location $Location \
-	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
+	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
@@ -2716,6 +2720,9 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	}
 
+	ls -l ${imagefile}
+	setfacl -mu:${VMUSER}:rwx -R ${VMpath}
+
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
@@ -2873,6 +2880,9 @@ elif [[ "$InstallType" = pxe ]]; then
 	echo -e "{VM:INFO} creating VM from pxe"
 	sudo -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
 
+	ls -l ${imagefile}
+	setfacl -mu:${VMUSER}:rwx -R ${VMpath}
+
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
@@ -2958,17 +2968,21 @@ elif [[ "$InstallType" = cdrom ]]; then
 	fi
 	[[ -f ${isofile} ]] || exit 1
 
-	qemu-img create -f qcow2 $VMpath/${vmname}.qcow2 ${DSIZE}G
+	imagefile=$VMpath/${vmname}.qcow2
+	qemu-img create -f qcow2 ${imagefile} ${DSIZE}G
 
 	echo -e "{VM:INFO} creating VM install from cdrom($isofile)"
 	sudo -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
+
+	ls -l ${imagefile}
+	setfacl -mu:${VMUSER}:rwx -R ${VMpath}
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
 	  --cdrom $isofile \
-	  --disk path=$VMpath/${vmname}.qcow2,${BOOT_DISK_ATTRS} \
+	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
