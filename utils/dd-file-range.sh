@@ -61,7 +61,7 @@ dd_file_range_old() {
 		dd if="$tmpof" bs=$BS $logOpt
 		} | dd of="$of" obs=$BS seek=$Q conv=notrunc $logOpt
 	else
-		eval dd if="$tmpof" "$ofarg" bs=$BS conv=notrunc $logOpt
+		eval dd if="$tmpof" $([[ -n "$ofarg" ]] && printf %q "$ofarg") bs=$BS conv=notrunc $logOpt
 	fi
 	rm -f -- "$tmpof"
 }
@@ -109,10 +109,10 @@ for arg; do
 	-log=*)  LogLevel=${arg/*=/};;
 	-ver=*)  _ver=${arg/*=/};;
 	-*)      :;;
-	*)       args+=($arg);;
+	*)       args+=("$arg");;
 	esac
 done
-eval set -- "${args[@]}"
+set -- "${args[@]}"
 [[ $# -lt 1 ]] && {
 	cat <<-COMM
 	Usage: $0 <ifile[:offset[:len]]> [ofile[:offset]] [-sep=<seperator>] [-log=<0|1|2>]
