@@ -148,7 +148,7 @@ IFS=$SEP read of seek <<<"${2}"
 skip=${skip:-0}
 seek=${seek:-0}
 [[ "$skip" = [* ]] && { skip=${skip:1}; skip=$((skip > 0 ? skip - 1 : 0)); }
-[[ "$len" = *] ]] && { len=${len:0:-1}; len=$((len - skip)); }
+[[ "$len" = *] ]] && { len=${len:0:-1}; len=$((len > skip ? len - skip : 0)); }
 [[ "$seek" = [* ]] && { seek=${seek:1}; seek=$((seek > 0 ? seek - 1 : 0)); }
 status=none
 case "${LogLevel}" in (1) status=noxfer;; (2) status=progress;; esac
