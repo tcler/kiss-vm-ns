@@ -37,9 +37,22 @@ create_vdiskn() {
 	rm -vf $imghead $imgtail
 }
 
+create_vdiskm() {
+	local path=$1
+	local dsize=$2
+	local fstype=$3
+	local fsroot=$4 _fsroot=
+	local fn=${FUNCNAME[0]}
+
+	[[ -z "$fsroot" ]] && _fsroot=$(mktemp -d) || _fsroot=$fsroot
+	virt-make-fs -v --partition --label=label \
+		-s "$dsize" -t "$fstype" "$_fsroot" "$path"
+	[[ -z "$fsroot" ]] && rmdir "$_fsroot"
+}
+
 [[ $# -lt 3 ]] && {
 	cat <<-COMM
-	Usage: [MKFS_OPT=xxx] $0 <image> <size> <fstype>
+	Usage: [MKFS_OPT=xxx] $0 <image> <size> <fstype> [fsroot]
 
 	Examples:
 	  $0 usb.img 256M vfat
