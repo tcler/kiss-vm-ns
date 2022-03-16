@@ -485,7 +485,9 @@ vmstat() {
 		eval set $vmList
 	}
 
-	for vm; do virsh domstate "$vm"; done
+	for vm; do
+		virsh domstate "$vm"
+	done
 }
 
 vmclone() {
@@ -698,6 +700,10 @@ vmlogin() {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-login $resf && _vmname=$(sed 's/"//g' $resf)
 		[[ -z "$_vmname" ]] && { return; }
+	}
+	[[ "$(vmstat $_vmname)" = running* ]] || {
+		echo -e "{VM:WARN} $_vmname has not been running"
+		return 1
 	}
 
 	local sshCommand=$(getSafeCommandLine "$@")
