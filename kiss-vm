@@ -100,19 +100,19 @@ vmname_gen() {
 	echo -n $name
 }
 
-_vmsrcfiles() {
+_vmblklist() {
 	local _vmname=$1
 	local _pat=${2:-.}
 	[[ -z "$_vmname" ]] && {
-		echo "Usage: vmsrcfiles <vmname> [pattern]"
+		echo "Usage: vmblklist <vmname> [pattern]"
 		return 1
 	}
 
-	local srcfilelist=$(virsh domblklist "$_vmname" |
+	local blklist=$(virsh domblklist "$_vmname" |
 		awk 'NR>2 && NF==2{print $2}')
 
-	echo "$srcfilelist" | egrep "/$_vmname/"     | egrep "$_pat"
-	echo "$srcfilelist" | egrep -v "/$_vmname/"  | egrep "$_pat"
+	echo "$blklist" | egrep "/$_vmname/"     | egrep "$_pat"
+	echo "$blklist" | egrep -v "/$_vmname/"  | egrep "$_pat"
 }
 
 vmrootdir() {
@@ -126,7 +126,7 @@ vmhomedir() {
 	local _vmname=$1
 	local _vmdir= _image=
 
-	read _image < <(_vmsrcfiles $_vmname '\.(qcow2|qcow|raw)')
+	read _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
 	if test -n "$_image"; then
 		_vmdir=$(dirname $_image)
 	elif test -d $VMSHOME/PXE/$_vmname; then
@@ -180,7 +180,7 @@ _vmdelete() {
 	fi
 
 	local _vmdir= _image=
-	read _image < <(_vmsrcfiles $_vmname '\.(qcow2|qcow|raw)')
+	read _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
 	if test -n "$_image"; then
 		_vmdir=$(dirname $_image)
 	elif test -d $VMSHOME/PXE/$_vmname; then
@@ -539,7 +539,7 @@ vmclone() {
 	#Note: https://www.reddit.com/r/archlinux/comments/obn999/ownership_of_qcow2_images_created_by_virtmanager/
 	#^^^^ why don't use virt-clone directly
 
-	read srcimage < <(_vmsrcfiles "$srcname")
+	read srcimage < <(_vmblklist "$srcname")
 	sudo -u $VMUSER bash <<-EOF
 	cp $srcimage $dstpath/${dstname}.qcow2
 	chcon --reference=${srcpath%/*} -R $dstpath
@@ -2027,7 +2027,7 @@ sudo -u $VMUSER bash <<< "mkdir -p $RuntimeTmp ${DownloadImagePath}"
 	stop|sto*) shift; [[ "$1" = -d ]] && shift; vmstop "$@"; exit $?;;
 	start|star*) shift; [[ "$1" = -d ]] && shift; vmstart "$@"; exit $?;;
 	stat) shift; [[ "$1" = -d ]] && shift; vmstat "$@"; exit $?;;
-	srcfiles) shift; [[ "$1" = -d ]] && shift; _vmsrcfiles "$@"; exit $?;;
+	blk*|srcfiles) shift; [[ "$1" = -d ]] && shift; _vmblklist "$@"; exit $?;;
 	rootdir) shift; [[ "$1" = -d ]] && shift; vmrootdir "$@"; exit $?;;
 	homedir) shift; [[ "$1" = -d ]] && shift; vmhomedir "$@"; exit $?;;
 	clone) shift; [[ "$1" = -d ]] && shift; vmclone "$@"; exit $?;;
@@ -3099,7 +3099,7 @@ esac
 
 if [[ "$GenerateImage" = yes ]]; then
 	sudo -u $VMUSER bash <<< "mkdir -p $ImagePath/$Distro"
-	read image < <(_vmsrcfiles $vmname '\.(qcow2|qcow|raw)')
+	read image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
 	imgfilename=${imgfilename#${vmprefix}-}
 	newimage=$ImagePath/$Distro/${imgfilename}
