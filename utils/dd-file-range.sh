@@ -115,10 +115,10 @@ done
 set -- "${args[@]}"
 [[ $# -lt 1 ]] && {
 	cat <<-COMM
-	Usage: $0 <ifile[:offset[:len]]> [ofile[:offset]] [-sep=<seperator>] [-log=<0|1|2>]
-	#Comment: if 'offset' start with '[' trate it as 'start', ((start=offset+1))
-	#Comment: if 'len' has a suffix ']' trate it as 'end', ((end=offset+len))
-	#Comment: e.g: ifile:5:5 <==> ifile:[6:10]
+	Usage: $0 <ifile[:skip_offset[:len]]> [ofile[:seek_offset]] [-sep=<seperator>] [-log=<0|1|2>]
+	#Comment: if 'skip_offset' start with '['; trate it as 'start' #((start=skip_offset+1))
+	#Comment: if 'len' has a suffix ']'; trate it as 'end' #((end=skip_offset+len))
+	#Comment: e.g: ifile:5:5 <=is equivalent to=> ifile:[6:10]
 
 	Examples:
 	  $0 ifile:8192:512  ofile
