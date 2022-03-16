@@ -13,6 +13,7 @@ mount_vdisk2() {
 	fi
 
 	local path=$1
+	local mp=$2
 	local partN=${2:-1}
 	local dev= mntdev= mntopt= mntinfo=
 
