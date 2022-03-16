@@ -524,17 +524,28 @@ vmclone() {
 	}
 
 	#virsh suspend "$srcname"
-	virsh destroy "$srcname"
+	virsh destroy "$srcname" 2>/dev/null
 
 	# do clone
 	local dstpath=${srcpath%/*}/$dstname
-	sudo -u $VMUSER bash <<<"mkdir -p $dstpath && touch $dstpath/.kiss-vm"
+	sudo -u $VMUSER bash <<-EOF
+	mkdir -p $dstpath && touch $dstpath/.kiss-vm
 	chcon --reference=${srcpath%/*} -R $dstpath
-	virt-clone --original ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2
+	virt-clone -o ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2 \
+		--print-xml >$dstpath/${dstname}.xml
+	EOF
 
-	#virt-sysprep need sudo or add '%user ALL=NOPASSWD: /usr/bin/virt-sysprep' in /etc/sudoers
+	read srcimage < <(_vmsrcfiles "$srcname")
+	sudo -u $VMUSER bash <<-EOF
+	cp $srcimage $dstpath/${dstname}.qcow2
+	chcon --reference=${srcpath%/*} -R $dstpath
+	virsh define $dstpath/${dstname}.xml
+	EOF
+	vmhomedir ${dstname}
+
+		#--enable customize,user-account,ssh-hostkeys,net-hostname,net-hwaddr,machine-id \
 	LIBGUESTFS_BACKEND=direct virt-sysprep -d ${dstname} \
-		--enable customize,user-account,ssh-hostkeys,net-hostname,net-hwaddr,machine-id \
+		--enable customize,user-account,net-hostname,net-hwaddr,machine-id \
 		--hostname $dstname \
 		--remove-user-accounts bar \
 		--run-command "ls -l"
