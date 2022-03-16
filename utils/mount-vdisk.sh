@@ -43,9 +43,23 @@ mount_vdisk2() {
 	mount | awk -v d=$mntdev '$1 == d {print $3}'
 }
 
+mount_vdiskn() {
+	local path=$1
+	local mp=$2
+	local partN=${2:-1}
+	local fn=${FUNCNAME[0]}
+
+	local devlist=$(virt-filesystems -a "$path")
+	if [[ -n "$partN" ]]; then
+		read dev _ < <(echo "$devlist"|grep "[^0-9]${partN}$")
+	fi
+	[[ -z "$dev" ]] && read dev _ <<<"$devlist"
+	guestmount -a "path" -m $dev $mp
+}
+
 [[ $# -lt 1 ]] && {
 	cat <<-COMM
-	Usage: [MNT_OPT=xxx] $0 <image> [partition Number]
+	Usage: [MNT_OPT=xxx] $0 <image> <mount-point> [partition Number]
 
 	Examples:
 	  $0 usb.img
