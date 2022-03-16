@@ -116,6 +116,9 @@ set -- "${args[@]}"
 [[ $# -lt 1 ]] && {
 	cat <<-COMM
 	Usage: $0 <ifile[:offset[:len]]> [ofile[:offset]] [-sep=<seperator>] [-log=<0|1|2>]
+	#Comment: if 'offset' start with '[' trate it as 'start', ((start=offset+1))
+	#Comment: if 'len' has a suffix ']' trate it as 'end', ((end=offset+len))
+	#Comment: e.g: ifile:5:5 <==> ifile:[6:10]
 
 	Examples:
 	  $0 ifile:8192:512  ofile
@@ -144,6 +147,8 @@ IFS=$SEP read if skip len <<<"${1}"
 IFS=$SEP read of seek <<<"${2}"
 skip=${skip:-0}
 seek=${seek:-0}
+[[ "$skip" = [* ]] && skip=$((${skip:1} - 1))
+[[ "$len" = *] ]] && len=$((${len:0:-1} - skip))
 status=none
 case "${LogLevel}" in (1) status=noxfer;; (2) status=progress;; esac
 LogOpt=status=$status
