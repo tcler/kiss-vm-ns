@@ -1,4 +1,6 @@
 #!/bin/bash
+#auth: Jianhong <yin-jianhong@163.com>
+#version: 0.99
 #
 #this program is used to copy a range of data from one file to another
 #like syscall copy_file_range(2) on linux kernel-5.3 or FreeBSD-13
