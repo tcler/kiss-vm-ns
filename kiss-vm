@@ -543,6 +543,10 @@ vmclone() {
 
 	#virsh suspend "$srcname"
 	virsh destroy "$srcname" 2>/dev/null
+	[[ "$(vmstat $srcname)" = running* ]] && {
+		echo -e "{VM:WARN} Guest $srcname is still running, please stop it before clone ..."
+		return 1
+	}
 
 	# do clone
 	local distron=$(awk -F/ '{print $(NF-1)}' <<<"${srcpath}")
