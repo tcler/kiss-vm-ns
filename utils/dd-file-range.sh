@@ -13,7 +13,7 @@ dd_file_range_old() {
 	local skip=${3:-0}
 	local seek=${4:-0}
 	local len=${5}
-	local BS=$((16*1024))
+	local BS=${BSIZE:-$((16*1024))}
 	local fn=${FUNCNAME[0]}
 	local logOpt=${LogOpt:-status=none}
 
@@ -82,7 +82,7 @@ dd_file_range() {
 	local skip=${3:-0}
 	local seek=${4:-0}
 	local len=${5}
-	local BS=$((64*1024))
+	local BS=${BSIZE:-$((16*1024))}
 	local fn=${FUNCNAME[0]}
 	local logOpt=${LogOpt:-status=none}
 
@@ -114,6 +114,7 @@ dd_file_range() {
 args=()
 for arg; do
 	case "$arg" in
+	-bs*=*)  BSIZE=${arg/*=/};;
 	-s*=*)   SEP=${arg/*=/};;
 	-log=*)  LogLevel=${arg/*=/};;
 	-ver=*)  _ver=${arg/*=/};;
@@ -124,7 +125,7 @@ done
 set -- "${args[@]}"
 [[ $# -lt 1 ]] && {
 	cat <<-COMM
-	Usage: $0 <ifile[:skip_offset[:len]]> [ofile[:seek_offset]] [-sep=<seperator>] [-log=<0|1|2>]
+	Usage: $0 <ifile[:skip_offset[:len]]> [ofile[:seek_offset]] [-bs=BS] [-sep=<seperator>] [-log=<0|1|2>]
 	#Comment: if 'skip_offset' start with '['; trate it as 'start' #((start=skip_offset+1))
 	#Comment: if 'len' has a suffix ']'; trate it as 'end' #((end=skip_offset+len))
 	#Comment: e.g: ifile:5:5 <=is equivalent to=> ifile:[6:10]
