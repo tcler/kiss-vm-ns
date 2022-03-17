@@ -113,6 +113,9 @@ dd_file_range() {
 	fi
 }
 
+P=$0
+[[ $0 = /* ]] && P=${0##*/}
+
 args=()
 for arg; do
 	case "$arg" in
@@ -127,28 +130,28 @@ done
 set -- "${args[@]}"
 [[ $# -lt 1 ]] && {
 	cat <<-COMM
-	Usage: $0 <ifile[:skip_offset[:len]]> [ofile[:seek_offset]] [-bs=BS] [-sep=<seperator>] [-log=<0|1|2>]
+	Usage: $P <ifile[:skip_offset[:len]]> [ofile[:seek_offset]] [-bs=BS] [-sep=<seperator>] [-log=<0|1|2>]
 	#Comment: if 'skip_offset' start with '['; trate it as 'start' #((start=skip_offset+1))
 	#Comment: if 'len' has a suffix ']'; trate it as 'end' #((end=skip_offset+len))
 	#Comment: e.g: ifile:5:5 <=is equivalent to=> ifile:[6:10]
 
 	Examples:
-	  $0 ifile:8192:512  ofile
-	  $0 ifile::4096     ofile:1024
-	  $0 ifile:4                     #output to stdout
-	  $0 <(cat):4  ofile             #read from stdin
-	  $0 ifile::4  ifile:10          #copy data within same file
-	  $0 ifile:1:9 ifile:6           #copy data within same file overlap
+	  $P ifile:8192:512  ofile
+	  $P ifile::4096     ofile:1024
+	  $P ifile:4                     #output to stdout
+	  $P <(cat):4  ofile             #read from stdin
+	  $P ifile::4  ifile:10          #copy data within same file
+	  $P ifile:1:9 ifile:6           #copy data within same file overlap
 
 	Tests:
 	  echo -n "0123456789abcdef" >a; echo -n "^*******************************" >b
-	  $0 a::4   b:8;  sed "s/$/\n/" b
-	  $0 a:3:8  b:8;  sed "s/$/\n/" b
-	  $0 a:3:12 b:8;  sed "s/$/\n/" b
-	  $0 a:3:14 b:8;  sed "s/$/\n/" b
-	  $0 a:3:16 b:8;  sed "s/$/\n/" b
-	  $0 a:3:16 b:64; sed "s/$/\n/" b
-	  $0 a::4   a:10; sed "s/$/\n/" a
+	  $P a::4   b:8;  sed "s/$/\n/" b
+	  $P a:3:8  b:8;  sed "s/$/\n/" b
+	  $P a:3:12 b:8;  sed "s/$/\n/" b
+	  $P a:3:14 b:8;  sed "s/$/\n/" b
+	  $P a:3:16 b:8;  sed "s/$/\n/" b
+	  $P a:3:16 b:64; sed "s/$/\n/" b
+	  $P a::4   a:10; sed "s/$/\n/" a
 	  rm -f -- a b
 	COMM
 	exit 1
