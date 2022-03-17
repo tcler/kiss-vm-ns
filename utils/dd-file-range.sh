@@ -28,8 +28,7 @@ dd_file_range_old() {
 		len=$alen
 		echo "[$fn:warn] (skip+len) beyond the EOF of $if" >&2
 	}
-	local ofarg="of=$of"
-	if [[ -n "$of" ]]; then touch "$of" || return $?; else ofarg=; seek=0; fi
+	if [[ -n "$of" ]]; then touch "$of" || return $?; else seek=0; fi
 
 	local tmpof=$if
 
@@ -67,7 +66,11 @@ dd_file_range_old() {
 		dd if="$tmpof" bs=$BS $logOpt
 		} | dd of="$of" obs=$BS seek=$Q conv=notrunc $logOpt
 	else
-		eval dd if="$tmpof" $([[ -n "$ofarg" ]] && printf %q "$ofarg") bs=$BS conv=notrunc $logOpt
+		if [[ -n "$of" ]]; then
+			dd if="$tmpof" "of=$of" bs=$BS conv=notrunc $logOpt
+		else
+			cat "$tmpof"
+		fi
 	fi
 	[[ "$if" != "$tmpof" ]] && rm -f -- "$tmpof"
 }
