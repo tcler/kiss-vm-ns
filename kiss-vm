@@ -2159,7 +2159,10 @@ fi
 
 	VMpath=$VMSHOME/$Distro/$vmname
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
-	sudo -u $VMUSER bash <<< "mkdir -p $VMpath"
+	sudo -u $VMUSER bash <<< "mkdir -p $VMpath;"
+	if [[ "$VMSHARE" != yes ]]; then
+		setfacl -d -mg::--- -mo::--- $VMpath
+	fi
 }
 [[ "${VMpath,,}" = *windows* ]] && {
 	_MSIZE=4096
@@ -2540,7 +2543,6 @@ if [[ "$InstallType" = location ]]; then
 	}
 
 	ls -l ${imagefile}
-	setfacl -mu:${VMUSER}:rwx -R ${VMpath}
 
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
@@ -2741,7 +2743,6 @@ elif [[ "$InstallType" = import ]]; then
 	}
 
 	ls -l ${imagefile}
-	setfacl -mu:${VMUSER}:rwx -R ${VMpath}
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
@@ -2901,7 +2902,6 @@ elif [[ "$InstallType" = pxe ]]; then
 	sudo -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
 
 	ls -l ${imagefile}
-	setfacl -mu:${VMUSER}:rwx -R ${VMpath}
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
@@ -2995,7 +2995,6 @@ elif [[ "$InstallType" = cdrom ]]; then
 	sudo -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
 
 	ls -l ${imagefile}
-	setfacl -mu:${VMUSER}:rwx -R ${VMpath}
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
