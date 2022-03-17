@@ -525,7 +525,12 @@ vmclone() {
 	is_invalid_vmname "$dstname" && return 1
 
 	#get src vm path
-	srcpath=$(vmhomedir $srcname|head -n1)
+	srcpath=$(vmhomedir $srcname 2>/dev/null|head -n1)
+	[[ ! -r "${srcpath}" ]] && {
+		echo "homedir($srcname): $srcpath"
+		echo -e "{VM:WARN} Guest homedir is not readable for current user($(whoami)) ..."
+		return 1
+	}
 	[[ ! -f ${srcpath}/.kiss-vm || ${srcpath##*/} != ${srcname} ]] && {
 		echo -e "{VM:WARN} seems $srcname was not created by kiss-vm, can not use vm-clone; please use virt-clone instead ..."
 		return 1
