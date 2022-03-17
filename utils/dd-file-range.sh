@@ -31,24 +31,30 @@ dd_file_range_old() {
 	local ofarg="of=$of"
 	if [[ -n "$of" ]]; then touch "$of" || return $?; else ofarg=; seek=0; fi
 
-	local tmpof=$(mktemp)
-	local Q= R= Q2= R2= NREAD=
+	local tmpof=$if
 
-	local iBS=$BS
-	((ifsize <= BS)) && iBS=$ifsize
-	Q=$((skip/iBS))  #quotient
-	R=$((skip%iBS))  #residue
-	NREAD=$((iBS-R))
-	dd if="$if" ibs=$iBS skip=$Q count=1 $logOpt | tail -c $NREAD >$tmpof
+	if ((skip > 0 || len < ifsize)); then
+		tmpof=$(mktemp)
+		local Q=0 R= Q2= R2= NSKIP=0 NREAD=0
+		local iBS=$BS
+		((ifsize <= BS)) && iBS=$ifsize
+		R=$((skip%iBS))  #residue
+		if ((R > 0)); then
+			Q=$((skip/iBS))  #quotient
+			NREAD=$((iBS-R))
+			dd if="$if" ibs=$iBS skip=$Q count=1 $logOpt | tail -c $NREAD >$tmpof
+			NSKIP=$((Q+1))
+		fi
 
-	if ((len > NREAD)); then
-		let len-=$NREAD
-		Q2=$((len/iBS))  #quotient
-		R2=$((len%iBS))  #residue
-		((Q2>0)) && dd if="$if" ibs=$iBS skip=$((Q+1)) count=$Q2 oflag=append conv=notrunc of="$tmpof" $logOpt
-		((R2>0)) && dd if="$if" ibs=$iBS skip=$((Q+1+Q2)) count=1 $logOpt | head -c $R2 >>"$tmpof"
-	elif ((len < NREAD)); then
-		truncate --size=${len} "$tmpof"
+		if ((len > NREAD)); then
+			let len-=$NREAD
+			Q2=$((len/iBS))  #quotient
+			R2=$((len%iBS))  #residue
+			((Q2>0)) && dd if="$if" ibs=$iBS skip=$NSKIP count=$Q2 oflag=append conv=notrunc of="$tmpof" $logOpt
+			((R2>0)) && dd if="$if" ibs=$iBS skip=$((NSKIP+Q2)) count=1 $logOpt | head -c $R2 >>"$tmpof"
+		elif ((len < NREAD)); then
+			truncate --size=${len} "$tmpof"
+		fi
 	fi
 
 	if ((seek > 0)); then
@@ -63,7 +69,7 @@ dd_file_range_old() {
 	else
 		eval dd if="$tmpof" $([[ -n "$ofarg" ]] && printf %q "$ofarg") bs=$BS conv=notrunc $logOpt
 	fi
-	rm -f -- "$tmpof"
+	[[ "$if" != "$tmpof" ]] && rm -f -- "$tmpof"
 }
 
 dd_file_range() {
