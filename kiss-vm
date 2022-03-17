@@ -524,6 +524,11 @@ vmclone() {
 		echo -e "{VM:WARN} seems $srcname was not created by kiss-vm, can not use vm-clone; please use virt-clone instead ..."
 		return 1
 	}
+	[[ ! -r ${srcpath}/.kiss-vm ]] && {
+		vmhomedir $srcname
+		echo -e "{VM:WARN} Guest $srcname is not readable for current user($(whoami)) ..."
+		return 1
+	}
 
 	#virsh suspend "$srcname"
 	virsh destroy "$srcname" 2>/dev/null
@@ -533,7 +538,6 @@ vmclone() {
 	local dstpath=$VMSHOME/$distron/$dstname
 	sudo -u $VMUSER bash <<-EOF
 	mkdir -p $dstpath && touch $dstpath/.kiss-vm
-	chcon --reference=${srcpath%/*} -R $dstpath
 	rm -f $dstpath/${dstname}.qcow2
 	virt-clone -o ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2 \
 		--check path_exists=off \
@@ -543,9 +547,12 @@ vmclone() {
 	#^^^^ why don't use virt-clone directly
 
 	read srcimage < <(_vmblklist "$srcname")
-	sudo -u $VMUSER bash <<-EOF
 	cp -v --sparse=always $srcimage $dstpath/${dstname}.qcow2
+	if [[ $(id -u) = 0 ]]; then
+		chown $VMUSER:$VMUSER -R $dstpath
+	fi
 	chcon --reference=${srcpath%/*} -R $dstpath
+	sudo -u $VMUSER bash <<-EOF
 	virsh define $dstpath/${dstname}.xml
 	EOF
 	vmhomedir ${dstname}
