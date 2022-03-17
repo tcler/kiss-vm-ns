@@ -562,6 +562,7 @@ vmclone() {
 		--check path_exists=off \
 		--print-xml >$dstpath/${dstname}.xml
 	EOF
+	[[ -s $dstpath/${dstname}.xml ]] || return 1
 	#Note: https://www.reddit.com/r/archlinux/comments/obn999/ownership_of_qcow2_images_created_by_virtmanager/
 	#^^^^ why don't use virt-clone directly
 
