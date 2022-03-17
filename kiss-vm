@@ -537,7 +537,11 @@ vmclone() {
 	local distron=$(awk -F/ '{print $(NF-1)}' <<<"${srcpath}")
 	local dstpath=$VMSHOME/$distron/$dstname
 	sudo -u $VMUSER bash <<-EOF
-	mkdir -p $dstpath && touch $dstpath/.kiss-vm
+	mkdir -p $dstpath
+	if [[ "$VMSHARE" != yes ]]; then
+		setfacl -d -mg::--- -mo::--- $dstpath
+	fi
+	touch $dstpath/.kiss-vm
 	rm -f $dstpath/${dstname}.qcow2
 	virt-clone -o ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2 \
 		--check path_exists=off \
