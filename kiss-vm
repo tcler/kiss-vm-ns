@@ -136,10 +136,14 @@ vmhomedir() {
 		return 1
 	fi
 
-	pushd $_vmdir >/dev/null
-	pwd
-	ls -lA
-	popd >/dev/null
+	if pushd $_vmdir &>/dev/null; then
+		pwd
+		ls -lA
+		popd >/dev/null
+	else
+		echo "$_vmdir"
+		ls -lA "$_vmdir"
+	fi
 	test -f $_vmdir/.kiss-vm || echo "{VM:NOTE} seems this VM is not created by kiss-vm($(command -v vm))" >&2
 }
 
