@@ -180,11 +180,8 @@ status=none
 case "${LogLevel}" in (1) status=noxfer;; (2) status=progress;; esac
 LogOpt=status=$status
 
-if [[ -n "$_ver" ]]; then
-	case "$_ver" in
-	o*) dd_file_range_old "$if" "$of" $skip $seek $len;;
-	*)  dd_file_range "$if" "$of" $skip $seek $len;;
-	esac
+if [[ "$_ver" = o* ]]; then
+	dd_file_range_old "$if" "$of" $skip $seek $len
 elif dd --help|grep -q skip_bytes; then
 	dd_file_range "$if" "$of" $skip $seek $len
 else
