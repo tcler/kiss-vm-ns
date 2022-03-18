@@ -1,6 +1,6 @@
 #!/bin/bash
 #auth: Jianhong <yin-jianhong@163.com>
-#version: 1.1
+#version: 1.2
 #
 #this program is used to copy a range of data from one file to another
 #like syscall copy_file_range(2) on linux kernel-5.3 or FreeBSD-13
@@ -33,8 +33,12 @@ dd_file_range_old() {
 	if [[ -n "$of" ]]; then touch "$of" || return $?; else seek=0; fi
 
 	dd --help|grep -q status=noxfer && {
+		[[ $logOpt = *=none ]] && { exec 2>/dev/null; logOpt=status=noxfer; }
 		[[ $logOpt = *=prg* ]] && logOpt=
-		[[ $logOpt = *=none ]] && { logOpt=status=noxfer; exec 2>/dev/null; }
+	}
+	dd --help|grep -q status= || {
+		[[ $logOpt = *=none ]] && { exec 2>/dev/null; }
+		logOpt=
 	}
 
 	local tmpof=$if
@@ -50,12 +54,12 @@ dd_file_range_old() {
 			NSKIP=$((Q+1))
 			if [[ -n "$of" ]]; then
 				dd if="$if" ibs=$iBS skip=$Q count=1 $logOpt |
-					tail -c $NREAD >$tmpof
-				((NREAD > len)) && truncate --size=${len} "$tmpof"
+					tail -c $NREAD |
+					head -c $((NREAD > len ? len : NREAD)) >$tmpof
 			else
 				dd if="$if" ibs=$iBS skip=$Q count=1 $logOpt |
 					tail -c $NREAD |
-					head -c $((NREAD > len ? len))
+					head -c $((NREAD > len ? len : NREAD))
 			fi
 		fi
 
@@ -139,7 +143,7 @@ for arg; do
 	-log=*)  LogLevel=${arg/*=/};;
 	-ver=*)  _ver=${arg/*=/};;
 	-*)      :;;
-	*)       args+=("$arg");;
+	*)       args[${#args[@]}]="$arg";;
 	esac
 done
 set -- "${args[@]}"
