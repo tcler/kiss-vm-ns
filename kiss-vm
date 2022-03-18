@@ -673,7 +673,8 @@ vmcopyfrom() {
 	local _vmname=$1
 	shift 1
 	local src=${1%/}
-	local dstdir=$2
+	local dstf=${2}
+	[[ -d "$dstf" ]] && dstf=$(readlink -f $dstf)/.
 
 	port_available $_vmname 22 || {
 		echo -e "{VM:WARN} port $_vmname:22 is not available"
@@ -687,15 +688,12 @@ vmcopyfrom() {
 	sshOpts=$(sshtest $U@$_vmname "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 	if [[ $sshstat = yes ]]; then
-		scp $sshOpts -r $U@${_vmname}:$src $dstdir/.
+		scp $sshOpts -r $U@${_vmname}:$src $dstf
 		rc=$?
-		[[ $rc = 0 ]] && {
-			ls -l -d $dstdir/${src##*/}
-		}
 	elif [[ $sshstat = passwd ]]; then
 		expect <(cat <<-EOF
 		set timeout 120
-		spawn scp $sshOpts -r $U@${_vmname}:$src $dstdir/.
+		spawn scp $sshOpts -r $U@${_vmname}:$src $dstf
 		expect {
 			"password:" { send "$defaultPasswd\r"; exp_continue }
 			"Password for" { send "$defaultPasswd\r"; exp_continue }
@@ -710,6 +708,15 @@ vmcopyfrom() {
 		echo -e "{VM:WARN} ssh $_vmname is not available ..."
 		rc=1
 	fi
+
+	[[ $rc = 0 ]] && {
+		if [[ -f "$dstf" ]]; then
+			ls -l $dstf
+		else
+			ls -l -d ${dstdir%/.}/${src##*/}
+		fi
+	}
+
 	return $rc
 }
 
