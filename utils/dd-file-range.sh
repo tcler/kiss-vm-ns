@@ -1,6 +1,6 @@
 #!/bin/bash
 #auth: Jianhong <yin-jianhong@163.com>
-#version: 1.0
+#version: 1.1
 #
 #this program is used to copy a range of data from one file to another
 #like syscall copy_file_range(2) on linux kernel-5.3 or FreeBSD-13
@@ -32,8 +32,12 @@ dd_file_range_old() {
 	}
 	if [[ -n "$of" ]]; then touch "$of" || return $?; else seek=0; fi
 
-	local tmpof=$if
+	dd --help|grep -q status=noxfer && {
+		[[ $logOpt = *=prg* ]] && logOpt=
+		[[ $logOpt = *=none ]] && { logOpt=status=noxfer; exec 2>/dev/null; }
+	}
 
+	local tmpof=$if
 	if ((skip > 0 || len < ifsize)); then
 		tmpof=$(mktemp)
 		local Q=0 R= Q2= R2= NSKIP=0 NREAD=0
@@ -176,9 +180,9 @@ seek=${seek:-0}
 [[ "$skip" = [* ]] && { skip=${skip:1}; skip=$((skip > 0 ? skip - 1 : 0)); }
 [[ "$len" = *] ]] && { len=${len:0:-1}; len=$((len > skip ? len - skip : 0)); }
 [[ "$seek" = [* ]] && { seek=${seek:1}; seek=$((seek > 0 ? seek - 1 : 0)); }
-status=none
-case "${LogLevel}" in (1) status=noxfer;; (2) status=progress;; esac
-LogOpt=status=$status
+Status=${Status:-none}
+case "${LogLevel}" in (1) Status=noxfer;; (2) Status=progress;; esac
+LogOpt=status=$Status
 
 if [[ "$_ver" = o* ]]; then
 	dd_file_range_old "$if" "$of" $skip $seek $len
