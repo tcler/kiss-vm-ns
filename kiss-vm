@@ -1464,6 +1464,7 @@ Usage() {
 	  --saveimage [path]
 	                 #save image in path if install with import mode
 	  --downloadonly #download image only if there is qcow* image
+	  --share        #give others read permission to the VM image file
 	  --cpus,--vcpus <N|sockets=1,cores=2,threads=2>
 	                 #number of virtual cpus, default: sockets=1,cores=2,threads=2
 	                 #see also: virt-install --vcpus=?
@@ -1775,6 +1776,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long noauto \
 	--long saveimage:: --long sa:: \
 	--long downloadonly \
+	--long share \
 	--long ready \
 	--long diskbus: --long bus: \
 	--long disk: \
@@ -1879,6 +1881,7 @@ while true; do
 		shift 2
 		;;
 	--downloadonly)  SAVE_IMAGE="yes"; DOWNLOAD_ONLY="yes"; InstallType=import; shift 1;;
+	--share)         VMSHARE="yes"; shift 1;;
 	-r|--ready)      KISS_VM_READY=yes; shift 1;;
 	--diskbus|--bus) DEFAULT_DISK_BUS="$2"; shift 2;;
 	--disk)          DISKS+=("$2"); shift 2;;
