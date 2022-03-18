@@ -23,7 +23,6 @@ InstallType=import
 
 VMUSER=$(whoami)
 [[ -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
-vmprefix=$VMUSER
 eval VMSHOME=~$VMUSER/VMs
 eval ImagePath=~$VMUSER/myimages
 eval perConfDir=~$VMUSER/.config/kiss-vm
@@ -95,7 +94,7 @@ vmname_gen() {
 	if [[ -n "$cname" ]]; then
 		name=${cname}
 	else
-		[[ -n "$vmprefix" ]] && name=${vmprefix}-${name}
+		name=${VMUSER}-${name}
 	fi
 	echo -n $name
 }
@@ -160,29 +159,25 @@ _vmdelete() {
 		return 1
 	}
 
-	homedir=$(getent passwd "$vmprefix" | cut -d: -f6)
-	if [[ -n "${vmprefix}" ]]; then
-		blk=$(virsh domblklist "$_vmname" | sed 1,2d)
-		if test -n "$blk"; then
-			! grep -q "$homedir/VM[sS]/" <<<"$blk" && {
-				echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
-				cat <<-EOF
-				  virsh destroy $_vmname
-				  virsh undefine $_vmname #--remove-all-storage --nvram
-				EOF
-				return 1
-			}
-		#pxe vms
-		elif [[ ! -d $homedir/VMs/PXE/$_vmname ]]; then
+	local userhome=$(getent passwd "$VMUSER" | cut -d: -f6)
+	blk=$(virsh domblklist "$_vmname" | sed 1,2d)
+	if test -n "$blk"; then
+		! grep -q "$userhome/VM[sS]/" <<<"$blk" && {
 			echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
 			cat <<-EOF
 			  virsh destroy $_vmname
 			  virsh undefine $_vmname #--remove-all-storage --nvram
 			EOF
 			return 1
-		fi
-	else
-		:
+		}
+	#pxe vms
+	elif [[ ! -d $userhome/VMs/PXE/$_vmname ]]; then
+		echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
+		cat <<-EOF
+		  virsh destroy $_vmname
+		  virsh undefine $_vmname #--remove-all-storage --nvram
+		EOF
+		return 1
 	fi
 
 	local _vmdir= _image=
@@ -217,7 +212,7 @@ vmdialogchecklist() {
 	local resfile=$2
 	local all=$3
 	local vmlist=$(virsh list --name ${all:+--all})
-	[[ -n "$vmprefix" ]] && vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
+	[[ -n "$VMUSER" ]] && vmlist=$(grep "^$VMUSER" <<<"$vmlist"; grep -v "^$VMUSER" <<<"$vmlist";)
 	local vmList=$(echo "$vmlist" | sed -e /^$/d -e 's/.*/"&" "" 1/')
 	[[ -z "${vmList}" ]] && {
 		echo -e "{VM:WARN} there is not any VM in your host .." >&2
@@ -232,7 +227,7 @@ vmdialogradiolist() {
 	local resfile=$2
 	local all=$3
 	local vmlist=$(virsh list --name ${all:+--all})
-	[[ -n "$vmprefix" ]] && vmlist=$(grep "^$vmprefix" <<<"$vmlist"; grep -v "^$vmprefix" <<<"$vmlist";)
+	[[ -n "$VMUSER" ]] && vmlist=$(grep "^$VMUSER" <<<"$vmlist"; grep -v "^$VMUSER" <<<"$vmlist";)
 	local vmList=$(echo "$vmlist" | sed -e /^$/d -e 's/.*/"&" "" 1/')
 	[[ -z "${vmList}" ]] && {
 		echo -e "{VM:WARN} there is not any VM in your host .." >&2
@@ -1829,7 +1824,6 @@ while true; do
 	-h|--help) Usage; shift 1; exit 0;;
 	--prepare) ONLY_PREPARE=yes; shift 1;;
 	-u|--user) VMUSER=$2; shift 2;
-		vmprefix=$VMUSER
 		eval VMSHOME=~$VMUSER/VMs
 		eval ImagePath=~$VMUSER/myimages
 		eval perConfDir=~$VMUSER/.config/kiss-vm
@@ -2191,8 +2185,6 @@ fi
 	[[ -n "$_distro" ]] && Distro="$_distro"
 }
 
-[[ -n "$VMName" ]] && vmprefix=
-
 [[ "$OnlyGetVMName" = yes ]] && {
 	vmname_gen $Distro $VMName
 	exit $?
@@ -2211,7 +2203,7 @@ fi
 		fi
 	}
 	vmhostname=$vmname
-	[[ "$GenerateImage" = yes ]] && vmhostname=${vmname#${vmprefix}-}
+	[[ "$GenerateImage" = yes ]] && vmhostname=${vmname#${VMUSER}-}
 
 	VMpath=$VMSHOME/$Distro/$vmname
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
@@ -3157,7 +3149,7 @@ if [[ "$GenerateImage" = yes ]]; then
 	sudo -u $VMUSER bash <<< "mkdir -p $ImagePath/$Distro"
 	read image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
-	imgfilename=${imgfilename#${vmprefix}-}
+	imgfilename=${imgfilename#${VMUSER}-}
 	newimage=$ImagePath/$Distro/${imgfilename}
 
 	echo -e "\n{VM:INFO} force shutdown $vmname ..."
