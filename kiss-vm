@@ -589,6 +589,34 @@ vmclone() {
 	#virsh start "$srcname"
 }
 
+sshtest() {
+	local target=$1
+	local sshOpts=${2:--o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no}
+	local result=255
+	local tmpf=${RuntimeTmp}/_sshtest
+	local KexAlgorithmsOpt=
+	[[ -z "${RuntimeTmp}" ]] && tmpf=$(mktemp)
+	ssh -v -n -o Batchmode=yes $sshOpts $target &>$tmpf
+	if [[ $? = 0 ]]; then
+		result=0
+	elif grep -v ^debug1: $tmpf|grep -iq "Permission denied (.*password.*)"; then
+		result=1
+	elif grep -iq "no matching key exchange method found. Their offer:" $tmpf; then
+		local KexAlgorithmsOpt=-oKexAlgorithms=+$(sed -n '/^.*Their offer: /{s///;s/\r//;p}' $tmpf)
+		if [[ "$sshOpts" != *$KexAlgorithmsOpt ]]; then
+			sshOpts="$KexAlgorithmsOpt $sshOpts"
+			sshtest $target "$sshOpts"
+			result=$?
+		else
+			result=2
+		fi
+	fi
+	[[ -z "${RuntimeTmp}" ]] && rm -f $tmpf
+
+	[[ -z "$KexAlgorithmsOpt" ]] && echo "$sshOpts"
+	return $result
+}
+
 vmcopyto() {
 	[[ "$#" -lt 3 ]] && {
 		echo "Usage: vm cpto vmname <src files/dirs ...> <dst dir in vm>"
@@ -604,37 +632,35 @@ vmcopyto() {
 		return 1
 	}
 
-	local sshexec=no
+	local sshstat=unavailable
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
 	local U=root
 	vmhomedir $_vmname | grep -q -i windows && U=Administrator
-	ssh -n -o Batchmode=yes $sshOpts $U@$_vmname &>$RuntimeTmp/sshtest
-	[[ $? = 0 ]] && sshexec=yes
-	if [[ $sshexec = yes ]]; then
+	sshOpts=$(sshtest $U@$_vmname "$sshOpts")
+	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
+	if [[ $sshstat = yes ]]; then
 		scp $sshOpts -r "${srcarray[@]}" $U@${_vmname}:$dstdir/.
 		rc=$?
 		[[ $rc = 0 ]] && {
 			ssh $sshOpts $U@${_vmname} ls -l $dstdir
 		}
+	elif [[ $sshstat = passwd ]]; then
+		expect <(cat <<-EOF
+		set timeout 120
+		spawn scp $sshOpts -r "${srcarray[@]}" $U@${_vmname}:$dstdir/.
+		expect {
+			"password:" { send "$defaultPasswd\r"; exp_continue }
+			"Password for" { send "$defaultPasswd\r"; exp_continue }
+			eof
+		}
+		foreach {pid spawnid os_error_flag value} [wait] break
+		exit \$value
+		EOF
+		)
+		rc=$?
 	else
-		if grep -q -w password $RuntimeTmp/sshtest; then
-			expect <(cat <<-EOF
-			set timeout 120
-			spawn scp $sshOpts -r "${srcarray[@]}" $U@${_vmname}:$dstdir/.
-			expect {
-				"password:" { send "$defaultPasswd\r"; exp_continue }
-				"Password for" { send "$defaultPasswd\r"; exp_continue }
-				eof
-			}
-			foreach {pid spawnid os_error_flag value} [wait] break
-			exit \$value
-			EOF
-			)
-			rc=$?
-		else
-			echo -e "{VM:WARN} ssh $_vmname is not available ..."
-			rc=1
-		fi
+		echo -e "{VM:WARN} ssh $_vmname is not available ..."
+		rc=1
 	fi
 	return $rc
 }
@@ -654,37 +680,35 @@ vmcopyfrom() {
 		return 1
 	}
 
-	local sshexec=no
+	local sshstat=unavailable
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
 	local U=root
 	vmhomedir $_vmname | grep -q -i windows && U=Administrator
-	ssh -n -o Batchmode=yes $sshOpts $U@$_vmname &>$RuntimeTmp/sshtest
-	[[ $? = 0 ]] && sshexec=yes
-	if [[ $sshexec = yes ]]; then
+	sshOpts=$(sshtest $U@$_vmname "$sshOpts")
+	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
+	if [[ $sshstat = yes ]]; then
 		scp $sshOpts -r $U@${_vmname}:$src $dstdir/.
 		rc=$?
 		[[ $rc = 0 ]] && {
 			ls -l -d $dstdir/${src##*/}
 		}
+	elif [[ $sshstat = passwd ]]; then
+		expect <(cat <<-EOF
+		set timeout 120
+		spawn scp -r $U@${_vmname}:$src $dstdir/.
+		expect {
+			"password:" { send "$defaultPasswd\r"; exp_continue }
+			"Password for" { send "$defaultPasswd\r"; exp_continue }
+			eof
+		}
+		foreach {pid spawnid os_error_flag value} [wait] break
+		exit \$value
+		EOF
+		)
+		rc=$?
 	else
-		if grep -q -w password $RuntimeTmp/sshtest; then
-			expect <(cat <<-EOF
-			set timeout 120
-			spawn scp -r $U@${_vmname}:$src $dstdir/.
-			expect {
-				"password:" { send "$defaultPasswd\r"; exp_continue }
-				"Password for" { send "$defaultPasswd\r"; exp_continue }
-				eof
-			}
-			foreach {pid spawnid os_error_flag value} [wait] break
-			exit \$value
-			EOF
-			)
-			rc=$?
-		else
-			echo -e "{VM:WARN} ssh $_vmname is not available ..."
-			rc=1
-		fi
+		echo -e "{VM:WARN} ssh $_vmname is not available ..."
+		rc=1
 	fi
 	return $rc
 }
@@ -768,43 +792,41 @@ vmlogin() {
 		[[ "$DEBUG" = yes ]] &&
 			echo "[vmlogin:debug] port ${addr}:22 available ..." | GREP_COLORS='ms=01;36' grep --color . >&2
 
-		sshexec=no
-		ssh -n -o Batchmode=yes $sshOpts $U@$addr &>$RuntimeTmp/sshtest
-		[[ $? = 0 ]] && sshexec=yes
-		if [[ $sshexec = yes ]]; then
+		sshstat=unavailable
+		sshOpts=$(sshtest $U@$_vmname "$sshOpts")
+		case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
+		if [[ $sshstat = yes ]]; then
 			ssh $sshOpts $U@$addr "$sshCommand"
 			rc=$?
-		else
-			if grep -q -w password $RuntimeTmp/sshtest; then
-				expect <(cat <<-EOF
-				set timeout 120
-				set sshcmd [exec cat $RuntimeTmp/sshcmd]
-				log_user 0
-				spawn ssh $sshOpts $U@$addr \$sshcmd
-				log_user 1
-				if {\$argc == 0} {
-					expect {
-					"password:" { send "$defaultPasswd\r"; exp_continue }
-					"Password for" { send "$defaultPasswd\r"; exp_continue }
-					"*# " { send "\r"; interact }
-					}
-				} else {
-					expect {
-					"password:" { send "$defaultPasswd\r"; exp_continue }
-					"Password for" { send "$defaultPasswd\r"; exp_continue }
-					eof
-					}
+		elif [[ $sshstat = passwd ]]; then
+			expect <(cat <<-EOF
+			set timeout 120
+			set sshcmd [exec cat $RuntimeTmp/sshcmd]
+			log_user 0
+			spawn ssh $sshOpts $U@$addr \$sshcmd
+			log_user 1
+			if {\$argc == 0} {
+				expect {
+				"password:" { send "$defaultPasswd\r"; exp_continue }
+				"Password for" { send "$defaultPasswd\r"; exp_continue }
+				"*# " { send "\r"; interact }
 				}
-				foreach {pid spawnid os_error_flag value} [wait] break
-				exit \$value
-				EOF
-				) "$@"
-				rc=$?
-			else
-				echo -e "{VM:WARN} ssh $U@$addr is not available, try login with console ..."
-				virsh console "$_vmname"
-				rc=$?
-			fi
+			} else {
+				expect {
+				"password:" { send "$defaultPasswd\r"; exp_continue }
+				"Password for" { send "$defaultPasswd\r"; exp_continue }
+				eof
+				}
+			}
+			foreach {pid spawnid os_error_flag value} [wait] break
+			exit \$value
+			EOF
+			) "$@"
+			rc=$?
+		else
+			echo -e "{VM:WARN} ssh $U@$addr is not available, try login with console ..."
+			virsh console "$_vmname"
+			rc=$?
 		fi
 
 		faillog() { echo -e "\033[41m{TEST:FAIL} $*\033[0m"; }
