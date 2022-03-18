@@ -604,7 +604,7 @@ sshtest() {
 	elif grep -iq "no matching key exchange method found. Their offer:" $tmpf; then
 		local KexAlgorithmsOpt=-oKexAlgorithms=+$(sed -n '/^.*Their offer: /{s///;s/\r//;p}' $tmpf)
 		if [[ "$sshOpts" != *$KexAlgorithmsOpt ]]; then
-			sshOpts="$KexAlgorithmsOpt $sshOpts"
+			sshOpts+=" $KexAlgorithmsOpt"
 			sshtest $target "$sshOpts"
 			result=$?
 		else
