@@ -16,8 +16,8 @@ is_intranet() {
 
 _vm()
 {
-    local cur prev words cword
-    local narg
+    local w= cur= prev= words= cword=
+    local narg=
     local subcommandList=
     local distroList= dlist=
     local vmlist=
