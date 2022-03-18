@@ -1,6 +1,6 @@
 #!/bin/bash
 #auth: Jianhong <yin-jianhong@163.com>
-#version: 0.99
+#version: 1.0
 #
 #this program is used to copy a range of data from one file to another
 #like syscall copy_file_range(2) on linux kernel-5.3 or FreeBSD-13
@@ -43,18 +43,29 @@ dd_file_range_old() {
 		if ((R > 0)); then
 			Q=$((skip/iBS))  #quotient
 			NREAD=$((iBS-R))
-			dd if="$if" ibs=$iBS skip=$Q count=1 $logOpt | tail -c $NREAD >$tmpof
 			NSKIP=$((Q+1))
+			if [[ -n "$of" ]]; then
+				dd if="$if" ibs=$iBS skip=$Q count=1 $logOpt |
+					tail -c $NREAD >$tmpof
+				((NREAD > len)) && truncate --size=${len} "$tmpof"
+			else
+				dd if="$if" ibs=$iBS skip=$Q count=1 $logOpt |
+					tail -c $NREAD |
+					head -c $((NREAD > len ? len))
+			fi
 		fi
 
 		if ((len > NREAD)); then
 			let len-=$NREAD
 			Q2=$((len/iBS))  #quotient
 			R2=$((len%iBS))  #residue
-			((Q2>0)) && dd if="$if" ibs=$iBS skip=$NSKIP count=$Q2 oflag=append conv=notrunc of="$tmpof" $logOpt
-			((R2>0)) && dd if="$if" ibs=$iBS skip=$((NSKIP+Q2)) count=1 $logOpt | head -c $R2 >>"$tmpof"
-		elif ((len < NREAD)); then
-			truncate --size=${len} "$tmpof"
+			if [[ -n "$of" ]]; then
+				((Q2>0)) && dd if="$if" ibs=$iBS skip=$NSKIP count=$Q2 oflag=append conv=notrunc of="$tmpof" $logOpt
+				((R2>0)) && dd if="$if" ibs=$iBS skip=$((NSKIP+Q2)) count=1 $logOpt | head -c $R2 >>"$tmpof"
+			else
+				((Q2>0)) && dd if="$if" ibs=$iBS skip=$NSKIP count=$Q2 $logOpt
+				((R2>0)) && dd if="$if" ibs=$iBS skip=$((NSKIP+Q2)) count=1 $logOpt | head -c $R2
+			fi
 		fi
 	fi
 
