@@ -32,14 +32,14 @@ dd_file_range_old() {
 	}
 	if [[ -n "$of" ]]; then touch "$of" || return $?; else seek=0; fi
 
-	dd --help|grep -q status=noxfer && {
-		[[ $logOpt = *=none ]] && { exec 2>/dev/null; logOpt=status=noxfer; }
-		[[ $logOpt = *=prg* ]] && logOpt=
-	}
-	dd --help|grep -q status= || {
+	local stat=$(dd --help|grep status=)
+	if [[ -z "$stat" ]]; then  #RHEL-4
 		[[ $logOpt = *=none ]] && { exec 2>/dev/null; }
 		logOpt=
-	}
+	elif [[ "$stat" = *=noxfer ]]; then  #RHEL-5
+		[[ $logOpt = *=none ]] && { exec 2>/dev/null; logOpt=status=noxfer; }
+		[[ $logOpt = *=prg* ]] && logOpt=
+	fi
 
 	local tmpof=$if
 	if ((skip > 0 || len < ifsize)); then
