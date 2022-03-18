@@ -137,13 +137,13 @@ vmhomedir() {
 
 	if pushd $_vmdir &>/dev/null; then
 		pwd
-		ls -lA
+		ls -la
 		popd >/dev/null
 		test -f $_vmdir/.kiss-vm ||
 			echo "{VM:NOTE} seems this VM is not created by kiss-vm($(command -v vm))" >&2
 	else
 		echo "$_vmdir"
-		ls -lA "$_vmdir" ||
+		ls -la "$_vmdir" ||
 			echo "{VM:WARN} current user($(whoami)) can not access the ^^ VM homedir ^^" >&2
 	fi
 }
