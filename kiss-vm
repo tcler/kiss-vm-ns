@@ -564,7 +564,7 @@ vmclone() {
 	read srcimage < <(_vmblklist "$srcname")
 	cp -v --sparse=always $srcimage $dstpath/${dstname}.qcow2
 	if [[ $(id -u) = 0 ]]; then
-		chown $VMUSER:$VMUSER -R $dstpath
+		chown $VMUSER:$(id -g -u $VMUSER) -R $dstpath
 	fi
 	chcon --reference=${srcpath%/*} -R $dstpath
 	sudo -u $VMUSER bash <<-EOF
