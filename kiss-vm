@@ -695,7 +695,7 @@ vmcopyfrom() {
 	elif [[ $sshstat = passwd ]]; then
 		expect <(cat <<-EOF
 		set timeout 120
-		spawn scp -r $U@${_vmname}:$src $dstdir/.
+		spawn scp $sshOpts -r $U@${_vmname}:$src $dstdir/.
 		expect {
 			"password:" { send "$defaultPasswd\r"; exp_continue }
 			"Password for" { send "$defaultPasswd\r"; exp_continue }
