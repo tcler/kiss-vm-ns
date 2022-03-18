@@ -3290,7 +3290,7 @@ for vncaddr in $(vmvncproc $vmname); do
 	if [[ "$vncaddr" = localhost* ]]; then
 		echo -e "  $ vncviewer $vncaddr    #from localhost"
 	else
-		echo -e "  $ vncviewer $vncaddr    #from remote"
+		echo -e "  $ vncviewer $vncaddr    #from localhost or remote"
 	fi
 done
 exit 0
