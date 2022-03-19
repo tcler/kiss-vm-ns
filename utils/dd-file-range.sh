@@ -47,6 +47,15 @@ dd_file_range_old() {
 		local Q=0 R= Q2= R2= NSKIP=0 NREAD=0
 		local iBS=$BS
 		((ifsize <= BS)) && iBS=$ifsize
+
+		#if the skip_offset is not aligned with the step(iBS)
+		#+---------------+---------------+---------------+----
+		#|     iBS       |//////iBS//////|      iBS      |****
+		#+---------------+--R--*--NREAD--+---------------+----
+		#      (Q*iBS)__/      |/////?///|
+		#              offset<-+     |   +->NSKIP
+		#                            |
+		#                            `-->(NREAD > len ?)
 		R=$((skip%iBS))  #residue
 		if ((R > 0)); then
 			Q=$((skip/iBS))  #quotient
@@ -63,10 +72,18 @@ dd_file_range_old() {
 			fi
 		fi
 
+		#if the skip_offset is not aligned with the step(iBS)
+		#---+---------------+---------------+---------------+--
+		#***|     iBS       |//////iBS//////|//////iBS      |**
+		#---+--R--*--NREAD--+---------------+--R2--*--------+--
+		#         |\\\\\\\\\|//////////////////////|
+		# offset<-+         +->NSKIP               +->end(offset+len)
+		#         |         \________nlen_________/|
+		#         \_____________len________________/
 		if ((len > NREAD)); then
-			let len-=$NREAD
-			Q2=$((len/iBS))  #quotient
-			R2=$((len%iBS))  #residue
+			local nlen=$((len-NREAD))
+			Q2=$((nlen/iBS))  #quotient
+			R2=$((nlen%iBS))  #residue
 			if [[ -n "$of" ]]; then
 				((Q2>0)) && dd if="$if" ibs=$iBS skip=$NSKIP count=$Q2 oflag=append conv=notrunc of="$tmpof" $logOpt
 				((R2>0)) && dd if="$if" ibs=$iBS skip=$((NSKIP+Q2)) count=1 $logOpt | head -c $R2 >>"$tmpof"
