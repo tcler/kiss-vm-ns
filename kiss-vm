@@ -1968,64 +1968,75 @@ fi
 VCPUN=$(vcpuN "$VCPUS")
 
 # __main__
-is_slackware && export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
-if egrep -q -wo '(vmx|svm)' /proc/cpuinfo || egrep -q 'CPU 0000%@' /proc/cpuinfo; then
-	[[ "$1" = prepare ]] && {
-		KISS_VM_READY=; ONLY_PREPARE=yes
-		FORCE_PREPARE=$FORCE
-	}
-	[[ "$KISS_VM_READY" != yes ]] && {
-		if [[ -t 1 ]]; then
-			prepare_kiss_vm $FORCE_PREPARE &>/dev/tty
-		else
-			#echo -e "{VM:WARN} there's not /dev/tty file redirect prepare_kiss_vm msg to stderr" >&2
-			prepare_kiss_vm $FORCE_PREPARE >&2
-		fi
-		[[ "$ONLY_PREPARE" = yes ]] && exit
-	}
-
-	#first time
-	[[ $(id -u) != 0 ]] && ! is_slackware && {
-		if ! id | egrep -qw libvirt; then
-			expect <(cat <<-EOF
-			set timeout -1
-			log_user 0
-			spawn -noecho newgrp libvirt
-			expect "*\[>\$]" { send ": newgrp libvirt; $P ${orig_at[@]}; exit \$?\r"; interact; }
-			foreach {pid spawnid os_error_flag value} [wait] break
-			exit \$value
-			EOF
-			)
-			exit $?
-		fi
-	}
-else
+# check if support Virtualization
+support_virtualization() {
+	local rc=1
+	case ${OSTYPE,,} in
+	linux-gnu*) egrep -q -wo '(vmx|svm)' /proc/cpuinfo && rc=0;;
+	freebsd)    dmesg | grep -q -e VT-x: -e SVM: && rc=0;;
+	*)          echo -e "{VM:WARN} unsupported OS/platform.\n  $PROG -h";;
+	esac
+}
+if ! support_virtualization; then
 	echo -e "{VM:WARN} current machine doesn't support Virtualization, show help info with\n  $PROG -h"
 	exit 1
 fi
 
-enable_nested_kvm() {
-	local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
-	local vendor=${kmodule#kvm_}
-
-	{
-	echo "options kvm-$vendor nested=1"
-
-	[[ "$vendor" = intel ]] && cat <<-EOF
-	options kvm-$vendor enable_shadow_vmcs=1
-	options kvm-$vendor enable_apicv=1
-	options kvm-$vendor ept=1
-	EOF
-	} | sudo tee /etc/modprobe.d/kvm-nested.conf >/dev/null
-
-	if [[ $(< /sys/module/$kmodule/parameters/nested) != [Yy1] ]]; then
-		modprobe -r $kmodule || {
-			echo -e "{VM:WARN} stop tasks are using module $kmodule, and try again"
-			return 1
-		}
-		modprobe $kmodule
+is_slackware && export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
+[[ "$1" = prepare ]] && {
+	KISS_VM_READY=; ONLY_PREPARE=yes
+	FORCE_PREPARE=$FORCE
+}
+[[ "$KISS_VM_READY" != yes ]] && {
+	if [[ -t 1 ]]; then
+		prepare_kiss_vm $FORCE_PREPARE &>/dev/tty
+	else
+		#echo -e "{VM:WARN} there's not /dev/tty file redirect prepare_kiss_vm msg to stderr" >&2
+		prepare_kiss_vm $FORCE_PREPARE >&2
 	fi
-	cat /sys/module/$kmodule/parameters/nested
+	[[ "$ONLY_PREPARE" = yes ]] && exit
+}
+
+#first time
+[[ $(id -u) != 0 ]] && ! is_slackware && {
+	if ! id | egrep -qw libvirt; then
+		expect <(cat <<-EOF
+		set timeout -1
+		log_user 0
+		spawn -noecho newgrp libvirt
+		expect "*\[>\$]" { send ": newgrp libvirt; $P ${orig_at[@]}; exit \$?\r"; interact; }
+		foreach {pid spawnid os_error_flag value} [wait] break
+		exit \$value
+		EOF
+		)
+		exit $?
+	fi
+}
+
+enable_nested_kvm() {
+	if [[ "$OSTYPE" = linux-gnu* ]]; then
+		local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
+		local vendor=${kmodule#kvm_}
+
+		{
+		echo "options kvm-$vendor nested=1"
+
+		[[ "$vendor" = intel ]] && cat <<-EOF
+		options kvm-$vendor enable_shadow_vmcs=1
+		options kvm-$vendor enable_apicv=1
+		options kvm-$vendor ept=1
+		EOF
+		} | sudo tee /etc/modprobe.d/kvm-nested.conf >/dev/null
+
+		if [[ $(< /sys/module/$kmodule/parameters/nested) != [Yy1] ]]; then
+			modprobe -r $kmodule || {
+				echo -e "{VM:WARN} stop tasks are using module $kmodule, and try again"
+				return 1
+			}
+			modprobe $kmodule
+		fi
+		cat /sys/module/$kmodule/parameters/nested
+	fi
 }
 [[ "$ENABLE_NESTED" = yes ]] && {
 	enable_nested_kvm
@@ -2033,12 +2044,14 @@ enable_nested_kvm() {
 }
 
 support_nested_kvm() {
-	local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
-	local paramf=/sys/module/$kmodule/parameters/nested
 	local rc=0
+	if [[ "$OSTYPE" = linux-gnu* ]]; then
+		local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
+		local paramf=/sys/module/$kmodule/parameters/nested
 
-	if [[ ! -f $paramf || $(< $paramf) != [Yy1] ]]; then
-		rc=1
+		if [[ ! -f $paramf || $(< $paramf) != [Yy1] ]]; then
+			rc=1
+		fi
 	fi
 	return $rc
 }
