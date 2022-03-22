@@ -1231,7 +1231,7 @@ if [[ $Intranet = yes ]]; then
 	distro2location() {
 		local distro=$1
 		local variant=${2:-Server}
-		local arch=$(arch)
+		local arch=$(uname -m)
 
 		distrotrees=$(fetch_distro_trees $distro $arch)
 		[[ -z "$distrotrees" ]] && return 1
@@ -1249,7 +1249,7 @@ if [[ $Intranet = yes ]]; then
 		local imagenames=$(curl -L -s ${parenturl} | sed -nr '/.*"([^"]+'"${suffix_pattern}"')".*/{s//\1/;p}')
 		local qcow2Imgs= rawImgs= otherImgs=
 
-		local arch=$(arch)
+		local arch=$(uname -m)
 		[[ $arch = aarch64 || $arch = arm64 ]] && arch="(aarch64|arm64)"
 		[[ $arch = x86_64 || $arch = amd64 ]] && arch="(x86_64|amd64)"
 		imgs=$(egrep "$arch" <<< "$imagenames")
@@ -1317,8 +1317,8 @@ if [[ $Intranet = yes ]]; then
 				${osv}-debuginfo:${debug_url}
 				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
 				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$(arch)/extras/os
-				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$(arch)/os
+				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$(uname -m)/extras/os
+				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$(uname -m)/os
 			)
 			;;
 		rhel-7*|rhel7*|centos7*|centos-7*)
@@ -1338,8 +1338,8 @@ if [[ $Intranet = yes ]]; then
 				${osv}-RT-debuginfo:${debug_url/$osv/${osv}-RT}
 				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
 				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$(arch)/extras/os
-				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$(arch)/os
+				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$(uname -m)/extras/os
+				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$(uname -m)/os
 				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux7
 			)
 			;;
