@@ -2044,13 +2044,13 @@ enable_nested_kvm() {
 }
 
 support_nested_kvm() {
-	local rc=0
+	local rc=1
 	if [[ "$OSTYPE" = linux-gnu* ]]; then
 		local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 		local paramf=/sys/module/$kmodule/parameters/nested
 
-		if [[ ! -f $paramf || $(< $paramf) != [Yy1] ]]; then
-			rc=1
+		if [[ -f $paramf && $(< $paramf) = [Yy1] ]]; then
+			rc=0
 		fi
 	fi
 	return $rc
