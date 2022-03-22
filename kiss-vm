@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # author: yin-jianhong@163.com
 # test pass on RHEL-7/CentOS-7, RHEL-8/CentOS-8 and Fedora-29/30/31
 #
