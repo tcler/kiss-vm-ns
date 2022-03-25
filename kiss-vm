@@ -1940,7 +1940,7 @@ if [[ "${#NVME_DEVS[@]}" -gt 0 ]]; then
 	fi
 fi
 if [[ ${#SHARE_DIRS[@]} -gt 0 ]]; then
-	if vercmp "$(libvrt_ver)" lt libvirt-6.2; then
+	if vercmp "$(libvirt_nvr)" lt libvirt-6.2; then
 		echo -e "{VM:WARN} $(libvirt_nvr) doesn't support virtiofs driver that's required by --sharedir option."
 		exit 1
 	fi
@@ -3225,7 +3225,7 @@ fi
 		virsh attach-device $vmname virtiofs.xml --persistent
 	done
 
-	vm restart /w $vmname
+	vm reboot -w $vmname
 
 	for idx in "${!SHARE_DIRS[@]}"; do
 		read _ rtarget _ <<< "${SHARE_DIRS[$idx]//:/ }"
