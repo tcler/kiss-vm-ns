@@ -49,6 +49,75 @@ DEFAULT_IF_MODEL=virtio
 defaultPasswd=redhat
 orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6)
 
+getSafeCommandLine() {
+	#if only one parameter, treat it as a piece of script
+	[[ $# = 1 ]] && { echo "$1"; return; }
+
+	local shpattern='^[][0-9a-zA-Z~@%^_+=:,./-]+$'
+
+	for at; do
+		if [[ -z "$at" ]]; then
+			echo -n "'' "
+		elif [[ "$at" =~ $shpattern ]]; then
+			echo -n "$at "
+		elif [[ "$at" =~ [^[:print:]]+ ]]; then
+			echo -n "$(builtin printf %q "$at") "
+		else
+			echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
+				-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
+				-e "s/^''//" -e "s/'' $/ /"
+		fi
+	done
+	echo
+}
+
+run() {
+	local _runtype= _debug= _rc=0
+	local _nohup= _nohuplogf=
+	local _user= _SUDO=
+	local _defaultlogf=$VMpath/nohup.log
+
+	while true; do
+		case "$1" in
+		-as=*)  _U=${1#*=}; [[ "$_U" = "$USER" ]] || _SUDO="sudo -u $_U"; shift;;
+		-nohu*) _nohup=yes
+			[[ $1 = *=* ]] && _nohuplogf=${1#*=}
+			_nohuplogf=${_nohuplogf:-$_defaultlogf}
+			shift;;
+		-debug) _debug=yes; shift;;
+		-eval*) _runtype=eval; shift;;
+		-bash*) _runtype=bash; shift;;
+		-*)     shift;;
+		*)      break;;
+		esac
+	done
+
+	[[ $# -eq 0 ]] && return 0
+	[[ $# -eq 1 && -z "$_runtype" ]] && _runtype=eval
+	[[ "${_runtype}" = eval && -n "$_SUDO" ]] && _SUDO+=\ -s
+	local _cmdl=$(getSafeCommandLine "$@")
+
+	if [[ "$_debug" = yes ]]; then
+		[[ "$_nohup" = yes ]] && _cmdl="$_SUDO nohup $_cmdl &>${_nohuplogf} &"
+		echo "[${_runtype:-direct} run]" "$_SUDO $_cmdl"
+	fi | GREP_COLORS='ms=01;30;47' grep --color .
+
+	case ${_runtype:-direct} in
+	direct)
+		if [[ -n "$_nohup" ]]; then
+			$_SUDO touch "${_nohuplogf}"
+			$_SUDO nohup "$@" &>${_nohuplogf} &
+		else
+			$_SUDO "$@"; _rc=$?
+		fi
+		;;
+	eval)   $_SUDO eval "$_cmdl"; _rc=$?;;
+	bash)   $_SUDO bash -c "$_cmdl"; _rc=$?;;
+	esac
+
+	return $_rc
+}
+
 at_exit() {
 	#echo -e "\n\n{VM:debug} Removing tmpdir: $RuntimeTmp"
 	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=$orig_disable_ipv6 &>/dev/null
@@ -546,17 +615,15 @@ vmclone() {
 	# do clone
 	local distron=$(awk -F/ '{print $(NF-1)}' <<<"${srcpath}")
 	local dstpath=$VMSHOME/$distron/$dstname
-	sudo -u $VMUSER bash <<-EOF
-	mkdir -p $dstpath
+	run -as=$VMUSER mkdir -p $dstpath
 	if [[ "$VMSHARE" != yes ]]; then
 		setfacl -d -mg::--- -mo::--- $dstpath
 	fi
-	touch $dstpath/.kiss-vm
+	run -as=$VMUSER touch $dstpath/.kiss-vm
 	rm -f $dstpath/${dstname}.qcow2
-	virt-clone -o ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2 \
+	run -as=$VMUSER bash -c "virt-clone -o ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2 \
 		--check path_exists=off \
-		--print-xml >$dstpath/${dstname}.xml
-	EOF
+		--print-xml >$dstpath/${dstname}.xml"
 	[[ -s $dstpath/${dstname}.xml ]] || return 1
 	#Note: https://www.reddit.com/r/archlinux/comments/obn999/ownership_of_qcow2_images_created_by_virtmanager/
 	#^^^^ why don't use virt-clone directly
@@ -567,9 +634,7 @@ vmclone() {
 		chown $VMUSER:$(id -g -u $VMUSER) -R $dstpath
 	fi
 	chcon --reference=${srcpath%/*} -R $dstpath
-	sudo -u $VMUSER bash <<-EOF
-	virsh define $dstpath/${dstname}.xml
-	EOF
+	run -as=$VMUSER virsh define $dstpath/${dstname}.xml
 	vmhomedir ${dstname}
 
 		#--enable customize,user-account,ssh-hostkeys,net-hostname,net-hwaddr,machine-id \
@@ -725,28 +790,6 @@ vmconsole() {
 	}
 	virsh console "$_vmname"
 	return $?
-}
-
-getSafeCommandLine() {
-	#if only one parameter, treat it as a piece of script
-	[[ $# = 1 ]] && { echo "$1"; return; }
-
-	local shpattern='^[][0-9a-zA-Z~@%^_+=:,./-]+$'
-
-	for at; do
-		if [[ -z "$at" ]]; then
-			echo -n "'' "
-		elif [[ "$at" =~ $shpattern ]]; then
-			echo -n "$at "
-		elif [[ "$at" =~ [^[:print:]]+ ]]; then
-			echo -n "$(builtin printf %q "$at") "
-		else
-			echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
-				-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
-				-e "s/^''//" -e "s/'' $/ /"
-		fi
-	done
-	echo
 }
 
 vmlogin() {
@@ -994,9 +1037,7 @@ curl_download() {
 	fi
 
 	echo "{VM:INFO} run: curl -o $filename \$url $curlopts $curlOpt $@"
-	sudo -u $VMUSER bash <<-EOF
-		curl -o $filename $url $curlopts $curlOpt "$@"
-	EOF
+	run -as=$VMUSER curl -o $filename $url $curlopts $curlOpt "$@"
 	rc=$?
 	if [[ $rc != 0 && -s $filename ]]; then
 		fsizel=$(stat --printf %s $filename)
@@ -1651,50 +1692,6 @@ Usage() {
 	EOF
 }
 
-run() {
-	local _runtype= _debug=yes _rc=0
-	local _nohup= _nohuplogf=
-	local _defaultlogf=$VMpath/nohup.log
-
-	while true; do
-		case "$1" in
-		-nohu*) _nohup=yes
-			[[ $1 = *=* ]] && _nohuplogf=${1#*=}
-			_nohuplogf=${_nohuplogf:-$_defaultlogf}
-			shift;;
-		-debug) _debug=yes; shift;;
-		-eval*) _runtype=eval; shift;;
-		-bash*) _runtype=bash; shift;;
-		-*)     shift;;
-		*)      break;;
-		esac
-	done
-
-	[[ $# -eq 0 ]] && return 0
-	[[ $# -eq 1 && -z "$_runtype" ]] && _runtype=eval
-	local _cmdl=$(getSafeCommandLine "$@")
-
-	if [[ "$_debug" = yes ]]; then
-		[[ "$_nohup" = yes ]] && _cmdl="nohup $_cmdl &>${_nohuplogf} &"
-		echo "[${_runtype:-direct} run]" "$_cmdl"
-	fi | GREP_COLORS='ms=01;30;47' grep --color .
-
-	case ${_runtype:-direct} in
-	direct)
-		if [[ -n "$_nohup" ]]; then
-			sudo -u "$VMUSER" bash <<< "touch ${_nohuplogf}"
-			nohup "$@" &>${_nohuplogf} &
-		else
-			"$@"; _rc=$?
-		fi
-		;;
-	eval)   eval "$_cmdl"; _rc=$?;;
-	bash)   bash -c "$_cmdl"; _rc=$?;;
-	esac
-
-	return $_rc
-}
-
 expandrc() {
 	local rcrange=$1
 	local rclist=()
@@ -2065,7 +2062,7 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 	esac
 }
 
-sudo -u $VMUSER bash <<< "mkdir -p $RuntimeTmp ${DownloadImagePath}"
+run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 
 # sub-command
 [[ $P = vmc || $P = vm ]] || true && {
@@ -2223,7 +2220,7 @@ fi
 
 	VMpath=$VMSHOME/$Distro/$vmname
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
-	sudo -u $VMUSER bash <<< "mkdir -p $VMpath;"
+	run -as=$VMUSER mkdir -p $VMpath
 	if [[ "$VMSHARE" != yes ]]; then
 		setfacl -d -mg::--- -mo::--- $VMpath
 	fi
@@ -2586,8 +2583,8 @@ if [[ "$InstallType" = location ]]; then
 	}
 
 	echo -e "{VM:INFO} creating VM by using location:\n ->  $Location"
-	sudo -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
-	sudo -u $VMUSER bash <<< "echo $Location >$VMpath/url"
+	run -as=$VMUSER touch $VMpath/.kiss-vm
+	run -as=$VMUSER bash -c "echo $Location >$VMpath/url"
 	if [[ -f $Location ]]; then
 		cp $Location $VMpath/. && Location=$VMpath/${Location##*/}
 	fi
@@ -2795,8 +2792,8 @@ elif [[ "$InstallType" = import ]]; then
 	}
 
 	echo -e "{VM:INFO} creating VM by import $imagefile"
-	sudo -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
-	sudo -u $VMUSER bash <<< "echo $Imageurl >$VMpath/url"
+	run -as=$VMUSER bash -c "touch $VMpath/.kiss-vm"
+	run -as=$VMUSER bash -c "echo $Imageurl >$VMpath/url"
 
 	[[ "$dsizeflag" = 1 || "$NOAUTO" != yes ]] && {
 		_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
@@ -2963,7 +2960,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	[[ "$DISKLESS" = yes ]] && diskOpt=none
 
 	echo -e "{VM:INFO} creating VM from pxe"
-	sudo -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
+	run -as=$VMUSER touch $VMpath/.kiss-vm
 
 	ls -l ${imagefile}
 
@@ -3056,7 +3053,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	qemu-img create -f qcow2 ${imagefile} ${DSIZE}G
 
 	echo -e "{VM:INFO} creating VM install from cdrom($isofile)"
-	sudo -u $VMUSER bash <<< "touch $VMpath/.kiss-vm"
+	run -as=$VMUSER touch $VMpath/.kiss-vm
 
 	ls -l ${imagefile}
 
@@ -3162,7 +3159,7 @@ fedora*|rhel*|centos*|rocky*)
 esac
 
 if [[ "$GenerateImage" = yes ]]; then
-	sudo -u $VMUSER bash <<< "mkdir -p $ImagePath/$Distro"
+	run -as=$VMUSER mkdir -p $ImagePath/$Distro
 	read image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
 	imgfilename=${imgfilename#${VMUSER}-}
@@ -3213,7 +3210,7 @@ fi
 		read srcdir rtarget _ <<< "${SHARE_DIRS[$idx]//:/ }"
 		rtarget=${rtarget:-tag$idx}
 		target=virtiofs-tag-$rtarget
-		sudo -u $VMUSER bash <<< "mkdir -p $srcdir"
+		run -as=$VMUSER mkdir -p $srcdir
 		cat >virtiofs.xml <<-EOF
 		<filesystem type='mount' accessmode='passthrough'>
 			<binary path='/usr/libexec/virtiofsd' xattr='on'/>
