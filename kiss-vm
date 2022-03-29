@@ -78,18 +78,24 @@ run() {
 	local _runtype= _debug= _rc=0
 	local _nohup= _nohuplogf=
 	local _user= _SUDO=
-	local _defaultlogf=$VMpath/nohup.log
+	local _defaultlogf=${VMpath:-.}/nohup.log
+	local _tmuxSession= _tmuxlogf=
 
 	while true; do
 		case "$1" in
-		-as=*)  _U=${1#*=}; [[ "$_U" = "$USER" ]] || _SUDO="sudo -u $_U"; shift;;
+		-debug) _debug=yes; shift;;
+		-eval*) _runtype=eval; shift;;
+		-bash*) _runtype=bash; shift;;
+		-tmux*) _runtype=tmux;
+			[[ $1 = *=* ]] && _tmuxSession=${1#*=}
+			_tmuxSession=${_tmuxSession:-$$-${USER}}
+			_tmuxlogf=/tmp/run-tmux-${_tmuxSession}.log
+			shift;;
 		-nohu*) _nohup=yes
 			[[ $1 = *=* ]] && _nohuplogf=${1#*=}
 			_nohuplogf=${_nohuplogf:-$_defaultlogf}
 			shift;;
-		-debug) _debug=yes; shift;;
-		-eval*) _runtype=eval; shift;;
-		-bash*) _runtype=bash; shift;;
+		-as=*)  _U=${1#*=}; [[ "$_U" = "$USER" ]] || _SUDO="sudo -u $_U"; shift;;
 		-*)     shift;;
 		*)      break;;
 		esac
@@ -101,7 +107,11 @@ run() {
 	local _cmdl=$(getSafeCommandLine "$@")
 
 	if [[ "$_debug" = yes ]]; then
-		[[ "$_nohup" = yes ]] && _cmdl="$_SUDO nohup $_cmdl &>${_nohuplogf} &"
+		if [[ "${_runtype}" = tmux ]]; then
+			_cmdl="tmux new -s $_tmuxSession -d '$_cmdl' \\; pipe-pane 'cat >$_tmuxlogf'"
+		elif [[ "$_nohup" = yes ]]; then
+			_cmdl="nohup $_cmdl &>${_nohuplogf} &"
+		fi
 		echo "[${_runtype:-direct} run]" "$_SUDO $_cmdl"
 	fi | GREP_COLORS='ms=01;30;47' grep --color .
 
@@ -116,6 +126,7 @@ run() {
 		;;
 	eval)   $_SUDO eval "$_cmdl"; _rc=$?;;
 	bash)   $_SUDO bash -c "$_cmdl"; _rc=$?;;
+	tmux)   $_SUDO tmux new -s $_tmuxSession -d "$_cmdl" \; pipe-pane "cat >$_tmuxlogf"; _rc=$?;;
 	esac
 
 	return $_rc
