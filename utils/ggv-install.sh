@@ -94,11 +94,11 @@ echo
 		echo -e "\n{ggv-install} install gocr from src ..."
 		case ${OS,,} in
 		fedora*|red?hat*|centos*|rocky*)
-			yum $yumOpt install -y autoconf gcc make netpbm-progs;;
+			yum $yumOpt install -y git autoconf gcc make netpbm-progs;;
 		debian*|ubuntu*)
-			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y autoconf gcc make netpbm;;
+			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y git autoconf gcc make netpbm;;
 		opensuse*|sles*)
-			zypper in --no-recommends -y autoconf gcc make netpbm;;
+			zypper in --no-recommends -y git autoconf gcc make netpbm;;
 		*)
 			:;; #fixme add more platform
 		esac
@@ -120,8 +120,39 @@ echo
 }
 
 #install vncdotool
+fastesturl() {
+	local minavg=
+	local fast=
+
+	for url; do
+		read p host path <<<"${url//\// }";
+		cavg=$(ping -4 -w 4 -c 2 $host | awk -F / 'END {print $5}')
+		: ${minavg:=$cavg}
+
+		if [[ -z "$cavg" ]]; then
+			echo -e " -> $host\t 100% packet loss." >&2
+			continue
+		else
+			echo -e " -> $host\t $cavg  \t$minavg" >&2
+		fi
+
+		fast=${fast:-$url}
+		if awk "BEGIN{exit !($cavg<$minavg)}"; then
+			minavg=$cavg
+			fast=$url
+		fi
+	done
+
+	echo $fast
+}
 echo
 ! command -v vncdo && {
+	pipOpts="--default-timeout=60 --retries=10"
+	pipMirrorList="https://files.pythonhosted.org
+	https://pypi.tuna.tsinghua.edu.cn/simple
+	https://mirrors.aliyun.com/pypi/simple"
+	fastUrl=$(fastesturl $pipMirrorList)
+	[[ -n "$fastUrl" ]] && pipInstallOpts="-i $fastUrl"
 	echo -e "\n{ggv-install} install vncdotool ..."
 	case ${OS,,} in
 	slackware*)
@@ -136,9 +167,10 @@ echo
 		:;; #fixme add more platform
 	esac
 
+	echo -e "{ggv-install} pip Opts: $pipOpts $pipInstallOpts ..."
 	PIP=$(command -v pip3)
 	command -v pip3 || PIP=$(command -v pip)
-	$PIP --default-timeout=720 install --upgrade pip
-	$PIP --default-timeout=720 install --upgrade setuptools
-	$PIP --default-timeout=720 install vncdotool service_identity
+	$PIP $pipOpts install $pipInstallOpts --upgrade pip
+	$PIP $pipOpts install $pipInstallOpts --upgrade setuptools
+	$PIP $pipOpts install $pipInstallOpts vncdotool service_identity
 }
