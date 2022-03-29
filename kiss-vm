@@ -22,7 +22,7 @@ VMName=
 InstallType=import
 
 VMUSER=$(whoami)
-[[ -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
+[[ $(id -u) = 0 && -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
 eval VMSHOME=~$VMUSER/VMs
 eval ImagePath=~$VMUSER/myimages
 eval perConfDir=~$VMUSER/.config/kiss-vm
