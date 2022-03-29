@@ -27,6 +27,7 @@ i in ins inst install:
 	$(SUDO) cp bash-completion/* $(completion_path)/.
 	$(SUDO) wget -qO- http://api.github.com/repos/tcler/$(_repon)/commits/master -O $(_confdir)/version
 	@$(SUDO) rm -rf /etc/kiss-vm
+	$(SUDO) cp -r AnswerFileTemplates /usr/share/.
 
 p pu pull u up update:
 	git pull --rebase || :

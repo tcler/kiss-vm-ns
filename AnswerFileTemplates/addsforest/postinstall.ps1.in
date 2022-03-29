@@ -1,0 +1,270 @@
+
+#just for avoid getting unlikely -kdc option from $args[0]
+param (
+	[switch]$kdc = $ture
+)
+
+Function Out-Host {
+	$str = $args[0]
+	Write-Host "$str"
+	echo "$str"
+}
+
+Function Unzip-File() {
+	param([string]$ZipFile, [string]$TargetFolder)
+	if (!(Test-Path $TargetFolder)) {
+		mkdir $TargetFolder
+	}
+	$shellApp = New-Object -ComObject Shell.Application
+	$files = $shellApp.NameSpace($ZipFile).Items()
+	$shellApp.NameSpace($TargetFolder).CopyHere($files)
+}
+
+Function Install-sshd() {
+	param([string]$Path)
+	Copy-Item -Path $Path -Destination 'C:\OpenSSH.zip'
+	Unzip-File -ZipFile 'C:\OpenSSH.zip' -TargetFolder 'C:\Program Files'
+	powershell -ExecutionPolicy Bypass -File 'C:\Program Files\OpenSSH-Win64\install-sshd.ps1'
+	New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+	$oldpath = (Get-ItemProperty -Path 'Registry::HKLM\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
+	$newpath = "$oldpath;C:\Program Files\OpenSSH-Win64"
+	Set-ItemProperty -Path "Registry::HKLM\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
+
+	net start sshd
+	Set-Service sshd -StartupType Automatic
+	Set-Service ssh-agent -StartupType Automatic
+	New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
+
+	#create authorized_keys file
+	$sshConfDir="$HOME\.ssh"
+	New-Item "$sshConfDir" -ItemType Directory -ea 0
+	Get-Content -Path C:\id_*.pub | Set-Content "$sshConfDir\authorized_keys"
+	Get-Content -Path C:\id_*.pub | Set-Content "C:\ProgramData\ssh\administrators_authorized_keys"
+}
+
+Out-Host "==> Start postinstall ..."
+Out-Host "==> Start initialize second disk ..."
+Get-Disk |
+	Where partitionstyle -eq 'raw' |
+	Initialize-Disk -PartitionStyle MBR -PassThru |
+	New-Partition -AssignDriveLetter -UseMaximumSize |
+	Format-Volume -FileSystem NTFS -NewFileSystemLabel "test" -Confirm:$false
+
+$LogPath = "C:"
+
+$TestPath = "C:"
+if (Test-Path -Path F:) {
+	$TestPath = "F:"
+}
+
+$PostProg = "@ANSF_DRIVE_LETTER@\postinstall.ps1"
+$RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+
+$Stage = $args[0]
+if (!$Stage) { $Stage = "base" }
+
+Out-Host "==> Start postinstall $Stage ..."
+
+switch($Stage) {
+	"base" {
+		# activate windows with the product key
+		# no need to activate: ??? 
+
+		# turning off firewall
+		Out-Host "`n==> turning off firewall"
+		Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
+
+		# enabling remote desktop
+		Out-Host "`n==> enabling remote desktop"
+		Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+		#Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+		#Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0
+
+		# disabling IE ESC (Internet Explorer Enhanced Security Configuration)
+		Out-Host "`n==> disabling IE ESC (Internet Explorer Enhanced Security Configuration)"
+		$AdminKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}"
+		$UserKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}"
+		Set-ItemProperty -Path $AdminKey -Name "IsInstalled" -Value 0
+		Set-ItemProperty -Path $UserKey -Name "IsInstalled" -Value 0
+		Stop-Process -Name Explorer
+		Out-Host "`n==> IE Enhanced Security Configuration (ESC) has been disabled."
+
+		# disabling shutdown event tracker/shutdown dialog
+		Out-Host "`n==> disabling shutdown event tracker/dialog"
+		reg add "HKLM\SOFTWARE\Policies\Control\Microsoft\Windows NT\Reliability" /v ShutDownReasonOn /t REG_DWORD /d 0 /f
+		reg add "HKLM\SOFTWARE\Policies\Control\Microsoft\Windows NT\Reliability" /v ShutDownReasonUI /t REG_DWORD /d 0 /f
+
+		# adding hostname for the virtual host
+		Out-Host "`n==> add host's hostname to $Env:WinDir\system32\drivers\etc\hosts"
+		echo "" >> $Env:WinDir\system32\drivers\etc\hosts
+		echo "@HOST_IP@ @VIRTHOST@" >> $Env:WinDir\system32\drivers\etc\hosts
+
+		# static ip setup
+		Out-Host "`n==> static ip setup"
+		$INT_STATIC_IP = "@INT_STATIC_IP@"
+		$EXT_STATIC_IP = "@EXT_STATIC_IP@"
+
+		#waiting NICs up ready
+		while ($true) {
+			$NicArray = (Get-NetAdapter | Sort-Object -Property InterfaceIndex)
+			if ($NicArray.count -ge 2) {
+				break
+			} else {
+				Start-sleep -s 2
+			}
+		}
+		Foreach ($nic in $NicArray) {
+			$ip = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $nic.InterfaceIndex)[0].IPAddress.Trim()
+			#assume the NIC that connected to internal network use model=rtl8139, and another one use model=e1000
+			if ($nic.ifDesc -like "*8139*") {
+				$NicInt = $nic
+			} elseif ($nic.ifDesc -like "*1000*") {
+				$NicExt = $nic
+			} else {
+				Out-Host "`n---> info: 3rd NIC with ip($ip), desc: $($nic.ifDesc)"
+			}
+		}
+
+		if ($INT_STATIC_IP) {
+			$oldIntAddrs = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicInt.InterfaceIndex)
+			$IntIpConf = (Get-NetIPConfiguration -InterfaceIndex $NicInt.ifIndex)
+
+			Out-Host "`n---> set static IP($INT_STATIC_IP) on int NIC: $($NicInt.ifAlias)"
+			New-NetIPAddress -InterfaceIndex $NicInt.InterfaceIndex -AddressFamily IPv4 `
+				-IPAddress $INT_STATIC_IP -PrefixLength $oldIntAddrs[0].PrefixLength `
+				-DefaultGateway $IntIpConf.IPv4DefaultGateway[0].NextHop
+		}
+
+		# change address of EXT NIC from DHCP to STATIC
+		while ($true) {
+			$oldExtAddrs = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicExt.InterfaceIndex)
+			if ($null -ne $oldExtAddrs -and $null -ne $oldExtAddrs[0].IPAddress -and $oldExtAddrs[0].IPAddress -is [string] -and $oldExtAddrs[0].IPAddress.Trim() -notlike "169.254.*") {
+				break
+			} else {
+				Start-sleep -s 5
+				Out-Host "`n---> renew IP on ext NIC: $($NicExt.ifAlias)"
+				ipconfig /release $NicExt.ifAlias
+				ipconfig /renew $NicExt.ifAlias
+			}
+		}
+		$extStaticIp = $oldExtAddrs[0].IPAddress.Trim()
+		$extIpConf = (Get-NetIPConfiguration -InterfaceIndex $NicExt.ifIndex)
+		if ($EXT_STATIC_IP) {
+			$extStaticIp=$EXT_STATIC_IP
+		} else {
+			Remove-NetIPAddress -IPAddress $extStaticIp -Confirm:$false
+		}
+		Out-Host "`n---> set static IP($extStaticIp) on ext NIC: $($NicExt.ifAlias)"
+		New-NetIPAddress -InterfaceIndex $NicExt.InterfaceIndex -AddressFamily IPv4 `
+			-IPAddress $extStaticIp -PrefixLength $oldExtAddrs[0].PrefixLength `
+			-DefaultGateway $extIpConf.IPv4DefaultGateway[0].NextHop
+
+		# disabling DNS registration on the network interface
+		if ($NicInt) {
+			Out-Host "`n==> disabling DNS registration on the network interface"
+			$NicInt.SetDynamicDNSRegistration($false,$false)
+		}
+
+		# check if there is autorun script in anwser file
+		$AutoRunFilePath = "@ANSF_DRIVE_LETTER@\@AUTORUN_DIR@\autorun.ps1"
+		if (Test-Path -Path $AutoRunFilePath) {
+			Out-Host "`n==> exec autorun file"
+			cd "@ANSF_DRIVE_LETTER@\@AUTORUN_DIR@"
+			powershell -ExecutionPolicy Bypass -File autorun.ps1
+		}
+
+		# Setup AD as Domain Controller
+		Out-Host "`n==> Setup AD as Domain Controller"
+		$SafePasswd=(convertto-securestring "@ADMINPASSWORD@" -asplaintext -force)
+
+		# Installation
+		Remove-WindowsFeature -Name AD-Certificate
+		Install-windowsfeature -name AD-Domain-Services -IncludeManagementTools
+		Install-ADDSForest `
+		-DomainName @AD_DOMAIN@ `
+		-SafeModeAdministratorPassword $SafePasswd `
+		-CreateDNSDelegation:$false `
+		-NoDNSOnNetwork:$true `
+		-DomainMode @AD_DOMAIN_LEVEL@ `
+		-DomainNetBIOSName @NETBIOS_NAME@ `
+		-ForestMode @AD_FOREST_LEVEL@ `
+		-InstallDNS:$true `
+		-NoRebootOnCompletion:$true `
+		-Force
+
+		# Reboot to complete Active Directory setup
+		Out-Host "`n==> Reboot to complete Active Directory setup"
+		Set-ItemProperty $RunOnceKey "NextRun" "powershell $PostProg afterADSetup >> @POST_INSTALL_LOG@ 2>&1"
+		shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to complete Active Directory setup"
+		exit
+	}
+
+	"afterADSetup" {
+		# do this just after AD has been set up
+		Out-Host "`n==> reset dns ip"
+		$DNS_IPS=(Get-WmiObject "Win32_NetworkAdapterConfiguration where MACAddress='@VNIC_EXT_MAC@'").IPaddress
+		dnscmd . /ResetListenAddresses $DNS_IPS
+
+		# Install Standalone Root CA
+		Out-Host "`n==> Install Standalone Root CA"
+		Import-Module ServerManager
+		#Add-WindowsFeature Adcs-Cert-Authority -IncludeManagementTools
+		#Install-AdcsCertificationAuthority -force -CAType EnterpriseRootCa
+
+		# Reboot to complete Root CA Services setup
+		Out-Host "`n==> Reboot to complete Root CA setup"
+		Set-ItemProperty $RunOnceKey "NextRun" "powershell $PostProg afterRootCASetup >> @POST_INSTALL_LOG@ 2>&1"
+		shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to complete Root CA setup"
+		exit
+	}
+
+	"afterRootCASetup" {
+		# Time synchronization
+		Out-Host "`n==> sync time"
+		w32tm /config /manualpeerlist:clock.redhat.com /syncfromflags:manual /reliable:yes /update
+		net stop w32time
+		net start w32time
+		w32tm /resync
+
+		# Add KDC
+		Out-Host "`n==> Add KDC"
+		ksetup.exe /AddKDC @NETBIOS_NAME@ @FQDN@
+
+		# Add DNS TXT record for nfsv4idmap
+		Out-Host "`n==> Add DNS TXT record"
+		Add-DnsServerResourceRecord -ZoneName @AD_DOMAIN@ -Name _nfsv4idmapdomain -Txt -DescriptiveText "@AD_DOMAIN@"
+
+	}
+}
+
+# installing openssh
+$OpenSSHPath = "@ANSF_DRIVE_LETTER@\OpenSSH.zip"
+if (Test-Path -Path $OpenSSHPath) {
+	Out-Host "`n==> install and start ssh server"
+	Copy-Item -Path @ANSF_DRIVE_LETTER@\id_*.pub -Destination 'C:\'
+	Install-sshd -Path $OpenSSHPath
+}
+
+# check if there is autorun post script in anwser file
+$AutoRunFilePath = "@ANSF_DRIVE_LETTER@\@AUTORUN_DIR@\autorun-post.ps1"
+if (Test-Path -Path $AutoRunFilePath) {
+	Out-Host "`n==> exec autorun-post file"
+	cd "@ANSF_DRIVE_LETTER@\@AUTORUN_DIR@"
+	powershell -ExecutionPolicy Bypass -File autorun-post.ps1
+	cd -
+}
+
+# complete
+Out-Host "`n==> save ipconfig info and generate install complete file !!!"
+ipconfig | out-file -encoding utf8 $LogPath\@IPCONFIG_LOGF@
+echo "install complete" | out-file -encoding utf8 $LogPath\@INSTALL_COMPLETE_FILE@
+foreach ($dir in ("@ANSF_DRIVE_LETTER@", "F:")) {
+	if (Test-Path -Path $dir) {
+		Copy-Item -Path $LogPath\@INSTALL_COMPLETE_FILE@ -Destination $dir\
+		Copy-Item -Path $LogPath\@IPCONFIG_LOGF@ -Destination $dir\
+		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $dir\
+	}
+}
+
+taskkill /F /IM explorer.exe
+explorer
