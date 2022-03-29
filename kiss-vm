@@ -10,6 +10,8 @@ PATH=~/bin:$PATH
 
 P=$0
 [[ $0 = /* ]] && P=${0##*/}
+_repon=kiss-vm-ns
+_confdir=/etc/$repon
 Distro=
 Location=
 Imageurl=
@@ -25,7 +27,8 @@ VMUSER=$(whoami)
 [[ $(id -u) = 0 && -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
 eval VMSHOME=~$VMUSER/VMs
 eval ImagePath=~$VMUSER/myimages
-eval perConfDir=~$VMUSER/.config/kiss-vm
+eval perConfDir=~$VMUSER/.config/${_repon}
+eval oldperConfDir=~$VMUSER/.config/kiss-vm
 
 RuntimeTmp=/tmp/vm-$$
 INTERACT=yes
@@ -1140,7 +1143,8 @@ prepare_kiss_vm() {
 	if [[ -n "$force" ]]; then
 		echo -e "{VM:INFO} force re-prepare kiss-vm env"
 	else
-		if [[ -d $perConfDir ]]; then
+		[[ -d $oldperConfDir ]] && { mv $oldperConfDir $perConfDir; run -as=$vmuser touch $perConfDir/kiss-vm; }
+		if [[ -f $perConfDir/kiss-vm ]]; then
 			[[ "$ONLY_PREPARE" = yes ]] && echo -e "{VM:INFO} kiss-vm has been initialized."
 			return 0
 		fi
@@ -1229,7 +1233,7 @@ COMM
 		virsh net-autostart default
 	}
 
-	su $vmuser -s /bin/bash -c "mkdir -p $perConfDir"
+	su $vmuser -s /bin/bash -c "mkdir -p $perConfDir; touch $perConfDir/kiss-vm"
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && printf '\33[H\33[2J'
 }
@@ -1825,7 +1829,8 @@ while true; do
 	-u|--user) VMUSER=$2; shift 2;
 		eval VMSHOME=~$VMUSER/VMs
 		eval ImagePath=~$VMUSER/myimages
-		eval perConfDir=~$VMUSER/.config/kiss-vm
+		eval perConfDir=~$VMUSER/.config/${_repon}
+		eval oldperConfDir=~$VMUSER/.config/kiss-vm
 		;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
@@ -2102,7 +2107,7 @@ run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 [[ -n "$VNCPUTS" || -n "$VNCGET" || -n "$VNCGETSC" ]] && { vmvncproc "$@"; exit $?; }
 
 declare -A distroInfo
-dbfile=/etc/kiss-vm/distro-db.bash
+dbfile=${_confdir}/distro-db.bash
 owndbfile=$perConfDir/distro-db.bash
 [[ -f $dbfile ]] && {
 	echo "{VM:INFO} load distro-db file $dbfile ..."
