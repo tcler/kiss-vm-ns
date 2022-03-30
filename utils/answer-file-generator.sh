@@ -18,6 +18,8 @@ Options for windows anwserfile:
   --domain <domain>
 		#*Specify windows domain name; e.g: qetest.org
 
+  --locale <local>
+		#default en-US. see also: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/default-input-locales-for-windows-language-packs?view=windows-11
   -u, --user <user>
 		#Specify user for install and config.
 		  default value: Administrator
@@ -143,6 +145,7 @@ ARGS=$(getopt -o hu:p: \
 	--long wim-index: \
 	--long product-key: \
 	--long hostname: \
+	--long locale: \
 	--long domain: \
 	--long ad-forest-level: \
 	--long ad-domain-level: \
@@ -167,6 +170,7 @@ while true; do
 	--wim-index) WIM_IMAGE_INDEX="$2"; shift 2;;
 	--product-key) PRODUCT_KEY="$2"; shift 2;;
 	--hostname) GUEST_HOSTNAME="$2"; shift 2;;
+	--locale) LOCALE="$2"; shift 2;;
 	--domain) DOMAIN="$2"; shift 2;;
 	--ad-forest-level) AD_FOREST_LEVEL="$2"; shift 2;;
 	--ad-domain-level) AD_DOMAIN_LEVEL="$2"; shift 2;;
@@ -290,6 +294,7 @@ done)
 # =======================================================================
 # Windows Preparation
 # =======================================================================
+LOCALE=${LOCALE:-en-US}
 WIM_IMAGE_INDEX=${WIM_IMAGE_INDEX:-4}
 [[ "$VM_OS_VARIANT" = win10 ]] && WIM_IMAGE_INDEX=1
 GUEST_HOSTNAME=${GUEST_HOSTNAME}
@@ -348,6 +353,7 @@ process_ansf() {
 		-e "s/@DFS_TARGET@/$DFS_TARGET/g" \
 		-e "s/@HOST_NAME@/$HOSTNAME/g" \
 		-e "s/@AUTORUN_DIR@/$ANSF_AUTORUN_DIR/g" \
+		-e "s/@LOCALE@/$LOCALE/g" \
 		$destdir/*
 	[[ -z "$PRODUCT_KEY" ]] && {
 		echo -e "{INFO} remove ProductKey node from xml ..."
