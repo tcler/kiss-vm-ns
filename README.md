@@ -1,10 +1,7 @@
 # Summary
 
-[en] This project provides three fool-proof scripts **vm, ns, netns**; designed to simplify the steps for QE and developers to configure and use VM/Container/netns,
+[en] This project provides three fool-proof scripts **vm, ns, netns**; designed to simplify the steps for QE or developers to configure and use VM/Container/netns,
 Thereby focusing more on the verification and testing of business functions.
-
-[zh] 本项目提供了三个傻瓜化的脚本 **vm, ns, netns** ; 旨在简化测试和开发人员配置和使用 VM/Container/netns 的步骤，
-从而更加聚焦业务功能的验证和测试。
 
 ```
 vm:
@@ -21,6 +18,11 @@ ns:
 ```
 
 # Install
+```
+curl -s https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/utils/kiss-update.sh|sudo bash
+sudo vm prepare
+```
+or
 ```
 git clone https://github.com/tcler/kiss-vm-ns
 sudo make -C kiss-vm-ns install && sudo vm prepare
