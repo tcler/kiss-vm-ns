@@ -250,6 +250,21 @@ curl_download() {
 }
 curl_download_x() { until curl_download "$@"; do sleep 1; done; }
 
+getDefaultIp4() {
+	local nic=$1
+	[[ -z "$nic" ]] &&
+		nics=$(ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]}')
+	for nic in $nics; do
+		[[ -z "$(ip -d link show  dev $nic|sed -n 3p)" ]] && {
+			break
+		}
+	done
+	local ipaddr=$(ip addr show $nic)
+	local ret=$(echo "$ipaddr" |
+			awk '/inet .* global dynamic/{match($0,"inet ([0-9.]+)/[0-9]+",M); print M[1]}');
+	echo "$ret"
+}
+
 # =======================================================================
 # Global variable
 # =======================================================================
