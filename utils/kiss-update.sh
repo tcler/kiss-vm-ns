@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 P=$0; [[ $0 = /* ]] && P=${0##*/}
 switchroot() {
@@ -9,6 +9,28 @@ switchroot() {
 }
 switchroot
 
+. /etc/os-release
+OS=$NAME
+{ command -v git && command -v gmake; } >/dev/null ||
+case ${OS,,} in
+slackware*)
+	/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off git make
+	;;
+fedora*|red?hat*|centos*|rocky*)
+	yum $yumOpt install -y git make
+	;;
+debian*|ubuntu*)
+	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y git make
+	;;
+opensuse*|sles*)
+	zypper in --no-recommends -y git make
+	;;
+*)
+	exit
+	echo "[Error] not supported platform($OS)"
+	;;
+esac
+
 _repon=kiss-vm-ns
 _confdir=/etc/$_repon
 
@@ -16,7 +38,7 @@ install_kiss_tools() {
 	local url=https://github.com/tcler/$_repon
 	local clonedir=$(mktemp -d)
 	git clone $url $clonedir
-	make -C $clonedir i
+	gmake -C $clonedir i
 	rm -rf $clonedir
 }
 
