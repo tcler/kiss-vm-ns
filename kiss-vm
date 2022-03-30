@@ -3111,6 +3111,18 @@ elif [[ "$InstallType" = cdrom ]]; then
 	vm vnc $vmname -put "key:shift"
 	vm vnc $vmname -get | tee $RuntimeTmp/std.log
 
+	if grep -i -q windows <<<${Distro}; then
+		run -tmux=windows-vm-assistant "for ((i=0; i<12; i++)); do
+			if vm vnc $vmname -get|grep -i langua; then
+				vm vnc $vmname -put=key:tab -put=key:tab -put=key:tab -put=key:enter
+			else
+				sleep 5
+			fi
+		done"
+		sleep 2
+		vm vnc $vmname -get | tee $RuntimeTmp/std.log
+	fi
+
 	if [[ -n "$VNCWAIT_AFTER_INSTALL" ]]; then
 		read _pattern _msgs <<<"${VNCWAIT_AFTER_INSTALL/,/ }"
 		for ((i=0; i<60; i++)) do
