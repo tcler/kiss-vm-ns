@@ -670,7 +670,7 @@ sshtest() {
 	local tmpf=${RuntimeTmp}/_sshtest
 	local KexAlgorithmsOpt=
 	[[ -z "${RuntimeTmp}" ]] && tmpf=$(mktemp)
-	ssh -v -n -o Batchmode=yes $sshOpts $target &>$tmpf
+	ssh -v -n -o Batchmode=yes $sshOpts $target exit &>$tmpf
 	if [[ $? = 0 ]]; then
 		result=0  #can login or run command without password
 	elif grep -v ^debug1: $tmpf|grep -iq "Permission denied (.*password.*)"; then
