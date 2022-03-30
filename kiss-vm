@@ -672,9 +672,9 @@ sshtest() {
 	[[ -z "${RuntimeTmp}" ]] && tmpf=$(mktemp)
 	ssh -v -n -o Batchmode=yes $sshOpts $target &>$tmpf
 	if [[ $? = 0 ]]; then
-		result=0
+		result=0  #can login or run command without password
 	elif grep -v ^debug1: $tmpf|grep -iq "Permission denied (.*password.*)"; then
-		result=1
+		result=1  #can login or run command with password
 	elif grep -iq "no matching key exchange method found. Their offer:" $tmpf; then
 		local KexAlgorithmsOpt=-oKexAlgorithms=+$(sed -n '/^.*Their offer: /{s///;s/\r//;p}' $tmpf)
 		if [[ "$sshOpts" != *$KexAlgorithmsOpt ]]; then
@@ -682,7 +682,7 @@ sshtest() {
 			sshtest $target "$sshOpts"
 			result=$?
 		else
-			result=2
+			result=2  #can not connect to ssh
 		fi
 	fi
 	[[ -z "${RuntimeTmp}" ]] && rm -f $tmpf
