@@ -87,6 +87,18 @@ Sample answer file for headless deployment
                         <CreatePartition wcm:action="add">
                             <Order>1</Order>
                             <Type>Primary</Type>
+<!-- remove me to enable UEFI
+                            <Size>300</Size>
+                        </CreatePartition>
+                        <CreatePartition wcm:action="add">
+                            <Order>2</Order>
+                            <Type>EFI</Type>
+                            <Size>100</Size>
+                        </CreatePartition>
+                        <CreatePartition wcm:action="add">
+                            <Order>3</Order>
+                            <Type>Primary</Type>
+remove me to enable UEFI -->
                             <Extend>true</Extend>
                         </CreatePartition>
                     </CreatePartitions>
@@ -97,7 +109,7 @@ Sample answer file for headless deployment
                 <OSImage>
                     <InstallTo>
                         <DiskID>0</DiskID>
-                        <PartitionID>1</PartitionID>
+                        <PartitionID>1</PartitionID> <!-- change ID to 3 to enable UEFI -->
                     </InstallTo>
                     <WillShowUI>Never</WillShowUI>
                     <InstallFrom>

@@ -18,6 +18,7 @@ Options for windows anwserfile:
   --domain <domain>
 		#*Specify windows domain name; e.g: qetest.org
 
+  --uefi        #uefi partition
   --locale <local>
 		#default en-US. see also: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/default-input-locales-for-windows-language-packs?view=windows-11
   -u, --user <user>
@@ -139,6 +140,7 @@ EOF
 
 ARGS=$(getopt -o hu:p: \
 	--long help \
+	--long uefi \
 	--long path: \
 	--long user: \
 	--long password: \
@@ -164,6 +166,7 @@ eval set -- "$ARGS"
 while true; do
 	case "$1" in
 	-h|--help) Usage; exit 1;; 
+	--uefi) UEFI=yes; shift 1;;
 	--path) ANSF_IMG_PATH="$2"; shift 2;;
 	-u|--user) ADMINUSER="$2"; shift 2;;
 	-p|password) ADMINPASSWORD="$2"; shift 2;;
@@ -358,6 +361,10 @@ process_ansf() {
 	[[ -z "$PRODUCT_KEY" ]] && {
 		echo -e "{INFO} remove ProductKey node from xml ..."
 		sed -i '/<ProductKey>/ { :loop /<\/ProductKey>/! {N; b loop}; s;<ProductKey>.*</ProductKey>;; }' $destdir/*.xml
+	}
+	[[ "$UEFI" = yes ]] && {
+		echo -e "{INFO} enable UEFI ..."
+		sed -i -e '/remove me to enable UEFI/d' -e '/PartitionID/s/1/3/' $destdir/*.xml
 	}
 	unix2dos $destdir/* >/dev/null
 
