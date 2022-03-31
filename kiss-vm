@@ -1637,7 +1637,10 @@ Usage() {
 	  --win-auto[=<base|cifs-nfs|addsdomain|addsforest>]
 			 #indicate generate answer file media for windows, optional param is the name of answer file template
 	                  default: base; see also: /usr/share/AnswerFileTemplates/$template_name/
-	  --win-domain <domain>
+	  --win-hostname <windows hostname>
+	                 #*Specify windows hostname; e.g: win-nfsserv.
+	                  Note: length of windows hostname must < 16
+	  --win-domain <windows domain>
 	                 #*Specify windows domain name; e.g: qetest.org
 	  --win-locale <locale>
 	                 #default en-US. see also: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/default-input-locales-for-windows-language-packs?view=windows-11
@@ -1871,6 +1874,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long win-wim-index: \
 	--long win-key: \
 	--long win-locale: \
+	--long win-hostname: \
 	--long win-domain: \
 	--long win-ad-forest-level: \
 	--long win-ad-domain-level: \
@@ -2001,6 +2005,7 @@ while true; do
 		--win-wim-index)	WIN_WIM_IMAGE_INDEX="$2"; shift 2;;
 		--win-openssh)		WIN_OpenSSHUrl="$2"; shift 2;;
 		--win-key)		WIN_PRODUCT_KEY_OPT="--product-key=$2"; shift 2;;
+		--win-hostname)		WIN_HOSTNAME="$2"; shift 2;;
 		--win-domain)		WIN_DOMAIN_OPT="--domain=$2"; shift 2;;
 		--win-locale)		WIN_LOCALE_OPT="--locale=$2"; shift 2;;
 		--win-enable-kdc)	WIN_KDC_OPT="--enable-kdc"; shift 1;;
@@ -2020,6 +2025,11 @@ while true; do
 	--) shift; break;;
 	esac
 done
+
+[[ ${#WIN_HOSTNAME} -gt 15 ]] && {
+	echo -e "{VM:ERROR} length of windows hostname($WIN_HOSTNAME) should < 16" >&2
+	exit 1
+}
 
 DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 
@@ -3181,16 +3191,23 @@ elif [[ "$InstallType" = cdrom ]]; then
 		#WIN_RUN_POST_CMD_OPTS+
 		#WIN_EXT_STATIC_IP_OPT
 		#WIN_INT_STATIC_IP_OPT
+		if [[ -z "$WIN_HOSTNAME" ]]; then
+			WIN_HOSTNAME=${vmname,,}
+			WIN_HOSTNAME=${WIN_HOSTNAME#${VMUSER}-};
+			WIN_HOSTNAME=$(echo ${WIN_HOSTNAME}|sed -r 's/windows(-server)?-?/win/')
+			[[ "${#WIN_HOSTNAME}" -gt 15 ]] && { WIN_HOSTNAME=${WIN_HOSTNAME:0:15}; }
+		fi
+		WIN_HOSTNAME_OPT="--hostname=${WIN_HOSTNAME}"
 		case ${WIN_TEMPLATE} in
 		base)
-		    answer-file-generator.sh --hostname $vmname $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
+		    answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
 			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
 			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
 			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
 			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		cifs-nfs)
-		    answer-file-generator.sh --hostname $vmname $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
+		    answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
 			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
 			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
 			${WIN_KDC_OPT} ${WIN_DFS_TARGET_OPT} \
@@ -3198,7 +3215,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
 			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		addsdomain|addsforest)
-		    answer-file-generator.sh --hostname $vmname $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
+		    answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
 			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
 			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
 			${WIN_PARENT_DOMAIN_OPT} ${WIN_PARENT_IP_OPT} \
