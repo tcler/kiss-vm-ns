@@ -8,8 +8,7 @@
 LANG=C
 PATH=~/bin:$PATH 
 
-P=$0
-[[ $0 = /* ]] && P=${0##*/}
+P=$0; [[ $0 = /* ]] && P=${0##*/}
 _repon=kiss-vm-ns
 _confdir=/etc/$repon
 Distro=
@@ -1634,6 +1633,46 @@ Usage() {
 	  -u,--user      #prepare configure libvirt for other user
 	                 #`e.g: sudo vm prepare -u bar
 
+	Options for Windows Answer File Generator:
+	  --win-auto[=<base|cifs-nfs|addsdomain|addsforest>]
+	                 #indicate generate answer file media for windows with default config
+	  --win-domain <domain>
+	                 #*Specify windows domain name; e.g: qetest.org
+	  --win-locale <locale>
+	                 #default en-US. see also: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/default-input-locales-for-windows-language-packs?view=windows-11
+	  --win-user <user>
+	                 #Specify user for install and config, default: Administrator
+	  --win-passwd <password>
+	                 #Specify user's password for windows. for configure AD/DC:
+	                  must use a mix of uppercase letters, lowercase letters, numbers, and symbols
+	                  default: Sesame~0pen
+	  --wim-index <wim image index>
+	  --win-key <Prodcut key>
+	  --win-ad-forest-level <Default|Win2008|Win2008R2|Win2012|Win2012R2|WinThreshold>
+	  --win-ad-domain-level <Default|Win2008|Win2008R2|Win2012|Win2012R2|WinThreshold>
+	  --win-enable-kdc
+			 #enable AD KDC service(in case use template cifs-nfs)
+	  --win-parent-domain <parent-domain>
+			 #Domain name of an existing domain, only for template: 'addsdomain'
+	  --win-parent-ip <parent-ip>
+			 #IP address of an existing domain, only for template: 'addsdomain'
+	  --win-dfs-target <server:sharename>
+			 #The specified cifs share will be added into dfs target.
+	  --win-openssh <url>
+			 #url to download OpenSSH-Win64.zip
+	  --win-download-url <url>
+			 #url to download extra drivers/programs to anserfile media:
+	  --win-run <command line>
+			 #powershell cmd line need autorun and reboot
+			 #e.g: --run='./MLNX_VPI_WinOF-5_50_54000_All_win2019_x64.exe /S /V"qb /norestart"'
+	  --win-run-post <command line>
+			 #powershell cmd line need autorun without reboot
+			 #e.g: --run-post='ipconfig /all; ibstat'
+	  --win-static-ip-ext <ip>
+			 #set static ip for the nic that connect to public network
+	  --win-static-ip-int <ip>
+			 #set static ip for the nic that connect to internal libvirt network
+
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
 	Examples for create vm from distro-db (Intranet):
@@ -1825,6 +1864,25 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long reboot \
 	--long default-kernel: \
 	--long wait \
+	--long win-auto:: \
+	--long win-user: \
+	--long win-passwd: \
+	--long wim-index: \
+	--long win-key: \
+	--long win-locale: \
+	--long win-domain: \
+	--long win-ad-forest-level: \
+	--long win-ad-domain-level: \
+	--long win-static-ip-ext: \
+	--long win-static-ip-int: \
+	--long win-enable-kdc \
+	--long win-parent-domain: \
+	--long win-parent-ip: \
+	--long win-openssh: \
+	--long win-download-url: \
+	--long win-run: \
+	--long win-run-post: \
+	--long win-dfs-target: \
     -a -n "$0" -- "$@"`
 [[ $? != 0 ]] && { exit 1; }
 eval set -- "$_at"
@@ -1932,6 +1990,31 @@ while true; do
 	--reboot)        REBOOT=yes; shift 1;;
 	--default-kernel) DEFAULT_KERNEL="$2"; shift 2;;
 	-w|--wait)       WAIT=yes; shift 1;;
+	--win-*)
+		WIN_AUTO=yes
+		DEFAULT_DISK_BUS=sata
+		case "$1" in
+		--win-auto)   WIN_TEMPLATE="${2:-base}"; shift 2;;
+		--win-user)   WIN_ADMINUSER="$2"; shift 2;;
+		--win-passwd) WIN_ADMINPASSWORD="$2"; shift 2;;
+		--wim-index)  WIN_WIM_IMAGE_INDEX="$2"; shift 2;;
+		--win-openssh) WIN_OpenSSHUrl="$2"; shift 2;;
+		--win-key)    WIN_PRODUCT_KEY_OPT="--product-key=$2"; shift 2;;
+		--win-domain) WIN_DOMAIN_OPT="--domain=$2"; shift 2;;
+		--win-locale) WIN_LOCALE_OPT="--locale=$2"; shift 2;;
+		--win-enable-kdc)    WIN_KDC_OPT="--enable-kdc"; shift 1;;
+		--win-dfs-target)    WIN_DFS_TARGET_OPT="--dfs-target=$2"; DFS=yes; shift 2;;
+		--win-ad-forest-level) WIN_AD_FOREST_LEVEL_OPT="--ad-forest-level=$2"; shift 2;;
+		--win-ad-domain-level) WIN_AD_DOMAIN_LEVEL_OPT="--ad-domain-level=$2"; shift 2;;
+		--win-parent-domain) WIN_PARENT_DOMAIN_OPT="--parent-domain=$2"; shift 2;;
+		--win-parent-ip)     WIN_PARENT_IP_OPT="--parent-ip=$2"; shift 2;;
+		--win-download-url)  WIN_DL_URL_OPTS+=("--download-url=$2"); shift 2;;
+		--win-run)           WIN_RUN_CMD_OPTS+=("--run=$2"); shift 2;;
+		--win-run-post)      WIN_RUN_POST_CMD_OPTS+=("--run-post=$2"); shift 2;;
+		--win-static-ip-ext) WIN_EXT_STATIC_IP="$2"; shift 2;;
+		--win-static-ip-int) WIN_INT_STATIC_IP="$2"; shift 2;;
+		esac
+		;;
 	--) shift; break;;
 	esac
 done
@@ -2392,6 +2475,8 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	srcif=$(get_default_if)
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}"
+	elif [[ "$WIN_AUTO" = yes ]]; then
+		NETWORK_OPTS="--network=network=default,model=rtl8139 --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=e1000"
 	else
 		NETWORK_OPTS="--network=network=default,model=${DEFAULT_IF_MODEL} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}"
 	fi
@@ -3074,6 +3159,55 @@ elif [[ "$InstallType" = cdrom ]]; then
 
 	ls -l ${imagefile}
 
+	if [[ "$WIN_AUTO" = yes ]]; then
+		run -as=$VMUSER touch $VMpath/ansf-usb.image
+		WIN_ADMINUSER=${WIN_ADMINUSER:-Administrator}
+		WIN_ADMINPASSWORD=${WIN_ADMINPASSWORD:-Sesame~0pen}
+		WIN_OpenSSHUrl=${WIN_OpenSSHUrl:-https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip}
+		WIN_WIM_IMAGE_INDEX=${WIN_WIM_IMAGE_INDEX:-4}
+		[[ "$VM_OS_VARIANT" = win10 ]] && WIN_WIM_IMAGE_INDEX=1
+		WIN_WIM_IMAGE_INDEX_OPT="--wim-index=$WIN_WIM_IMAGE_INDEX"
+		#WIN_LOCALE_OPT
+		#WIN_PRODUCT_KEY_OPT
+		#WIN_DOMAIN_OPT
+		#WIN_AD_FOREST_LEVEL_OPT
+		#WIN_AD_DOMAIN_LEVEL_OPT
+		#WIN_PARENT_DOMAIN_OPT
+		#WIN_PARENT_IP_OPT
+		#WIN_KDC_OPT
+		#WIN_DFS_TARGET_OPT
+		#WIN_DL_URL_OPTS+
+		#WIN_RUN_CMD_OPTS+
+		#WIN_RUN_POST_CMD_OPTS+
+		#WIN_EXT_STATIC_IP
+		#WIN_INT_STATIC_IP
+		case ${WIN_TEMPLATE} in
+		base)
+		    answer-file-generator.sh --hostname $vmname $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
+			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
+			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
+			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
+			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
+		cifs-nfs)
+		    answer-file-generator.sh --hostname $vmname $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
+			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
+			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
+			${WIN_KDC_OPT} ${WIN_DFS_TARGET_OPT} \
+			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
+			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
+		addsdomain|addsforest)
+		    answer-file-generator.sh --hostname $vmname $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
+			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
+			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
+			${WIN_PARENT_DOMAIN_OPT} ${WIN_PARENT_IP_OPT} \
+			${WIN_AD_DOMAIN_LEVEL_OPT} ${WIN_AD_FOREST_LEVEL_OPT} \
+			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
+			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
+		esac
+
+		DISK_OPTS+=" --disk path=$VMpath/ansf-usb.image,bus=usb,removable=on"
+	fi
+
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
@@ -3112,7 +3246,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	vm vnc $vmname -put "key:shift"
 	vm vnc $vmname -get | tee $RuntimeTmp/std.log
 
-	if grep -i -q windows <<<${Distro}; then
+	if [[ "$WIN_AUTO" = yes ]]; then
 		run -tmux=windows-vm-assistant "for ((i=0; i<12; i++)); do
 			if vm vnc $vmname -get|grep -i langua; then
 				vm vnc $vmname -put=key:tab -put=key:tab -put=key:tab -put=key:enter
