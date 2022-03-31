@@ -307,7 +307,7 @@ GUEST_HOSTNAME=${GUEST_HOSTNAME}
 	echo -e "{ERROR} length of hostname($GUEST_HOSTNAME) should < 16" >&2
 	exit 1
 }
-DOMAIN=${DOMAIN:-win.com}
+DOMAIN=${DOMAIN:-winlrn.org}
 ADMINUSER=${ADMINUSER:-Administrator}
 ADMINPASSWORD=${ADMINPASSWORD:-Sesame~0pen}
 

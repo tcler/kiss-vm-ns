@@ -2004,7 +2004,7 @@ while true; do
 		--win-passwd)		WIN_ADMINPASSWORD="$2"; shift 2;;
 		--win-wim-index)	WIN_WIM_IMAGE_INDEX="$2"; shift 2;;
 		--win-openssh)		WIN_OpenSSHUrl="$2"; shift 2;;
-		--win-key)		WIN_PRODUCT_KEY_OPT="--product-key=$2"; shift 2;;
+		--win-key)		WIN_KEY_OPT="--product-key=$2"; shift 2;;
 		--win-hostname)		WIN_HOSTNAME="$2"; shift 2;;
 		--win-domain)		WIN_DOMAIN_OPT="--domain=$2"; shift 2;;
 		--win-locale)		WIN_LOCALE_OPT="--locale=$2"; shift 2;;
@@ -3178,7 +3178,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 		[[ "$VM_OS_VARIANT" = win10 ]] && WIN_WIM_IMAGE_INDEX=1
 		WIN_WIM_IMAGE_INDEX_OPT="--wim-index=$WIN_WIM_IMAGE_INDEX"
 		#WIN_LOCALE_OPT
-		#WIN_PRODUCT_KEY_OPT
+		#WIN_KEY_OPT
 		#WIN_DOMAIN_OPT
 		#WIN_AD_FOREST_LEVEL_OPT
 		#WIN_AD_DOMAIN_LEVEL_OPT
@@ -3200,14 +3200,14 @@ elif [[ "$InstallType" = cdrom ]]; then
 		WIN_HOSTNAME_OPT="--hostname=${WIN_HOSTNAME}"
 		case ${WIN_TEMPLATE} in
 		base)
-		    answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
+		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
 			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
 			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
 			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
 			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		cifs-nfs)
-		    answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
+		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
 			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
 			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
 			${WIN_KDC_OPT} ${WIN_DFS_TARGET_OPT} \
@@ -3215,7 +3215,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
 			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		addsdomain|addsforest)
-		    answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
+		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
 			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
 			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
 			${WIN_PARENT_DOMAIN_OPT} ${WIN_PARENT_IP_OPT} \
