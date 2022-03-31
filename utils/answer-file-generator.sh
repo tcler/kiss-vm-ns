@@ -65,9 +65,9 @@ Options for windows anwserfile:
 		#IP address of an existing domain, only for template: 'addsdomain'
   --dfs-target <server:sharename>
 		#The specified cifs share will be added into dfs target.
-  --openssh <url>
+  --openssh <url|local_path>
 		#url to download OpenSSH-Win64.zip
-  --driver-url,--download-url <url>
+  --driver-url,--download-url <url|local_path>
 		#url to download extra drivers to anserfile media:
 		#e.g: --driver-url=urlX --driver-url=urlY
   --run,--run-with-reboot <command line>
@@ -368,7 +368,10 @@ process_ansf() {
 	}
 	unix2dos $destdir/* >/dev/null
 
-	[[ -n "$OpenSSHUrl" ]] && curl_download_x $destdir/OpenSSH.zip $OpenSSHUrl
+	if [[ -n "$OpenSSHUrl" ]]; then
+		[[ -f "$OpenSSHUrl" ]] && OpenSSHUrl=file://$(readlink -f "$OpenSSHUrl")
+		curl_download_x $destdir/OpenSSH.zip $OpenSSHUrl
+	fi
 	cp $SUDOUSERHOME/.ssh/id_*.pub $destdir/. 2>/dev/null
 
 	autorundir=$destdir/$ANSF_AUTORUN_DIR
@@ -376,7 +379,8 @@ process_ansf() {
 		mkdir -p $autorundir
 		for _url in "${DL_URLS[@]}"; do
 			_fname=${_url##*/}
-			curl_download_x $autorundir/${_fname} $_url
+			[[ -f "$_url" ]] && _url=file://$(readlink -f "$_url")
+			curl_download_x $autorundir/${_fname} "$_url"
 		done
 	fi
 	if [[ -n "$RUN_CMDS" || -n "$RUN_POST_CMDS" ]]; then

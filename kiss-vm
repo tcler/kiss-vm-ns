@@ -1663,9 +1663,9 @@ Usage() {
 			 #IP address of an existing domain, only for template: 'addsdomain'
 	  --win-dfs-target <server:sharename>
 			 #The specified cifs share will be added into dfs target.
-	  --win-openssh <url>
+	  --win-openssh <url|local_path>
 			 #url to download OpenSSH-Win64.zip
-	  --win-download-url <url>
+	  --win-download-url <url|local_path>
 			 #url to download extra drivers/programs to anserfile media:
 	  --win-run <command line>
 			 #powershell cmd line need autorun and reboot
