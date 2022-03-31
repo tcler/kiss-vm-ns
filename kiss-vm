@@ -1635,7 +1635,8 @@ Usage() {
 
 	Options for Windows Answer File Generator:
 	  --win-auto[=<base|cifs-nfs|addsdomain|addsforest>]
-	                 #indicate generate answer file media for windows with default config
+			 #indicate generate answer file media for windows, optional param is the name of answer file template
+	                  default: base; see also: /usr/share/AnswerFileTemplates/$template_name/
 	  --win-domain <domain>
 	                 #*Specify windows domain name; e.g: qetest.org
 	  --win-locale <locale>
@@ -2011,8 +2012,9 @@ while true; do
 		--win-download-url)  WIN_DL_URL_OPTS+=("--download-url=$2"); shift 2;;
 		--win-run)           WIN_RUN_CMD_OPTS+=("--run=$2"); shift 2;;
 		--win-run-post)      WIN_RUN_POST_CMD_OPTS+=("--run-post=$2"); shift 2;;
-		--win-static-ip-ext) WIN_EXT_STATIC_IP="$2"; shift 2;;
-		--win-static-ip-int) WIN_INT_STATIC_IP="$2"; shift 2;;
+		--win-static-ip-ext) WIN_EXT_STATIC_IP_OPT="--static-ip-ext=$2"; shift 2;;
+		--win-static-ip-int) WIN_INT_STATIC_IP_OPT="--static-ip-int=$2"; shift 2;;
+		*) shift;;
 		esac
 		;;
 	--) shift; break;;
@@ -2524,7 +2526,6 @@ for disk in "${EXTRA_DISKS[@]}"; do
 		rmdir $_rootdir
 	fi
 	[[ -z "$_args" ]] && _args=bus=${DEFAULT_DISK_BUS}
-	[[ "$_args" = *bus=usb* && "$_args" != *removable=* ]] && _args+=,removable=on
 	DISK_OPTS+=" --disk path=$VMpath/${ximage},format=$_format,${_args}"  #bus=scsi
 done
 
@@ -2538,7 +2539,6 @@ for disk in "${DISKS[@]}"; do
 	cp -f $img $VMpath/.
 
 	[[ -z "$_args" ]] && _args=bus=${DEFAULT_DISK_BUS}
-	[[ "$_args" = *bus=usb* && "$_args" != *removable=* ]] && _args+=,removable=on
 	[[ "$_args" != *format=* ]] && {
 		_fmt=$(qemu-img info $img|awk '/file.format:/{print $NF}')
 		[[ -n "$_fmt" ]] && _fmt=",format=$_fmt"
@@ -3179,14 +3179,15 @@ elif [[ "$InstallType" = cdrom ]]; then
 		#WIN_DL_URL_OPTS+
 		#WIN_RUN_CMD_OPTS+
 		#WIN_RUN_POST_CMD_OPTS+
-		#WIN_EXT_STATIC_IP
-		#WIN_INT_STATIC_IP
+		#WIN_EXT_STATIC_IP_OPT
+		#WIN_INT_STATIC_IP_OPT
 		case ${WIN_TEMPLATE} in
 		base)
 		    answer-file-generator.sh --hostname $vmname $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
 			${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
 			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
+			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
 			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		cifs-nfs)
 		    answer-file-generator.sh --hostname $vmname $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
@@ -3194,6 +3195,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
 			${WIN_KDC_OPT} ${WIN_DFS_TARGET_OPT} \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
+			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
 			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		addsdomain|addsforest)
 		    answer-file-generator.sh --hostname $vmname $WIN_DOMAIN_OPT $WIN_PRODUCT_KEY_OPT \
@@ -3202,10 +3204,12 @@ elif [[ "$InstallType" = cdrom ]]; then
 			${WIN_PARENT_DOMAIN_OPT} ${WIN_PARENT_IP_OPT} \
 			${WIN_AD_DOMAIN_LEVEL_OPT} ${WIN_AD_FOREST_LEVEL_OPT} \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
+			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
 			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		esac
+		[[ $? -ne 0 ]] && exit 1
 
-		DISK_OPTS+=" --disk path=$VMpath/ansf-usb.image,bus=usb,removable=on"
+		ANSF_DISK_OPT="--disk path=$VMpath/ansf-usb.image,bus=usb,removable=on"
 	fi
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
@@ -3214,6 +3218,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  --name $vmname \
 	  --cdrom $isofile \
 	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
+	  $ANSF_DISK_OPT \
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
@@ -3255,7 +3260,6 @@ elif [[ "$InstallType" = cdrom ]]; then
 			fi
 		done"
 		sleep 2
-		vm vnc $vmname -get | tee $RuntimeTmp/std.log
 	fi
 
 	if [[ -n "$VNCWAIT_AFTER_INSTALL" ]]; then
