@@ -6,7 +6,7 @@ prog=$(basename $BASH_SOURCE)
 
 is_available_url() {
 	local _url=$1
-	curl --connect-timeout 4 -m 4 --output /dev/null --silent --head --fail $_url &>/dev/null
+	curl --connect-timeout 4 -m 4 --output /dev/null -k --silent --head --fail $_url &>/dev/null
 }
 is_intranet() {
     local _downhostname="download.devel.fedorahat.com"

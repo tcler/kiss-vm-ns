@@ -15,7 +15,7 @@ bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved
 
 is_available_url() {
         local _url=$1
-        curl --connect-timeout 8 -m 16 --output /dev/null --silent --head --fail $_url &>/dev/null
+        curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null
 }
 is_intranet() {
 	local iurl=http://$downhostname
@@ -132,19 +132,19 @@ runcmd:
   -   command -v pacman && pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; pacman -S --needed --noconfirm curl wget $PKGS
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
-  - command -v yum && curl -L -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
+  - command -v yum && curl -L -k -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
     chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo "'$b' "; done) -noreboot
 IntranetCMD
 )
 $(
 [[ "$fips" = yes ]] && cat <<FIPS
-  - command -v yum && curl -L -m 30 -o /usr/bin/enable-fips.sh "$baseUrl/utils/enable-fips.sh" &&
+  - command -v yum && curl -L -k -m 30 -o /usr/bin/enable-fips.sh "$baseUrl/utils/enable-fips.sh" &&
     chmod +x /usr/bin/enable-fips.sh && enable-fips.sh
 FIPS
 )
 $(
 [[ "$kdump" = yes ]] && cat <<KDUMP
-  - command -v yum && curl -L -m 30 -o /usr/bin/kdump-setup.sh "$baseUrl/utils/kdump-setup.sh" &&
+  - command -v yum && curl -L -k -m 30 -o /usr/bin/kdump-setup.sh "$baseUrl/utils/kdump-setup.sh" &&
     chmod +x /usr/bin/kdump-setup.sh && kdump-setup.sh
 KDUMP
 )

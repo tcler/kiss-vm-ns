@@ -1032,7 +1032,7 @@ curl_download() {
 	local url=$2
 	shift 2;
 
-	local curlopts="-f -L"
+	local curlopts="-f -L -k"
 	local header=
 	local fsizer=1
 	local fsizel=0
@@ -1251,7 +1251,7 @@ COMM
 
 is_available_url() {
 	local _url=$1
-	curl --connect-timeout 8 -m 16 --output /dev/null --silent --head --fail $_url &>/dev/null
+	curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null
 }
 is_intranet() {
 	local iurl=http://$downhostname
@@ -1302,7 +1302,7 @@ if [[ $Intranet = yes ]]; then
 		local suffix_pattern=$2
 		local rc=1
 
-		local imagenames=$(curl -L -s ${parenturl} | sed -nr '/.*"([^"]+'"${suffix_pattern}"')".*/{s//\1/;p}')
+		local imagenames=$(curl -L -s -k ${parenturl} | sed -nr '/.*"([^"]+'"${suffix_pattern}"')".*/{s//\1/;p}')
 		local qcow2Imgs= rawImgs= otherImgs=
 
 		local arch=$(uname -m)

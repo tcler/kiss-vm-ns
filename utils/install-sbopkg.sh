@@ -11,7 +11,7 @@ else
 	sudo slackpkg -batch=on update
 	if ! command -v sbopkg; then
 		#install sbopkg
-		urlpath=$(curl -s -L https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | head -n1)
+		urlpath=$(curl -s -L -k https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | head -n1)
 		wget https://github.com/$urlpath
 		sudo installpkg ${urlpath##*/}
 		rm -f ${urlpath##*/}
