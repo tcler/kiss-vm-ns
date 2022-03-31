@@ -1647,7 +1647,7 @@ Usage() {
 	                 #Specify user's password for windows. for configure AD/DC:
 	                  must use a mix of uppercase letters, lowercase letters, numbers, and symbols
 	                  default: Sesame~0pen
-	  --wim-index <wim image index>
+	  --win-wim-index <wim image index>
 	  --win-key <Prodcut key>
 	  --win-ad-forest-level <Default|Win2008|Win2008R2|Win2012|Win2012R2|WinThreshold>
 	  --win-ad-domain-level <Default|Win2008|Win2008R2|Win2012|Win2012R2|WinThreshold>
@@ -1868,7 +1868,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long win-auto:: \
 	--long win-user: \
 	--long win-passwd: \
-	--long wim-index: \
+	--long win-wim-index: \
 	--long win-key: \
 	--long win-locale: \
 	--long win-domain: \
@@ -1995,25 +1995,25 @@ while true; do
 		WIN_AUTO=yes
 		DEFAULT_DISK_BUS=sata
 		case "$1" in
-		--win-auto)   WIN_TEMPLATE="${2:-base}"; shift 2;;
-		--win-user)   WIN_ADMINUSER="$2"; shift 2;;
-		--win-passwd) WIN_ADMINPASSWORD="$2"; shift 2;;
-		--wim-index)  WIN_WIM_IMAGE_INDEX="$2"; shift 2;;
-		--win-openssh) WIN_OpenSSHUrl="$2"; shift 2;;
-		--win-key)    WIN_PRODUCT_KEY_OPT="--product-key=$2"; shift 2;;
-		--win-domain) WIN_DOMAIN_OPT="--domain=$2"; shift 2;;
-		--win-locale) WIN_LOCALE_OPT="--locale=$2"; shift 2;;
-		--win-enable-kdc)    WIN_KDC_OPT="--enable-kdc"; shift 1;;
-		--win-dfs-target)    WIN_DFS_TARGET_OPT="--dfs-target=$2"; DFS=yes; shift 2;;
-		--win-ad-forest-level) WIN_AD_FOREST_LEVEL_OPT="--ad-forest-level=$2"; shift 2;;
-		--win-ad-domain-level) WIN_AD_DOMAIN_LEVEL_OPT="--ad-domain-level=$2"; shift 2;;
-		--win-parent-domain) WIN_PARENT_DOMAIN_OPT="--parent-domain=$2"; shift 2;;
-		--win-parent-ip)     WIN_PARENT_IP_OPT="--parent-ip=$2"; shift 2;;
-		--win-download-url)  WIN_DL_URL_OPTS+=("--download-url=$2"); shift 2;;
-		--win-run)           WIN_RUN_CMD_OPTS+=("--run=$2"); shift 2;;
-		--win-run-post)      WIN_RUN_POST_CMD_OPTS+=("--run-post=$2"); shift 2;;
-		--win-static-ip-ext) WIN_EXT_STATIC_IP_OPT="--static-ip-ext=$2"; shift 2;;
-		--win-static-ip-int) WIN_INT_STATIC_IP_OPT="--static-ip-int=$2"; shift 2;;
+		--win-auto)		WIN_TEMPLATE="${2:-base}"; shift 2;;
+		--win-user)		WIN_ADMINUSER="$2"; shift 2;;
+		--win-passwd)		WIN_ADMINPASSWORD="$2"; shift 2;;
+		--win-wim-index)	WIN_WIM_IMAGE_INDEX="$2"; shift 2;;
+		--win-openssh)		WIN_OpenSSHUrl="$2"; shift 2;;
+		--win-key)		WIN_PRODUCT_KEY_OPT="--product-key=$2"; shift 2;;
+		--win-domain)		WIN_DOMAIN_OPT="--domain=$2"; shift 2;;
+		--win-locale)		WIN_LOCALE_OPT="--locale=$2"; shift 2;;
+		--win-enable-kdc)	WIN_KDC_OPT="--enable-kdc"; shift 1;;
+		--win-dfs-target)	WIN_DFS_TARGET_OPT="--dfs-target=$2"; DFS=yes; shift 2;;
+		--win-ad-forest-level)	WIN_AD_FOREST_LEVEL_OPT="--ad-forest-level=$2"; shift 2;;
+		--win-ad-domain-level)	WIN_AD_DOMAIN_LEVEL_OPT="--ad-domain-level=$2"; shift 2;;
+		--win-parent-domain)	WIN_PARENT_DOMAIN_OPT="--parent-domain=$2"; shift 2;;
+		--win-parent-ip)	WIN_PARENT_IP_OPT="--parent-ip=$2"; shift 2;;
+		--win-download-url)	WIN_DL_URL_OPTS+=("--download-url=$2"); shift 2;;
+		--win-run)		WIN_RUN_CMD_OPTS+=("--run=$2"); shift 2;;
+		--win-run-post)		WIN_RUN_POST_CMD_OPTS+=("--run-post=$2"); shift 2;;
+		--win-static-ip-ext)	WIN_EXT_STATIC_IP_OPT="--static-ip-ext=$2"; shift 2;;
+		--win-static-ip-int)	WIN_INT_STATIC_IP_OPT="--static-ip-int=$2"; shift 2;;
 		*) shift;;
 		esac
 		;;
