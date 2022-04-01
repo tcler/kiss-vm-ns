@@ -1589,6 +1589,8 @@ Usage() {
 	  --xml          #just generate xml
 	  --machine <machine type>
 	                 #specify machine type #get supported type by: qemu-kvm -machine help
+	  --uefi-tpm-sb  #an alias option equivalent to: --boot=firmware=efi,loader_secure=yes --machine=q35 --vtpm
+	                  and --vncwait="boot.manager,key:enter key:down key:down key:enter key:enter key:enter"
 	  --hostdev,--host-device <device from "virsh nodedev-list">
 	                 #passthrough host device to KVM Guest
 	                 #see also: virt-install --hostdev=?
@@ -1716,11 +1718,17 @@ Usage() {
 	  $P [create] centos-8 -l https://cloud.centos.org/centos/8/x86_64/images/
 	  $P [create] rhel-8.4.0 -l ~/myimages/download/RHEL-8.4.0-any-x86_64-dvd1.iso -n rhel84-from-iso
 
-	Examples for create vm from local iso file:
+	Examples for create vm from local iso file manually:
 	  $P create Windows-11 -n win11-virtio -C win11_english_x64.iso --xcdrom virtio-win-0.1.208.iso \
-	      --machine q35 --boot=firmware=efi,loader_secure=yes -msize 8G -dsize 80 --vtpm \
-	      --video=qxl --hostdev=00:1b.0
+	      --machine q35 --boot=firmware=efi,loader_secure=yes --vtpm \
+	      --msize 8G --dsize 80 --hostdev=00:1b.0
 	  $P create OpenIndiana -n opensolaris -C OI-hipster-text-20211031.iso -msize 8G -dsize 120
+
+	Examples for auto create Windows VM (if have not product-key, must use Evaluation release)
+	  $P create Windows-10 -n win10-auto -C ~/Downloads/Win10.iso --win-auto --win-key="\$productKey"
+	  $P create Windows-11 -n win11-auto -C ~/Downloads/Win11-Evaluation.iso --win-auto
+	  $P create Windows-server-2012 -n win2012r2-auto -C ~/Downloads/Win2012r2-Evaluation.iso --win-auto
+	  $P create Windows-server-2019 -n win2019-auto -C ~/Downloads/Win2019-Evaluation.iso --win-auto
 
 	Examples for other sub-commands:
 	  $P prepare [-u user] #check/install/configure libvirt and other dependent packages
@@ -1859,6 +1867,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long vncput-after-install: \
 	--long xml \
 	--long machine: \
+	--long uefi-tpm-sb \
 	--long hostdev: --long host-device: \
 	--long hostif: --long hostnic: --long host-nic: \
 	--long virt-install-opts: \
@@ -1988,6 +1997,7 @@ while true; do
 	--vncput-after-install) VNCPUT_AFTER_INSTALL="$2"; shift 2;;
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
+	--uefi-tpm-sb)   UEFI_TPM_SB=yes; shift 1;;
 	--hostdev|--host-device)    HOST_DEV_LIST+=("$2"); shift 2;;
 	--hostif|--hostnic|--host-nic)  HOST_NIC_LIST+=("$2"); shift 2;;
 	--virt-install-opts)    VIRT_INSTALL_OPTS+=("$2"); shift 2;;
@@ -2033,6 +2043,16 @@ while true; do
 	--) shift; break;;
 	esac
 done
+
+if [[ "$VM_OS_VARIANT" = win11 || "${*,,}" =~ (win|windows-?)11 ]]; then
+	UEFI_TPM_SB=yes
+fi
+if [[ "$UEFI_TPM_SB" = yes ]]; then
+	BOOT_OPTS+=(--boot=firmware=efi,loader_secure=yes)
+	VTPM=yes
+	MACHINE_OPT="--machine=q35"
+	VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter"
+fi
 
 [[ ${#WIN_HOSTNAME} -gt 15 ]] && {
 	echo -e "{VM:ERROR} length of windows hostname($WIN_HOSTNAME) should < 16" >&2
