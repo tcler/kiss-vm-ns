@@ -88,7 +88,7 @@ run() {
 		-tmux*) _runtype=tmux;
 			[[ $1 = *=* ]] && _tmuxSession=${1#*=}
 			_tmuxSession=${_tmuxSession:-$$-${USER}}
-			_tmuxlogf=/tmp/run-tmux-${_tmuxSession}.log
+			_tmuxlogf=${VMpath:-/tmp}/run-tmux-${_tmuxSession}.log
 			shift;;
 		-nohu*) _nohup=yes
 			[[ $1 = *=* ]] && _nohuplogf=${1#*=}
@@ -3319,7 +3319,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				sleep 5
 			fi
 		done"
-		run -tmux=virtio-win-install-$vmname "sleep 180; for ((i=0; i<360; i++)); do
+		run -tmux=virtio-win-install-$vmname "sleep 180; for ((i=0; i<720; i++)); do
 			if vm vnc $vmname -get|grep -i -e virtio.win -e Publisher.*Red.Hat; then
 				vm vnc $vmname -put=key:alt-tab
 				vm vnc $vmname -put=key:tab -put=key:tab -put=key:tab -put=key:enter
