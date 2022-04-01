@@ -11,14 +11,17 @@ eval SUDOUSERHOME=~$SUDOUSER
 # ==============================================================================
 Usage() {
 cat <<EOF
-Usage: $PROG [OPTION] <AnswerFile Template dir>
+Usage: $PROG [OPTIONS]
 
 Options for windows anwserfile:
+  --temp[=<base|cifs-nfs|addsdomain|addsforest>]
+		#name of answer file's template, default: base
+		 see also: /usr/share/AnswerFileTemplates/$template_name/
+  --uefi        #uefi partition
   --hostname    #hostname of Windows Guest VM; e.g: win2019-ad
   --domain <domain>
 		#*Specify windows domain name; e.g: qetest.org
 
-  --uefi        #uefi partition
   --locale <local>
 		#default en-US. see also: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/default-input-locales-for-windows-language-packs?view=windows-11
   -u, --user <user>
@@ -66,7 +69,9 @@ Options for windows anwserfile:
   --dfs-target <server:sharename>
 		#The specified cifs share will be added into dfs target.
   --openssh <url|local_path>
-		#url to download OpenSSH-Win64.zip
+		#url/path to download/copy OpenSSH-Win64.zip
+  --virtio-win <url|local_path>
+		#url/path to download/copy virtio-win.iso
   --driver-url,--download-url <url|local_path>
 		#url to download extra drivers to anserfile media:
 		#e.g: --driver-url=urlX --driver-url=urlY
@@ -140,6 +145,7 @@ EOF
 
 ARGS=$(getopt -o hu:p: \
 	--long help \
+	--long temp:: \
 	--long uefi \
 	--long path: \
 	--long user: \
@@ -157,6 +163,7 @@ ARGS=$(getopt -o hu:p: \
 	--long parent-domain: \
 	--long parent-ip: \
 	--long openssh: \
+	--long virtio-win: \
 	--long driver-url: --long download-url: \
 	--long run: --long run-with-reboot: \
 	--long run-post: \
@@ -166,6 +173,7 @@ eval set -- "$ARGS"
 while true; do
 	case "$1" in
 	-h|--help) Usage; exit 1;; 
+	--temp) TEMPLATE=${2:-base}; shift 2;;
 	--uefi) UEFI=yes; shift 1;;
 	--path) ANSF_IMG_PATH="$2"; shift 2;;
 	-u|--user) ADMINUSER="$2"; shift 2;;
@@ -183,6 +191,7 @@ while true; do
 	--parent-domain) PARENT_DOMAIN="$2"; shift 2;;
 	--parent-ip) PARENT_IP="$2"; shift 2;;
 	--openssh) OpenSSHUrl="$2"; shift 2;;
+	--virtio-win) VirtioDriverISOUrl="$2"; shift 2;;
 	--driver-url|--download-url) DL_URLS+=("$2"); shift 2;;
 	--run|--run-with-reboot) RUN_CMDS+=("$2"); shift 2;;
 	--run-post) RUN_POST_CMDS+=("$2"); shift 2;;
@@ -192,24 +201,27 @@ while true; do
 	esac
 done
 
-AD_FOREST_LEVEL=${AD_FOREST_LEVEL:-Default}
-AD_DOMAIN_LEVEL=${AD_DOMAIN_LEVEL:-$AD_FOREST_LEVEL}
-DefaultAnserfileTemplatePath=/usr/share/AnswerFileTemplates/base
-[[ -d "$DefaultAnserfileTemplatePath" ]] || DefaultAnserfileTemplatePath=AnswerFileTemplates/base
-AnserfileTemplatePath=${1%/}
-if [[ -z "$AnserfileTemplatePath" ]]; then
-	AnserfileTemplatePath=$DefaultAnserfileTemplatePath
-	echo "{warn} no answer files template is given, use default($DefaultAnserfileTemplatePath)" >&2
+OpenSSHUrl=${OpenSSHUrl:-https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip}
+if [[ -z "$VirtioDriverISOUrl" ]]; then
+	VirtioDriverISOUrl=/usr/share/virtio-win/virtio-win.iso
+	if [[ ! -f "$VirtioDriverISOUrl" ]]; then
+		VirtioDriverISOUrl=https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.215-2/virtio-win.iso
+		#^^ fixme: auto get latest version instead hard-code
+	fi
 fi
 
-if [[ ! -d "$AnserfileTemplatePath" ]]; then
-	echo "{ERROR} template dir($AnserfileTemplatePath) not found" >&2
+AD_FOREST_LEVEL=${AD_FOREST_LEVEL:-Default}
+AD_DOMAIN_LEVEL=${AD_DOMAIN_LEVEL:-$AD_FOREST_LEVEL}
+AnserfileTemplatesRepo=${AnserfileTemplatesRepo:-/usr/share/AnswerFileTemplates}
+TemplateDir=$AnserfileTemplatesRepo/$TEMPLATE
+if [[ ! -d "$TemplateDir" ]]; then
+	echo "{ERROR} answerfile template dir($TemplateDir) not found" >&2
 	exit 1
 fi
 
-if egrep -q "@PARENT_(DOMAIN|IP)@" -r "$AnserfileTemplatePath"; then
+if egrep -q "@PARENT_(DOMAIN|IP)@" -r "$TemplateDir"; then
 	[[ -z "$PARENT_DOMAIN" || -z "$PARENT_IP" ]] && {
-		echo "{ERROR} Missing parent-domain or parent-ip for template(${AnserfileTemplatePath##*/})" >&2
+		echo "{ERROR} Missing parent-domain or parent-ip for template(${TemplateDir##*/})" >&2
 		Usage >&2
 		exit 1
 	}
@@ -372,6 +384,10 @@ process_ansf() {
 		[[ -f "$OpenSSHUrl" ]] && OpenSSHUrl=file://$(readlink -f "$OpenSSHUrl")
 		curl_download_x $destdir/OpenSSH.zip $OpenSSHUrl
 	fi
+	if [[ -n "$VirtioDriverISOUrl" ]]; then
+		[[ -f "$VirtioDriverISOUrl" ]] && VirtioDriverISOUrl=file://$(readlink -f "$VirtioDriverISOUrl")
+		curl_download_x $destdir/virtio-win.iso $VirtioDriverISOUrl
+	fi
 	cp $SUDOUSERHOME/.ssh/id_*.pub $destdir/. 2>/dev/null
 
 	autorundir=$destdir/$ANSF_AUTORUN_DIR
@@ -398,8 +414,8 @@ process_ansf() {
 }
 
 echo -e "\n{INFO} make answer file media ..."
-eval "ls $AnserfileTemplatePath/*" || {
-	echo -e "\n{ERROR} answer files not found in $AnserfileTemplatePath"
+eval "ls $TemplateDir/*" || {
+	echo -e "\n{ERROR} answer files not found in $TemplateDir"
 	exit 1
 }
 \rm -f $ANSF_IMG_PATH #remove old/exist media file
@@ -409,5 +425,5 @@ ANSF_AUTORUN_DIR=tools-drivers
 usbSize=1024M
 media_dir=$(mktemp -d)
 trap "rm -fr $media_dir" EXIT
-process_ansf $media_dir $AnserfileTemplatePath/*
+process_ansf $media_dir $TemplateDir/*
 virt-make-fs -s $usbSize -t vfat $media_dir $ANSF_IMG_PATH --partition

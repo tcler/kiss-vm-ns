@@ -1664,7 +1664,9 @@ Usage() {
 	  --win-dfs-target <server:sharename>
 			 #The specified cifs share will be added into dfs target.
 	  --win-openssh <url|local_path>
-			 #url to download OpenSSH-Win64.zip
+			 #url/path to download/copy OpenSSH-Win64.zip
+	  --win-virtio-drv <url|local_path>
+			 #url/path to download/copy virtio-win.iso
 	  --win-download-url <url|local_path>
 			 #url to download extra drivers/programs to anserfile media:
 	  --win-run <command line>
@@ -1886,6 +1888,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long win-parent-domain: \
 	--long win-parent-ip: \
 	--long win-openssh: \
+	--long win-virtio-drv: \
 	--long win-download-url: \
 	--long win-run: \
 	--long win-run-post: \
@@ -2003,10 +2006,11 @@ while true; do
 		case "$1" in
 		--win-auto)		WIN_TEMPLATE="${2:-base}"; shift 2;;
 		--win-uefi)		WIN_UEFI_OPT="--uefi"; shift 1;;
-		--win-user)		WIN_ADMINUSER="$2"; shift 2;;
-		--win-passwd)		WIN_ADMINPASSWORD="$2"; shift 2;;
+		--win-user)		WIN_USER="$2"; shift 2;;
+		--win-passwd)		WIN_PASS="$2"; shift 2;;
 		--win-wim-index)	WIN_WIM_IMAGE_INDEX="$2"; shift 2;;
-		--win-openssh)		WIN_OpenSSHUrl="$2"; shift 2;;
+		--win-openssh)		WIN_OpenSSH_OPT=("--openssh=$2"); shift 2;;
+		--win-virtio-drv)	WIN_VirtioDrv_OPT=("--virtio-win=$2"); shift 2;;
 		--win-key)		WIN_KEY_OPT="--product-key=$2"; shift 2;;
 		--win-hostname)		WIN_HOSTNAME="$2"; shift 2;;
 		--win-domain)		WIN_DOMAIN_OPT="--domain=$2"; shift 2;;
@@ -3174,12 +3178,13 @@ elif [[ "$InstallType" = cdrom ]]; then
 
 	if [[ "$WIN_AUTO" = yes ]]; then
 		run -as=$VMUSER touch $VMpath/ansf-usb.image
-		WIN_ADMINUSER=${WIN_ADMINUSER:-Administrator}
-		WIN_ADMINPASSWORD=${WIN_ADMINPASSWORD:-Sesame~0pen}
-		WIN_OpenSSHUrl=${WIN_OpenSSHUrl:-https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip}
+		WIN_USER=${WIN_USER:-Administrator}
+		WIN_PASS=${WIN_PASS:-Sesame~0pen}
 		WIN_WIM_IMAGE_INDEX=${WIN_WIM_IMAGE_INDEX:-4}
 		[[ "$VM_OS_VARIANT" = win10 ]] && WIN_WIM_IMAGE_INDEX=1
 		WIN_WIM_IMAGE_INDEX_OPT="--wim-index=$WIN_WIM_IMAGE_INDEX"
+		#WIN_OpenSSH_OPT
+		#WIN_VirtioDrv_OPT
 		#WIN_LOCALE_OPT
 		#WIN_KEY_OPT
 		#WIN_DOMAIN_OPT
@@ -3206,27 +3211,30 @@ elif [[ "$InstallType" = cdrom ]]; then
 		base)
 		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
 			${WIN_UEFI_OPT} ${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
-			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
+			-u $WIN_USER -p "$WIN_PASS" "${WIN_OpenSSH_OPT[@]}" "${WIN_VirtioDrv_OPT[@]}" \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
 			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
-			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
+			--temp=${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		cifs-nfs)
 		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
 			${WIN_UEFI_OPT} ${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
-			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
+			-u $WIN_USER -p "$WIN_PASS" "${WIN_OpenSSH_OPT[@]}" "${WIN_VirtioDrv_OPT[@]}" \
 			${WIN_KDC_OPT} ${WIN_DFS_TARGET_OPT} \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
 			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
-			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
+			--temp=${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		addsdomain|addsforest)
 		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
 			${WIN_UEFI_OPT} ${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
-			-u $WIN_ADMINUSER -p $WIN_ADMINPASSWORD --openssh=$WIN_OpenSSHUrl \
+			-u $WIN_USER -p "$WIN_PASS" "${WIN_OpenSSH_OPT[@]}" "${WIN_VirtioDrv_OPT[@]}" \
 			${WIN_PARENT_DOMAIN_OPT} ${WIN_PARENT_IP_OPT} \
 			${WIN_AD_DOMAIN_LEVEL_OPT} ${WIN_AD_FOREST_LEVEL_OPT} \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
 			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
-			/usr/share/AnswerFileTemplates/${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
+			--temp=${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
+		*)
+		    echo "{ERROR} unsupported answerfile template (${WIN_TEMPLATE})" >&2
+		    false;;
 		esac
 		[[ $? -ne 0 ]] && exit 1
 
