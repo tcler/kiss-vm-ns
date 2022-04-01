@@ -2053,6 +2053,9 @@ if [[ "$UEFI_TPM_SB" = yes ]]; then
 	MACHINE_OPT="--machine=q35"
 	VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter"
 fi
+case "${BOOT_OPTS[*]}" in
+	(*uefi*|*firmware=efi*) VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter";;
+esac
 
 [[ ${#WIN_HOSTNAME} -gt 15 ]] && {
 	echo -e "{VM:ERROR} length of windows hostname($WIN_HOSTNAME) should < 16" >&2
