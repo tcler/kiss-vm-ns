@@ -42,7 +42,10 @@ Function Install-sshd() {
 	Get-Content -Path C:\id_*.pub | Set-Content "C:\ProgramData\ssh\administrators_authorized_keys"
 }
 
-Out-Host "==> Start postinstall ..."
+$mypath = $MyInvocation.Mycommand.Path
+$ansfDriveLetter = "$((Get-Item $mypath).PSDrive.Name):"
+
+Out-Host "==> Start postinstall $mypath ..."
 Out-Host "==> Start initialize second disk ..."
 Get-Disk |
 	Where partitionstyle -eq 'raw' |
@@ -57,7 +60,7 @@ if (Test-Path -Path F:) {
 	$TestPath = "F:"
 }
 
-$PostProg = "@ANSF_DRIVE_LETTER@\postinstall.ps1"
+$PostProg = "$ansfDriveLetter\postinstall.ps1"
 $RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
 
 $Stage = $args[0]
@@ -166,10 +169,10 @@ switch($Stage) {
 		}
 
 		# check if there is autorun script in anwser file
-		$AutoRunFilePath = "@ANSF_DRIVE_LETTER@\@AUTORUN_DIR@\autorun.ps1"
+		$AutoRunFilePath = "$ansfDriveLetter\@AUTORUN_DIR@\autorun.ps1"
 		if (Test-Path -Path $AutoRunFilePath) {
 			Out-Host "`n==> exec autorun file"
-			cd "@ANSF_DRIVE_LETTER@\@AUTORUN_DIR@"
+			cd "$ansfDriveLetter\@AUTORUN_DIR@"
 			powershell -ExecutionPolicy Bypass -File autorun.ps1
 		}
 
@@ -238,18 +241,18 @@ switch($Stage) {
 }
 
 # installing openssh
-$OpenSSHPath = "@ANSF_DRIVE_LETTER@\OpenSSH.zip"
+$OpenSSHPath = "$ansfDriveLetter\OpenSSH.zip"
 if (Test-Path -Path $OpenSSHPath) {
 	Out-Host "`n==> install and start ssh server"
-	Copy-Item -Path @ANSF_DRIVE_LETTER@\id_*.pub -Destination 'C:\'
+	Copy-Item -Path $ansfDriveLetter\sshkeys\id_*.pub -Destination 'C:\'
 	Install-sshd -Path $OpenSSHPath
 }
 
 # check if there is autorun post script in anwser file
-$AutoRunFilePath = "@ANSF_DRIVE_LETTER@\@AUTORUN_DIR@\autorun-post.ps1"
+$AutoRunFilePath = "$ansfDriveLetter\@AUTORUN_DIR@\autorun-post.ps1"
 if (Test-Path -Path $AutoRunFilePath) {
 	Out-Host "`n==> exec autorun-post file"
-	cd "@ANSF_DRIVE_LETTER@\@AUTORUN_DIR@"
+	cd "$ansfDriveLetter\@AUTORUN_DIR@"
 	powershell -ExecutionPolicy Bypass -File autorun-post.ps1
 	cd -
 }
@@ -258,7 +261,7 @@ if (Test-Path -Path $AutoRunFilePath) {
 Out-Host "`n==> save ipconfig info and generate install complete file !!!"
 ipconfig | out-file -encoding utf8 $LogPath\@IPCONFIG_LOGF@
 echo "install complete" | out-file -encoding utf8 $LogPath\@INSTALL_COMPLETE_FILE@
-foreach ($dir in ("@ANSF_DRIVE_LETTER@", "F:")) {
+foreach ($dir in ("$ansfDriveLetter", "F:")) {
 	if (Test-Path -Path $dir) {
 		Copy-Item -Path $LogPath\@INSTALL_COMPLETE_FILE@ -Destination $dir\
 		Copy-Item -Path $LogPath\@IPCONFIG_LOGF@ -Destination $dir\
