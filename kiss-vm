@@ -3311,14 +3311,23 @@ elif [[ "$InstallType" = cdrom ]]; then
 	vm vnc $vmname -get | tee $RuntimeTmp/std.log
 
 	if [[ "$WIN_AUTO" = yes ]]; then
-		run -tmux=windows-vm-assistant "for ((i=0; i<12; i++)); do
+		run -tmux=langselect-$vmname "for ((i=0; i<12; i++)); do
 			if vm vnc $vmname -get|grep -i langua; then
 				vm vnc $vmname -put=key:tab -put=key:tab -put=key:tab -put=key:enter
+				break
 			else
 				sleep 5
 			fi
 		done"
-		sleep 2
+		run -tmux=virtio-win-install-$vmname "sleep 180; for ((i=0; i<360; i++)); do
+			if vm vnc $vmname -get|grep -i -e virtio.win -e Publisher.*Red.Hat; then
+				vm vnc $vmname -put=key:alt-tab
+				vm vnc $vmname -put=key:tab -put=key:tab -put=key:tab -put=key:enter
+				break
+			else
+				sleep 10
+			fi
+		done"
 	fi
 
 	if [[ -n "$VNCWAIT_AFTER_INSTALL" ]]; then

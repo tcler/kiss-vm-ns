@@ -102,6 +102,17 @@ switch($Stage) {
 		echo "" >> $Env:WinDir\system32\drivers\etc\hosts
 		echo "@HOST_IP@ @VIRTHOST@" >> $Env:WinDir\system32\drivers\etc\hosts
 
+		# try install virtio-win driver
+		$isoPath = "$ansfDriveLetter\virtio-win.iso"
+		Out-Host "`n==> mount iso file: $isoPath ..."
+		$mntObj = Mount-DiskImage -ImagePath $isoPath -PassThru
+		$drive = "$(($mntObj | Get-Volume).DriveLetter):"
+		$msifile = "$drive\virtio-win-gt-x64.msi"
+		$exefile = "$drive\virtio-win-guest-tools.exe"
+		Out-Host "`n==> install virtio-win driver: $exefile ..."
+		powershell "msiexec.exe /i $msifile /passive /qn /norestart"
+		#powershell "$exefile install /qn /passive /norestart"
+
 		# static ip setup
 		Out-Host "`n==> static ip setup"
 		$INT_STATIC_IP = "@INT_STATIC_IP@"
