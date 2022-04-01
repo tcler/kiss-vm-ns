@@ -460,6 +460,7 @@ vncput() {
 	done
 }
 
+_vmvncport() { local _vmn=$1; virsh dumpxml "$_vmn" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}"; }
 vmvncproc() {
 	local _vmname=$1
 	[[ -z "$_vmname" ]] && {
@@ -468,7 +469,7 @@ vmvncproc() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 
-	local port=$(virsh dumpxml "$_vmname" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}")
+	local port=$(_vmvncport $_vmname)
 	if [[ -n "${port}" ]]; then
 		if [[ -z "${VNCPUTS}" && -z "${VNCGET}" && -z "${VNCGETSC}" ]]; then
 			for _host in $(hostname -A|xargs -n 1|sort -u); do
@@ -3133,6 +3134,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	if [[ -n $DISPLAY ]]; then
 		run -debug virt-viewer -v $vmname |& tee $VMpath/virt-viewer.log
 		if grep -iq "server closed the connection" $VMpath/virt-viewer.log; then
+			until port_available ${vmname} $(_vmvncport $vmname); do sleep 1; done
 			run -debug -nohup=/dev/null virt-viewer -v $vmname
 			echo -e "\n{VM:INFO} guest $vmname install finished"
 		else
@@ -3181,7 +3183,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 		WIN_USER=${WIN_USER:-Administrator}
 		WIN_PASS=${WIN_PASS:-Sesame~0pen}
 		WIN_WIM_IMAGE_INDEX=${WIN_WIM_IMAGE_INDEX:-4}
-		[[ "$VM_OS_VARIANT" = win10 ]] && WIN_WIM_IMAGE_INDEX=1
+		[[ "$VM_OS_VARIANT" = win10 || "${Distro,,}" =~ (win|windows-?)1[01] ]] && WIN_WIM_IMAGE_INDEX=1
 		WIN_WIM_IMAGE_INDEX_OPT="--wim-index=$WIN_WIM_IMAGE_INDEX"
 		#WIN_OpenSSH_OPT
 		#WIN_VirtioDrv_OPT
