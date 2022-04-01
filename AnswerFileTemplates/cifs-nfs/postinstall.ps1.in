@@ -41,8 +41,8 @@ Function Install-sshd() {
 	#create authorized_keys file
 	$sshConfDir="$HOME\.ssh"
 	New-Item "$sshConfDir" -ItemType Directory -ea 0
-	Get-Content -Path C:\id_*.pub | Set-Content "$sshConfDir\authorized_keys"
-	Get-Content -Path C:\id_*.pub | Set-Content "C:\ProgramData\ssh\administrators_authorized_keys"
+	Get-Content -Path C:\sshkeys\id_*.pub | Set-Content "$sshConfDir\authorized_keys"
+	Get-Content -Path C:\sshkeys\id_*.pub | Set-Content "C:\ProgramData\ssh\administrators_authorized_keys"
 }
 
 $mypath = $MyInvocation.Mycommand.Path
@@ -56,14 +56,15 @@ Get-Disk |
 	New-Partition -AssignDriveLetter -UseMaximumSize |
 	Format-Volume -FileSystem NTFS -NewFileSystemLabel "test" -Confirm:$false
 
-$LogPath = "C:"
+$LogDirName = "postinstall_logs"
+$LogPath = "C:\$LogDirName"
+New-Item "$LogPath" -ItemType Directory -ea 0
 
 $TestPath = "C:"
 if (Test-Path -Path F:) {
 	$TestPath = "F:"
 }
 
-$PostProg = "$ansfDriveLetter\postinstall.ps1"
 $RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
 
 $Stage = $args[0]
@@ -240,7 +241,8 @@ switch($Stage) {
 		#reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v forceguest /t REG_DWORD /d 00000000 /f
 
 		# Setup krb5 for NFS/CIFS
-		if ($kdc) {
+		$enablekdc = "@KDC_OPT@"
+		if ($kdc -or $enablekdc) {
 			# Setup AD as Domain Controller
 			Out-Host "`n==> Setup AD as Domain Controller"
 			Remove-WindowsFeature -Name AD-Certificate
@@ -262,7 +264,7 @@ switch($Stage) {
 
 			# Reboot to complete Active Directory setup
 			Out-Host "`n==> Reboot to complete Active Directory setup"
-			Set-ItemProperty $RunOnceKey "NextRun" "powershell $PostProg afterADSetup >> @POST_INSTALL_LOG@ 2>&1"
+			Set-ItemProperty $RunOnceKey "NextRun" "powershell $mypath afterADSetup >> @POST_INSTALL_LOG@ 2>&1"
 			shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to complete Active Directory setup"
 			exit
 		}
@@ -284,7 +286,7 @@ switch($Stage) {
 
 		# Reboot to complete Root CA Services setup
 		Out-Host "`n==> Reboot to complete Root CA setup"
-		Set-ItemProperty $RunOnceKey "NextRun" "powershell $PostProg afterRootCASetup >> @POST_INSTALL_LOG@ 2>&1"
+		Set-ItemProperty $RunOnceKey "NextRun" "powershell $mypath afterRootCASetup >> @POST_INSTALL_LOG@ 2>&1"
 		shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to complete Root CA setup"
 		exit
 	}
@@ -339,7 +341,7 @@ switch($Stage) {
 $OpenSSHPath = "$ansfDriveLetter\OpenSSH.zip"
 if (Test-Path -Path $OpenSSHPath) {
 	Out-Host "`n==> install and start ssh server"
-	Copy-Item -Path $ansfDriveLetter\sshkeys\id_*.pub -Destination 'C:\'
+	Copy-Item -Path $ansfDriveLetter\sshkeys -Recurse -Destination 'C:\'
 	Install-sshd -Path $OpenSSHPath
 }
 
@@ -358,9 +360,8 @@ ipconfig | out-file -encoding utf8 $LogPath\@IPCONFIG_LOGF@
 echo "install complete" | out-file -encoding utf8 $LogPath\@INSTALL_COMPLETE_FILE@
 foreach ($dir in ("$ansfDriveLetter", "F:")) {
 	if (Test-Path -Path $dir) {
-		Copy-Item -Path $LogPath\@INSTALL_COMPLETE_FILE@ -Destination $dir\
-		Copy-Item -Path $LogPath\@IPCONFIG_LOGF@ -Destination $dir\
-		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $dir\
+		Copy-Item -Path $LogPath -Recurse -Destination $dir\
+		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $LogPath
 	}
 }
 
