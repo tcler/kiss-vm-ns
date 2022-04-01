@@ -2092,7 +2092,7 @@ if [[ "$VTPM" = yes ]]; then
 		echo -e "{VM:WARN} $(qemu_kvm_nvr) don't support tpm-crb driver that's required by --vtpm option"
 		exit 1
 	fi
-	if ! command -v $_dependcmd 2>/dev/null; then
+	if ! command -v $_dependcmd &>/dev/null; then
 		echo -e "{VM:WARN} pkg $_dependpkgs is/are needed by vTPM function, please install $_dependpkgs first."
 		exit 1
 	fi
@@ -2282,6 +2282,7 @@ else
 	BOOT_DISK_ATTRS=bus=$DEFAULT_DISK_BUS
 fi
 
+distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn't select any distro/family, it is necessary!"; }
 # Phase-0 get distro name
 [[ -z "$Distro" ]] && Distro=$1
 [[ -z "$Distro" ]] && {
@@ -2303,7 +2304,7 @@ fi
 		}
 
 		familys=$(sed -e 's/.*/"&" "" 1/' $distropatternIntra $distropatternInter)
-		dialog --backtitle "$dialogTitle" --radiolist "please selet distro family/pattern:" 20 40 16 $familys 2>$dialogres || { Usage; exit 0; }
+		dialog --backtitle "$dialogTitle" --radiolist "please selet distro family/pattern:" 20 40 16 $familys 2>$dialogres || { distroSelectNull; exit 0; }
 		pattern=$(head -n1 $dialogres|sed 's/"//g')
 		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|egrep "$pattern")
 		[[ "$Intranet" = yes ]] && grep -F "$pattern" $distropatternIntra && {
@@ -2312,8 +2313,9 @@ fi
 				--yesno "Do you want nightly build distros?" 7 60
 			[[ $? = 1 ]] && dList=$(echo "$dList"|grep -v '\.n\.[0-9]"')
 		}
-		dialog --backtitle "$dialogTitle" --radiolist "please select distro:" 30 60 28 $dList 2>$dialogres || { Usage; exit 0; }
+		dialog --backtitle "$dialogTitle" --radiolist "please select distro:" 30 60 28 $dList 2>$dialogres || { distroSelectNull; exit 0; }
 		Distro=$(head -n1 $dialogres|sed 's/"//g')
+		[[ -z "$Distro" ]] && { distroSelectNull; exit 0; }
 		printf '\33[H\33[2J'
 	else
 		Usage
