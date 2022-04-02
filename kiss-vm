@@ -3374,21 +3374,25 @@ elif [[ "$InstallType" = cdrom ]]; then
 			esac
 		done'
 		run -tmux=virtio-win-install_$vmname 'sleep 180; vmn='"$vmname"'
+		pre=no
 		for ((i=0; i<720; i++)); do
 			screenocr=$(vm vnc $vmn -get)
 			case "${screenocr,,}" in
-			*virtio?win*|*publisher*red?hat*)
+			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*)
+				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
 				vm vnc $vmn -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
-				break;;
-			*install?vir*|*?*nsta*v?*r*)
+				case $pre in (no) pre=yes;; (yes) :;; esac
+				;;
+			*__i*__i*)
+				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
-				vm vnc $vmn -put=key:alt-tab -put=key:alt-tab
-				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
-				break;;
+				case $pre in (no) vm vnc $vmn -put=key:alt-tab;; (yes) :;; esac
+				;;
 			*)
-				sleep 10;;
+				case $pre in (no) sleep 10;; (yes) break;; esac
+				;;
 			esac
 		done'
 	fi
