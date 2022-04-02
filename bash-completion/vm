@@ -54,7 +54,7 @@ _vm()
                 fi
             else
                 case $prev in
-                -i|-l|-C|--xcdrom|--disk|--win-openssh|--win-download-url)
+                -i|-l|-C|--xcdrom|--disk|--win-openssh|--win-download-url|--win-virtio-drv)
                     COMPREPLY=( $( compgen -A file -- "$cur" ) )
                     ;;
                 --diskbus|--bus)
