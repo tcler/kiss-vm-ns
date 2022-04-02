@@ -3319,15 +3319,24 @@ elif [[ "$InstallType" = cdrom ]]; then
 				sleep 5
 			fi
 		done"
-		run -tmux=virtio-win-install-$vmname "sleep 180; for ((i=0; i<720; i++)); do
-			if vm vnc $vmname -get|grep -i -e virtio.win -e Publisher.*Red.Hat; then
-				vm vnc $vmname -put=key:alt-tab
-				vm vnc $vmname -put=key:tab -put=key:tab -put=key:tab -put=key:enter
-				break
-			else
-				sleep 10
-			fi
-		done"
+		run -tmux=virtio-win-install-$vmname 'sleep 180; vmn='"$vmname"'
+		for ((i=0; i<720; i++)); do
+			screenocr=$(vm vnc $vmn -get)
+			case "${screenocr,,}" in
+			*virtio?win*|*publisher*red?hat*)
+				echo "$screenocr"
+				vm vnc $vmn -put=key:alt-tab
+				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
+				break;;
+			*install?virt*)
+				echo "$screenocr"
+				vm vnc $vmn -put=key:alt-tab -put=key:alt-tab
+				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
+				break;;
+			*)
+				sleep 10;;
+			esac
+		done'
 	fi
 
 	if [[ -n "$VNCWAIT_AFTER_INSTALL" ]]; then
