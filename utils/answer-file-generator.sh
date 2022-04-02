@@ -202,6 +202,7 @@ while true; do
 done
 
 OpenSSHUrl=${OpenSSHUrl:-https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip}
+: <<EOF
 if [[ -z "$VirtioDriverISOUrl" ]]; then
 	VirtioDriverISOUrl=/usr/share/virtio-win/virtio-win.iso
 	if [[ ! -f "$VirtioDriverISOUrl" ]]; then
@@ -209,6 +210,7 @@ if [[ -z "$VirtioDriverISOUrl" ]]; then
 		#^^ fixme: auto get latest version instead hard-code
 	fi
 fi
+EOF
 
 AD_FOREST_LEVEL=${AD_FOREST_LEVEL:-Default}
 AD_DOMAIN_LEVEL=${AD_DOMAIN_LEVEL:-$AD_FOREST_LEVEL}
