@@ -387,6 +387,7 @@ process_ansf() {
 		curl_download_x $destdir/OpenSSH.zip $OpenSSHUrl
 	fi
 	if [[ -n "$VirtioDriverISOUrl" ]]; then
+		[[ "$VirtioDriverISOUrl" = ~* ]] && eval VirtioDriverISOUrl=$VirtioDriverISOUrl
 		[[ -f "$VirtioDriverISOUrl" ]] && VirtioDriverISOUrl=file://$(readlink -f "$VirtioDriverISOUrl")
 		curl_download_x $destdir/virtio-win.iso $VirtioDriverISOUrl
 	fi
