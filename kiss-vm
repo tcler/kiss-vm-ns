@@ -2384,12 +2384,14 @@ if [[ "$VM_OS_VARIANT" = win* || "${VMpath,,}" =~ (win|windows)-?[0-9] ]]; then
 	[[ "$dsizeflag" -ne 1 ]] && DSIZE=80
 
 	#add virtio-win iso
-	VirtioDriverISOUrl=/usr/share/virtio-win/virtio-win.iso
-	if [[ -f "$VirtioDriverISOUrl" ]]; then
-		EXTRA_CDROMS+=("$VirtioDriverISOUrl")
-	else
-		VirtioDriverISOUrl=https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.215-2/virtio-win.iso
-		: do nothing
+	if [[ "${EXTRA_CDROMS[*]}" != *virtio-win*.iso* ]]; then
+		VirtioDriverISOUrl=/usr/share/virtio-win/virtio-win.iso
+		if [[ -f "$VirtioDriverISOUrl" ]]; then
+			EXTRA_CDROMS+=("$VirtioDriverISOUrl")
+		else
+			VirtioDriverISOUrl=https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.215-2/virtio-win.iso
+			: do nothing
+		fi
 	fi
 fi
 
@@ -3363,7 +3365,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				vm vnc $vmn -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
-			*install?virt*)
+			*install?vir*)
 				echo "$screenocr"
 				vm vnc $vmn -put=key:alt-tab -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter

@@ -103,15 +103,31 @@ switch($Stage) {
 		echo "@HOST_IP@ @VIRTHOST@" >> $Env:WinDir\system32\drivers\etc\hosts
 
 		# try install virtio-win driver
+		$msifile, $exefile = "", ""
 		$isoPath = "$ansfDriveLetter\virtio-win.iso"
-		Out-Host "`n==> mount iso file: $isoPath ..."
-		$mntObj = Mount-DiskImage -ImagePath $isoPath -PassThru
-		$drive = "$(($mntObj | Get-Volume).DriveLetter):"
-		$msifile = "$drive\virtio-win-gt-x64.msi"
-		$exefile = "$drive\virtio-win-guest-tools.exe"
-		Out-Host "`n==> install virtio-win driver: $exefile ..."
-		powershell "msiexec.exe /i $msifile /passive /qn /norestart"
-		#powershell "$exefile install /qn /passive /norestart"
+		if (Test-Path -Path $isoPath) {
+			Out-Host "`n==> mount iso file: $isoPath ..."
+			$mntObj = Mount-DiskImage -ImagePath $isoPath -PassThru
+			$drive = "$(($mntObj | Get-Volume).DriveLetter):"
+			$msifile = "$drive\virtio-win-gt-x64.msi"
+			$exefile = "$drive\virtio-win-guest-tools.exe"
+		}
+		if (!$msifile) {
+			for ($c=65; $c -lt 91; $c++) {
+				$L=[char]$c;
+				$M="${L}:\virtio-win-gt-x64.msi";
+				$E="${L}:\virtio-win-guest-tools.exe";
+				if (Test-Path -Path $M) {
+					$msifile, $exefile = $M, $E
+					break
+				}
+			}
+		}
+		if ($msifile -and (Test-Path -Path $msifile)) {
+			Out-Host "`n==> install virtio-win driver: $msifile ..."
+			powershell "msiexec.exe /i $msifile /passive /qn /norestart"
+			#powershell "$exefile install /qn /passive /norestart"
+		}
 
 		# static ip setup
 		Out-Host "`n==> static ip setup"
@@ -222,7 +238,7 @@ echo "install complete" | out-file -encoding utf8 $LogPath\@INSTALL_COMPLETE_FIL
 foreach ($dir in ("$ansfDriveLetter", "F:")) {
 	if (Test-Path -Path $dir) {
 		Copy-Item -Path $LogPath -Recurse -Destination $dir\
-		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $LogPath
+		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $LogPath\
 	}
 }
 
