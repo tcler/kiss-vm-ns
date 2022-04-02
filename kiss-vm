@@ -3382,7 +3382,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				vm vnc $vmn -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
-			*install?vir*|?*nsta*v?*r)
+			*install?vir*|*?*nsta*v?*r*)
 				echo "$screenocr"
 				vm vnc $vmn -put=key:alt-tab -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
