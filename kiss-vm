@@ -3385,7 +3385,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				case $pre in (no) pre=yes;; (yes) :;; esac
 				;;
-			*__i*__i*)
+			*'"[$'\n']"'__i*'"[$'\n']"'__i*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
 				case $pre in (no) vm vnc $vmn -put=key:alt-tab;; (yes) :;; esac
