@@ -277,6 +277,11 @@ _vmdelete() {
 	  virsh undefine $_vmname 2>/dev/null || virsh undefine $_vmname --nvram; } | sed '/^$/d'
 
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
+		echo -e "{VM:INFO} kill tmux session ..."
+		while read session _ ; do
+			[[ "$session" = *_${vmname}: ]] && tmux kill-session -t ${session%:}
+		done < <(tmux ls 2>/dev/null)
+
 		echo -e "{VM:INFO} removing VM folder $_vmdir ..."
 		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
 		rm -f $_vmdir/*.cfg $_vmdir/*.ks
@@ -3336,7 +3341,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	vm vnc $vmname -get | tee $RuntimeTmp/std.log
 
 	if [[ "$WIN_AUTO" = yes ]]; then
-		run -tmux=langselect-$vmname "for ((i=0; i<12; i++)); do
+		run -tmux=langselect_$vmname "for ((i=0; i<12; i++)); do
 			if vm vnc $vmname -get|grep -i langua; then
 				vm vnc $vmname -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break
@@ -3344,7 +3349,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				sleep 5
 			fi
 		done"
-		run -tmux=key-ask-$vmname 'sleep 64; vmn='"$vmname"'
+		run -tmux=key-ask_$vmname 'sleep 64; vmn='"$vmname"'
 		for ((i=0; i<180; i++)); do
 			screenocr=$(vm vnc $vmn -get)
 			case "${screenocr,,}" in
@@ -3356,7 +3361,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				sleep 10;;
 			esac
 		done'
-		run -tmux=virtio-win-install-$vmname 'sleep 180; vmn='"$vmname"'
+		run -tmux=virtio-win-install_$vmname 'sleep 180; vmn='"$vmname"'
 		for ((i=0; i<720; i++)); do
 			screenocr=$(vm vnc $vmn -get)
 			case "${screenocr,,}" in
