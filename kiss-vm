@@ -219,13 +219,13 @@ vmhomedir() {
 
 	if pushd $_vmdir &>/dev/null; then
 		pwd
-		ls -la
+		ls -lahZ
 		popd >/dev/null
 		test -f $_vmdir/.kiss-vm ||
 			echo "{VM:NOTE} seems this VM is not created by kiss-vm($(command -v vm))" >&2
 	else
 		echo "$_vmdir"
-		ls -la "$_vmdir" ||
+		ls -lahZ "$_vmdir" ||
 			echo "{VM:WARN} current user($(whoami)) can not access the ^^ VM homedir ^^" >&2
 	fi
 }
@@ -2379,10 +2379,19 @@ fi
 		setfacl -d -mg::--- -mo::--- $VMpath
 	fi
 }
-[[ "${VMpath,,}" = *windows* ]] && {
+if [[ "$VM_OS_VARIANT" = win* || "${VMpath,,}" =~ (win|windows)-?[0-9] ]]; then
 	_MSIZE=4096
 	[[ "$dsizeflag" -ne 1 ]] && DSIZE=80
-}
+
+	#add virtio-win iso
+	VirtioDriverISOUrl=/usr/share/virtio-win/virtio-win.iso
+	if [[ -f "$VirtioDriverISOUrl" ]]; then
+		EXTRA_CDROMS+=("$VirtioDriverISOUrl")
+	else
+		VirtioDriverISOUrl=https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.215-2/virtio-win.iso
+		: do nothing
+	fi
+fi
 
 # Phase-1: get distro's Location or Image url
 _Imagepattern='(qcow2c|qcow2|qcow2.xz|raw|img)'
@@ -2600,7 +2609,12 @@ done
 
 ### xcdrom option
 for _iso in "${EXTRA_CDROMS[@]}"; do
-	DISK_OPTS+=" --disk $_iso,device=cdrom,${iso_bus_type:-bus=sata}"
+	isopath=$VMpath/${_iso##*/}
+	cp -v $_iso $isopath
+	#fixme: ^^ performance improve?
+	chcon system_u:object_r:qemu_var_run_t:s0 $isopath #system_u:object_r:virt_cache_t:s0 also works
+	ls -lhZ $isopath
+	DISK_OPTS+=" --disk $isopath,device=cdrom,${iso_bus_type:-bus=sata}"
 done
 
 ### nvme option
@@ -3185,9 +3199,9 @@ elif [[ "$InstallType" = pxe ]]; then
 elif [[ "$InstallType" = cdrom ]]; then
 	[[ -f $Isourl ]] && Isourl=file://$(readlink -f ${Isourl})
 	isofilename=${Isourl##*/}
-	isofile=$VMpath/$isofilename
+	isofilepath=$VMpath/$isofilename
 
-	echo "{VM:INFO} downloading iso file of $Distro to $isofile ..."
+	echo "{VM:INFO} downloading iso file of $Distro to $isofilepath ..."
 	if [[ $Isourl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
 			curl_download_x ${DownloadImagePath}/${isofilename} $Isourl
@@ -3195,22 +3209,25 @@ elif [[ "$InstallType" = cdrom ]]; then
 				ls -l ${DownloadImagePath}/${isofilename}
 				exit 0
 			}
-			cp ${DownloadImagePath}/${isofilename} $isofile
+			cp -v ${DownloadImagePath}/${isofilename} $isofilepath
+			#fixme: ^^ performance improve?
 		else
-			curl_download $isofile $Isourl
+			curl_download_x $isofilepath $Isourl
 		fi
 	else
-		cp -f ${Isourl#file://} $isofile
+		cp -v -f ${Isourl#file://} $isofilepath
+		#fixme: ^^ performance improve?
 	fi
-	[[ -f ${isofile} ]] || exit 1
+	[[ -f ${isofilepath} ]] || exit 1
+	ls -lhZ ${isofilepath}
 
 	imagefile=$VMpath/${vmname}.qcow2
 	qemu-img create -f qcow2 ${imagefile} ${DSIZE}G
 
-	echo -e "{VM:INFO} creating VM install from cdrom($isofile)"
+	echo -e "{VM:INFO} creating VM install from cdrom($isofilepath)"
 	run -as=$VMUSER touch $VMpath/.kiss-vm
 
-	ls -l ${imagefile}
+	ls -lhZ ${imagefile}
 
 	if [[ "$WIN_AUTO" = yes ]]; then
 		run -as=$VMUSER touch $VMpath/ansf-usb.image
@@ -3281,7 +3298,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
-	  --cdrom $isofile \
+	  --cdrom $isofilepath \
 	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
 	  $ANSF_DISK_OPT \
 	  $MACHINE_OPT \
@@ -3325,6 +3342,18 @@ elif [[ "$InstallType" = cdrom ]]; then
 				sleep 5
 			fi
 		done"
+		run -tmux=key-ask-$vmname 'sleep 64; vmn='"$vmname"'
+		for ((i=0; i<180; i++)); do
+			screenocr=$(vm vnc $vmn -get)
+			case "${screenocr,,}" in
+			*wxxwxxwxx*)
+				echo "$screenocr"
+				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:tab -put=key:enter
+				break;;
+			*)
+				sleep 10;;
+			esac
+		done'
 		run -tmux=virtio-win-install-$vmname 'sleep 180; vmn='"$vmname"'
 		for ((i=0; i<720; i++)); do
 			screenocr=$(vm vnc $vmn -get)
