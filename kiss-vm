@@ -3378,12 +3378,16 @@ elif [[ "$InstallType" = cdrom ]]; then
 		for ((i=0; i<720; i++)); do
 			screenocr=$(vm vnc $vmn -get)
 			case "${screenocr,,}" in
+			stat?c??p) break;;
 			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
 				vm vnc $vmn -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
-				case $pre in (no) pre=yes;; (yes) :;; esac
+				case $pre in
+				(no) pre=yes;;
+				(yes) let yes++; ((yes%2)) && vm vnc $vmn -put=key:alt-tab;;
+				esac
 				;;
 			*'"[$'\n']"'__i*'"[$'\n']"'__i*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
