@@ -2069,6 +2069,13 @@ case "${BOOT_OPTS[*]}" in
 	(*uefi*|*firmware=efi*) VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter";;
 esac
 
+QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
+$QEMU_KVM -machine help|grep -q q35 && Q35=support
+[[ "$MACHINE_OPT" = *q35 && "$Q35" != support ]] && {
+	echo -e "{VM:ERROR} Guest require machine type 'q35', but the qemu in your platform doesn't support 'q35'" >&2
+	exit 1
+}
+
 [[ ${#WIN_HOSTNAME} -gt 15 ]] && {
 	echo -e "{VM:ERROR} length of windows hostname($WIN_HOSTNAME) should < 16" >&2
 	exit 1
@@ -2076,7 +2083,6 @@ esac
 
 DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 
-QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
 qemu_kvm_nvr() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
@@ -2384,7 +2390,7 @@ fi
 		setfacl -d -mg::--- -mo::--- $VMpath
 	fi
 }
-if [[ "$VM_OS_VARIANT" = win* || "${VMpath,,}" =~ (win|windows)-?[0-9] ]]; then
+if [[ "$VM_OS_VARIANT" = win* || "${VMpath,,}" =~ (win|windows(-server)?)-?[0-9] ]]; then
 	_MSIZE=4096
 	[[ "$dsizeflag" -ne 1 ]] && DSIZE=80
 
@@ -2392,10 +2398,12 @@ if [[ "$VM_OS_VARIANT" = win* || "${VMpath,,}" =~ (win|windows)-?[0-9] ]]; then
 	if [[ "${EXTRA_CDROMS[*]}" != *virtio-win*.iso* ]]; then
 		VirtioDriverISOUrl=/usr/share/virtio-win/virtio-win.iso
 		if [[ -f "$VirtioDriverISOUrl" ]]; then
-			EXTRA_CDROMS+=("$VirtioDriverISOUrl")
-		else
-			VirtioDriverISOUrl=https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.215-2/virtio-win.iso
-			: do nothing
+			#Q35 support multi-cdrom
+			if [[ "$Q35" = support ]] && [[ -z "$MACHINE_OPT" || "$MACHINE_OPT" = *q35 ]]; then
+				EXTRA_CDROMS+=("$VirtioDriverISOUrl")
+			elif [[ -z "$WIN_VirtioDrv_OPT" ]]; then
+				WIN_VirtioDrv_OPT="--virtio-win=$VirtioDriverISOUrl"
+			fi
 		fi
 	fi
 fi
@@ -2615,6 +2623,10 @@ for disk in "${DISKS[@]}"; do
 done
 
 ### xcdrom option
+[[ ${#EXTRA_CDROMS[@]} > 0 && -z "$MACHINE_OPT" ]] && {
+	#Q35 support multi-cdrom
+	[[ "$Q35" = support ]] && MACHINE_OPT="--machine=q35"
+}
 for _iso in "${EXTRA_CDROMS[@]}"; do
 	isopath=$VMpath/${_iso##*/}
 	cp -v $_iso $isopath
@@ -3370,7 +3382,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				vm vnc $vmn -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
-			*install?vir*)
+			*install?vir*|?*nsta*v?*r)
 				echo "$screenocr"
 				vm vnc $vmn -put=key:alt-tab -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
