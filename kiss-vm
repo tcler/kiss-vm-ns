@@ -2071,7 +2071,7 @@ esac
 
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
 $QEMU_KVM -machine help|grep -q q35 && Q35=support
-[[ "$MACHINE_OPT" = *q35 && "$Q35" != support ]] && {
+[[ "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
 	echo -e "{VM:ERROR} Guest require machine type 'q35', but the qemu in your platform doesn't support 'q35'" >&2
 	exit 1
 }
@@ -2399,7 +2399,7 @@ if [[ "$VM_OS_VARIANT" = win* || "${VMpath,,}" =~ (win|windows(-server)?)-?[0-9]
 		VirtioDriverISOUrl=/usr/share/virtio-win/virtio-win.iso
 		if [[ -f "$VirtioDriverISOUrl" ]]; then
 			#Q35 support multi-cdrom
-			if [[ "$Q35" = support ]] && [[ -z "$MACHINE_OPT" || "$MACHINE_OPT" = *q35 ]]; then
+			if [[ "$Q35" = support ]] && [[ -z "$MACHINE_OPT" || "$MACHINE_OPT" = *q35* ]]; then
 				EXTRA_CDROMS+=("$VirtioDriverISOUrl")
 			elif [[ -z "$WIN_VirtioDrv_OPT" ]]; then
 				WIN_VirtioDrv_OPT="--virtio-win=$VirtioDriverISOUrl"
