@@ -75,7 +75,11 @@ switch($Stage) {
 
 		# turning off firewall
 		Out-Host "`n==> turning off firewall"
-		Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
+		if (Get-Command Set-NetFirewallProfile -errorAction SilentlyContinue) {
+			Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
+		} else {
+			netsh advfirewall set currentprofile state off
+		}
 
 		# enabling remote desktop
 		Out-Host "`n==> enabling remote desktop"
@@ -135,7 +139,9 @@ switch($Stage) {
 		$EXT_STATIC_IP = "@EXT_STATIC_IP@"
 
 		#waiting NICs up ready
-		while ($true) {
+		$NicArray = @()
+		#while ($true) {
+		while (Get-Command Get-NetAdapter -errorAction SilentlyContinue) {
 			$NicArray = (Get-NetAdapter | Sort-Object -Property InterfaceIndex)
 			if ($NicArray.count -ge 2) {
 				break
@@ -166,7 +172,8 @@ switch($Stage) {
 		}
 
 		# change address of EXT NIC from DHCP to STATIC
-		while ($true) {
+		#while ($true) {
+		while (Get-Command Get-NetIPAddress -errorAction SilentlyContinue) {
 			$oldExtAddrs = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicExt.InterfaceIndex)
 			if ($null -ne $oldExtAddrs -and $null -ne $oldExtAddrs[0].IPAddress -and $oldExtAddrs[0].IPAddress -is [string] -and $oldExtAddrs[0].IPAddress.Trim() -notlike "169.254.*") {
 				break

@@ -27,8 +27,13 @@ Sample answer file for headless deployment
             </OOBE>
             <FirstLogonCommands>
                 <SynchronousCommand wcm:action="add">
-			<CommandLine>powershell -NoProfile -ExecutionPolicy Bypass -Command "for ($c=65; $c -lt 91; $c++) { $L=[char]$c; $P=\"${L}:\postinstall.ps1\"; if (Test-Path -Path $P) {break} }; iex $P > @POST_INSTALL_LOG@ 2>&1"</CommandLine>
+			<CommandLine>cmd /C "powershell Set-ExecutionPolicy -ExecutionPolicy Bypass > C:\enable-powershell.log 2>&1"</CommandLine>
                     <Order>1</Order>
+                    <Description>Set powershell policy for Win7</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+			<CommandLine>cmd /C powershell -NoProfile -ExecutionPolicy Bypass -Command "for ($c=65; $c -lt 91; $c++) { $L=[char]$c; $P=\"${L}:\postinstall.ps1\"; if (Test-Path -Path $P) {break} }; iex $P > @POST_INSTALL_LOG@ 2>&1"</CommandLine>
+                    <Order>2</Order>
                     <Description>Run Post-Install commands</Description>
                 </SynchronousCommand>
             </FirstLogonCommands>
