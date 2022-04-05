@@ -61,9 +61,6 @@ $LogPath = "C:\$LogDirName"
 New-Item "$LogPath" -ItemType Directory -ea 0
 
 $TestPath = "C:"
-if (Test-Path -Path F:) {
-	$TestPath = "F:"
-}
 
 $RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
 
@@ -358,7 +355,7 @@ if (Test-Path -Path $AutoRunFilePath) {
 Out-Host "`n==> save ipconfig info and generate install complete file !!!"
 ipconfig | out-file -encoding utf8 $LogPath\@IPCONFIG_LOGF@
 echo "install complete" | out-file -encoding utf8 $LogPath\@INSTALL_COMPLETE_FILE@
-foreach ($dir in ("$ansfDriveLetter", "F:")) {
+foreach ($dir in ("$ansfDriveLetter")) {
 	if (Test-Path -Path $dir) {
 		Copy-Item -Path $LogPath -Recurse -Destination $dir\
 		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $LogPath
