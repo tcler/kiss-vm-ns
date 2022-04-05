@@ -50,17 +50,21 @@ $ansfDriveLetter = "$((Get-Item $mypath).PSDrive.Name):"
 
 Out-Host "==> Start postinstall $mypath ..."
 Out-Host "==> Start initialize second disk ..."
-Get-Disk |
-	Where partitionstyle -eq 'raw' |
+$diskArray = (Get-Disk | Where partitionstyle -eq 'raw')
+for ($i=1; $i -le $diskArray.Count; $i++) {
+	$diskArray[$i-1] |
 	Initialize-Disk -PartitionStyle MBR -PassThru |
 	New-Partition -AssignDriveLetter -UseMaximumSize |
-	Format-Volume -FileSystem NTFS -NewFileSystemLabel "test" -Confirm:$false
+	Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
+}
+$testDrvLetter = (Get-Volume -FileSystemLabel "test1").DriveLetter
 
 $LogDirName = "postinstall_logs"
 $LogPath = "C:\$LogDirName"
 New-Item "$LogPath" -ItemType Directory -ea 0
 
 $TestPath = "C:"
+if ($testDrvLetter) { $TestPath = "${testDrvLetter}:" }
 
 $RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
 
