@@ -80,7 +80,11 @@ switch($Stage) {
 
 		# turning off firewall
 		Out-Host "`n==> turning off firewall"
-		Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
+		if (Get-Command Set-NetFirewallProfile -errorAction SilentlyContinue) {
+			Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
+		} else {
+			netsh advfirewall set currentprofile state off
+		}
 
 		# enabling remote desktop
 		Out-Host "`n==> enabling remote desktop"

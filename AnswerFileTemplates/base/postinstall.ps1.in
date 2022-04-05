@@ -51,11 +51,13 @@ $ansfDriveLetter = "$((Get-Item $mypath).PSDrive.Name):"
 
 Out-Host "==> Start postinstall $mypath ..."
 Out-Host "==> Start initialize second disk ..."
-Get-Disk |
-	Where partitionstyle -eq 'raw' |
+$diskArray = (Get-Disk | Where partitionstyle -eq 'raw')
+for ($i=1; $i -le $diskArray.Count; $i++) {
+	$diskArray[$i-1] |
 	Initialize-Disk -PartitionStyle MBR -PassThru |
 	New-Partition -AssignDriveLetter -UseMaximumSize |
-	Format-Volume -FileSystem FAT32 -NewFileSystemLabel "test" -Confirm:$false
+	Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
+}
 
 $LogDirName = "postinstall_logs"
 $LogPath = "C:\$LogDirName"
