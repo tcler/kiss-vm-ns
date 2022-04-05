@@ -3373,9 +3373,10 @@ elif [[ "$InstallType" = cdrom ]]; then
 				sleep 10;;
 			esac
 		done'
-		run -tmux=virtio-win-install_$vmname 'sleep 180; vmn='"$vmname"'
+		run -tmux=virtio-win-install_$vmname 'sleep 180; vmn='"$vmname"'; temp='"$WIN_TEMPLATE"'
 		pre=no
 		for ((i=0; i<720; i++)); do
+			[[ "$temp" != base ]] && break
 			screenocr=$(vm vnc $vmn -get)
 			case "${screenocr,,}" in
 			stat?c??p) break;;
