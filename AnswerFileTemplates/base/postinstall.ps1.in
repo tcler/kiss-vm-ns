@@ -50,15 +50,6 @@ $mypath = $MyInvocation.Mycommand.Path
 $ansfDriveLetter = "$((Get-Item $mypath).PSDrive.Name):"
 
 Out-Host "==> Start postinstall $mypath ..."
-Out-Host "==> Start initialize second disk ..."
-$diskArray = (Get-Disk | Where partitionstyle -eq 'raw')
-for ($i=1; $i -le $diskArray.Count; $i++) {
-	$diskArray[$i-1] |
-	Initialize-Disk -PartitionStyle MBR -PassThru |
-	New-Partition -AssignDriveLetter -UseMaximumSize |
-	Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
-}
-
 $LogDirName = "postinstall_logs"
 $LogPath = "C:\$LogDirName"
 New-Item "$LogPath" -ItemType Directory -ea 0
@@ -133,6 +124,15 @@ switch($Stage) {
 			Out-Host "`n==> install virtio-win driver: $msifile ..."
 			powershell "msiexec.exe /i $msifile /passive /qn /norestart"
 			#powershell "$exefile install /qn /passive /norestart"
+		}
+
+		Out-Host "==> Start initialize second disk ..."
+		$diskArray = (Get-Disk | Where partitionstyle -eq 'raw')
+		for ($i=1; $i -le $diskArray.Count; $i++) {
+			$diskArray[$i-1] |
+			Initialize-Disk -PartitionStyle MBR -PassThru |
+			New-Partition -AssignDriveLetter -UseMaximumSize |
+			Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
 		}
 
 		# static ip setup

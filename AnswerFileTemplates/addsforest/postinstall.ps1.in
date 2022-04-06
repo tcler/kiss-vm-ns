@@ -46,22 +46,10 @@ $mypath = $MyInvocation.Mycommand.Path
 $ansfDriveLetter = "$((Get-Item $mypath).PSDrive.Name):"
 
 Out-Host "==> Start postinstall $mypath ..."
-Out-Host "==> Start initialize second disk ..."
-$diskArray = (Get-Disk | Where partitionstyle -eq 'raw')
-for ($i=1; $i -le $diskArray.Count; $i++) {
-	$diskArray[$i-1] |
-	Initialize-Disk -PartitionStyle MBR -PassThru |
-	New-Partition -AssignDriveLetter -UseMaximumSize |
-	Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
-}
-$testDrvLetter = (Get-Volume -FileSystemLabel "test1").DriveLetter
-
 $LogDirName = "postinstall_logs"
 $LogPath = "C:\$LogDirName"
 New-Item "$LogPath" -ItemType Directory -ea 0
-
 $TestPath = "C:"
-if ($testDrvLetter) { $TestPath = "${testDrvLetter}:" }
 
 $RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
 
@@ -107,6 +95,17 @@ switch($Stage) {
 		Out-Host "`n==> add host's hostname to $Env:WinDir\system32\drivers\etc\hosts"
 		echo "" >> $Env:WinDir\system32\drivers\etc\hosts
 		echo "@HOST_IP@ @VIRTHOST@" >> $Env:WinDir\system32\drivers\etc\hosts
+
+		Out-Host "==> Start initialize second disk ..."
+		$diskArray = (Get-Disk | Where partitionstyle -eq 'raw')
+		for ($i=1; $i -le $diskArray.Count; $i++) {
+			$diskArray[$i-1] |
+			Initialize-Disk -PartitionStyle MBR -PassThru |
+			New-Partition -AssignDriveLetter -UseMaximumSize |
+			Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
+		}
+		$testDrvLetter = (Get-Volume -FileSystemLabel "test1").DriveLetter
+		if ($testDrvLetter) { $TestPath = "${testDrvLetter}:" }
 
 		# static ip setup
 		Out-Host "`n==> static ip setup"
