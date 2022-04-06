@@ -1649,7 +1649,7 @@ Usage() {
 
 	Options for Windows Answer File Generator:
 	  --win-auto[=<base|cifs-nfs|addsdomain|addsforest>]
-			 #indicate generate answer file media for windows, optional param is the name of answer file template
+	                 #indicate generate answer file media for windows, optional param is the name of answer file template
 	                  default: base; see also: /usr/share/AnswerFileTemplates/$template_name/
 	  --win-uefi     #support uefi
 	  --win-hostname <windows hostname>
@@ -1670,29 +1670,29 @@ Usage() {
 	  --win-ad-forest-level <Default|Win2008|Win2008R2|Win2012|Win2012R2|WinThreshold>
 	  --win-ad-domain-level <Default|Win2008|Win2008R2|Win2012|Win2012R2|WinThreshold>
 	  --win-enable-kdc
-			 #enable AD KDC service(in case use template cifs-nfs)
+	                 #enable AD KDC service(in case use template cifs-nfs)
 	  --win-parent-domain <parent-domain>
-			 #Domain name of an existing domain, only for template: 'addsdomain'
+	                 #Domain name of an existing domain, only for template: 'addsdomain'
 	  --win-parent-ip <parent-ip>
-			 #IP address of an existing domain, only for template: 'addsdomain'
+	                 #IP address of an existing domain, only for template: 'addsdomain'
 	  --win-dfs-target <server:sharename>
-			 #The specified cifs share will be added into dfs target.
+	                 #The specified cifs share will be added into dfs target.
 	  --win-openssh <url|local_path>
-			 #url/path to download/copy OpenSSH-Win64.zip
+	                 #url/path to download/copy OpenSSH-Win64.zip
 	  --win-virtio-drv <url|local_path>
-			 #url/path to download/copy virtio-win.iso
+	                 #url/path to download/copy virtio-win.iso
 	  --win-download-url <url|local_path>
-			 #url to download extra drivers/programs to anserfile media:
+	                 #url to download extra drivers/programs to anserfile media:
 	  --win-run <command line>
-			 #powershell cmd line need autorun and reboot
-			 #e.g: --run='./MLNX_VPI_WinOF-5_50_54000_All_win2019_x64.exe /S /V"qb /norestart"'
+	                 #powershell cmd line need autorun and reboot
+	                 #e.g: --win-run='./MLNX_VPI_WinOF-5_50_54000_All_win2019_x64.exe /S /V"qb /norestart"'
 	  --win-run-post <command line>
-			 #powershell cmd line need autorun without reboot
-			 #e.g: --run-post='ipconfig /all; ibstat'
+	                 #powershell cmd line need autorun without reboot
+	                 #e.g: --win-run-post='ipconfig /all; ibstat'
 	  --win-static-ip-ext <ip>
-			 #set static ip for the nic that connect to public network
+	                 #set static ip for the nic that connect to public network
 	  --win-static-ip-int <ip>
-			 #set static ip for the nic that connect to internal libvirt network
+	                 #set static ip for the nic that connect to internal libvirt network
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
