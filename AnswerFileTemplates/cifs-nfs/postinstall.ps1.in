@@ -109,6 +109,9 @@ switch($Stage) {
 		}
 		$testDrvLetter = (Get-Volume -FileSystemLabel "test1").DriveLetter
 		if ($testDrvLetter) { $TestPath = "${testDrvLetter}:" }
+		$TestPath2 = ""
+		$testDrvLetter2 = (Get-Volume -FileSystemLabel "test2").DriveLetter
+		if ($testDrvLetter2) { $TestPath2 = "${testDrvLetter2}:" }
 
 		# static ip setup
 		Out-Host "`n==> static ip setup"
@@ -200,6 +203,7 @@ switch($Stage) {
 		$nfsPath = "$TestPath\nfstest"
 		$nfsShareName = "nfstest"
 		$nfsPath2 = "$TestPath\nfssch"
+		if ($TestPath2) {$nfsPath2 = "$TestPath2\nfssch"}
 		$nfsShareName2 = "nfssch"
 		mkdir $nfsPath
 		mkdir $nfsPath2
@@ -222,6 +226,7 @@ switch($Stage) {
 		$cifsPath = "$TestPath\cifstest"
 		$cifsShareName = "cifstest"
 		$cifsPath2 = "$TestPath\cifssch"
+		if ($TestPath2) {$cifsPath2 = "$TestPath2\cifssch"}
 		$cifsShareName2 = "cifssch"
 		$cifsPath3 = "$TestPath\dfsroot"
 		$cifsShareName3 = "dfsroot"
