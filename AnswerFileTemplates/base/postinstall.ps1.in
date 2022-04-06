@@ -100,7 +100,7 @@ switch($Stage) {
 		echo "@HOST_IP@ @VIRTHOST@" >> $Env:WinDir\system32\drivers\etc\hosts
 
 		# try install virtio-win driver
-		$msifile, $exefile = "", ""
+		$msifile, $exefile, $drvDir = "", "", ""
 		$isoPath = "$ansfDriveLetter\virtio-win.iso"
 		if (Test-Path -Path $isoPath) {
 			Out-Host "`n==> mount iso file: $isoPath ..."
@@ -108,19 +108,24 @@ switch($Stage) {
 			$drive = "$(($mntObj | Get-Volume).DriveLetter):"
 			$msifile = "$drive\virtio-win-gt-x64.msi"
 			$exefile = "$drive\virtio-win-guest-tools.exe"
+			$drvDir = "$drive\amd64"
 		}
 		if (!$msifile) {
 			for ($c=65; $c -lt 91; $c++) {
 				$L=[char]$c;
 				$M="${L}:\virtio-win-gt-x64.msi";
 				$E="${L}:\virtio-win-guest-tools.exe";
+				$D="${L}:\amd64"
 				if (Test-Path -Path $M) {
-					$msifile, $exefile = $M, $E
+					$msifile, $exefile, $drvDir = $M, $E, $D
 					break
 				}
 			}
 		}
-		if ($msifile -and (Test-Path -Path $msifile)) {
+		if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
+			Out-Host "`n==> win7 virtio-win driver: ${D}\w7\ ..."
+			PnPutil.exe -i -a ${D}\w7\*.inf
+		} elseif ($msifile -and (Test-Path -Path $msifile)) {
 			Out-Host "`n==> install virtio-win driver: $msifile ..."
 			powershell "msiexec.exe /i $msifile /passive /qn /norestart"
 			#powershell "$exefile install /qn /passive /norestart"

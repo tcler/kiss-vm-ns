@@ -3380,6 +3380,11 @@ elif [[ "$InstallType" = cdrom ]]; then
 			screenocr=$(vm vnc $vmn -get)
 			case "${screenocr,,}" in
 			stat?c??p) break;;
+			*==??win7*|*0e3????53J3e3c3_0_e*|*88??o0_8_i9*)
+				vm vnc $vmn -put=key:tab -put=key:enter
+				vm vnc $vmn -put=key:alt-tab
+				vm vnc $vmn -put=key:tab -put=key:enter
+				break;;
 			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
