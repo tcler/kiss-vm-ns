@@ -49,7 +49,6 @@ Out-Host "==> Start postinstall $mypath ..."
 $LogDirName = "postinstall_logs"
 $LogPath = "C:\$LogDirName"
 New-Item "$LogPath" -ItemType Directory -ea 0
-$TestPath = "C:"
 
 $RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
 
@@ -97,13 +96,15 @@ switch($Stage) {
 		echo "@HOST_IP@ @VIRTHOST@" >> $Env:WinDir\system32\drivers\etc\hosts
 
 		Out-Host "==> Start initialize second disk ..."
-		$diskArray = (Get-Disk | Where partitionstyle -eq 'raw')
+		Get-Disk | Where partitionstyle -eq 'raw' | Out-Host
+		$diskArray = @(Get-Disk | Where partitionstyle -eq 'raw')
 		for ($i=1; $i -le $diskArray.Count; $i++) {
 			$diskArray[$i-1] |
 			Initialize-Disk -PartitionStyle MBR -PassThru |
 			New-Partition -AssignDriveLetter -UseMaximumSize |
 			Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
 		}
+		$TestPath = "C:"
 		$testDrvLetter = (Get-Volume -FileSystemLabel "test1").DriveLetter
 		if ($testDrvLetter) { $TestPath = "${testDrvLetter}:" }
 

@@ -2025,7 +2025,7 @@ while true; do
 	--win-*)
 		WIN_AUTO=yes
 		DEFAULT_DISK_BUS=sata
-		WIN_TEMPLATE=base
+		WIN_TEMPLATE=${WIN_TEMPLATE:-base}
 		case "$1" in
 		--win-auto)		[[ -n "$2" ]] && WIN_TEMPLATE="${2}"; shift 2;;
 		--win-uefi)		WIN_UEFI_OPT="--uefi"; shift 1;;

@@ -127,7 +127,8 @@ switch($Stage) {
 		}
 
 		Out-Host "==> Start initialize second disk ..."
-		$diskArray = (Get-Disk | Where partitionstyle -eq 'raw')
+		Get-Disk | Where partitionstyle -eq 'raw' | Out-Host
+		$diskArray = @(Get-Disk | Where partitionstyle -eq 'raw')
 		for ($i=1; $i -le $diskArray.Count; $i++) {
 			$diskArray[$i-1] |
 			Initialize-Disk -PartitionStyle MBR -PassThru |
