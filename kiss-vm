@@ -1736,10 +1736,12 @@ Usage() {
 	  $P create OpenIndiana -n opensolaris -C OI-hipster-text-20211031.iso -msize 8G -dsize 120
 
 	Examples for auto create Windows VM (if have not product-key, must use Evaluation release)
-	  $P create Windows-10 -n win10-auto -C ~/Downloads/Win10.iso --win-auto --win-key="\$productKey"
-	  $P create Windows-11 -n win11-auto -C ~/Downloads/Win11-Evaluation.iso --win-auto
-	  $P create Windows-server-2012 -n win2012r2-auto -C ~/Downloads/Win2012r2-Evaluation.iso --win-auto
-	  $P create Windows-server-2019 -n win2019-auto -C ~/Downloads/Win2019-Evaluation.iso --win-auto
+	  $P create Windows-7  -C ~/Downloads/cn_windows_7_ultimate_with_sp1_x64_dvd_u_677408.iso --win-auto -xdisk 20,bus=virtio -n win7-auto -f
+	  $P create Windows-10 -C ~/Downloads/Win10-Evaluation.iso --win-auto  -f #-n win10-auto
+	  $P create Windows-11 -C ~/Downloads/Win11-Evaluation.iso --win-auto  -f #-n win11-auto
+	  $P create Windows-server-2019   -C ~/Downloads/Win2019-Evaluation.iso   --win-auto  -f #-n win2019-auto
+	  $P create Windows-server-2012r2 -C ~/Downloads/Win2012r2-Evaluation.iso --win-auto  -f #-n win2012r2-auto
+	  $P create Windows-server-2012r2 -C ~/Downloads/Win2012r2.iso --win-auto --win-key="\${key:-W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9}"  -f #-n win2012r2-auto
 
 	Examples for other sub-commands:
 	  $P prepare [-u user] #check/install/configure libvirt and other dependent packages
@@ -3208,7 +3210,7 @@ elif [[ "$InstallType" = pxe ]]; then
 			echo -e "\n{VM:INFO} virt-viewer disconnected, run: 'virt-viewer -s $vmname' to finish install"
 		fi
 	else
-		echo -e "\n{VM:INFO} please connect vnc to continue install:"
+		echo -e "\n{VM:INFO} please connect vnc to continue/complete the install:"
 		for vncaddr in $(vmvncproc $vmname); do
 			echo -e "  $ vncviewer $vncaddr    #from remote"
 		done
