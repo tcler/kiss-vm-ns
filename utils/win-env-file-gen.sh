@@ -8,7 +8,7 @@ POST_INSTALL_LOGF=postinstall.log
 IPCONFIG_LOGF=ipconfig.log
 WIN_INSTALL_LOG=/tmp/$vmname.install.log
 WIN_IPCONFIG_LOG=/tmp/$vmname.ipconfig.log
-WIN_ENVF=/tmp/$vmname.win.env
+WIN_ENVF=/tmp/win.env.$vmname
 rm -f $WIN_INSTALL_LOG $WIN_IPCONFIG_LOG $WIN_ENVF
 vm cpfrom $vmname C:/$POST_INSTALL_LOGF $WIN_INSTALL_LOG
 vm cpfrom $vmname C:/postinstall_logs/$IPCONFIG_LOGF $WIN_IPCONFIG_LOG
