@@ -13,6 +13,31 @@ Function Out-Host {
 	echo "$str"
 }
 
+Function init-extra-disks {
+	if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
+		$dlist = @("list disk"|diskpart|Select-String -Pattern "Disk (\d+) .*GB *$")
+		for ($i=0; $i -lt $dlist.Count; $i++) {
+			$m = $dlist[$i]
+			$Num = $($m.Matches).Groups[1].Value
+			"Select disk $Num
+				Create partition PRIMARY
+				Format FS=NTFS LABEL=test$($i+1) QUICK
+				Assign
+				Active
+				exit"|diskpart
+		}
+	} else {
+		Get-Disk | Where partitionstyle -eq 'raw' | Out-Host
+		$diskArray = @(Get-Disk | Where partitionstyle -eq 'raw')
+		for ($i=1; $i -le $diskArray.Count; $i++) {
+			$diskArray[$i-1] |
+			Initialize-Disk -PartitionStyle MBR -PassThru |
+			New-Partition -AssignDriveLetter -UseMaximumSize |
+			Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
+		}
+	}
+}
+
 Function Unzip-File() {
 	param([string]$ZipFile, [string]$TargetFolder)
 	if (!(Test-Path $TargetFolder)) {
@@ -98,15 +123,8 @@ switch($Stage) {
 		echo "" >> $Env:WinDir\system32\drivers\etc\hosts
 		echo "@HOST_IP@ @VIRTHOST@" >> $Env:WinDir\system32\drivers\etc\hosts
 
-		Out-Host "==> Start initialize second disk ..."
-		Get-Disk | Where partitionstyle -eq 'raw' | Out-Host
-		$diskArray = @(Get-Disk | Where partitionstyle -eq 'raw')
-		for ($i=1; $i -le $diskArray.Count; $i++) {
-			$diskArray[$i-1] |
-			Initialize-Disk -PartitionStyle MBR -PassThru |
-			New-Partition -AssignDriveLetter -UseMaximumSize |
-			Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
-		}
+		Out-Host "==> Start initialize extra disks ..."
+		init-extra-disks
 		$TestPath = "C:"
 		$testDrvLetter = (Get-Volume -FileSystemLabel "test1").DriveLetter
 		if ($testDrvLetter) { $TestPath = "${testDrvLetter}:" }
