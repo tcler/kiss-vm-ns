@@ -30,7 +30,7 @@ else
 	for ((i=0; i<CNT; i++)); do
 		port_available "${_at[@]}"; rc=$?
 		[[ $rc = 0 ]] && break
-		[[ "$TIME" = forever ]] && i=0
+		[[ "$TIME" = forever ]] && { i=0; CNT=2; }
 		sleep 10
 	done
 fi
