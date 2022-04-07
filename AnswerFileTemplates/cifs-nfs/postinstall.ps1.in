@@ -70,6 +70,28 @@ Function Install-sshd() {
 	Get-Content -Path C:\sshkeys\id_*.pub | Set-Content "C:\ProgramData\ssh\administrators_authorized_keys"
 }
 
+Function Generate-Env-File {
+	$envf = "C:\win.env"
+	echo "#windows env file
+#VM_INT_IP=
+#VM_EXT_IP=
+#VM_EXT_IP6=
+
+ADMINUSER=@ADMINUSER@
+ADMINPASSWORD=@ADMINPASSWORD@
+AD_NETBIOS_NAME=@NETBIOS_NAME@
+AD_DOMAIN=@AD_DOMAIN@
+AD_FQDN=@FQDN@
+
+WIN_CIFS_SHARE1=cifstest
+WIN_CIFS_SHARE2=cifssch
+WIN_DFS_SHARE=dfsroot
+WIN_DFS_SHARE1=dfsroot/local
+WIN_DFS_SHARE2=dfsroot/remote
+WIN_NFS_SHARE1=/nfstest
+WIN_NFS_SHARE2=/nfssch" >$envf
+}
+
 $mypath = $MyInvocation.Mycommand.Path
 $ansfDriveLetter = "$((Get-Item $mypath).PSDrive.Name):"
 
@@ -367,6 +389,9 @@ switch($Stage) {
 
 	}
 }
+
+# windows env file
+Generate-Env-File
 
 # installing openssh
 $OpenSSHPath = "$ansfDriveLetter\OpenSSH.zip"
