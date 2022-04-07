@@ -2041,7 +2041,7 @@ while true; do
 		--win-domain)		WIN_DOMAIN_OPT="--domain=$2"; shift 2;;
 		--win-locale)		WIN_LOCALE_OPT="--locale=$2"; shift 2;;
 		--win-enable-kdc)	WIN_KDC_OPT="--enable-kdc"; shift 1;;
-		--win-dfs-target)	WIN_DFS_TARGET_OPT="--dfs-target=$2"; DFS=yes; shift 2;;
+		--win-dfs-target)	DFS=yes; DFS_TARGET="$2"; WIN_DFS_TARGET_OPT="--dfs-target=$2"; shift 2;;
 		--win-ad-forest-level)	WIN_AD_FOREST_LEVEL_OPT="--ad-forest-level=$2"; shift 2;;
 		--win-ad-domain-level)	WIN_AD_DOMAIN_LEVEL_OPT="--ad-domain-level=$2"; shift 2;;
 		--win-parent-domain)	WIN_PARENT_DOMAIN_OPT="--parent-domain=$2"; shift 2;;
@@ -3257,6 +3257,12 @@ elif [[ "$InstallType" = cdrom ]]; then
 		WIN_WIM_IMAGE_INDEX=${WIN_WIM_IMAGE_INDEX:-4}
 		[[ "$VM_OS_VARIANT" = win10 || "${Distro,,}" =~ (win|windows-?)1[01] ]] && WIN_WIM_IMAGE_INDEX=1
 		WIN_WIM_IMAGE_INDEX_OPT="--wim-index=$WIN_WIM_IMAGE_INDEX"
+		if [[ "$DFS" = yes && -z "$DFS_TARGET" ]]; then
+			make-samba-server.sh --users=$WIN_USER,smbfoo,smbbar \
+				--passwd=$WIN_PASS --group=${WIN_DOMAIN//./}
+			DFS_TARGET=$HOSTNAME:pub
+			WIN_DFS_TARGET_OPT="--dfs-target=$DFS_TARGET"
+		fi
 		#WIN_OpenSSH_OPT
 		#WIN_VirtioDrv_OPT
 		#WIN_LOCALE_OPT
@@ -3267,7 +3273,6 @@ elif [[ "$InstallType" = cdrom ]]; then
 		#WIN_PARENT_DOMAIN_OPT
 		#WIN_PARENT_IP_OPT
 		#WIN_KDC_OPT
-		#WIN_DFS_TARGET_OPT
 		#WIN_DL_URL_OPTS+
 		#WIN_RUN_CMD_OPTS+
 		#WIN_RUN_POST_CMD_OPTS+
