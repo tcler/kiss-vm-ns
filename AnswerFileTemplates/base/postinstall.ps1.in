@@ -14,6 +14,65 @@ Function Out-Host {
 	echo "$str"
 }
 
+Function virtio-win-install() {
+	param([string]$AnsfDrvLetter)
+	$msifile, $exefile, $drvDir = "", "", ""
+	$isoPath = "$AnsfDrvLetter\virtio-win.iso"
+	if (Test-Path -Path $isoPath) {
+		Out-Host "`n==> mount iso file: $isoPath ..."
+		$mntObj = Mount-DiskImage -ImagePath $isoPath -PassThru
+		$drive = "$(($mntObj | Get-Volume).DriveLetter):"
+		$msifile = "$drive\virtio-win-gt-x64.msi"
+		$exefile = "$drive\virtio-win-guest-tools.exe"
+		$drvDir = "$drive\amd64"
+	}
+	if (!$msifile) {
+		for ($c=65; $c -lt 91; $c++) {
+			$L=[char]$c;
+			$M="${L}:\virtio-win-gt-x64.msi";
+			$E="${L}:\virtio-win-guest-tools.exe";
+			$D="${L}:\amd64"
+			if (Test-Path -Path $M) {
+				$msifile, $exefile, $drvDir = $M, $E, $D
+				break
+			}
+		}
+	}
+	if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
+		Out-Host "`n==> win7 virtio-win driver: ${D}\w7\ ..."
+		PnPutil.exe -i -a ${D}\w7\*.inf
+	} elseif ($msifile -and (Test-Path -Path $msifile)) {
+		Out-Host "`n==> install virtio-win driver: $msifile ..."
+		powershell "msiexec.exe /i $msifile /passive /qn /norestart"
+		#powershell "$exefile install /qn /passive /norestart"
+	}
+}
+
+Function init-extra-disks {
+	if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
+		$dlist = @("list disk"|diskpart|Select-String -Pattern "Disk (\d+) .*GB *$")
+		for ($i=0; $i -lt $dlist.Count; $i++) {
+			$m = $dlist[$i]
+			$Num = $($m.Matches).Groups[1].Value
+			"Select disk $Num
+				Create partition PRIMARY
+				Format FS=NTFS LABEL=test$($i+1) QUICK
+				Assign
+				Active
+				exit"|diskpart
+		}
+	} else {
+		Get-Disk | Where partitionstyle -eq 'raw' | Out-Host
+		$diskArray = @(Get-Disk | Where partitionstyle -eq 'raw')
+		for ($i=1; $i -le $diskArray.Count; $i++) {
+			$diskArray[$i-1] |
+			Initialize-Disk -PartitionStyle MBR -PassThru |
+			New-Partition -AssignDriveLetter -UseMaximumSize |
+			Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
+		}
+	}
+}
+
 Function Unzip-File() {
 	param([string]$ZipFile, [string]$TargetFolder)
 	if (!(Test-Path $TargetFolder)) {
@@ -100,46 +159,11 @@ switch($Stage) {
 		echo "@HOST_IP@ @VIRTHOST@" >> $Env:WinDir\system32\drivers\etc\hosts
 
 		# try install virtio-win driver
-		$msifile, $exefile, $drvDir = "", "", ""
-		$isoPath = "$ansfDriveLetter\virtio-win.iso"
-		if (Test-Path -Path $isoPath) {
-			Out-Host "`n==> mount iso file: $isoPath ..."
-			$mntObj = Mount-DiskImage -ImagePath $isoPath -PassThru
-			$drive = "$(($mntObj | Get-Volume).DriveLetter):"
-			$msifile = "$drive\virtio-win-gt-x64.msi"
-			$exefile = "$drive\virtio-win-guest-tools.exe"
-			$drvDir = "$drive\amd64"
-		}
-		if (!$msifile) {
-			for ($c=65; $c -lt 91; $c++) {
-				$L=[char]$c;
-				$M="${L}:\virtio-win-gt-x64.msi";
-				$E="${L}:\virtio-win-guest-tools.exe";
-				$D="${L}:\amd64"
-				if (Test-Path -Path $M) {
-					$msifile, $exefile, $drvDir = $M, $E, $D
-					break
-				}
-			}
-		}
-		if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
-			Out-Host "`n==> win7 virtio-win driver: ${D}\w7\ ..."
-			PnPutil.exe -i -a ${D}\w7\*.inf
-		} elseif ($msifile -and (Test-Path -Path $msifile)) {
-			Out-Host "`n==> install virtio-win driver: $msifile ..."
-			powershell "msiexec.exe /i $msifile /passive /qn /norestart"
-			#powershell "$exefile install /qn /passive /norestart"
-		}
+		Out-Host "`n==> install virtio-win driver ..."
+		virtio-win-install -AnsfDrvLetter $ansfDriveLetter
 
-		Out-Host "==> Start initialize second disk ..."
-		Get-Disk | Where partitionstyle -eq 'raw' | Out-Host
-		$diskArray = @(Get-Disk | Where partitionstyle -eq 'raw')
-		for ($i=1; $i -le $diskArray.Count; $i++) {
-			$diskArray[$i-1] |
-			Initialize-Disk -PartitionStyle MBR -PassThru |
-			New-Partition -AssignDriveLetter -UseMaximumSize |
-			Format-Volume -FileSystem NTFS -NewFileSystemLabel "test$i" -Confirm:$false
-		}
+		Out-Host "==> Start initialize extra disks ..."
+		init-extra-disks
 
 		# static ip setup
 		Out-Host "`n==> static ip setup"
