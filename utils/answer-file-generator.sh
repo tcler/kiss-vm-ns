@@ -282,7 +282,7 @@ getDefaultIp4() {
 	done
 	local ipaddr=$(ip addr show $nic)
 	local ret=$(echo "$ipaddr" |
-			awk '/inet .* global dynamic/{match($0,"inet ([0-9.]+)/[0-9]+",M); print M[1]}');
+		awk '/inet .* (global|host lo)/{match($0,"inet ([0-9.]+)",M); print M[1]}')
 	echo "$ret"
 }
 
