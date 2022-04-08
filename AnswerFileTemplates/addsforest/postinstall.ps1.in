@@ -252,6 +252,11 @@ switch($Stage) {
 	}
 
 	"afterADSetup" {
+		# install DNS if has not been there
+		if (!(Get-Command dnscmd -errorAction SilentlyContinue)) {
+			Install-WindowsFeature -Name DNS -IncludeManagementTools
+		}
+
 		# do this just after AD has been set up
 		Out-Host "`n==> reset dns ip"
 		$DNS_IPS=(Get-WmiObject "Win32_NetworkAdapterConfiguration where MACAddress='@VNIC_EXT_MAC@'").IPaddress
