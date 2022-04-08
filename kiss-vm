@@ -2400,7 +2400,9 @@ if [[ "$VM_OS_VARIANT" = win* || "${VMpath,,}" =~ (win|windows(-server)?)-?[0-9]
 	if [[ "${EXTRA_CDROMS[*]}" != *virtio-win*.iso* ]]; then
 		VirtioDriverISOUrl=/usr/share/virtio-win/virtio-win.iso
 		if [[ -f "$VirtioDriverISOUrl" ]]; then
-			#Q35 support multi-cdrom
+			#q35 support multi-cdrom
+			#if not q35, extra cdrom will cause err: "boot failed : could not read from CDROM(code 0004)"
+			#`-> see also: https://marc.info/?l=centos&m=151039100602440&w=2
 			if [[ "$Q35" = support ]] && [[ -z "$MACHINE_OPT" || "$MACHINE_OPT" = *q35* ]]; then
 				EXTRA_CDROMS+=("$VirtioDriverISOUrl")
 			elif [[ -z "$WIN_VirtioDrv_OPT" ]]; then
