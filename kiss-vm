@@ -1694,6 +1694,7 @@ Usage() {
 	                 #set static ip for the nic that connect to public network
 	  --win-static-ip-int <ip>
 	                 #set static ip for the nic that connect to internal libvirt network
+	  --win-if-model <> #change default windows if model(e1000): virtio,rtl8139
 
 	EOF
 	[[ "$Intranet" = yes ]] && cat <<-EOF
@@ -1917,6 +1918,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw \
 	--long win-run: \
 	--long win-run-post: \
 	--long win-dfs-target: \
+	--long win-if-model: \
     -a -n "$0" -- "$@"`
 [[ $? != 0 ]] && { exit 1; }
 eval set -- "$_at"
@@ -2029,6 +2031,7 @@ while true; do
 		WIN_AUTO=yes
 		DEFAULT_DISK_BUS=sata
 		WIN_TEMPLATE=${WIN_TEMPLATE:-base}
+		WIN_IF_MODEL=${WIN_IF_MODEL:-e1000}
 		case "$1" in
 		--win-auto)		[[ -n "$2" ]] && WIN_TEMPLATE="${2}"; shift 2;;
 		--win-uefi)		WIN_UEFI_OPT="--uefi"; shift 1;;
@@ -2052,6 +2055,7 @@ while true; do
 		--win-run-post)		WIN_RUN_POST_CMD_OPTS+=("--run-post=$2"); shift 2;;
 		--win-static-ip-ext)	WIN_STATIC_IP_EXT="$2"; shift 2;;
 		--win-static-ip-int)	WIN_STATIC_IP_INT="$2"; shift 2;;
+		--win-if-model)		WIN_IF_MODEL="$2"; shift 2;;
 		*) shift;;
 		esac
 		;;
@@ -2560,7 +2564,8 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	elif [[ "$WIN_AUTO" = yes ]]; then
 		gen_virt_mac() { echo 54:52:00:${1:-00}$(od -txC -An -N2 /dev/random | tr \  :); }
 		WIN_MAC_INT=$(gen_virt_mac); WIN_MAC_EXT=$(gen_virt_mac)
-		NETWORK_OPTS="--network=network=default,model=e1000,mac=$WIN_MAC_INT --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=e1000,mac=$WIN_MAC_EXT"
+		case "$WIN_TEMPLATE" in (base) WIN_IF_MODEL=virtio;; esac
+		NETWORK_OPTS="--network=network=default,mac=$WIN_MAC_INT,model=${WIN_IF_MODEL} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}"
 	else
 		NETWORK_OPTS="--network=network=default,model=${DEFAULT_IF_MODEL} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}"
 	fi
