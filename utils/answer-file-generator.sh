@@ -81,6 +81,10 @@ Options for windows anwserfile:
   --run-post <command line>
 		#powershell cmd line need autorun without reboot
 		#e.g: --run-post='ipconfig /all; ibstat'
+  --mac-ext <mac-addr>
+		#set mac addr for the nic that connect to public network
+  --mac-int <mac-addr>
+		#set mac addr for the nic that connect to internal libvirt network
   --static-ip-ext <>
 		#set static ip for the nic that connect to public network
   --static-ip-int <>
@@ -157,6 +161,8 @@ ARGS=$(getopt -o hu:p: \
 	--long domain: \
 	--long ad-forest-level: \
 	--long ad-domain-level: \
+	--long mac-ext: \
+	--long mac-int: \
 	--long static-ip-ext: \
 	--long static-ip-int: \
 	--long enable-kdc \
@@ -185,8 +191,10 @@ while true; do
 	--domain) DOMAIN="$2"; shift 2;;
 	--ad-forest-level) AD_FOREST_LEVEL="$2"; shift 2;;
 	--ad-domain-level) AD_DOMAIN_LEVEL="$2"; shift 2;;
-	--static-ip-ext) EXT_STATIC_IP="$2"; shift 2;;
-	--static-ip-int) INT_STATIC_IP="$2"; shift 2;;
+	--mac-ext) MAC_EXT="$2"; shift 2;;
+	--mac-int) MAC_INT="$2"; shift 2;;
+	--static-ip-ext) STATIC_IP_EXT="$2"; shift 2;;
+	--static-ip-int) STATIC_IP_INT="$2"; shift 2;;
 	--enable-kdc) KDC_OPT="-kdc"; shift 1;;
 	--parent-domain) PARENT_DOMAIN="$2"; shift 2;;
 	--parent-ip) PARENT_IP="$2"; shift 2;;
@@ -356,10 +364,10 @@ process_ansf() {
 		-e "s/@INSTALL_COMPLETE_FILE@/$INSTALL_COMPLETE_FILE/g" \
 		-e "s/@AD_FOREST_LEVEL@/$AD_FOREST_LEVEL/g" \
 		-e "s/@AD_DOMAIN_LEVEL@/$AD_DOMAIN_LEVEL/g" \
-		-e "s/@VNIC_INT_MAC@/$MAC_INT/g" \
-		-e "s/@VNIC_EXT_MAC@/$MAC_EXT/g" \
-		-e "s/@INT_STATIC_IP@/$INT_STATIC_IP/g" \
-		-e "s/@EXT_STATIC_IP@/$EXT_STATIC_IP/g" \
+		-e "s/@VNIC_MAC_INT@/$MAC_INT/g" \
+		-e "s/@VNIC_MAC_EXT@/$MAC_EXT/g" \
+		-e "s/@STATIC_IP_INT@/$STATIC_IP_INT/g" \
+		-e "s/@STATIC_IP_EXT@/$STATIC_IP_EXT/g" \
 		-e "s/@VIRTHOST@/$VIRTHOST/g" \
 		-e "s/@IPCONFIG_LOGF@/$IPCONFIG_LOGF/g" \
 		-e "s/@GUEST_HOSTNAME@/$GUEST_HOSTNAME/g" \

@@ -105,6 +105,11 @@ Function Install-sshd() {
 	Get-Content -Path C:\sshkeys\id_*.pub | Set-Content "C:\ProgramData\ssh\administrators_authorized_keys"
 }
 
+Function GetIPAddrFromNic() {
+	param([System.Object]$Nic, [string]$Family = "IPv4")
+	@(Get-NetIPAddress -AddressFamily $Family -InterfaceIndex $Nic.ifIndex)[0].IPAddress.Trim()
+}
+
 Function Generate-Env-File {
 	$envf = "C:\win.env"
 	echo "#windows env file
@@ -184,44 +189,31 @@ switch($Stage) {
 		Out-Host "`n==> install virtio-win driver ..."
 		virtio-win-install -AnsfDrvLetter $ansfDriveLetter
 
-		Out-Host "==> Start initialize extra disks ..."
+		Out-Host "`n==> Start initialize extra disks ..."
 		init-extra-disks
 
 		# static ip setup
 		Out-Host "`n==> static ip setup"
-		$INT_STATIC_IP = "@INT_STATIC_IP@"
-		$EXT_STATIC_IP = "@EXT_STATIC_IP@"
+		$STATIC_IP_EXT = "@STATIC_IP_EXT@"
+		$STATIC_IP_INT = "@STATIC_IP_INT@"
+		$MAC_EXT = "@VNIC_MAC_EXT@"
+		$MAC_INT = "@VNIC_MAC_INT@"
 
 		#waiting NICs up ready
-		$NicArray = @()
-		#while ($true) {
-		while (Get-Command Get-NetAdapter -errorAction SilentlyContinue) {
-			$NicArray = (Get-NetAdapter | Sort-Object -Property InterfaceIndex)
-			if ($NicArray.count -ge 2) {
-				break
-			} else {
-				Start-sleep -s 2
-			}
-		}
-		Foreach ($nic in $NicArray) {
-			$ip = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $nic.InterfaceIndex)[0].IPAddress.Trim()
-			#assume the NIC that connected to internal network use model=rtl8139, and another one use model=e1000
-			if ($nic.ifDesc -like "*8139*") {
-				$NicInt = $nic
-			} elseif ($nic.ifDesc -like "*1000*") {
-				$NicExt = $nic
-			} else {
-				Out-Host "`n---> info: 3rd NIC with ip($ip), desc: $($nic.ifDesc)"
-			}
-		}
+		$NicExt = Get-NetAdapter|Where-Object {$_.MacAddress -like $MAC_EXT.replace(":","?")}
+		$NicInt = Get-NetAdapter|Where-Object {$_.MacAddress -like $MAC_INT.replace(":","?")}
+		$NicRDMA = @(Get-NetAdapterRdma)[0]
+		Out-Host "`n---> NIC ext info: ip($(GetIPAddrFromNic $NicExt)), desc: $($NicExt.ifDesc)"
+		Out-Host "`n---> NIC int info: ip($(GetIPAddrFromNic $NicInt)), desc: $($NicInt.ifDesc)"
+		if ($NicRDMA) {Out-Host "`n---> NIC int info: ip($(GetIPAddrFromNic $NicRDMA)), desc: $($NicRDMA.ifDesc)"}
 
-		if ($INT_STATIC_IP) {
+		if ($STATIC_IP_INT) {
 			$oldIntAddrs = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicInt.InterfaceIndex)
 			$IntIpConf = (Get-NetIPConfiguration -InterfaceIndex $NicInt.ifIndex)
 
-			Out-Host "`n---> set static IP($INT_STATIC_IP) on int NIC: $($NicInt.ifAlias)"
+			Out-Host "`n---> set static IP($STATIC_IP_INT) on int NIC: $($NicInt.ifAlias)"
 			New-NetIPAddress -InterfaceIndex $NicInt.InterfaceIndex -AddressFamily IPv4 `
-				-IPAddress $INT_STATIC_IP -PrefixLength $oldIntAddrs[0].PrefixLength `
+				-IPAddress $STATIC_IP_INT -PrefixLength $oldIntAddrs[0].PrefixLength `
 				-DefaultGateway $IntIpConf.IPv4DefaultGateway[0].NextHop
 		}
 
@@ -229,7 +221,8 @@ switch($Stage) {
 		#while ($true) {
 		while (Get-Command Get-NetIPAddress -errorAction SilentlyContinue) {
 			$oldExtAddrs = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicExt.InterfaceIndex)
-			if ($null -ne $oldExtAddrs -and $null -ne $oldExtAddrs[0].IPAddress -and $oldExtAddrs[0].IPAddress -is [string] -and $oldExtAddrs[0].IPAddress.Trim() -notlike "169.254.*") {
+			if ($null -ne $oldExtAddrs -and $null -ne $oldExtAddrs[0].IPAddress `
+				-and $oldExtAddrs[0].IPAddress -is [string] -and $oldExtAddrs[0].IPAddress.Trim() -notlike "169.254.*") {
 				break
 			} else {
 				Start-sleep -s 5
@@ -240,8 +233,8 @@ switch($Stage) {
 		}
 		$extStaticIp = $oldExtAddrs[0].IPAddress.Trim()
 		$extIpConf = (Get-NetIPConfiguration -InterfaceIndex $NicExt.ifIndex)
-		if ($EXT_STATIC_IP) {
-			$extStaticIp=$EXT_STATIC_IP
+		if ($STATIC_IP_EXT) {
+			$extStaticIp=$STATIC_IP_EXT
 		} else {
 			Remove-NetIPAddress -IPAddress $extStaticIp -Confirm:$false
 		}

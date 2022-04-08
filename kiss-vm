@@ -2050,8 +2050,8 @@ while true; do
 		--win-download-url)	WIN_DL_URL_OPTS+=("--download-url=$2"); shift 2;;
 		--win-run)		WIN_RUN_CMD_OPTS+=("--run=$2"); shift 2;;
 		--win-run-post)		WIN_RUN_POST_CMD_OPTS+=("--run-post=$2"); shift 2;;
-		--win-static-ip-ext)	WIN_EXT_STATIC_IP_OPT="--static-ip-ext=$2"; shift 2;;
-		--win-static-ip-int)	WIN_INT_STATIC_IP_OPT="--static-ip-int=$2"; shift 2;;
+		--win-static-ip-ext)	WIN_STATIC_IP_EXT="$2"; shift 2;;
+		--win-static-ip-int)	WIN_STATIC_IP_INT="$2"; shift 2;;
 		*) shift;;
 		esac
 		;;
@@ -2558,7 +2558,9 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}"
 	elif [[ "$WIN_AUTO" = yes ]]; then
-		NETWORK_OPTS="--network=network=default,model=rtl8139 --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=e1000"
+		gen_virt_mac() { echo 54:52:00:${1:-00}$(od -txC -An -N2 /dev/random | tr \  :); }
+		WIN_MAC_INT=$(gen_virt_mac); WIN_MAC_EXT=$(gen_virt_mac)
+		NETWORK_OPTS="--network=network=default,model=e1000,mac=$WIN_MAC_INT --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=e1000,mac=$WIN_MAC_EXT"
 	else
 		NETWORK_OPTS="--network=network=default,model=${DEFAULT_IF_MODEL} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}"
 	fi
@@ -3265,6 +3267,10 @@ elif [[ "$InstallType" = cdrom ]]; then
 			DFS_TARGET=$HOSTNAME:pub
 			WIN_DFS_TARGET_OPT="--dfs-target=$DFS_TARGET"
 		fi
+		[[ -n "$WIN_MAC_EXT" ]] && WIN_MAC_OPTS+=(--mac-ext=$WIN_MAC_EXT)
+		[[ -n "$WIN_MAC_INT" ]] && WIN_MAC_OPTS+=(--mac-int=$WIN_MAC_INT)
+		[[ -n "$WIN_STATIC_IP_EXT" ]] && WIN_STATIC_IP_OPTS+=(--static-ip-ext=$WIN_STATIC_IP_EXT)
+		[[ -n "$WIN_STATIC_IP_INT" ]] && WIN_STATIC_IP_OPTS+=(--static-ip-int=$WIN_STATIC_IP_INT)
 		#WIN_OpenSSH_OPT
 		#WIN_VirtioDrv_OPT
 		#WIN_LOCALE_OPT
@@ -3278,8 +3284,6 @@ elif [[ "$InstallType" = cdrom ]]; then
 		#WIN_DL_URL_OPTS+
 		#WIN_RUN_CMD_OPTS+
 		#WIN_RUN_POST_CMD_OPTS+
-		#WIN_EXT_STATIC_IP_OPT
-		#WIN_INT_STATIC_IP_OPT
 		if [[ -z "$WIN_HOSTNAME" ]]; then
 			WIN_HOSTNAME=${vmname,,}
 			WIN_HOSTNAME=${WIN_HOSTNAME#${VMUSER}-};
@@ -3294,7 +3298,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			${WIN_UEFI_OPT} ${WIN_LOCALE_OPT} ${WIN_WIM_IMAGE_INDEX_OPT} \
 			-u $WIN_USER -p "$WIN_PASS" "${WIN_OpenSSH_OPT[@]}" "${WIN_VirtioDrv_OPT[@]}" \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
-			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
+			"${WIN_STATIC_IP_OPTS[@]}" "${WIN_MAC_OPTS[@]}" \
 			--temp=${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		cifs-nfs)
 		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
@@ -3302,7 +3306,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			-u $WIN_USER -p "$WIN_PASS" "${WIN_OpenSSH_OPT[@]}" "${WIN_VirtioDrv_OPT[@]}" \
 			${WIN_KDC_OPT} ${WIN_DFS_TARGET_OPT} \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
-			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
+			"${WIN_STATIC_IP_OPTS[@]}" "${WIN_MAC_OPTS[@]}" \
 			--temp=${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		addsdomain|addsforest)
 		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
@@ -3311,7 +3315,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			${WIN_PARENT_DOMAIN_OPT} ${WIN_PARENT_IP_OPT} \
 			${WIN_AD_DOMAIN_LEVEL_OPT} ${WIN_AD_FOREST_LEVEL_OPT} \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
-			${WIN_EXT_STATIC_IP_OPT} ${WIN_INT_STATIC_IP_OPT} \
+			"${WIN_STATIC_IP_OPTS[@]}" "${WIN_MAC_OPTS[@]}" \
 			--temp=${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image;;
 		*)
 		    echo "{ERROR} unsupported answerfile template (${WIN_TEMPLATE})" >&2
