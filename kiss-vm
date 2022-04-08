@@ -2058,6 +2058,8 @@ while true; do
 	esac
 done
 
+DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
+
 if [[ "$VM_OS_VARIANT" = win11 || "${*,,}" =~ (win|windows-?)11 ]]; then
 	UEFI_TPM_SB=yes
 fi
@@ -2071,20 +2073,17 @@ case "${BOOT_OPTS[*]}" in
 	(*uefi*|*firmware=efi*) VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter";;
 esac
 
-QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
-$QEMU_KVM -machine help|grep -q q35 && Q35=support
-[[ "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
-	echo -e "{VM:ERROR} Guest require machine type 'q35', but the qemu in your platform doesn't support 'q35'" >&2
-	exit 1
-}
-
 [[ ${#WIN_HOSTNAME} -gt 15 ]] && {
 	echo -e "{VM:ERROR} length of windows hostname($WIN_HOSTNAME) should < 16" >&2
 	exit 1
 }
 
-DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
-
+QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
+[[ -n "$QEMU_KVM" ]] && $QEMU_KVM -machine help|grep -q q35 && Q35=support
+[[ "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
+	echo -e "{VM:ERROR} Guest require machine type 'q35', but the qemu in your platform doesn't support 'q35'" >&2
+	exit 1
+}
 qemu_kvm_nvr() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
