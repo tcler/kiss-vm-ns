@@ -97,7 +97,15 @@ _vm()
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             fi
             ;;
-        vi|vie|view*|lo|log|log*|co|con|cons|cons*|if|ifaddr|x|xm|xml|ed|edit)
+        vi|vie|view*|lo|log|log*|co|con|cons|cons*|if|ifaddr)
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --name)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            else
+                COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            fi
+            ;;
+        x|xm|xml|ed|edit)
             if [[ $narg -le 3 ]]; then
                 vmlist=$(virsh list --all --name)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
