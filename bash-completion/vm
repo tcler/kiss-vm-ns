@@ -1,6 +1,7 @@
 # vm(1) completion                                         -*- shell-script -*-
 
 . /etc/profile.d/bash_completion.sh || :
+LANG=C #avoid bz1958876
 
 prog=$(basename $BASH_SOURCE)
 
