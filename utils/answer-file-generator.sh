@@ -92,8 +92,7 @@ Options for windows anwserfile:
 
 Examples:
   #create answer file usb for Active Directory forest Win2012r2:
-  macin=$(gen-virt-mac.sh); macex=$(gen-virt-mac.sh);
-
+  read macin macex _ < <(gen-virt-mac.sh 2)
   $PROG --hostname win2012-adf --domain ad.test   --product-key "$key" \\
 	-p ~Ocgxyz --ad-forest-level Win2012R2 \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\
@@ -105,6 +104,7 @@ Examples:
 	--diskbus sata
 
   #create answer file usb for Active Directory child domain:
+  read macin macex _ < <(gen-virt-mac.sh 2)
   $PROG --hostname win2016-adc --domain fs.qe \\
 	-p ~Ocgxyz --parent-domain kernel.test --parent-ip \$addr \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\
@@ -116,6 +116,7 @@ Examples:
 	--diskbus sata
 
   #create answer file usb for Windows NFS/CIFS server, and enable KDC(--enable-kdc):
+  read macin macex _ < <(gen-virt-mac.sh 2)
   $PROG --hostname win2019-nfs --domain cifs-nfs.test \\
 	-p ~Ocgxyz --enable-kdc \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\
@@ -127,6 +128,7 @@ Examples:
 	--diskbus sata
 
   #create answer file usb for Windows NFS/CIFS server, and install mellanox driver:
+  read macin macex _ < <(gen-virt-mac.sh 2)
   $PROG --hostname win2019-rdma --domain nfs-rdma.test \\
 	-p ~Ocgxyz \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\
@@ -141,6 +143,7 @@ Examples:
 	--diskbus sata
 
   #create answer file usb for Windows NFS/CIFS server, and add dfs target, and enable KDC(--enable-kdc):
+  read macin macex _ < <(gen-virt-mac.sh 2)
   $PROG --hostname win2019-dfs --domain cifs-nfs.test \\
 	-p ~Ocgxyz --dfs-target \$hostname:\$cifsshare --enable-kdc \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\

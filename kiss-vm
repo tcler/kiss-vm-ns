@@ -2562,7 +2562,7 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS="--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}"
 	elif [[ "$WIN_AUTO" = yes ]]; then
-		gen_virt_mac() { echo 54:52:00:${1:-00}$(od -txC -An -N2 /dev/random | tr \  :); }
+		gen_virt_mac() { echo -n 54:52:00$(od -txC -An -N3 /dev/random | tr \  :); }
 		WIN_MAC_INT=$(gen_virt_mac); WIN_MAC_EXT=$(gen_virt_mac)
 		case "$WIN_TEMPLATE" in (base) WIN_IF_MODEL=virtio;; esac
 		NETWORK_OPTS="--network=network=default,mac=$WIN_MAC_INT,model=${WIN_IF_MODEL} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}"
