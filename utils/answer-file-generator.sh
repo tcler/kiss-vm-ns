@@ -92,56 +92,63 @@ Options for windows anwserfile:
 
 Examples:
   #create answer file usb for Active Directory forest Win2012r2:
+  macin=$(gen-virt-mac.sh); macex=$(gen-virt-mac.sh);
+
   $PROG --hostname win2012-adf --domain ad.test   --product-key "$key" \\
 	-p ~Ocgxyz --ad-forest-level Win2012R2 \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\
-	/usr/share/AnswerFileTemplates/addsforest --path ./ansf-usb.image
+	--mac-int=$macin --mac-ext=$macex
+	--temp=addsforest --path ./ansf-usb.image
   vm create Windows-Server-2012 -n win2012-adf -C ~/Downloads/Win2012r2-Evaluation.iso \\
 	--disk ansf-usb.image,bus=usb \\
-	--net=default,model=rtl8139 --net-macvtap=-,model=e1000 \\
+	--net=default,model=e1000,mac=$macin --net-macvtap=-,model=e1000,mac=$macex \\
 	--diskbus sata
 
   #create answer file usb for Active Directory child domain:
   $PROG --hostname win2016-adc --domain fs.qe \\
 	-p ~Ocgxyz --parent-domain kernel.test --parent-ip \$addr \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\
-	/usr/share/AnswerFileTemplates/addsdomain --path ./ansf-usb.image
+	--mac-int=$macin --mac-ext=$macex
+	--temp=addsdomain --path ./ansf-usb.image
   vm create Windows-Server-2016 -n win2016-adc -C ~/Downloads/Win2016-Evaluation.iso \\
 	--disk ansf-usb.image,bus=usb \\
-	--net=default,model=rtl8139 --net-macvtap=-,model=e1000 \\
+	--net=default,model=e1000,mac=$macin --net-macvtap=-,model=e1000,mac=$macex \\
 	--diskbus sata
 
   #create answer file usb for Windows NFS/CIFS server, and enable KDC(--enable-kdc):
   $PROG --hostname win2019-nfs --domain cifs-nfs.test \\
 	-p ~Ocgxyz --enable-kdc \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\
-	/usr/share/AnswerFileTemplates/cifs-nfs --path ./ansf-usb.image
+	--mac-int=$macin --mac-ext=$macex
+	--temp=cifs-nfs --path ./ansf-usb.image
   vm create Windows-Server-2019 -n win2019-nfs -C ~/Downloads/Win2019-Evaluation.iso \\
 	--disk ansf-usb.image,bus=usb \\
-	--net=default,model=rtl8139 --net-macvtap=-,model=e1000 \\
+	--net=default,model=e1000,mac=$macin --net-macvtap=-,model=e1000,mac=$macex \\
 	--diskbus sata
 
   #create answer file usb for Windows NFS/CIFS server, and install mellanox driver:
   $PROG --hostname win2019-rdma --domain nfs-rdma.test \\
 	-p ~Ocgxyz \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\
+	--mac-int=$macin --mac-ext=$macex
 	--driver-url=http://www.mellanox.com/downloads/WinOF/MLNX_VPI_WinOF-5_50_54000_All_win2019_x64.exe \\
 	--run-with-reboot='./MLNX_VPI_WinOF-5_50_54000_All_win2019_x64.exe /S /V\"/qb /norestart\"' \\
 	--run-post='ipconfig /all; ibstat' \\
-	/usr/share/AnswerFileTemplates/cifs-nfs --path ./ansf-usb.image
+	--temp=cifs-nfs --path ./ansf-usb.image
   vm create Windows-Server-2019 -n win2019-rdma -C ~/Downloads/Win2019-Evaluation.iso \\
 	--disk ansf-usb.image,bus=usb \\
-	--net=default,model=rtl8139 --net-macvtap=-,model=e1000 \\
+	--net=default,model=e1000,mac=$macin --net-macvtap=-,model=e1000,mac=$macex \\
 	--diskbus sata
 
   #create answer file usb for Windows NFS/CIFS server, and add dfs target, and enable KDC(--enable-kdc):
   $PROG --hostname win2019-dfs --domain cifs-nfs.test \\
 	-p ~Ocgxyz --dfs-target \$hostname:\$cifsshare --enable-kdc \\
 	--openssh=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip \\
-	/usr/share/AnswerFileTemplates/cifs-nfs --path ./ansf-usb.image
+	--mac-int=$macin --mac-ext=$macex
+	--temp=cifs-nfs --path ./ansf-usb.image
   vm create Windows-Server-2019 -n win2019-dfs -C ~/Downloads/Win2019-Evaluation.iso \\
 	--disk ansf-usb.image,bus=usb \\
-	--net=default,model=rtl8139 --net-macvtap=-,model=e1000 \\
+	--net=default,model=e1000,mac=$macin --net-macvtap=-,model=e1000,mac=$macex \\
 	--diskbus sata
 
 EOF
