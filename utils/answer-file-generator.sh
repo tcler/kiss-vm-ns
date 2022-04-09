@@ -363,7 +363,6 @@ process_ansf() {
 		-e "s/@ADMINUSER@/$ADMINUSER/g" \
 		-e "s/@AD_DOMAIN@/$DOMAIN/g" \
 		-e "s/@NETBIOS_NAME@/$NETBIOS_NAME/g" \
-		-e "s/@VM_NAME@/$VM_NAME/g" \
 		-e "s/@FQDN@/$FQDN/g" \
 		-e "s/@PRODUCT_KEY@/$PRODUCT_KEY/g" \
 		-e "s/@WIM_IMAGE_INDEX@/$WIM_IMAGE_INDEX/g" \
