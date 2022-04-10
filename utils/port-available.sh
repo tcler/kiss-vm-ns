@@ -24,13 +24,14 @@ if [[ "$WAIT" != yes ]]; then
 	port_available "${_at[@]}"; rc=$?
 else
 	TIME=${TIME//[^0-9]/}
-	TIME=${TIME:-forever}
+	TIME=${TIME:-0}
 	CNT=$(((TIME+10)/10))
-	echo "[INFO] waiting port ${_at[@]} available, max time(${TIME})"
+	T=$TIME; [[ "$T" = 0 ]] && T=forever
+	echo "[INFO] waiting port ${_at[@]} available, max time(${T}), CNT($CNT)"
 	for ((i=0; i<CNT; i++)); do
 		port_available "${_at[@]}"; rc=$?
 		[[ $rc = 0 ]] && break
-		[[ "$TIME" = forever ]] && { i=0; CNT=2; }
+		[[ "$TIME" = 0 ]] && { i=0; CNT=2; }
 		sleep 10
 	done
 fi
