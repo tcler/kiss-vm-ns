@@ -186,7 +186,7 @@ switch($Stage) {
 				-and $oldExtAddrs[0].IPAddress -is [string] -and $oldExtAddrs[0].IPAddress.Trim() -notlike "169.254.*") {
 				break
 			} else {
-				Start-sleep -s 5
+				Start-Sleep -s 5
 				Out-Host "`n---> renew IP on ext NIC: $($NicExt.ifAlias)"
 				ipconfig /release $NicExt.ifAlias
 				ipconfig /renew $NicExt.ifAlias

@@ -192,7 +192,7 @@ switch($Stage) {
 				-and $oldExtAddrs[0].IPAddress -is [string] -and $oldExtAddrs[0].IPAddress.Trim() -notlike "169.254.*") {
 				break
 			} else {
-				Start-sleep -s 5
+				Start-Sleep -s 5
 				Out-Host "`n---> renew IP on ext NIC: $($NicExt.ifAlias)"
 				ipconfig /release $NicExt.ifAlias
 				ipconfig /renew $NicExt.ifAlias
@@ -289,6 +289,12 @@ switch($Stage) {
 		# Setup krb5 for NFS/CIFS
 		$enablekdc = "@KDC_OPT@"
 		if ($kdc -or $enablekdc) {
+			# install DNS if has not been there
+			if (!(Get-Command dnscmd -errorAction SilentlyContinue)) {
+				Out-Host "`n--> Install WindowsFeature DNS"
+				Install-WindowsFeature -Name DNS -IncludeManagementTools
+			}
+
 			# Setup AD as Domain Controller
 			Out-Host "`n==> Setup AD as Domain Controller"
 			Remove-WindowsFeature -Name AD-Certificate
@@ -317,11 +323,6 @@ switch($Stage) {
 	}
 
 	"afterADSetup" {
-		# install DNS if has not been there
-		if (!(Get-Command dnscmd -errorAction SilentlyContinue)) {
-			Install-WindowsFeature -Name DNS -IncludeManagementTools
-		}
-
 		# do this just after AD has been set up
 		Out-Host "`n==> reset dns ip"
 		#$DNS_IPS=(Get-WmiObject "Win32_NetworkAdapterConfiguration where MACAddress='@VNIC_MAC_EXT@'").IPaddress
@@ -349,7 +350,14 @@ switch($Stage) {
 		w32tm /config /manualpeerlist:clock.redhat.com /syncfromflags:manual /reliable:yes /update
 		net stop w32time
 		net start w32time
-		w32tm /resync
+		while ($true) {
+			$tmresync = w32tm /resync
+			if ($tmresync | Select-String -pattern "successfully." ) {
+				Out-Host "$tmresync"; break
+			} else {
+				Start-Sleep 1
+			}
+		}
 
 		#setup dfs
 		$cifsShareName = "cifstest"
