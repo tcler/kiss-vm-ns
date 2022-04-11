@@ -3,6 +3,9 @@
 vmname=$1
 [[ -z "$vmname" ]] && exit 1
 
+VM_ENV_FILE=/tmp/$vmname.env
+echo "[INFO] generating windows env file: $VM_ENV_FILE"
+
 # Get install and ipconfig log
 POST_INSTALL_LOGF=postinstall.log
 IPCONFIG_LOGF=ipconfig.log
@@ -22,7 +25,6 @@ VM_EXT_IP=$(awk '/^ *IPv4 Address/ {if ($NF !~ /^(192|169.254)/) print $NF}' $WI
 VM_EXT_IP6=$(awk '/^ *IPv6 Address/ {printf("%s,", $NF)}' $WIN_IPCONFIG_LOG)
 [[ -z "$VM_EXT_IP" ]] && VM_EXT_IP=${VM_EXT_IP6%%,*}
 
-VM_ENV_FILE=/tmp/$vmname.env
 cat $WIN_ENVF - <<-EOF | tee $VM_ENV_FILE
 
 	VM_INT_IP=$VM_INT_IP
