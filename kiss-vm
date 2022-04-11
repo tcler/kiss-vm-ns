@@ -2288,6 +2288,13 @@ if is_intranet; then
 	for _d in RHEL-7.{1..2} RHEL-6.{0..10} RHEL5-Server-U{10..11}; do
 		distroInfo[$_d]="http://$downhostname/qa/rhts/lookaside/vm-images/$_d/"
 	done
+
+	distroInfo[Windows-server-2019]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2019-Evaluation.iso"
+	distroInfo[Windows-server-2016]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2016-Evaluation.iso"
+	distroInfo[Windows-server-2012r2]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2012r2-Evaluation.iso"
+	distroInfo[Windows-11]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win11-Evaluation.iso"
+	distroInfo[Windows-10]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win10-Evaluation.iso"
+	distroInfo[Windows-7]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win7-cn.iso"
 else
 	Intranet=no
 	baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
@@ -2319,7 +2326,7 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 		dialogres=$RuntimeTmp/dialogRes
 		touch $distropatternInter $distropatternIntra
 
-		echo -e "Rocky\nCentOS\nfedora\ndebian\nopenSUSE\narchlinux\nFreeBSD" >>$distropatternInter
+		echo -e "Rocky\nCentOS\nfedora\ndebian\nopenSUSE\narchlinux\nFreeBSD\nWindows" >>$distropatternInter
 		for dname in "${!distroInfo[@]}"; do echo "$dname"; done >>$distrolist
 
 		dialogTitle="vm-create"
@@ -2330,7 +2337,7 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 		}
 
 		familys=$(sed -e 's/.*/"&" "" 1/' $distropatternIntra $distropatternInter)
-		dialog --backtitle "$dialogTitle" --radiolist "please selet distro family/pattern:" 20 40 16 $familys 2>$dialogres || { distroSelectNull; exit 0; }
+		dialog --backtitle "$dialogTitle" --radiolist "please selet distro family/pattern:" 22 40 20 $familys 2>$dialogres || { distroSelectNull; exit 0; }
 		pattern=$(head -n1 $dialogres|sed 's/"//g')
 		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|egrep "$pattern")
 		[[ "$Intranet" = yes ]] && grep -F "$pattern" $distropatternIntra && {
@@ -2424,10 +2431,16 @@ _Imagepattern='(qcow2c|qcow2|qcow2.xz|raw|img)'
 	[[ "$_Imageurl" = *%%* ]] && {
 		read _Imageurl _Imagepattern <<<"${_Imageurl/\%\%/ }"
 	}
-	echo -e "{VM:INFO} db: $_Imageurl($_Imagepattern) $_Location"
+	if [[ "$_Imageurl" = cdrom:* ]]; then
+		InstallType=cdrom
+		Isourl=${_Imageurl#cdrom:}
+		Imageurl=
+	else
+		echo -e "{VM:INFO} db: $_Imageurl($_Imagepattern) $_Location"
 
-	[[ -z "$Imageurl" ]] && Imageurl=${_Imageurl}
-	[[ -z "$Location" ]] && Location=${_Location}
+		[[ -z "$Imageurl" ]] && Imageurl=${_Imageurl}
+		[[ -z "$Location" ]] && Location=${_Location}
+	fi
 }
 
 if [[ "$InstallType" = import ]]; then
