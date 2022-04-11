@@ -718,7 +718,7 @@ vmcopyto() {
 	}
 
 	local sshstat=unavailable
-	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
+	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR"
 	local U=root
 	vmhomedir $_vmname | grep -q -i windows && U=Administrator
 	sshOpts=$(sshtest $U@$_vmname "$sshOpts")
@@ -767,7 +767,7 @@ vmcopyfrom() {
 	}
 
 	local sshstat=unavailable
-	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
+	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR"
 	local U=root
 	vmhomedir $_vmname | grep -q -i windows && U=Administrator
 	sshOpts=$(sshtest $U@$_vmname "$sshOpts")
