@@ -10,6 +10,7 @@ for arg; do
 done
 
 port_available() {
+	local rc=1
 	if grep -q -- '-z\>' < <(nc -h 2>&1); then
 		nc -z $1 $2 </dev/null &>/dev/null
 	elif command -v nmap >/dev/null; then
@@ -17,6 +18,8 @@ port_available() {
 	else
 		timeout 0.1 curl -s -v telnet://$1:$2 |& grep -q ^..Connected
 	fi
+	rc=$?
+	return $rc
 }
 
 rc=1
