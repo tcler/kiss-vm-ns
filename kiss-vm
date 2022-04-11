@@ -49,6 +49,7 @@ VCPUS=4,sockets=1,cores=4
 DEFAULT_DISK_BUS=virtio
 DEFAULT_IF_MODEL=virtio
 defaultPasswd=redhat
+defaultWindowsPasswd=Sesame~0pen
 orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6)
 
 getSafeCommandLine() {
@@ -720,7 +721,9 @@ vmcopyto() {
 	local sshstat=unavailable
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR"
 	local U=root
-	vmhomedir $_vmname | grep -q -i windows && U=Administrator
+	vmhomedir $_vmname | grep -q -i windows && {
+		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
+	}
 	sshOpts=$(sshtest $U@$_vmname "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 	if [[ $sshstat = yes ]]; then
@@ -769,7 +772,9 @@ vmcopyfrom() {
 	local sshstat=unavailable
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR"
 	local U=root
-	vmhomedir $_vmname | grep -q -i windows && U=Administrator
+	vmhomedir $_vmname | grep -q -i windows && {
+		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
+	}
 	sshOpts=$(sshtest $U@$_vmname "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 	if [[ $sshstat = yes ]]; then
@@ -832,7 +837,9 @@ vmlogin() {
 
 	local sshCommand=$(getSafeCommandLine "$@")
 	local U=root
-	vmhomedir $_vmname | grep -q -i windows && U=Administrator
+	vmhomedir $_vmname | grep -q -i windows && {
+		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
+	}
 	[[ "${EXEC}" = yes ]] && {
 		[[ $# = 0 ]] && set "exit 0";
 		[[ "$VERBOSE" = yes ]] &&
@@ -3275,7 +3282,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	if [[ "$WIN_AUTO" = yes ]]; then
 		run -as=$VMUSER touch $VMpath/ansf-usb.image
 		WIN_USER=${WIN_USER:-Administrator}
-		WIN_PASS=${WIN_PASS:-Sesame~0pen}
+		WIN_PASS=${WIN_PASS:-${defaultWindowsPasswd}}
 		WIN_WIM_IMAGE_INDEX=${WIN_WIM_IMAGE_INDEX:-4}
 		[[ "$VM_OS_VARIANT" = win10 || "${Distro,,}" =~ (win|windows-?)1[01] ]] && WIN_WIM_IMAGE_INDEX=1
 		WIN_WIM_IMAGE_INDEX_OPT="--wim-index=$WIN_WIM_IMAGE_INDEX"
