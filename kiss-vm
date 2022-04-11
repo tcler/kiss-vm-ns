@@ -2433,7 +2433,7 @@ _Imagepattern='(qcow2c|qcow2|qcow2.xz|raw|img)'
 	}
 	if [[ "$_Imageurl" = cdrom:* ]]; then
 		InstallType=cdrom
-		Isourl=${_Imageurl#cdrom:}
+		Isourl=${Isourl:-${_Imageurl#cdrom:}}
 		Imageurl=
 	else
 		echo -e "{VM:INFO} db: $_Imageurl($_Imagepattern) $_Location"
