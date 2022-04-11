@@ -81,7 +81,7 @@ Function Generate-Env-File {
 
 ADMINUSER=@ADMINUSER@
 ADMINPASSWORD=@ADMINPASSWORD@
-AD_NETBIOS_NAME=@NETBIOS_NAME@
+AD_DOMAIN_NETBIOS_NAME=@DOMAIN_NETBIOS_NAME@
 AD_DOMAIN=@AD_DOMAIN@
 AD_FQDN=@FQDN@
 
@@ -237,7 +237,7 @@ switch($Stage) {
 		-CreateDNSDelegation:$false `
 		-NoDNSOnNetwork:$true `
 		-DomainMode @AD_DOMAIN_LEVEL@ `
-		-DomainNetBIOSName @NETBIOS_NAME@ `
+		-DomainNetBIOSName @DOMAIN_NETBIOS_NAME@ `
 		-ForestMode @AD_FOREST_LEVEL@ `
 		-InstallDNS:$true `
 		-NoRebootOnCompletion:$true `
@@ -287,7 +287,7 @@ switch($Stage) {
 
 		# Add KDC
 		Out-Host "`n==> Add KDC"
-		ksetup.exe /AddKDC @NETBIOS_NAME@ @FQDN@
+		ksetup.exe /AddKDC @DOMAIN_NETBIOS_NAME@ @FQDN@
 
 		# Add DNS TXT record for nfsv4idmap
 		Out-Host "`n==> Add DNS TXT record"

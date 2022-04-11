@@ -349,8 +349,8 @@ ADMINPASSWORD=${ADMINPASSWORD:-Sesame~0pen}
 # Setup Active Directory
 FQDN=$GUEST_HOSTNAME.$DOMAIN
 [[ -n "$PARENT_DOMAIN" ]] && FQDN+=.$PARENT_DOMAIN
-NETBIOS_NAME=$(echo ${DOMAIN//./} | tr '[a-z]' '[A-Z]')
-NETBIOS_NAME=${NETBIOS_NAME:0:15}
+DOMAIN_NETBIOS_NAME=$(echo ${DOMAIN//./} | tr '[a-z]' '[A-Z]')
+DOMAIN_NETBIOS_NAME=${DOMAIN_NETBIOS_NAME:0:15}
 
 # anwser file usb image path ...
 ANSF_IMG_PATH=${ANSF_IMG_PATH:-ansf-usb.image}
@@ -365,7 +365,7 @@ process_ansf() {
 	sed -i -e "s/@ADMINPASSWORD@/$ADMINPASSWORD/g" \
 		-e "s/@ADMINUSER@/$ADMINUSER/g" \
 		-e "s/@AD_DOMAIN@/$DOMAIN/g" \
-		-e "s/@NETBIOS_NAME@/$NETBIOS_NAME/g" \
+		-e "s/@DOMAIN_NETBIOS_NAME@/$DOMAIN_NETBIOS_NAME/g" \
 		-e "s/@FQDN@/$FQDN/g" \
 		-e "s/@PRODUCT_KEY@/$PRODUCT_KEY/g" \
 		-e "s/@WIM_IMAGE_INDEX@/$WIM_IMAGE_INDEX/g" \
