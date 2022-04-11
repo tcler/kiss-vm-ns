@@ -3462,7 +3462,10 @@ trap - SIGINT SIGQUIT SIGTERM
 if [[ "$WAIT" = yes ]]; then
 	echo -e "\n{VM:INFO} wait port($WAIT_PORT) of $vmname available ..."
 	port-available.sh $vmname $WAIT_PORT -w
-	[[ $? = 0 && "$WIN_AUTO" = yes ]] && win-env-file-gen.sh $vmname
+	[[ $? = 0 && "$WIN_AUTO" = yes ]] && {
+		echo
+		win-env-file-gen.sh $vmname
+	}
 fi
 
 if ! virsh desc $vmname &>/dev/null; then
