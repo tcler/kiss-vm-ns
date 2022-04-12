@@ -24,23 +24,24 @@ Function virtio-win-install() {
 		$drive = "$(($mntObj | Get-Volume).DriveLetter):"
 		$msifile = "$drive\virtio-win-gt-x64.msi"
 		$exefile = "$drive\virtio-win-guest-tools.exe"
-		$drvDir = "$drive\amd64"
+		$drvDir = "$drive"
 	}
 	if (!$msifile) {
 		for ($c=65; $c -lt 91; $c++) {
 			$L=[char]$c;
 			$M="${L}:\virtio-win-gt-x64.msi";
 			$E="${L}:\virtio-win-guest-tools.exe";
-			$D="${L}:\amd64"
+			$D="${L}:"
 			if (Test-Path -Path $M) {
-				$msifile, $exefile, $drvDir = $M, $E, $D
+				$msifile, $exefile, $drvDir = $M, $E, ${D}
 				break
 			}
 		}
 	}
 	if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
 		Out-Host "`n==> win7 virtio-win driver: ${D}\w7\ ..."
-		PnPutil.exe -i -a ${D}\w7\*.inf
+		PnPutil.exe -i -a ${drvDir}\NetKVM\w7\amd64\*.inf
+		PnPutil.exe -i -a ${drvDir}\amd64\w7\*.inf
 	} elseif ($msifile -and (Test-Path -Path $msifile)) {
 		Out-Host "`n==> install virtio-win driver: $msifile ..."
 		powershell "msiexec.exe /i $msifile /passive /qn /norestart"
@@ -194,6 +195,9 @@ switch($Stage) {
 
 		# static ip setup
 		Out-Host "`n==> static ip setup"
+		if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
+			Start-Sleep -s 8;
+		}
 		$STATIC_IP_EXT = "@STATIC_IP_EXT@"
 		$STATIC_IP_INT = "@STATIC_IP_INT@"
 		$MAC_EXT = "@VNIC_MAC_EXT@"

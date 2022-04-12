@@ -138,10 +138,17 @@ at_exit() {
 	rm -rf $RuntimeTmp
 }
 cleanup() {
+	local _vmn=
 	if [[ -n "$VMpath" ]]; then
 		echo -e "\n{VM:clean} Removing VM dir: $VMpath"
 		rm -rfv "$VMpath"
 		rmdir -v "${VMpath%/*}" 2>/dev/null
+
+		echo -e "\n{VM:clean} kill installer assistant tmux session"
+		_vmn=${VMpath##*/}
+		while read session _ ; do
+			[[ "$session" = *_${_vmn}: ]] && tmux kill-session -t ${session%:}
+		done < <(tmux ls 2>/dev/null)
 	fi
 	exit
 }
@@ -280,7 +287,7 @@ _vmdelete() {
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "{VM:INFO} kill tmux session ..."
 		while read session _ ; do
-			[[ "$session" = *_${vmname}: ]] && tmux kill-session -t ${session%:}
+			[[ "$session" = *_${_vmname}: ]] && tmux kill-session -t ${session%:}
 		done < <(tmux ls 2>/dev/null)
 
 		echo -e "{VM:INFO} removing VM folder $_vmdir ..."
@@ -1536,7 +1543,7 @@ Usage() {
 	                 $ osinfo-query os  #RHEL-7 and later
 	                 $ virt-install --os-variant list  #RHEL-6
 	  --nointeract   #exit from virsh console after install finish
-	  --noauto       #enter virsh console after installing start
+	  --noauto       #enter virsh console after installing start, or disable windows auto install
 	  --saveimage [path]
 	                 #save image in path if install with import mode
 	  --downloadonly #download image only if there is qcow* image
@@ -2072,30 +2079,12 @@ done
 
 DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 
-if [[ "$VM_OS_VARIANT" = win11 || "${*,,}" =~ (win|windows-?)11 ]]; then
-	UEFI_TPM_SB=yes
-fi
-if [[ "$UEFI_TPM_SB" = yes ]]; then
-	BOOT_OPTS+=(--boot=firmware=efi,loader_secure=yes)
-	VTPM=yes
-	MACHINE_OPT="--machine=q35"
-	VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter"
-fi
-case "${BOOT_OPTS[*]}" in
-	(*uefi*|*firmware=efi*) VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter";;
-esac
-
 [[ ${#WIN_HOSTNAME} -gt 15 ]] && {
 	echo -e "{VM:ERROR} length of windows hostname($WIN_HOSTNAME) should < 16" >&2
 	exit 1
 }
 
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
-[[ -n "$QEMU_KVM" ]] && $QEMU_KVM -machine help|grep -q q35 && Q35=support
-[[ "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
-	echo -e "{VM:ERROR} Guest require machine type 'q35', but the qemu in your platform doesn't support 'q35'" >&2
-	exit 1
-}
 qemu_kvm_nvr() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
@@ -2314,11 +2303,6 @@ done
 
 Imageurl=
 [[ -n "$ImportImageInfo" ]] && read Imageurl BOOT_DISK_ATTRS <<<"${ImportImageInfo/,/ }"
-if [[ -n "$BOOT_DISK_ATTRS" ]]; then
-	[[ "$BOOT_DISK_ATTRS" =~ bus= ]] || BOOT_DISK_ATTRS+=,bus=$DEFAULT_DISK_BUS
-else
-	BOOT_DISK_ATTRS=bus=$DEFAULT_DISK_BUS
-fi
 
 #thanks: https://stackoverflow.com/questions/49733211/bash-jump-to-bottom-of-terminal
 # { echo -ne "\E[${LINES};0H"; }  works the same as { tput cup $(tput lines) 0; }
@@ -2368,11 +2352,43 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 	Usage
 	exit 1
 }
-
 if egrep --color=always "[][~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$Distro"; then
 	echo -e "{VM:WARN} ^^^ invalid character[s] in distro name: '$Distro'"
 	exit 1
 fi
+
+[[ "${*,,} ${Distro,,}" =~ windows ]] && {
+	WIN_AUTO=yes
+	DEFAULT_DISK_BUS=sata
+	WIN_TEMPLATE=${WIN_TEMPLATE:-base}
+	WIN_IF_MODEL=${WIN_IF_MODEL:-e1000}
+}
+[[ "$NOAUTO" = yes ]] && { WIN_AUTO=no; }
+if [[ "$VM_OS_VARIANT" = win11 || "${*,,}" =~ (win|windows-?)11 ]]; then
+	UEFI_TPM_SB=yes
+fi
+if [[ "$UEFI_TPM_SB" = yes ]]; then
+	BOOT_OPTS+=(--boot=firmware=efi,loader_secure=yes)
+	VTPM=yes
+	MACHINE_OPT="--machine=q35"
+	VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter"
+fi
+
+case "${BOOT_OPTS[*]}" in
+	(*uefi*|*firmware=efi*) VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter";;
+esac
+
+if [[ -n "$BOOT_DISK_ATTRS" ]]; then
+	[[ "$BOOT_DISK_ATTRS" =~ bus= ]] || BOOT_DISK_ATTRS+=,bus=$DEFAULT_DISK_BUS
+else
+	BOOT_DISK_ATTRS=bus=$DEFAULT_DISK_BUS
+fi
+
+[[ -n "$QEMU_KVM" ]] && $QEMU_KVM -machine help|grep -q q35 && Q35=support
+[[ "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
+	echo -e "{VM:ERROR} Guest require machine type 'q35', but the qemu in your platform doesn't support 'q35'" >&2
+	exit 1
+}
 
 [[ "$Distro" = *[%*?]* ]] && {
 	dpattern=${Distro//./\\.}
@@ -3078,7 +3094,7 @@ elif [[ "$InstallType" = import ]]; then
 		fi
 
 		echo -e "{VM:INFO} vnc info:"
-		vm vncport $vmname
+		vm vnc $vmname
 	else
 		if grep -i -q freebsd <<<"$Distro"; then
 			echo -e "{VM:INFO} waiting login: prompt ..."
@@ -3391,14 +3407,18 @@ elif [[ "$InstallType" = cdrom ]]; then
 	vm vnc $vmname -get | tee $RuntimeTmp/std.log
 
 	if [[ "$WIN_AUTO" = yes ]]; then
-		run -tmux=langselect_$vmname "for ((i=0; i<12; i++)); do
-			if vm vnc $vmname -get|grep -i langua; then
-				vm vnc $vmname -put=key:tab -put=key:tab -put=key:tab -put=key:enter
-				break
-			else
-				sleep 5
-			fi
-		done"
+		run -tmux=langselect_$vmname 'vmn='"$vmname"'
+		for ((i=0; i<32; i++)); do
+			screenocr=$(vm vnc $vmn -get)
+			case "${screenocr,,}" in
+			*lan9*|*langua*|*_jju?_ve*)
+				echo "$screenocr"
+				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
+				break;;
+			*)
+				sleep 5;;
+			esac
+		done'
 		run -tmux=key-ask_$vmname 'sleep 64; vmn='"$vmname"'
 		for ((i=0; i<180; i++)); do
 			screenocr=$(vm vnc $vmn -get)
@@ -3419,23 +3439,22 @@ elif [[ "$InstallType" = cdrom ]]; then
 			case "${screenocr,,}" in
 			stat?c??p) break;;
 			*==??win7*|*0e3????53j3e3c3_0_e*|*88??o0_8_i9*)
+				[[ "$screenocr" = *==\>\ win7\ virtio?win* ]] && continue
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
-				vm vnc $vmn -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:enter
 				case $pre in
 				(no) pre=win7;;
 				(win7) let win7++; ((win7%2)) && vm vnc $vmn -put=key:alt-tab;;
 				esac
 				;;
-			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*|*alwaystrust*)
+			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*|*lwaystrust*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
-				vm vnc $vmn -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				case $pre in
 				(no) pre=yes;;
-				(yes) let yes++; ((yes%2)) && vm vnc $vmn -put=key:alt-tab;;
+				(yes) let yes++; vm vnc $vmn -put=key:alt-tab; ((yes%2)) && vm vnc $vmn -put=key:alt-tab;;
 				esac
 				;;
 			*'"[$'\n']"'__i*'"[$'\n']"'__i*|*'"[$'\n']"'[_8][_8]_*'"[$'\n']"'[_8][_8]_*ecommend*)
