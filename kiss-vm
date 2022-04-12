@@ -441,41 +441,38 @@ vncput() {
 
 	local msgArray=()
 	for msg; do
-		if [[ -n "$msg" ]]; then
-			if [[ "$msg" = key:* ]]; then
-				msgArray+=("$msg")
-			else
-				regex='[~@#$%^&*()_+|}{":?><!]'
-				_msg="${msg#type:}"
-				if [[ "$_msg" =~ $regex ]]; then
-					while IFS= read -r line; do
-						if [[ "$line" = key:shift-? ]]; then
-							: #line=key:shift-$(tr ')~!@#$%^&*(+}{|:><?"'   '0`123456789=][\\;.,/'"'" <<<"${line: -1}")
-						else
-							line="type:$line"
-						fi
-						msgArray+=("$line")
-					done < <(sed -r -e 's;[~!@#$%^&*()_+|}{":?><]+;&\n;g' -e 's;[~!@#$%^&*()_+|}{":?><];\nkey:shift-&;g' <<<"$_msg")
-				else
-					msgArray+=("$msg")
-				fi
-			fi
-			msgArray+=("")
-		else
+		[[ -z "$msg" ]] && { msgArray+=(); continue; }
+		case "$msg" in
+		key:*|keyup:*|keydown:*)
 			msgArray+=("$msg")
-		fi
-
+			;;
+		*)
+			regex='[~@#$%^&*()_+|}{":?><!]'
+			_msg="${msg#type:}"
+			if [[ "$_msg" =~ $regex ]]; then
+				while IFS= read -r line; do
+					if [[ "$line" = key:shift-? ]]; then
+						: #line=key:shift-$(tr ')~!@#$%^&*(+}{|:><?"'   '0`123456789=][\\;.,/'"'" <<<"${line: -1}")
+					else
+						line="type:$line"
+					fi
+					msgArray+=("$line")
+				done < <(sed -r -e 's;[~!@#$%^&*()_+|}{":?><]+;&\n;g' -e 's;[~!@#$%^&*()_+|}{":?><];\nkey:shift-&;g' <<<"$_msg")
+			else
+				msgArray+=("$msg")
+			fi
+			;;
+		esac
+		msgArray+=("")
 	done
 	for msg in "${msgArray[@]}"; do
-		if [[ -n "$msg" ]]; then
-			if [[ "$msg" = key:* ]]; then
-				vncdo --force-caps -s $vncport key "${msg#key:}"
-			else
-				vncdo --force-caps -s $vncport type "${msg#type:}"
-			fi
-		else
-			sleep 1
-		fi
+		[[ -z "$msg" ]] && { sleep 0.5; continue; }
+		case "$msg" in
+		key:*)     vncdo --force-caps -s $vncport key "${msg#key:}";;
+		keyup:*)   vncdo --force-caps -s $vncport keyup "${msg#keyup:}";;
+		keydown:*) vncdo --force-caps -s $vncport keydown "${msg#keydown:}";;
+		*)         vncdo --force-caps -s $vncport type "${msg#type:}";;
+		esac
 	done
 }
 
@@ -2105,20 +2102,6 @@ if [[ ${#SHARE_DIRS[@]} -gt 0 ]]; then
 		exit 1
 	fi
 fi
-if [[ "$VTPM" = yes ]]; then
-	_dependpkgs=swtpm-tools
-	_dependcmd=swtpm_setup
-	if ! grep -q tpm-crb < <($QEMU_KVM -device help); then
-		echo -e "{VM:WARN} $(qemu_kvm_nvr) don't support tpm-crb driver that's required by --vtpm option"
-		exit 1
-	fi
-	if ! command -v $_dependcmd &>/dev/null; then
-		echo -e "{VM:WARN} pkg $_dependpkgs is/are needed by vTPM function, please install $_dependpkgs first."
-		exit 1
-	fi
-	VTPM_OPT="--tpm emulator,model=tpm-crb,version=2.0"
-	PKGS+=" tpm2-tools"
-fi
 
 [[ "$QUIET" = yes ]] && {
 	yumOpt=-q
@@ -2384,6 +2367,21 @@ else
 	BOOT_DISK_ATTRS=bus=$DEFAULT_DISK_BUS
 fi
 
+if [[ "$VTPM" = yes ]]; then
+	_dependpkgs=swtpm-tools
+	_dependcmd=swtpm_setup
+	if ! grep -q tpm-crb < <($QEMU_KVM -device help); then
+		echo -e "{VM:WARN} $(qemu_kvm_nvr) don't support tpm-crb driver that's required by --vtpm option"
+		exit 1
+	fi
+	if ! command -v $_dependcmd &>/dev/null; then
+		echo -e "{VM:WARN} pkg $_dependpkgs is/are needed by vTPM function, please install $_dependpkgs first."
+		exit 1
+	fi
+	VTPM_OPT="--tpm emulator,model=tpm-crb,version=2.0"
+	PKGS+=" tpm2-tools"
+fi
+
 [[ -n "$QEMU_KVM" ]] && $QEMU_KVM -machine help|grep -q q35 && Q35=support
 [[ "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
 	echo -e "{VM:ERROR} Guest require machine type 'q35', but the qemu in your platform doesn't support 'q35'" >&2
@@ -2601,7 +2599,8 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 		gen_virt_mac() { echo -n 54:52:00$(od -txC -An -N3 /dev/random | tr \  :); }
 		WIN_MAC_INT=$(gen_virt_mac); WIN_MAC_EXT=$(gen_virt_mac)
 		case "$WIN_TEMPLATE" in (base) WIN_IF_MODEL=virtio;; esac
-		NETWORK_OPTS="--network=network=default,mac=$WIN_MAC_INT,model=${WIN_IF_MODEL} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}"
+		intIfModel=$WIN_IF_MODEL; [[ "${Distro,,}" =~ (win|windows)-?(10|11) ]] && intIfModel=e1000
+		NETWORK_OPTS="--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}"
 	else
 		NETWORK_OPTS="--network=network=default,model=${DEFAULT_IF_MODEL} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}"
 	fi
@@ -3451,19 +3450,31 @@ elif [[ "$InstallType" = cdrom ]]; then
 			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*|*lwaystrust*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
+				vm vnc $vmn -put=key:alt-tab
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				case $pre in
 				(no) pre=yes;;
-				(yes) let yes++; vm vnc $vmn -put=key:alt-tab; ((yes%2)) && vm vnc $vmn -put=key:alt-tab;;
+				(yes) let yes++; ((yes%2)) && vm vnc $vmn -put=key:alt-tab;;
 				esac
 				;;
-			*'"[$'\n']"'__i*'"[$'\n']"'__i*|*'"[$'\n']"'[_8][_8]_*'"[$'\n']"'[_8][_8]_*ecommend*)
-				echo "--------[$(date +%F_%T)]------------------------------------------"
-				echo "$screenocr"
-				case $pre in (no) vm vnc $vmn -put=key:alt-tab;; (yes) :;; esac
-				;;
 			*)
-				case $pre in (no) sleep 10;; (yes) break;; esac
+				case $pre in
+				(no)
+					case "${screenocr,,}" in
+					*[_8][_8]_*ecommend*|*learn\ mor*)
+						vm vnc $vmn -put=keydown:alt -put=key:tab -put=keyup:alt;;
+					*)
+						sleep 10;;
+					esac
+					;;
+				(yes)
+					let noagain++
+					tabOpt=$(for ((i=0;i<noagain%3;i++)); do
+						echo -n "-put=key:tab ";
+					done)
+					vm vnc $vmn -put=keydown:alt -put=key:tab -put=keyup:alt
+					;;
+				esac
 				;;
 			esac
 		done'
