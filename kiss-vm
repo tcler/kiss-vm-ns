@@ -2082,6 +2082,9 @@ DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 }
 
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
+[[ -n "$QEMU_KVM" ]] && {
+	timeout 0.5 $QEMU_KVM -vga qxl |& grep 'QXL VGA not available' && VIDEO_OPT=
+}
 qemu_kvm_nvr() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
@@ -3509,6 +3512,12 @@ elif [[ "$InstallType" = cdrom ]]; then
 fi
 trap - SIGINT SIGQUIT SIGTERM
 
+if ! virsh desc $vmname &>/dev/null; then
+	echo -e "\n{VM:ERR} virt-install fail"
+	rm -rf $VMpath && rmdir {$VMpath%/*} 2>/dev/null
+	exit 1
+fi
+
 if [[ "$WAIT" = yes ]]; then
 	echo -e "\n{VM:INFO} wait port($WAIT_PORT) of $vmname available ..."
 	port-available.sh $vmname $WAIT_PORT -w
@@ -3516,12 +3525,6 @@ if [[ "$WAIT" = yes ]]; then
 		echo
 		win-env-file-gen.sh $vmname
 	}
-fi
-
-if ! virsh desc $vmname &>/dev/null; then
-	echo -e "\n{VM:ERR} virt-install fail"
-	rm -rf $VMpath && rmdir {$VMpath%/*} 2>/dev/null
-	exit 1
 fi
 
 #only for Fedora/RHEL/CentOS/RockyLinux
