@@ -3439,7 +3439,8 @@ elif [[ "$InstallType" = cdrom ]]; then
 			[[ "$temp" != base ]] && break
 			screenocr=$(vm vnc $vmn -get)
 			case "${screenocr,,}" in
-			stat?c??p) break;;
+			*v?rt?o?w?n??nstall?done*) break;;
+			*stat?c??p*) break;;
 			*==??win7*|*0e3????53j3e3c3_0_e*|*88??o0_8_i9*)
 				[[ "$screenocr" = *==\>\ win7\ virtio?win* ]] && continue
 				echo "--------[$(date +%F_%T)]------------------------------------------"
@@ -3465,7 +3466,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				(no)
 					case "${screenocr,,}" in
 					*[_8][_8]_*ecommend*|*learn\ mor*)
-						vm vnc $vmn -put=keydown:alt -put=key:tab -put=keyup:alt;;
+						vm vnc $vmn -put=key:alt-tab
 					*)
 						sleep 10;;
 					esac

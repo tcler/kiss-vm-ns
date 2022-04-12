@@ -47,6 +47,8 @@ Function virtio-win-install() {
 		powershell "msiexec.exe /i $msifile /passive /qn /norestart"
 		#powershell "$exefile install /qn /passive /norestart"
 	}
+	Out-Host "`n==> virtio-win install done!"
+	Start-Sleep -s 4
 }
 
 Function init-extra-disks {
@@ -195,9 +197,6 @@ switch($Stage) {
 
 		# static ip setup
 		Out-Host "`n==> static ip setup"
-		if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
-			Start-Sleep -s 8;
-		}
 		$STATIC_IP_EXT = "@STATIC_IP_EXT@"
 		$STATIC_IP_INT = "@STATIC_IP_INT@"
 		$MAC_EXT = "@VNIC_MAC_EXT@"
