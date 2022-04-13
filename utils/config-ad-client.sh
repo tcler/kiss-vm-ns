@@ -6,7 +6,7 @@ P=${0##*/}
 
 Usage() {
 cat <<END
-Usage: config_ad_client.sh -i <AD_DC_IP> -p <Password> --host-netbios <netbois_name> [-e <AES|DES>] [--config_idmap|--config_krb]
+Usage: config-ad-client.sh -i <AD_DC_IP> -p <Password> --host-netbios <netbois_name> [-e <AES|DES>] [--config_idmap|--config_krb]
 
         -h|--help                  # Print this help
 
