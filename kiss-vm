@@ -2271,6 +2271,7 @@ if is_intranet; then
 		distroInfo[$_d]="http://$downhostname/qa/rhts/lookaside/vm-images/$_d/"
 	done
 
+	distroInfo[Windows-server-2022]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2022-Evaluation.iso"
 	distroInfo[Windows-server-2019]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2019-Evaluation.iso"
 	distroInfo[Windows-server-2016]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2016-Evaluation.iso"
 	distroInfo[Windows-server-2012r2]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2012r2-Evaluation.iso"
@@ -3441,7 +3442,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			case "${screenocr,,}" in
 			*v?rt?o?w?n??nstall?done*) break;;
 			*stat?c??p*) break;;
-			*==??win7*|*0e3????53j3e3c3_0_e*|*88??o0_8_i9*)
+			*==??win7*|*0e3????*53j3e3*_0_e*|*88??o0_8_i9*)
 				[[ "$screenocr" = *==\>\ win7\ virtio?win* ]] && continue
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
@@ -3451,7 +3452,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				(win7) let win7++; ((win7%2)) && vm vnc $vmn -put=key:alt-tab;;
 				esac
 				;;
-			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*|*lwaystrust*)
+			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*|*?ns??ll???rjr?jo*|*lwaystrust*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
 				vm vnc $vmn -put=key:alt-tab
@@ -3465,18 +3466,18 @@ elif [[ "$InstallType" = cdrom ]]; then
 				case $pre in
 				(no)
 					case "${screenocr,,}" in
-					*[_8][_8]_*ecommend*|*learn\ mor*)
-						vm vnc $vmn -put=key:alt-tab
+					*[_8][_8]_*ecomm?nd*|*you?want?to?allow?your?pc*|*learn\ mor*|*w*recomm?nd*llow*n*)
+						vm vnc $vmn -put=key:alt-tab;;
 					*)
 						sleep 10;;
 					esac
 					;;
 				(yes)
 					let noagain++
-					tabOpt=$(for ((i=0;i<noagain%3;i++)); do
-						echo -n "-put=key:tab ";
-					done)
-					vm vnc $vmn -put=keydown:alt -put=key:tab -put=keyup:alt
+					#tabOpts=$(for ((i=0;i<noagain%3;i++)); do echo -n "-put=key:tab "; done)
+					#fixme: seems keydown doesnot work as expected
+					#vm vnc $vmn -put=keydown:alt $tabOpts -put=keyup:alt
+					vm vnc $vmn -put=key:alt-tab
 					;;
 				esac
 				;;
