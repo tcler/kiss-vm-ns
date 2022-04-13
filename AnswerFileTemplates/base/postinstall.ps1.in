@@ -38,17 +38,21 @@ Function virtio-win-install() {
 			}
 		}
 	}
-	if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
-		Out-Host "`n==> win7 virtio-win driver: ${D}\w7\ ..."
-		PnPutil.exe -i -a ${drvDir}\NetKVM\w7\amd64\*.inf
-		PnPutil.exe -i -a ${drvDir}\amd64\w7\*.inf
-	} elseif ($msifile -and (Test-Path -Path $msifile)) {
-		Out-Host "`n==> install virtio-win driver: $msifile ..."
-		powershell "msiexec.exe /i $msifile /passive /qn /norestart"
-		#powershell "$exefile install /qn /passive /norestart"
+	while ($true) {
+		if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
+			Out-Host "`n==> win7 virtio-win driver: ${D}\w7\ ..."
+			PnPutil.exe -i -a ${drvDir}\NetKVM\w7\amd64\*.inf
+			PnPutil.exe -i -a ${drvDir}\amd64\w7\*.inf
+		} elseif ($msifile -and (Test-Path -Path $msifile)) {
+			Out-Host "`n==> install virtio-win driver: $msifile ..."
+			powershell "msiexec.exe /i $msifile /passive /qn /norestart"
+			#powershell "$exefile install /qn /passive /norestart"
+		}
+		Start-Sleep -s 2
+		$ifs = @(Get-NetAdapter)
+		if ($ifs.Count -ge 2) { break }
 	}
 	Out-Host "`n==> virtio-win install done!"
-	Start-Sleep -s 4
 }
 
 Function init-extra-disks {
@@ -113,8 +117,8 @@ Function GetIPAddrFromNic() {
 	@(Get-NetIPAddress -AddressFamily $Family -InterfaceIndex $Nic.ifIndex)[0].IPAddress.Trim()
 }
 
-Function Generate-Env-File {
-	$envf = "C:\win.env"
+Function Generate-Env-File() {
+	param([string]$envf = "C:\win.env")
 	echo "#windows env file
 #VM_INT_IP=
 #VM_EXT_IP=
@@ -303,8 +307,9 @@ ipconfig | out-file -encoding utf8 $LogPath\@IPCONFIG_LOGF@
 echo "install complete" | out-file -encoding utf8 $LogPath\@INSTALL_COMPLETE_FILE@
 foreach ($dir in ("$ansfDriveLetter")) {
 	if (Test-Path -Path $dir) {
+		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $LogPath
+		Copy-Item -Path C:\win.env -Destination $LogPath
 		Copy-Item -Path $LogPath -Recurse -Destination $dir\
-		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $LogPath\
 	}
 }
 

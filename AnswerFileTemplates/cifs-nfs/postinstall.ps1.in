@@ -75,8 +75,8 @@ Function GetIPAddrFromNic() {
 	@(Get-NetIPAddress -AddressFamily $Family -InterfaceIndex $Nic.ifIndex)[0].IPAddress.Trim()
 }
 
-Function Generate-Env-File {
-	$envf = "C:\win.env"
+Function Generate-Env-File() {
+	param([string]$envf = "C:\win.env")
 	echo "#windows env file
 #VM_INT_IP=
 #VM_EXT_IP=
@@ -423,8 +423,9 @@ ipconfig | out-file -encoding utf8 $LogPath\@IPCONFIG_LOGF@
 echo "install complete" | out-file -encoding utf8 $LogPath\@INSTALL_COMPLETE_FILE@
 foreach ($dir in ("$ansfDriveLetter")) {
 	if (Test-Path -Path $dir) {
-		Copy-Item -Path $LogPath -Recurse -Destination $dir\
 		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $LogPath
+		Copy-Item -Path C:\win.env -Destination $LogPath
+		Copy-Item -Path $LogPath -Recurse -Destination $dir\
 	}
 }
 
