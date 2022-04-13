@@ -175,7 +175,7 @@ switch($Stage) {
 		if ($NicRDMA) {Out-Host "`n---> NIC int info: ip($(GetIPAddrFromNic $NicRDMA)), desc: $($NicRDMA.ifDesc)"}
 
 		if ($STATIC_IP_INT) {
-			$oldIntAddrs = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicInt.InterfaceIndex)
+			$oldIntAddrs = @(Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicInt.InterfaceIndex)
 			$IntIpConf = (Get-NetIPConfiguration -InterfaceIndex $NicInt.ifIndex)
 
 			Out-Host "`n---> set static IP($STATIC_IP_INT) on int NIC: $($NicInt.ifAlias)"
@@ -187,7 +187,7 @@ switch($Stage) {
 		# change address of EXT NIC from DHCP to STATIC
 		#while ($true) {
 		while (Get-Command Get-NetIPAddress -errorAction SilentlyContinue) {
-			$oldExtAddrs = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicExt.InterfaceIndex)
+			$oldExtAddrs = @(Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicExt.InterfaceIndex)
 			if ($null -ne $oldExtAddrs -and $null -ne $oldExtAddrs[0].IPAddress `
 				-and $oldExtAddrs[0].IPAddress -is [string] -and $oldExtAddrs[0].IPAddress.Trim() -notlike "169.254.*") {
 				break
