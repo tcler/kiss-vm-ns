@@ -3466,10 +3466,8 @@ elif [[ "$InstallType" = cdrom ]]; then
 				case $pre in
 				(no)
 					case "${screenocr,,}" in
-					*[_8][_8]_*ecomm?nd*|*you?want?to?allow?your?pc*|*learn\ mor*|*w*recomm?nd*llow*n*)
-						vm vnc $vmn -put=key:alt-tab;;
-					*)
-						sleep 10;;
+					*[_8][_8]_*ecomm?n?*) vm vnc $vmn -put=key:alt-tab;;
+					*) sleep 10;;
 					esac
 					;;
 				(yes)

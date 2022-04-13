@@ -197,6 +197,8 @@ switch($Stage) {
 			Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask -Verbose
 			Stop-Process -Name "ServerManager"
 		}
+		Out-Host "`n==> disable 'allow PC to be discoverable on this network'"
+		reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff" /f
 
 		# try install virtio-win driver
 		Out-Host "`n==> install virtio-win driver ..."
