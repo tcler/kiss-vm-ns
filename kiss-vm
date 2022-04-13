@@ -2083,7 +2083,7 @@ DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
 [[ -n "$QEMU_KVM" ]] && {
-	timeout 0.5 $QEMU_KVM -vga qxl |& grep -q 'QXL VGA not available' && VIDEO_OPT=--video=virtio
+	DISPLAY= $QEMU_KVM -vga qxl |& grep -q 'QXL VGA not available' && VIDEO_OPT=--video=virtio
 }
 qemu_kvm_nvr() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
