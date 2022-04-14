@@ -3444,7 +3444,9 @@ elif [[ "$InstallType" = cdrom ]]; then
 			case "${screenocr,,}" in
 			*v?rt?o?w?n??nstall?done*) break;;
 			*stat?c??p*) break;;
-			*0e3??*53j3e3*_0_e*|*88??o0_8*4j*bj*%i*|*j_ll_%d_r__a_y*)
+			*win7*|*c3_53j3j3__0_e*|*0e3??*53j3e3*_0_e*|*88??o0_8*4j*bj*%i*|*j_ll_%d_r__a_y*)
+				[[ "$screenocr" = *==\>*==\>*==\>*==\>?install?virtio-win?driver?...* ]] && {
+					vm vnc $vmn -put=key:alt-tab; continue; }
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
 				vm vnc $vmn -put=key:tab -put=key:enter
