@@ -137,18 +137,21 @@ at_exit() {
 	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=$orig_disable_ipv6 &>/dev/null
 	rm -rf $RuntimeTmp
 }
+kill_installer_tmux_session() {
+	local _vmn=$1
+	[[ -z "$_vmn" ]] && return
+	while read session _ ; do
+		[[ "$session" = *_${_vmn}: ]] && tmux kill-session -t ${session%:}
+	done < <(tmux ls 2>/dev/null)
+}
 cleanup() {
-	local _vmn=
 	if [[ -n "$VMpath" ]]; then
 		echo -e "\n{VM:clean} Removing VM dir: $VMpath"
 		rm -rfv "$VMpath"
 		rmdir -v "${VMpath%/*}" 2>/dev/null
 
-		echo -e "\n{VM:clean} kill installer assistant tmux session"
-		_vmn=${VMpath##*/}
-		while read session _ ; do
-			[[ "$session" = *_${_vmn}: ]] && tmux kill-session -t ${session%:}
-		done < <(tmux ls 2>/dev/null)
+		echo -e "{VM:clean} kill installer assistant tmux session"
+		kill_installer_tmux_session ${VMpath##*/}
 	fi
 	exit
 }
@@ -286,9 +289,7 @@ _vmdelete() {
 
 	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
 		echo -e "{VM:INFO} kill tmux session ..."
-		while read session _ ; do
-			[[ "$session" = *_${_vmname}: ]] && tmux kill-session -t ${session%:}
-		done < <(tmux ls 2>/dev/null)
+		kill_installer_tmux_session ${_vmname}
 
 		echo -e "{VM:INFO} removing VM folder $_vmdir ..."
 		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
@@ -3414,7 +3415,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 		for ((i=0; i<32; i++)); do
 			screenocr=$(vm vnc $vmn -get)
 			case "${screenocr,,}" in
-			*lan9*|*langua*|*_jju?_ve*)
+			*lan9*|*langua*|*_jju?_ve*|*t3e1_oot3*)
 				echo "$screenocr"
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
@@ -3442,8 +3443,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			case "${screenocr,,}" in
 			*v?rt?o?w?n??nstall?done*) break;;
 			*stat?c??p*) break;;
-			*==??win7*|*0e3????*53j3e3*_0_e*|*88??o0_8_i9*)
-				[[ "$screenocr" = *==\>\ win7\ virtio?win* ]] && continue
+			*0e3??*53j3e3*_0_e*|*88??o0_8*4j*bj*%i*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
 				vm vnc $vmn -put=key:tab -put=key:enter
@@ -3480,6 +3480,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				esac
 				;;
 			esac
+			port-available.sh $vmn 22 &>/dev/null && break
 		done'
 	fi
 
@@ -3522,7 +3523,7 @@ if [[ "$WAIT" = yes ]]; then
 	echo -e "\n{VM:INFO} wait port($WAIT_PORT) of $vmname available ..."
 	port-available.sh $vmname $WAIT_PORT -w
 	[[ $? = 0 && "$WIN_AUTO" = yes ]] && {
-		echo
+		kill_installer_tmux_session ${vmname}
 		win-env-file-gen.sh $vmname
 	}
 fi

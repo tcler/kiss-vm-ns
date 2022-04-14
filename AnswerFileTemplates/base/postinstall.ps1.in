@@ -49,7 +49,7 @@ Function virtio-win-install() {
 			#powershell "$exefile install /qn /passive /norestart"
 		}
 		Start-Sleep -s 2
-		$ifs = @(Get-NetAdapter)
+		$ifs = @(ipconfig | Select-String -Pattern "^Eth")
 		if ($ifs.Count -ge 2) { break }
 	}
 	Out-Host "`n==> virtio-win install done!"
