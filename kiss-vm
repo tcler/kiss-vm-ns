@@ -2252,6 +2252,14 @@ run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 declare -A distroInfo
 dbfile=${_confdir}/distro-db.bash
 owndbfile=$perConfDir/distro-db.bash
+if is_intranet; then
+	timeout 2 hostname -A|grep -q '\.pek2\.' && downhostname=${downhostname/devel/eng.pek2}
+	IntranetBaseUrl=http://$downhostname/qa/rhts/lookaside
+else
+	Intranet=no
+	baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
+fi
+
 [[ -f $dbfile ]] && {
 	echo "{VM:INFO} load distro-db file $dbfile ..."
 	source $dbfile
@@ -2260,28 +2268,6 @@ owndbfile=$perConfDir/distro-db.bash
 	echo "{VM:INFO} load own distro-db file $owndbfile ..."
 	source $owndbfile
 }
-
-if is_intranet; then
-	timeout 2 hostname -A|grep -q '\.pek2\.' && downhostname=${downhostname/devel/eng.pek2}
-	distroInfo[FreeBSD-13.0]="http://$downhostname/qa/rhts/lookaside/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-amd64.qcow2.xz"
-	distroInfo[FreeBSD-12.2]="http://$downhostname/qa/rhts/lookaside/vm-images/FreeBSD-12.2/FreeBSD-12.2-RELEASE-amd64.qcow2.xz"
-
-	for _d in RHEL-7.{1..2} RHEL-6.{0..10} RHEL5-Server-U{10..11}; do
-		distroInfo[$_d]="http://$downhostname/qa/rhts/lookaside/vm-images/$_d/"
-	done
-
-	distroInfo[Windows-server-2022]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2022-Evaluation.iso"
-	distroInfo[Windows-server-2019]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2019-Evaluation.iso"
-	distroInfo[Windows-server-2016]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2016-Evaluation.iso"
-	distroInfo[Windows-server-2012r2]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win2012r2-Evaluation.iso"
-	distroInfo[Windows-11]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win11-Evaluation.iso"
-	distroInfo[Windows-10]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win10-Evaluation.iso"
-	distroInfo[Windows-7]="cdrom:http://$downhostname/qa/rhts/lookaside/windows-images/Win7-cn.iso"
-else
-	Intranet=no
-	baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
-	#bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
-fi
 
 for disk in "${EXTRA_DISKS[@]}"; do
 	read size fstype _ <<<"${disk//,/ }"
@@ -2304,7 +2290,7 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 		touch $distropatternInter $distropatternIntra
 
 		echo -e "Rocky\nCentOS\nfedora\ndebian\nopenSUSE\narchlinux\nFreeBSD\nWindows" >>$distropatternInter
-		for dname in "${!distroInfo[@]}"; do echo "$dname"; done >>$distrolist
+		for dname in "${!distroInfo[@]}"; do echo "$dname"; done | sort -rV >>$distrolist
 
 		dialogTitle="vm-create"
 		[[ "$Intranet" = yes ]] && {
