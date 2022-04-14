@@ -889,13 +889,13 @@ vmlogin() {
 			log_user 1
 			if {\$argc == 0} {
 				expect {
-				"password:" { send "$defaultPasswd\r"; exp_continue }
+				"\[Pp]assword:" { send "$defaultPasswd\r"; exp_continue }
 				"Password for" { send "$defaultPasswd\r"; exp_continue }
 				"*# " { send "\r"; interact }
 				}
 			} else {
 				expect {
-				"password:" { send "$defaultPasswd\r"; exp_continue }
+				"\[Pp]assword:" { send "$defaultPasswd\r"; exp_continue }
 				"Password for" { send "$defaultPasswd\r"; exp_continue }
 				eof
 				}
