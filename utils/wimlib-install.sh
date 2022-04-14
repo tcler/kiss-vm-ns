@@ -28,7 +28,6 @@ red?hat|centos*|rocky*)
 esac
 
 echo -e "\n{wimlib-install} install wimlib from repo ..."
-#install netpbm/netpbm-progs or gm(GraphicsMagick/ImageMagick)
 command -v wiminfo || {
 	case ${OS,,} in
 	slackware*)
@@ -52,7 +51,7 @@ command -v wiminfo || {
 		echo -e "\n{wimlib-install} install wimlib from src ..."
 		case ${OS,,} in
 		fedora*|red?hat*|centos*|rocky*)
-			yum $yumOpt install -y \
+			yum $yumOpt --setopt=strict=0 install -y \
 				autoconf git gcc make libxml2-devel fuse fuse-libs fuse-devel fuse3 fuse3-libs fuse3-devel ntfs-3g-devel;;
 		debian*|ubuntu*)
 			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y --ignore-missing \
@@ -67,7 +66,10 @@ command -v wiminfo || {
 		tgzf=${wimliburl##*/}
 		rm -rf ${tgzf} ${tgzf%.tar.gz}
 		wget -4 $wimliburl && tar zxf ${tgzf}
-		(cd ${tgzf%.tar.gz} && ./configure && make && make install)
+		(cd ${tgzf%.tar.gz} &&
+			{ ./configure || ./configure --without-fuse; } &&
+			make && make install)
+		rm -rf ${tgzf} ${tgzf%.tar.gz}
 	}
 }
 
