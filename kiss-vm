@@ -256,7 +256,8 @@ _vmdelete() {
 	blk=$(virsh domblklist "$_vmname" | sed 1,2d)
 	if test -n "$blk"; then
 		! grep -q "$userhome/VM[sS]/" <<<"$blk" && {
-			echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
+			echo -e "{VM:DEBUG} blklist in '$_vmname':\n$blk"
+			echo -e "{VM:WARN} VM '$_vmname' was not created by current user($VMUSER); try:"
 			cat <<-EOF
 			  virsh destroy $_vmname
 			  virsh undefine $_vmname #--remove-all-storage --nvram
@@ -265,7 +266,7 @@ _vmdelete() {
 		}
 	#pxe vms
 	elif [[ ! -d $userhome/VMs/PXE/$_vmname ]]; then
-		echo -e "{VM:WARN} VM '$_vmname' was not created by current user; try:"
+		echo -e "{VM:WARN} VM '$_vmname' was not created by current user($VMUSER); try:"
 		cat <<-EOF
 		  virsh destroy $_vmname
 		  virsh undefine $_vmname #--remove-all-storage --nvram
