@@ -77,7 +77,7 @@ dlvmname=linux-diskless
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
 mkdir $nfsroot
-yum install -y @Base kernel dracut-network openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
+yum install --setopt=strict=0 -y @Base @Minimal\ Install kernel dracut-network openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
 cp /etc/resolv.conf ${nfsroot}/etc/resolv.conf
 echo "none            /tmp            tmpfs    defaults        0 0" >>${nfsroot}/etc/fstab
 echo "devtmpfs        /dev            devtmpfs defaults        0 0" >>${nfsroot}/etc/fstab
@@ -99,7 +99,8 @@ ls -lZ /etc/shadow $nfsroot/etc/shadow
 #https://stackallflow.com/unix-linux/recursive-umount-after-rbind-mount/
 mount -t proc /proc $nfsroot/proc; mount --rbind /sys $nfsroot/sys; mount --make-rslave $nfsroot/sys; mount --rbind /dev $nfsroot/dev; mount --make-rslave $nfsroot/dev
   echo 'add_dracutmodules+=" nfs "' >>$nfsroot/etc/dracut.conf
-  chroot $nfsroot dracut --no-hostonly --nolvmconf -m "nfs network base" --xz /boot/initramfs.pxe-\$(uname -r) \$(uname -r)
+  VR=\$(chroot /nfsroot/ bash -c 'ls /boot/config-*|sed s/.*config-//')
+  chroot $nfsroot dracut --no-hostonly --nolvmconf -m "nfs network base" --xz /boot/initramfs.pxe-\$VR \$VR
   chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$(uname -r)
 umount $nfsroot/proc; umount -R $nfsroot/dev; umount -R $nfsroot/sys;
 touch $nfsroot/.autorelabel
@@ -130,12 +131,15 @@ while ! vm exec $vmname -- ls $nfsroot/boot; do
 done
 distrofamily=$(vm exec $vmname -- awk -F'[="]+' '/^(ID|VERSION_ID)=/{printf($2)}' /etc/os-release)
 bootfiles=$(vm exec $vmname -- ls $nfsroot/boot)
-vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-)
+vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-|sort -V|tail -1)
 initramfs=$(echo "$bootfiles"|grep ^initramfs.pxe-)
-vm cpfrom $vmname $nfsroot/boot/$vmlinuz .
-vm cpfrom $vmname $nfsroot/boot/$initramfs .
-echo "$password" | sudo -S mv $vmlinuz $initramfs /var/lib/tftpboot/pxelinux/.
+tmpdir=$(mktemp -d)
+vm cpfrom $vmname $nfsroot/boot/$vmlinuz $tmpdir/.
+vm cpfrom $vmname $nfsroot/boot/$initramfs $tmpdir/.
+echo "$password" | sudo -S mv $tmpdir/* /var/lib/tftpboot/pxelinux/.
+echo "$password" | sudo -S chmod a+r $initramfs /var/lib/tftpboot/pxelinux/*
 echo "$password" | sudo -S chcon --reference=/var/lib/tftpboot/pxelinux/pxelinux.0 /var/lib/tftpboot/pxelinux/*
+rm -fr $tmpdir
 
 
 #---------------------------------------------------------------
