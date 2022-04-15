@@ -720,7 +720,7 @@ vmcopyto() {
 	local srcarray=("${@:1: $#-1}")
 
 	port_available $_vmname 22 || {
-		echo -e "{VM:WARN} port $_vmname:22 is not available"
+		echo -e "{VM:ERR} port $_vmname:22 is not available"
 		return 1
 	}
 
@@ -771,7 +771,7 @@ vmcopyfrom() {
 	[[ -d "$dstf" ]] && dstf=$(readlink -f $dstf)/.
 
 	port_available $_vmname 22 || {
-		echo -e "{VM:WARN} port $_vmname:22 is not available"
+		echo -e "{VM:ERR} port $_vmname:22 is not available"
 		return 1
 	}
 
@@ -907,9 +907,14 @@ vmlogin() {
 			) "$@"
 			rc=$?
 		else
-			echo -e "{VM:WARN} ssh $U@$addr is not available, try login with console ..."
-			virsh console "$_vmname"
-			rc=$?
+			if [[ "${EXEC}" = yes ]]; then
+				echo -e "{VM:ERR} ssh $U@$addr is not available, exit."
+				return 1
+			else
+				echo -e "{VM:WARN} ssh $U@$addr is not available, try login with console ..."
+				virsh console "$_vmname"
+				rc=$?
+			fi
 		fi
 
 		faillog() { echo -e "\033[41m{TEST:FAIL} $*\033[0m"; }
