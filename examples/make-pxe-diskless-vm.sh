@@ -14,6 +14,7 @@ command -v vm >/dev/null || {
 
 argv=()
 extrapkgs=()
+Usage() { echo "Usage: $0 [distro] [-selinux[={0|1|no|yes}]"; }
 for arg; do
 	case "$arg" in
 	-selinux|-selinux=[01]|-selinux=no|-selinux=yes|-selinux=*)
@@ -21,26 +22,30 @@ for arg; do
 		SEVAL=${arg#-selinux=}
 		case "$SEVAL" in 0|no) SELINUX=permissive;; 1|yes) SELINUX=enforcing;; esac
 		;;
-	-h)   echo "Usage: $0 [distro] [-selinux[={0|1|no|yes}]";;
+	-h|--h*)
+		Usage; exit;;
 	-*)   echo "{WARN} unkown option '${arg}'";;
 	*)    argv+=($arg);;
 	esac
 done
 set -- "${argv[@]}"
 
-distro=${1:-RHEL-8.1.0}
-
+distro=${1:-RHEL-8.5.0}
+echo -e "\n================ [DEBUG] ===============\n= distro/family: $distro"
 
 #---------------------------------------------------------------
-sudo -K
-while true; do
-	read -s -p "sudo Password: " password
-	echo
-	echo "$password" | sudo -S ls / >/dev/null && break
-done
+[[ $(id -u) != 0 ]] && {
+	sudo -K
+	while true; do
+		read -s -p "sudo Password: " password
+		echo
+		echo "$password" | sudo -S ls / >/dev/null && break
+	done
+}
 
 #---------------------------------------------------------------
 #install tftp server and configure pxe
+echo -e "\n================ [INFO] ================\n= prepare tftp-server /var/lib/tftpboot/pxelinux:"
 echo "$password" | sudo -S yum install -y syslinux tftp-server
 # prepare pxelinux.0
 echo "$password" | sudo -S mkdir -p /var/lib/tftpboot/pxelinux
@@ -50,22 +55,28 @@ echo "$password" | sudo -S cp /usr/share/syslinux/ldlinux.c32 /var/lib/tftpboot/
 
 #---------------------------------------------------------------
 #create virt network pxenet
+echo -e "\n[INFO] create pxe virt network"
+netname=pxenet
+brname=virpxebr0
 netaddr=200
-vm netcreate netname=pxenet brname=virpxebr0 subnet=$netaddr tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
+vm netcreate netname=$netname brname=$brname subnet=$netaddr tftproot=/var/lib/tftpboot bootpfile=pxelinux/pxelinux.0
+vm netinfo $netname
 vm netls
 
 #---------------------------------------------------------------
 #create nfs root
 nfsroot=/nfsroot
-vm $distro -p nfs-utils --net pxenet --nointeract --force
-vmname=$(vm --getvmname $distro)
+vmname=pxe-nfs-server
+echo -e "\n================ [INFO] ================\n= create nfs server of sysroot for diskless guest"
+vm $distro -n $vmname --msize=4G --dsize=80 -p nfs-utils --net pxenet --nointeract --force
 
 [[ -n "$SELINUX" ]] && extrapkgs+=(selinux-policy selinux-policy-targeted)
 
+dlvmname=linux-diskless
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
 mkdir $nfsroot
-yum install -y @Base kernel dracut-network nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
+yum install -y @Base kernel dracut-network openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
 cp /etc/resolv.conf ${nfsroot}/etc/resolv.conf
 echo "none            /tmp            tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
 echo "tmpfs           /dev/shm        tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
@@ -88,49 +99,56 @@ chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$(uname -r)
 touch $nfsroot/.autorelabel
 
 
-
 echo "$nfsroot *(rw,no_root_squash,security_label)" >/etc/exports
 systemctl enable nfs-server
 systemctl restart nfs-server
 
 cp /etc/yum.repos.d/*.repo ${nfsroot}/etc/yum.repos.d/.
+
+echo "$dlvmname" >${nfsroot}/etc/hostname
+authKeys="$(for F in ~/.ssh/id_*.pub; do tail -n1 $F; done)"
+#mkdir -p ${nfsroot}/root/.ssh && echo "\$authKeys" >>${nfsroot}/root/.ssh/authorized_keys
+mkdir -p ${nfsroot}/root/.ssh && cp /root/.ssh/authorized_keys ${nfsroot}/root/.ssh/authorized_keys
 EOF
 
-scp -o StrictHostKeyChecking=no prepare-nfsroot.sh root@$vmname: && rm -f prepare-nfsroot.sh
+vm cpto $vmname prepare-nfsroot.sh . && rm -f prepare-nfsroot.sh
 vm exec $vmname -- bash prepare-nfsroot.sh
 vm exec $vmname -- systemctl stop firewalld
 
 
 #---------------------------------------------------------------
 # prepare vmlinuz and initrd.img
+echo -e "\n================ [INFO] ================\n= prepare vmlinuz and initrd.img for pxelinux boot"
 while ! vm exec $vmname -- ls $nfsroot/boot; do
 	sleep 2
 done
+distrofamily=$(vm exec $vmname -- awk -F'[="]+' '/^(ID|VERSION_ID)=/{printf($2)}' /etc/os-release)
 bootfiles=$(vm exec $vmname -- ls $nfsroot/boot)
 vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-)
 initramfs=$(echo "$bootfiles"|grep ^initramfs.pxe-)
-scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$vmlinuz .
-scp -o StrictHostKeyChecking=no root@$vmname:$nfsroot/boot/$initramfs .
+vm cpfrom $vmname $nfsroot/boot/$vmlinuz .
+vm cpfrom $vmname $nfsroot/boot/$initramfs .
 echo "$password" | sudo -S mv $vmlinuz $initramfs /var/lib/tftpboot/pxelinux/.
 echo "$password" | sudo -S chcon --reference=/var/lib/tftpboot/pxelinux/pxelinux.0 /var/lib/tftpboot/pxelinux/*
 
 
 #---------------------------------------------------------------
 # generate pxe config file
+echo -e "\n================ [INFO] ================\n= generate pxe config file ..."
 nfsserv=$(vm ifaddr $vmname | grep "192\\.168\\.$netaddr\\.")
 echo "$password" | sudo -S mkdir -p /var/lib/tftpboot/pxelinux/pxelinux.cfg
 cat <<EOF | sudo tee /var/lib/tftpboot/pxelinux/pxelinux.cfg/default
-# boot rhel-7 with tftp/nfs
+# boot ${distrofamily} with tftp/nfs
 default menu.c32
 prompt 0
 
 menu title PXE Boot Menu
 
-ontimeout rhel-7
+ontimeout ${distrofamily}
 timeout 50
 
-label rhel-7
-  menu label Install diskless rhel-7 ${vmlinuz#vmlinuz-}
+label ${distrofamily}
+  menu label Install diskless ${distrofamily} ${vmlinuz#vmlinuz-}
   kernel $vmlinuz
   append initrd=$initramfs root=nfs4:$nfsserv:$nfsroot:vers=4.2,rw rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
 
@@ -142,4 +160,5 @@ echo "$password" | sudo -S systemctl start tftp
 
 #---------------------------------------------------------------
 # install diskless vm
-vm ${distro}-pxe --net pxenet --pxe --diskless --force
+echo -e "\n================ [INFO] ================\n= create diskless guest over nfs ..."
+vm create ${distro}-pxe -n $dlvmname --net pxenet --net default --pxe --diskless --force
