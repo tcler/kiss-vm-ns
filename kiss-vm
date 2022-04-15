@@ -3238,14 +3238,8 @@ elif [[ "$InstallType" = pxe ]]; then
 	fi
 
 	if [[ -n $DISPLAY ]]; then
-		run -debug virt-viewer -s -v $vmname |& tee $VMpath/virt-viewer.log
-		if grep -iq "server closed the connection" $VMpath/virt-viewer.log; then
-			until port_available ${vmname} $(_vmvncport $vmname); do sleep 1; done
-			run -debug -nohup=/dev/null virt-viewer -s -v $vmname
-			echo -e "\n{VM:INFO} guest $vmname install finished"
-		else
-			echo -e "\n{VM:INFO} virt-viewer disconnected, run: 'virt-viewer -s $vmname' to finish install"
-		fi
+		run -debug -nohup=/dev/null virt-viewer -s -v $vmname
+		echo -e "\n{VM:INFO} pxe guest $vmname booting ..."
 	else
 		echo -e "\n{VM:INFO} please connect vnc to continue/complete the install:"
 		for vncaddr in $(vmvncproc $vmname); do
