@@ -68,7 +68,8 @@ vm netls
 nfsroot=/nfsroot
 vmname=pxe-nfs-server
 echo -e "\n================ [INFO] ================\n= create nfs server of sysroot for diskless guest"
-vm $distro -n $vmname --msize=4G --dsize=80 -p nfs-utils --net pxenet --nointeract --force
+vm $distro -n $vmname --msize=4G --dsize=80 -p "nfs-utils deltarpm" --net pxenet --nointeract --force
+vm exec $vmname ls || exit $?
 
 [[ -n "$SELINUX" ]] && extrapkgs+=(selinux-policy selinux-policy-targeted)
 
@@ -78,10 +79,11 @@ cat >prepare-nfsroot.sh <<EOF
 mkdir $nfsroot
 yum install -y @Base kernel dracut-network openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
 cp /etc/resolv.conf ${nfsroot}/etc/resolv.conf
-echo "none            /tmp            tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
-echo "tmpfs           /dev/shm        tmpfs   defaults        0 0" >>${nfsroot}/etc/fstab
-echo "sysfs           /sys            sysfs   defaults        0 0" >>${nfsroot}/etc/fstab
-echo "proc            /proc           proc    defaults        0 0" >>${nfsroot}/etc/fstab
+echo "none            /tmp            tmpfs    defaults        0 0" >>${nfsroot}/etc/fstab
+echo "devtmpfs        /dev            devtmpfs defaults        0 0" >>${nfsroot}/etc/fstab
+echo "tmpfs           /dev/shm        tmpfs    defaults        0 0" >>${nfsroot}/etc/fstab
+echo "sysfs           /sys            sysfs    defaults        0 0" >>${nfsroot}/etc/fstab
+echo "proc            /proc           proc     defaults        0 0" >>${nfsroot}/etc/fstab
 
 [[ -n "$SELINUX" ]] && sed -i 's/^SELINUX=.*/SELINUX=$SELINUX/' $nfsroot/etc/sysconfig/selinux
 
@@ -93,9 +95,13 @@ ls -lZ /etc/shadow $nfsroot/etc/shadow
 chcon --reference=/etc/shadow $nfsroot/etc/shadow
 ls -lZ /etc/shadow $nfsroot/etc/shadow
 
-echo 'add_dracutmodules+="nfs"' >>$nfsroot/etc/dracut.conf
-chroot $nfsroot dracut --no-hostonly --nolvmconf -m "nfs network base" --xz /boot/initramfs.pxe-\$(uname -r) \$(uname -r)
-chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$(uname -r)
+#https://superuser.com/questions/165116/mount-dev-proc-sys-in-a-chroot-environment
+#https://stackallflow.com/unix-linux/recursive-umount-after-rbind-mount/
+mount -t proc /proc $nfsroot/proc; mount --rbind /sys $nfsroot/sys; mount --make-rslave $nfsroot/sys; mount --rbind /dev $nfsroot/dev; mount --make-rslave $nfsroot/dev
+  echo 'add_dracutmodules+=" nfs "' >>$nfsroot/etc/dracut.conf
+  chroot $nfsroot dracut --no-hostonly --nolvmconf -m "nfs network base" --xz /boot/initramfs.pxe-\$(uname -r) \$(uname -r)
+  chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$(uname -r)
+umount $nfsroot/proc; umount -R $nfsroot/dev; umount -R $nfsroot/sys;
 touch $nfsroot/.autorelabel
 
 
