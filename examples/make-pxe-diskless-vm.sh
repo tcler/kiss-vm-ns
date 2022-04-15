@@ -100,7 +100,9 @@ ls -lZ /etc/shadow $nfsroot/etc/shadow
 mount -t proc /proc $nfsroot/proc; mount --rbind /sys $nfsroot/sys; mount --make-rslave $nfsroot/sys; mount --rbind /dev $nfsroot/dev; mount --make-rslave $nfsroot/dev
   echo 'add_dracutmodules+=" nfs "' >>$nfsroot/etc/dracut.conf
   VR=\$(chroot /nfsroot/ bash -c 'ls /boot/config-*|sed s/.*config-//')
-  chroot $nfsroot dracut --no-hostonly --nolvmconf -m "nfs network base" --xz /boot/initramfs.pxe-\$VR \$VR
+  chroot $nfsroot dracut --no-hostonly --nolvmconf \\
+	-m "nfs network base qemu " --xz /boot/initramfs.pxe-\$VR \$VR
+	#--add-drivers "virtio_net virtio_scsi virtio_pci virtio_ring virtio" \\
   chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$(uname -r)
 umount $nfsroot/proc; umount -R $nfsroot/dev; umount -R $nfsroot/sys;
 touch $nfsroot/.autorelabel
