@@ -3441,7 +3441,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				(win7) let win7++; ((win7%2)) && vm vnc $vmn -put=key:alt-tab;;
 				esac
 				;;
-			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*|*?ns??ll???rjr?jo*|*lwaystrust*)
+			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*|*?ns??ll???rjr?jo*|*lwaystrust*|*==\>*_____*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
 				vm vnc $vmn -put=key:alt-tab
