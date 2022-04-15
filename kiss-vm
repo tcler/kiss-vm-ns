@@ -2401,7 +2401,9 @@ fi
 	virsh desc $vmname &>/dev/null && {
 		if [[ "${OVERWRITE}" = "yes" ]]; then
 			echo "{VM:INFO} VM $vmname has been there, remove it ..."
-			_vmdelete $vmname
+			_vmdelete $vmname || {
+				echo "{VM:ERR} delete $vmname fail, exit."
+			}
 		elif [[ "${DOWNLOAD_ONLY}" != "yes" ]]; then
 			echo "{VM:INFO} VM $vmname has been there, if you want overwrite please use --force option"
 			exit
