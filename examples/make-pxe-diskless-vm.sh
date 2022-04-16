@@ -77,8 +77,8 @@ dlvmname=linux-diskless
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
 mkdir $nfsroot
-yum install --setopt=strict=0 -y @Base @Minimal\ Install kernel dracut-network openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
-cp /etc/resolv.conf ${nfsroot}/etc/resolv.conf
+yum install --setopt=strict=0 -y @Base kernel dracut-network openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
+cp --remove-destination /etc/resolv.conf ${nfsroot}/etc/resolv.conf
 echo "none            /tmp            tmpfs    defaults        0 0" >>${nfsroot}/etc/fstab
 echo "devtmpfs        /dev            devtmpfs defaults        0 0" >>${nfsroot}/etc/fstab
 echo "tmpfs           /dev/shm        tmpfs    defaults        0 0" >>${nfsroot}/etc/fstab
@@ -87,13 +87,18 @@ echo "proc            /proc           proc     defaults        0 0" >>${nfsroot}
 
 [[ -n "$SELINUX" ]] && sed -i 's/^SELINUX=.*/SELINUX=$SELINUX/' $nfsroot/etc/sysconfig/selinux
 
-ls -lZ /etc/shadow $nfsroot/etc/shadow
-chcon --reference=/etc/shadow $nfsroot/etc/shadow
-ls -lZ /etc/shadow $nfsroot/etc/shadow
+chcon --reference=/etc/shadow $nfsroot/etc/shadow*
+chcon --reference=/etc/passwd $nfsroot/etc/passwd*
 chroot $nfsroot bash -c 'echo redhat | passwd --stdin root'
-ls -lZ /etc/shadow $nfsroot/etc/shadow
-chcon --reference=/etc/shadow $nfsroot/etc/shadow
-ls -lZ /etc/shadow $nfsroot/etc/shadow
+chcon --reference=/etc/shadow $nfsroot/etc/shadow*
+chcon --reference=/etc/passwd $nfsroot/etc/passwd*
+[[ -f /etc/rc.d/rc.local ]] && {
+	echo 'command -v iptables && { iptables -P INPUT ACCEPT;
+		iptables -P OUTPUT ACCEPT;
+		iptables -P FORWARD ACCEPT;
+		iptables -F; }' >>$nfsroot/etc/rc.d/rc.local
+	chmod +x $nfsroot/etc/rc.d/rc.local
+}
 
 #https://superuser.com/questions/165116/mount-dev-proc-sys-in-a-chroot-environment
 #https://stackallflow.com/unix-linux/recursive-umount-after-rbind-mount/
@@ -101,9 +106,10 @@ mount -t proc /proc $nfsroot/proc; mount --rbind /sys $nfsroot/sys; mount --make
   echo 'add_dracutmodules+=" nfs "' >>$nfsroot/etc/dracut.conf
   VR=\$(chroot /nfsroot/ bash -c 'ls /boot/config-*|sed s/.*config-//')
   chroot $nfsroot dracut --no-hostonly --nolvmconf \\
-	-m "nfs network base qemu " --xz /boot/initramfs.pxe-\$VR \$VR
+	-m "nfs network base qemu" --xz /boot/initramfs.pxe-\$VR \$VR
 	#--add-drivers "virtio_net virtio_scsi virtio_pci virtio_ring virtio" \\
-  chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$(uname -r)
+  chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$VR
+  #chroot $nfsroot restorecon -R /
 umount $nfsroot/proc; umount -R $nfsroot/dev; umount -R $nfsroot/sys;
 touch $nfsroot/.autorelabel
 
@@ -118,6 +124,8 @@ echo "$dlvmname" >${nfsroot}/etc/hostname
 authKeys="$(for F in ~/.ssh/id_*.pub; do tail -n1 $F; done)"
 #mkdir -p ${nfsroot}/root/.ssh && echo "\$authKeys" >>${nfsroot}/root/.ssh/authorized_keys
 mkdir -p ${nfsroot}/root/.ssh && cp /root/.ssh/authorized_keys ${nfsroot}/root/.ssh/authorized_keys
+echo "PermitRootLogin yes" >>$nfsroot/etc/ssh/sshd_config
+ls -lZ /etc/ssh/sshd_config $nfsroot/etc/ssh/sshd_config
 EOF
 
 vm cpto $vmname prepare-nfsroot.sh . && rm -f prepare-nfsroot.sh
@@ -128,9 +136,7 @@ vm exec $vmname -- systemctl stop firewalld
 #---------------------------------------------------------------
 # prepare vmlinuz and initrd.img
 echo -e "\n================ [INFO] ================\n= prepare vmlinuz and initrd.img for pxelinux boot"
-while ! vm exec $vmname -- ls $nfsroot/boot; do
-	sleep 2
-done
+vm exec $vmname -- ls -l $nfsroot/boot
 distrofamily=$(vm exec $vmname -- awk -F'[="]+' '/^(ID|VERSION_ID)=/{printf($2)}' /etc/os-release)
 bootfiles=$(vm exec $vmname -- ls $nfsroot/boot)
 vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-|sort -V|tail -1)
@@ -139,9 +145,9 @@ tmpdir=$(mktemp -d)
 vm cpfrom $vmname $nfsroot/boot/$vmlinuz $tmpdir/.
 vm cpfrom $vmname $nfsroot/boot/$initramfs $tmpdir/.
 echo "$password" | sudo -S mv $tmpdir/* /var/lib/tftpboot/pxelinux/.
-echo "$password" | sudo -S chmod a+r $initramfs /var/lib/tftpboot/pxelinux/*
+echo "$password" | sudo -S chmod a+r /var/lib/tftpboot/pxelinux/*
 echo "$password" | sudo -S chcon --reference=/var/lib/tftpboot/pxelinux/pxelinux.0 /var/lib/tftpboot/pxelinux/*
-rm -fr $tmpdir
+echo "$password" | sudo -S rm -fr $tmpdir
 
 
 #---------------------------------------------------------------
