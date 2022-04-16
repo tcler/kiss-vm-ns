@@ -876,7 +876,7 @@ vmlogin() {
 			echo "[vmlogin:debug] port ${addr}:22 available ..." | GREP_COLORS='ms=01;36' grep --color . >&2
 
 		sshstat=unavailable
-		sshOpts=$(sshtest $U@$_vmname "$sshOpts")
+		sshOpts=$(sshtest $U@$addr "$sshOpts")
 		case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 		if [[ $sshstat = yes ]]; then
 			ssh $sshOpts $U@$addr "$sshCommand"
