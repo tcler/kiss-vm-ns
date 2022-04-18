@@ -14,13 +14,16 @@ command -v vm >/dev/null || {
 
 argv=()
 extrapkgs=()
-Usage() { echo "Usage: $0 [distro] [-selinux[={0|1|no|yes}]"; }
+dracutSelinux=
+Usage() { echo "Usage: $0 [distro] [-selinux[={0|1|permissive|enforcing}[,{target*|min*|mls}]]"; }
 for arg; do
 	case "$arg" in
-	-selinux|-selinux=[01]|-selinux=no|-selinux=yes|-selinux=*)
-		SELINUX=enforcing
-		SEVAL=${arg#-selinux=}
-		case "$SEVAL" in 0|no) SELINUX=permissive;; 1|yes) SELINUX=enforcing;; esac
+	-selinux|-selinux=*)
+		read _ SELINUX SELINUXTYPE <<<${arg//[=,]/ }
+		SELINUX=${SELINUX:-permissive}
+		SELINUXTYPE=${SELINUXTYPE:-targeted}
+		case "$SELINUX" in 0|pe*) SELINUX=permissive;; 1|en*) SELINUX=enforcing;; esac
+		case "$SELINUXTYPE" in tar*) SELINUXTYPE=targeted;; mi*) SELINUXTYPE=minimum;; ml*) SELINUXTYPE=mls;; esac
 		;;
 	-h|--h*)
 		Usage; exit;;
@@ -71,13 +74,18 @@ echo -e "\n================ [INFO] ================\n= create nfs server of sysr
 vm $distro -n $vmname --msize=4G --dsize=80 -p "nfs-utils deltarpm" --net pxenet --nointeract --force
 vm exec $vmname ls || exit $?
 
-[[ -n "$SELINUX" ]] && extrapkgs+=(selinux-policy selinux-policy-targeted)
+[[ -n "$SELINUX" ]] && {
+	echo -e "\n================ [INFO] ================\n= prepare tftp-server /var/lib/tftpboot/pxelinux:"
+	extrapkgs+=(selinux-policy selinux-policy-$SELINUXTYPE)
+	dracutSelinux= #selinux
+}
 
-dlvmname=linux-diskless
+distrofamily=$(vm exec $vmname -- awk -F'[="]+' '/^(ID|VERSION_ID)=/{printf($2)}' /etc/os-release)
+dlhostname=linux-diskless-$distrofamily
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
 mkdir $nfsroot
-yum install --setopt=strict=0 -y @Base kernel dracut-network openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
+yum install --setopt=strict=0 -y @Base kernel dracut-network rootfiles openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
 cp --remove-destination /etc/resolv.conf ${nfsroot}/etc/resolv.conf
 echo "none            /tmp            tmpfs    defaults        0 0" >>${nfsroot}/etc/fstab
 echo "devtmpfs        /dev            devtmpfs defaults        0 0" >>${nfsroot}/etc/fstab
@@ -85,7 +93,12 @@ echo "tmpfs           /dev/shm        tmpfs    defaults        0 0" >>${nfsroot}
 echo "sysfs           /sys            sysfs    defaults        0 0" >>${nfsroot}/etc/fstab
 echo "proc            /proc           proc     defaults        0 0" >>${nfsroot}/etc/fstab
 
-[[ -n "$SELINUX" ]] && sed -i 's/^SELINUX=.*/SELINUX=$SELINUX/' $nfsroot/etc/sysconfig/selinux
+echo "$dlhostname" >${nfsroot}/etc/hostname
+
+[[ -n "$SELINUX" ]] && {
+	sed -i -e 's/^SELINUX=.*/SELINUX=$SELINUX/' -e 's/^SELINUXTYPE=.*/SELINUXTYPE=$SELINUXTYPE/' \\
+		$nfsroot/etc/sysconfig/selinux $nfsroot/etc/selinux/config
+}
 
 chcon --reference=/etc/shadow $nfsroot/etc/shadow*
 chcon --reference=/etc/passwd $nfsroot/etc/passwd*
@@ -106,26 +119,28 @@ mount -t proc /proc $nfsroot/proc; mount --rbind /sys $nfsroot/sys; mount --make
   echo 'add_dracutmodules+=" nfs "' >>$nfsroot/etc/dracut.conf
   VR=\$(chroot /nfsroot/ bash -c 'ls /boot/config-*|sed s/.*config-//')
   chroot $nfsroot dracut --no-hostonly --nolvmconf \\
-	-m "nfs network base qemu" --xz /boot/initramfs.pxe-\$VR \$VR
+	-m "nfs network base qemu $dracutSelinux" --xz /boot/initramfs.pxe-\$VR \$VR
 	#--add-drivers "virtio_net virtio_scsi virtio_pci virtio_ring virtio" \\
   chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$VR
-  #chroot $nfsroot restorecon -R /
 umount $nfsroot/proc; umount -R $nfsroot/dev; umount -R $nfsroot/sys;
 touch $nfsroot/.autorelabel
 
 
-echo "$nfsroot *(rw,no_root_squash,security_label)" >/etc/exports
+echo "$nfsroot *(fsid=0,rw,sync,no_root_squash,security_label)" >/etc/exports
+echo "$nfsroot/etc *(rw,no_root_squash,security_label)" >>/etc/exports
+echo "$nfsroot/usr *(rw,no_root_squash,security_label)" >>/etc/exports
+echo "$nfsroot/usr/lib *(rw,no_root_squash,security_label)" >>/etc/exports
+echo "$nfsroot/usr/lib/systemd *(rw,no_root_squash,security_label)" >>/etc/exports
+echo "$nfsroot/usr/bin *(rw,no_root_squash,security_label)" >>/etc/exports
+echo "$nfsroot/usr/sbin *(rw,no_root_squash,security_label)" >>/etc/exports
 systemctl enable nfs-server
 systemctl restart nfs-server
 
 cp /etc/yum.repos.d/*.repo ${nfsroot}/etc/yum.repos.d/.
 
-echo "$dlvmname" >${nfsroot}/etc/hostname
-authKeys="$(for F in ~/.ssh/id_*.pub; do tail -n1 $F; done)"
+#authKeys=$(printf %q "$(for F in ~/.ssh/id_*.pub; do tail -n1 $F; done)")
 #mkdir -p ${nfsroot}/root/.ssh && echo "\$authKeys" >>${nfsroot}/root/.ssh/authorized_keys
 mkdir -p ${nfsroot}/root/.ssh && cp /root/.ssh/authorized_keys ${nfsroot}/root/.ssh/authorized_keys
-echo "PermitRootLogin yes" >>$nfsroot/etc/ssh/sshd_config
-ls -lZ /etc/ssh/sshd_config $nfsroot/etc/ssh/sshd_config
 EOF
 
 vm cpto $vmname prepare-nfsroot.sh . && rm -f prepare-nfsroot.sh
@@ -137,7 +152,6 @@ vm exec $vmname -- systemctl stop firewalld
 # prepare vmlinuz and initrd.img
 echo -e "\n================ [INFO] ================\n= prepare vmlinuz and initrd.img for pxelinux boot"
 vm exec $vmname -- ls -l $nfsroot/boot
-distrofamily=$(vm exec $vmname -- awk -F'[="]+' '/^(ID|VERSION_ID)=/{printf($2)}' /etc/os-release)
 bootfiles=$(vm exec $vmname -- ls $nfsroot/boot)
 vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-|sort -V|tail -1)
 initramfs=$(echo "$bootfiles"|grep ^initramfs.pxe-)
@@ -148,7 +162,6 @@ echo "$password" | sudo -S mv $tmpdir/* /var/lib/tftpboot/pxelinux/.
 echo "$password" | sudo -S chmod a+r /var/lib/tftpboot/pxelinux/*
 echo "$password" | sudo -S chcon --reference=/var/lib/tftpboot/pxelinux/pxelinux.0 /var/lib/tftpboot/pxelinux/*
 echo "$password" | sudo -S rm -fr $tmpdir
-
 
 #---------------------------------------------------------------
 # generate pxe config file
@@ -168,7 +181,7 @@ timeout 50
 label ${distrofamily}
   menu label Install diskless ${distrofamily} ${vmlinuz#vmlinuz-}
   kernel $vmlinuz
-  append initrd=$initramfs root=nfs4:$nfsserv:$nfsroot:vers=4.2,rw rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
+  append initrd=$initramfs root=nfs4:$nfsserv:/:vers=4.2,rw rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
 
 label memtest
   menu label memtest
@@ -178,5 +191,6 @@ echo "$password" | sudo -S systemctl start tftp
 
 #---------------------------------------------------------------
 # install diskless vm
+dlvmname=linux-diskless
 echo -e "\n================ [INFO] ================\n= create diskless guest over nfs ..."
 vm create ${distro}-pxe -n $dlvmname --net pxenet --net default --pxe --diskless --force
