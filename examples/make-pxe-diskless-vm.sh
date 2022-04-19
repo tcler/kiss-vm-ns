@@ -85,7 +85,12 @@ dlhostname=linux-diskless-$distrofamily
 cat >prepare-nfsroot.sh <<EOF
 #!/bin/bash
 mkdir $nfsroot
-yum install --setopt=strict=0 -y @Base kernel dracut-network rootfiles openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
+BaseGroup=@Base
+groupList=\$(yum grouplist hidden|sed 's/^ *//')
+if ! grep -q '^Base$' <<<"\$groupList"; then
+	BaseGroup="@Server @core @Standard"
+fi
+yum install --setopt=strict=0 -y \$BaseGroup kernel dracut-network rootfiles passwd openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
 cp --remove-destination /etc/resolv.conf ${nfsroot}/etc/resolv.conf
 echo "none            /tmp            tmpfs    defaults        0 0" >>${nfsroot}/etc/fstab
 echo "devtmpfs        /dev            devtmpfs defaults        0 0" >>${nfsroot}/etc/fstab
@@ -118,9 +123,15 @@ chcon --reference=/etc/passwd $nfsroot/etc/passwd*
 mount -t proc /proc $nfsroot/proc; mount --rbind /sys $nfsroot/sys; mount --make-rslave $nfsroot/sys; mount --rbind /dev $nfsroot/dev; mount --make-rslave $nfsroot/dev
   echo 'add_dracutmodules+=" nfs "' >>$nfsroot/etc/dracut.conf
   VR=\$(chroot /nfsroot/ bash -c 'ls /boot/config-*|sed s/.*config-//')
+  extraDracutModules="dracut-systemd"
   chroot $nfsroot dracut --no-hostonly --nolvmconf \\
-	-m "nfs network base qemu $dracutSelinux" --xz /boot/initramfs.pxe-\$VR \$VR
-	#--add-drivers "virtio_net virtio_scsi virtio_pci virtio_ring virtio" \\
+	-m "nfs network base qemu $dracutSelinux \$extraDracutModules" --xz /boot/initramfs.pxe-\$VR \$VR \\
+	--add-drivers="qxl" --omit-drivers="ahci" || {
+	echo -e "\n{dracut} remove \$extraDracutModules, and retry:"
+	chroot $nfsroot dracut --no-hostonly --nolvmconf \\
+		-m "nfs network base qemu $dracutSelinux" --xz /boot/initramfs.pxe-\$VR \$VR \\
+		--add-drivers="qxl" --omit-drivers="ahci"
+  }
   chroot $nfsroot chmod ugo+r /boot/initramfs.pxe-\$VR
 umount $nfsroot/proc; umount -R $nfsroot/dev; umount -R $nfsroot/sys;
 touch $nfsroot/.autorelabel
@@ -181,7 +192,7 @@ timeout 50
 label ${distrofamily}
   menu label Install diskless ${distrofamily} ${vmlinuz#vmlinuz-}
   kernel $vmlinuz
-  append initrd=$initramfs root=nfs4:$nfsserv:/:vers=4.2,rw rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
+  append initrd=$initramfs root=nfs4:$nfsserv:/:seclabel,vers=4.2,rw rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
 
 label memtest
   menu label memtest
