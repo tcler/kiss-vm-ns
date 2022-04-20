@@ -502,11 +502,11 @@ vmvncproc() {
 			echo "[vncput@$_vmname]> ${VNCPUTS[*]}"
 		fi
 		if [[ -n "${VNCGETSC}" ]]; then
-			echo "[vncgetsc@$_vmname]:"
+			[[ -t 1 || ! -p /dev/stdout ]] && echo "[vncgetsc@$_vmname]:" >&2
 			vncgetsc localhost::$port $_vmname
 		fi
 		if [[ -n "${VNCGET}" ]]; then
-			echo "[vncget@$_vmname]:"
+			[[ -t 1 || ! -p /dev/stdout ]] && echo "[vncget@$_vmname]:" >&2
 			vncget localhost::$port $_vmname
 		fi
 	fi
@@ -1614,7 +1614,7 @@ Usage() {
 	                 #add dnf/yum <repo> before install, only for CentOS/RHEL/Fedora
 	  --nosshkey     #don't inject sshkey
 	  --debug        #debug mode
-	  --vncwait,--vncwait-after-install <pattern,send>
+	  --vncwait,--vncwait-after-install <pattern,send,timeout>
 	                 #wait string:$pattern, then send string:$send
 	  --vncput-after-install <msg>
 	                 #send string or key event ASAP after virt-intall
@@ -2030,7 +2030,7 @@ while true; do
 	--getsc|--vncgetsc) VNCGETSC=yes; shift 1;;
 	--put|--vncput)  VNCPUTS+=("$2"); shift 2;;
 	--putln|--vncputln)     [[ -n "$2" ]] && VNCPUTS+=("$2" "key:enter") || VNCPUTS+=("key:enter"); shift 2;;
-	--vncwait|--vncwait-after-install) VNCWAIT_AFTER_INSTALL="$2"; shift 2;;
+	--vncwait|--vncwait-after-install) VNCWAIT_AFTER_INSTALL+=("$2"); shift 2;;
 	--vncput-after-install) VNCPUT_AFTER_INSTALL="$2"; shift 2;;
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
@@ -2351,11 +2351,11 @@ if [[ "$UEFI_TPM_SB" = yes ]]; then
 	BOOT_OPTS+=(--boot=firmware=efi,loader_secure=yes)
 	VTPM=yes
 	MACHINE_OPT="--machine=q35"
-	VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter"
+	VNCWAIT_AFTER_INSTALL+=("boot.manager,key:enter key:down key:down key:enter key:enter key:enter")
 fi
 
 case "${BOOT_OPTS[*]}" in
-	(*uefi*|*firmware=efi*) VNCWAIT_AFTER_INSTALL="boot.manager,key:enter key:down key:down key:enter key:enter key:enter";;
+	(*uefi*|*firmware=efi*) VNCWAIT_AFTER_INSTALL+=("boot.manager,key:enter key:down key:down key:enter key:enter key:enter");;
 esac
 
 if [[ -n "$BOOT_DISK_ATTRS" ]]; then
@@ -3236,18 +3236,29 @@ elif [[ "$InstallType" = pxe ]]; then
 	vm vnc $vmname -get
 
 	if [[ "$NOAUTO" = yes ]]; then
-		echo -e "{VM:INFO} waiting boot: prompt ..."
-		while ! grep "^boot:" < <(vm vnc "$vmname" -get); do sleep 1; done
-		vm vnc $vmname -get
-		vm vnc $vmname -putln "menu"
-		vm vnc $vmname -put "key:down"
+		echo -e "{VM:INFO} waiting pxe boot/menu: prompt ..."
+		for ((i=0; i<60; i++)) do grep -iq "pxe boot menu" < <(vm vnc "$vmname" -get) && break; sleep 1; done
+		vm vnc $vmname -put=key:tab -put=key:esc
 	else
-		sleep 10
-		vm vnc $vmname -get
+		if [[ -n "${VNCWAIT_AFTER_INSTALL[*]}" ]]; then
+			for pat_msg_timo in "${VNCWAIT_AFTER_INSTALL[@]}"; do
+				IFS=, read _pattern _msgs _timo <<<"${pat_msg_timo}"
+				echo -e "\n{VM:INFO} vncwait $_pattern ..."
+				vm vnc $vmname -get
+				for ((i=0; i<${_timo:-60}; i++)) do
+					sleep 1; vm vnc "$vmname" -get | GREP_COLORS='ms=01;30;46' grep -i --color "$_pattern" && break
+				done && for _send in $_msgs; do vm vnc "$vmname" -put "$_send"; done
+				sleep 2
+			done
+		else
+			echo -e "{VM:INFO} waiting pxe boot/menu: prompt ..."
+			for ((i=0; i<60; i++)) do grep -iq "pxe boot menu" < <(vm vnc "$vmname" -get) && break; sleep 1; done
+			vm vnc $vmname -put=key:enter
+		fi
 	fi
 
 	if [[ -n $DISPLAY ]]; then
-		run -debug -nohup=/dev/null virt-viewer -s -v $vmname
+		run -debug -nohup=/dev/null virt-viewer -sv $vmname
 		echo -e "\n{VM:INFO} pxe guest $vmname booting ..."
 	else
 		echo -e "\n{VM:INFO} please connect vnc to continue/complete the install:"
@@ -3477,11 +3488,16 @@ elif [[ "$InstallType" = cdrom ]]; then
 		done'
 	fi
 
-	if [[ -n "$VNCWAIT_AFTER_INSTALL" ]]; then
-		read _pattern _msgs <<<"${VNCWAIT_AFTER_INSTALL/,/ }"
-		for ((i=0; i<60; i++)) do
-			sleep 1; vm vnc "$vmname" -get | GREP_COLORS='ms=01;30;46' grep -i --color "$_pattern" && break
-		done && for _send in $_msgs; do vm vnc "$vmname" -put "$_send"; done
+	if [[ -n "${VNCWAIT_AFTER_INSTALL[*]}" ]]; then
+		for pat_msg_timo in "${VNCWAIT_AFTER_INSTALL[@]}"; do
+			IFS=, read _pattern _msgs _timo <<<"${pat_msg_timo}"
+			echo -e "\n{VM:INFO} vncwait $_pattern ..."
+			vm vnc $vmname -get
+			for ((i=0; i<${_timo:-60}; i++)) do
+				sleep 1; vm vnc "$vmname" -get | GREP_COLORS='ms=01;30;46' grep -i --color "$_pattern" && break
+			done && for _send in $_msgs; do vm vnc "$vmname" -put "$_send"; done
+			sleep 2
+		done
 	fi
 	if [[ -n "$VNCPUT_AFTER_INSTALL" ]]; then
 		vm vnc "$vmname" -put "$VNCPUT_AFTER_INSTALL"
