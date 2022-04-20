@@ -52,8 +52,7 @@ echo -e "\n================ [INFO] ================\n= prepare tftp-server /var/
 echo "$password" | sudo -S yum install -y syslinux tftp-server
 # prepare pxelinux.0
 echo "$password" | sudo -S mkdir -p /var/lib/tftpboot/pxelinux
-echo "$password" | sudo -S cp /usr/share/syslinux/pxelinux.0 /var/lib/tftpboot/pxelinux/.
-echo "$password" | sudo -S cp /usr/share/syslinux/ldlinux.c32 /var/lib/tftpboot/pxelinux/. 
+echo "$password" | sudo -S cp /usr/share/syslinux/{pxelinux.0,ldlinux.c32,libutil.c32,libcom32.c32,*menu.c32} /var/lib/tftpboot/pxelinux/.
 
 
 #---------------------------------------------------------------
@@ -186,13 +185,18 @@ prompt 0
 
 menu title PXE Boot Menu
 
-ontimeout ${distrofamily}
-timeout 50
+ontimeout ${distrofamily}-over-nfsv4.2
+timeout 120
 
-label ${distrofamily}
-  menu label Install diskless ${distrofamily} ${vmlinuz#vmlinuz-}
+label ${distrofamily}-over-nfsv4.2
+  menu label Install diskless nfsv4.2 ${distrofamily} ${vmlinuz#vmlinuz-}
   kernel $vmlinuz
-  append initrd=$initramfs root=nfs4:$nfsserv:/:seclabel,vers=4.2,rw rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
+  append initrd=$initramfs root=nfs4:$nfsserv:/:vers=4.2,rw rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
+
+label ${distrofamily}-over-nfsv3
+  menu label Install diskless nfsv3 ${distrofamily} ${vmlinuz#vmlinuz-}
+  kernel $vmlinuz
+  append initrd=$initramfs root=nfs:$nfsserv:$nfsroot:vers=3,rw rw panic=60 ipv6.disable=1 console=tty0 console=ttyS0,115200n8
 
 label memtest
   menu label memtest
@@ -204,4 +208,5 @@ echo "$password" | sudo -S systemctl start tftp
 # install diskless vm
 dlvmname=linux-diskless
 echo -e "\n================ [INFO] ================\n= create diskless guest over nfs ..."
-vm create ${distro}-pxe -n $dlvmname --net pxenet --net default --pxe --diskless --force
+vm create ${distro}-pxe -n ${dlvmname}-nfsv4 --net pxenet --net default --pxe --diskless --force --vncwait="less.nfsv3,key:enter" --vncwait="less.nfsv3,key:enter"
+vm create ${distro}-pxe -n ${dlvmname}-nfsv3 --net pxenet --net default --pxe --diskless --force --vncwait="less.nfsv3,key:down key:enter" --vncwait="less.nfsv3,key:down key:enter"
