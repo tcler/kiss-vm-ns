@@ -3235,6 +3235,16 @@ elif [[ "$InstallType" = pxe ]]; then
 	sleep 1
 	vm vnc $vmname -get
 
+	if [[ -n $DISPLAY ]]; then
+		run -debug -nohup=/dev/null virt-viewer -sv $vmname
+		echo -e "\n{VM:INFO} pxe guest $vmname booting ..."
+	else
+		echo -e "\n{VM:INFO} please connect vnc to continue/complete the install:"
+		for vncaddr in $(vmvncproc $vmname); do
+			echo -e "  $ vncviewer $vncaddr    #from remote"
+		done
+	fi
+
 	if [[ "$NOAUTO" = yes ]]; then
 		echo -e "{VM:INFO} waiting pxe boot/menu: prompt ..."
 		for ((i=0; i<60; i++)) do grep -iq "pxe boot menu" < <(vm vnc "$vmname" -get) && break; sleep 1; done
@@ -3255,16 +3265,6 @@ elif [[ "$InstallType" = pxe ]]; then
 			for ((i=0; i<60; i++)) do grep -iq "pxe boot menu" < <(vm vnc "$vmname" -get) && break; sleep 1; done
 			vm vnc $vmname -put=key:enter
 		fi
-	fi
-
-	if [[ -n $DISPLAY ]]; then
-		run -debug -nohup=/dev/null virt-viewer -sv $vmname
-		echo -e "\n{VM:INFO} pxe guest $vmname booting ..."
-	else
-		echo -e "\n{VM:INFO} please connect vnc to continue/complete the install:"
-		for vncaddr in $(vmvncproc $vmname); do
-			echo -e "  $ vncviewer $vncaddr    #from remote"
-		done
 	fi
 
 	exit 0
