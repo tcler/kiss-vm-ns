@@ -113,7 +113,7 @@ run() {
 			_cmdl="nohup $_cmdl &>${_nohuplogf} &"
 		fi
 		echo "[${_runtype:-direct} run]" "$_SUDO $_cmdl"
-	fi | GREP_COLORS='ms=01;30;47' grep --color .
+	fi | GREP_COLORS='ms=0;33;44' grep --color .
 
 	case ${_runtype:-direct} in
 	direct)
@@ -429,7 +429,7 @@ vncget() {
 		echo "{VM:WARN} vncdo capture fail, it might because that conflict with unshared 'virt-viewer'" >&2
 	}
 	image_binarize $RuntimeTmp/_screen.png $RuntimeTmp/_screen2.png
-	gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=01;30;47' grep --color .
+	gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=30;47' grep --color .
 }
 
 vncput() {
