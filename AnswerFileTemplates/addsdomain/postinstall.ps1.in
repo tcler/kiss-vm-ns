@@ -220,9 +220,18 @@ switch($Stage) {
 
 		# Setup child domain to test multi domain cases
 		Out-Host "`n==> Setup child domain"
-		$SafePasswd=(convertto-securestring "@ADMINPASSWORD@" -asplaintext -force)
 		Install-windowsfeature -name AD-Domain-Services -IncludeManagementTools
 
+
+		# Reboot to start child domain setup
+		Out-Host "`n==> Reboot to start child domain setup"
+		Set-ItemProperty $RunOnceKey "NextRun" "powershell $mypath startADDSDomainSetup >> @POST_INSTALL_LOG@ 2>&1"
+		shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to start child domain setup"
+		exit
+	}
+
+	"startADDSDomainSetup" {
+		$SafePasswd=(convertto-securestring "@ADMINPASSWORD@" -asplaintext -force)
 		$User="@PARENT_DOMAIN@\Administrator"
 		$Credential=New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList $User, $SafePasswd
 		Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses("@PARENT_IP@")
@@ -247,7 +256,6 @@ switch($Stage) {
 		Set-ItemProperty $RunOnceKey "NextRun" "powershell $mypath afterADDSDomainSetup >> @POST_INSTALL_LOG@ 2>&1"
 		shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to complete child domain setup"
 		exit
-	}
 
 	"afterADDSDomainSetup" {
 		# Time synchronization

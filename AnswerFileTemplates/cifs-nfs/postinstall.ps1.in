@@ -295,33 +295,39 @@ switch($Stage) {
 				Install-WindowsFeature -Name DNS -IncludeManagementTools
 			}
 
-			# Setup AD as Domain Controller
-			Out-Host "`n==> Setup AD as Domain Controller"
 			Remove-WindowsFeature -Name AD-Certificate
-
 			Install-windowsfeature -name AD-Domain-Services -IncludeManagementTools
-			Import-Module ADDSDeployment
-			$SafePasswd=(convertto-securestring "@ADMINPASSWORD@" -asplaintext -force)
-			Install-ADDSForest `
-			-DomainName @AD_DOMAIN@ `
-			-SafeModeAdministratorPassword $SafePasswd `
-			-CreateDNSDelegation:$false `
-			-NoDNSOnNetwork:$true `
-			-DomainMode @AD_DOMAIN_LEVEL@ `
-			-DomainNetBIOSName @DOMAIN_NETBIOS_NAME@ `
-			-ForestMode @AD_FOREST_LEVEL@ `
-			-InstallDNS:$true `
-			-NoRebootOnCompletion:$true `
-			-Force
 
-			# Reboot to complete Active Directory setup
-			Out-Host "`n==> Reboot to complete Active Directory setup"
-			Set-ItemProperty $RunOnceKey "NextRun" "powershell $mypath afterADSetup >> @POST_INSTALL_LOG@ 2>&1"
-			shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to complete Active Directory setup"
+			# Reboot to start Active Directory setup
+			Out-Host "`n==> Reboot to start Active Directory setup"
+			Set-ItemProperty $RunOnceKey "NextRun" "powershell $mypath startADSetup >> @POST_INSTALL_LOG@ 2>&1"
+			shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to start Active Directory setup"
 			exit
 		}
 	}
 
+	"startADSetup" {
+		Out-Host "`n==> Setup AD as Domain Controller"
+		Import-Module ADDSDeployment
+		$SafePasswd=(convertto-securestring "@ADMINPASSWORD@" -asplaintext -force)
+		Install-ADDSForest `
+		-DomainName @AD_DOMAIN@ `
+		-SafeModeAdministratorPassword $SafePasswd `
+		-CreateDNSDelegation:$false `
+		-NoDNSOnNetwork:$true `
+		-DomainMode @AD_DOMAIN_LEVEL@ `
+		-DomainNetBIOSName @DOMAIN_NETBIOS_NAME@ `
+		-ForestMode @AD_FOREST_LEVEL@ `
+		-InstallDNS:$true `
+		-NoRebootOnCompletion:$true `
+		-Force
+
+		# Reboot to complete Active Directory setup
+		Out-Host "`n==> Reboot to complete Active Directory setup"
+		Set-ItemProperty $RunOnceKey "NextRun" "powershell $mypath afterADSetup >> @POST_INSTALL_LOG@ 2>&1"
+		shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to complete Active Directory setup"
+		exit
+	}
 	"afterADSetup" {
 		# do this just after AD has been set up
 		Out-Host "`n==> reset dns ip"
@@ -336,6 +342,8 @@ switch($Stage) {
 		#Install-AdcsCertificationAuthority -force -CAType EnterpriseRootCa
 		#Install DFS feature
 		Install-WindowsFeature -Name FS-DFS-Namespace,FS-DFS-Replication -IncludeManagementTools
+		Import-Module ActiveDirectory
+		Import-Module GroupPolicy
 
 		# Reboot to complete Root CA Services setup
 		Out-Host "`n==> Reboot to complete Root CA setup"
@@ -373,8 +381,6 @@ switch($Stage) {
 		}
 
 		# Set krb5 encryption
-		Import-Module ActiveDirectory
-		Import-Module GroupPolicy
 		$GPOName = 'Default Domain Policy'
 		# full supported kerberos encryption is 0x7fffffff
 		Set-GPPrefRegistryValue -Name $GPOName -Action Update -Context Computer -Key 'HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\kerberos\Parameters' -Type DWord -ValueName 'SupportedEncryptionTypes' -Value 0x7fffffff

@@ -231,6 +231,15 @@ switch($Stage) {
 		# Installation
 		Remove-WindowsFeature -Name AD-Certificate
 		Install-windowsfeature -name AD-Domain-Services -IncludeManagementTools
+
+		# Reboot to start Active Directory setup
+		Out-Host "`n==> Reboot to start Active Directory setup"
+		Set-ItemProperty $RunOnceKey "NextRun" "powershell $mypath startADSetup >> @POST_INSTALL_LOG@ 2>&1"
+		shutdown -r -f -t 10 -c "Shutting down in 1 minute: Reboot to start Active Directory setup"
+		exit
+	}
+
+	"startADSetup" {
 		Install-ADDSForest `
 		-DomainName @AD_DOMAIN@ `
 		-SafeModeAdministratorPassword $SafePasswd `
