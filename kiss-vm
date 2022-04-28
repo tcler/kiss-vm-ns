@@ -3610,7 +3610,41 @@ if [[ "$RM" = yes ]]; then
 	exit 0
 fi
 
+vm_add_virtiofs_sharedir() {
+	local vmname=$1
+	local srcdir=$2
+	local rtarget=$3
+	local target=virtiofs-tag-$rtarget
+	local xmlf=${VMpath:-/tmp}/${target}.xml
+
+	cat >${xmlf} <<-EOF
+	<filesystem type='mount' accessmode='passthrough'>
+		<binary path='/usr/libexec/virtiofsd' xattr='on'/>
+		<driver type='virtiofs'/>
+		<source dir='$srcdir'/>
+		<target dir='$target'/>
+	</filesystem>
+	EOF
+	virsh attach-device $vmname ${xmlf} --persistent
+	virsh attach-device $vmname ${xmlf} --live
+
+	local mp=/virtiofs/$rtarget
+	vm exec -v $vmname -- mkdir -p $mp
+	vm exec -v $vmname -- mount -t virtiofs $target $mp
+	vm exec -v $vmname -- mount -t virtiofs
+}
+
+if vercmp "$(libvirt_nvr)" ge libvirt-7.9; then
 #only for linux virtiofs
+[[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
+	for idx in "${!SHARE_DIRS[@]}"; do
+		read srcdir rtarget _ <<< "${SHARE_DIRS[$idx]//:/ }"
+		run -as=$VMUSER mkdir -p $srcdir || continue
+		vm_add_virtiofs_sharedir $vmname $srcdir ${rtarget:-tag$idx}
+	done
+}
+else
+#only for linux virtiofs, related bug: rhel/fedora 1897708 1897710
 [[ ${#SHARE_DIRS[@]} -gt 0 ]] && {
 	vm stop $vmname
 
@@ -3642,6 +3676,7 @@ fi
 		vm exec -v $vmname -- mount -t virtiofs
 	done
 }
+fi
 
 if [[ ! -f ~/.ssh/config ]]; then
 	cat <<-EOF > ~/.ssh/config
