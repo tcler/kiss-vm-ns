@@ -19,13 +19,13 @@ _vm()
 {
     local w= cur= prev= words= cword=
     local narg=
-    local subcommandList=
+    local subcommandList=()
     local distroList= dlist=
     local vmlist=
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList="prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir"
+    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir)
 
     for w in "${words[@]}"; do
         [[ $w =~ ^-.* && $w != "--" ]] || let narg++
@@ -37,7 +37,7 @@ _vm()
         if [[ "$cur" == -* && $prev = create ]]; then
             COMPREPLY=( $( compgen -W "$opts -h" -- "$cur" ) )
         else
-            COMPREPLY=( $( compgen -W "$subcommandList" -- "$cur" ) )
+            COMPREPLY=( $( compgen -W "${subcommandList[*]}" -- "$cur" ) )
         fi
     else
         case "${words[1]}" in
