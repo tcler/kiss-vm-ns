@@ -11,12 +11,12 @@ distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/%%GenericCloud.qc
 #### Fedora
 # https://ord.mirror.rackspace.com/fedora/releases/$version/Cloud/
 distroInfo[fedora-rawhide]="https://ord.mirror.rackspace.com/fedora/development/rawhide/Cloud/x86_64/images/"
+distroInfo[fedora-35]="https://ord.mirror.rackspace.com/fedora/releases/35/Cloud/x86_64/images/"
 distroInfo[fedora-34]="https://ord.mirror.rackspace.com/fedora/releases/34/Cloud/x86_64/images/"
 distroInfo[fedora-33]="https://ord.mirror.rackspace.com/fedora/releases/33/Cloud/x86_64/images/"
 distroInfo[fedora-32]="https://ord.mirror.rackspace.com/fedora/releases/32/Cloud/x86_64/images/"
 distroInfo[fedora-31]="https://ord.mirror.rackspace.com/fedora/releases/31/Cloud/x86_64/images/"
 distroInfo[fedora-30]="https://ord.mirror.rackspace.com/fedora/releases/30/Cloud/x86_64/images/"
-distroInfo[fedora-29]="https://ord.mirror.rackspace.com/fedora/releases/29/Cloud/x86_64/images/"
 
 #### Debian
 # https://cloud.debian.org/images/openstack/testing/
@@ -32,7 +32,7 @@ distroInfo[openSUSE-leap-15.3]="https://download.opensuse.org/repositories/Cloud
 distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2"
 
 #### FreeBSD
-distroInfo[FreeBSD-12.2]="https://download.freebsd.org/ftp/releases/VM-IMAGES/12.2-RELEASE/amd64/Latest/FreeBSD-12.2-RELEASE-amd64.qcow2.xz"
+distroInfo[FreeBSD-12.3]="https://download.freebsd.org/ftp/releases/VM-IMAGES/12.3-RELEASE/amd64/Latest/FreeBSD-12.3-RELEASE-amd64.qcow2.xz"
 distroInfo[FreeBSD-13.0]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.0-RELEASE/amd64/Latest/FreeBSD-13.0-RELEASE-amd64.qcow2.xz"
 distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/14.0-CURRENT/amd64/Latest/FreeBSD-14.0-CURRENT-amd64.qcow2.xz"
 
