@@ -28,7 +28,7 @@ vm create openSUSE-leap-15.3
 Q: how to get the distro list in default distro.db?  
 A: vm create \<tab>\<tab>  #bash completion will show avalible distro list in distro.db
 ```
-$ vm create 
+$ vm create #<tab><tab>
 #<Enter>               CentOS-8-stream        RHEL-6%                Windows-10             Windows-server-2019    debian-9               fedora-33              openSUSE-leap-15.3
 #<aDistroFamilyName>   CentOS-9-stream        RHEL-7%                Windows-11             Windows-server-2022    debian-testing         fedora-34              
 CentOS-6               FreeBSD-12.3           RHEL-8%                Windows-7              archlinux              fedora-30              fedora-35              
