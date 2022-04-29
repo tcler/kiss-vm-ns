@@ -58,6 +58,28 @@ vm create Fedora-35 --pxe [--net=pxenet] [--diskless]
 
 Q: How does kiss-vm realize automatic installation?  
 A: We mainly achieve the goal of automation by implementing Redhat based kickstart file generator, cloud-init generator, windows answerfile generator; then in some special scenarios, we use [OCR](https://en.wikipedia.org/wiki/Optical_character_recognition) technology and [VNC CLI client](https://github.com/sibson/vncdotool) to solve the problem.
+```
+$ vm vnc jiyin-opensuse-leap-153 --get
+[vncget@jiyin-opensuse-leap-153]:
+jiyin-opensuse-leap-153:~ # exit
+logout
+jiyin-opensuse-leap-153 login: _
+$ vm vnc jiyin-opensuse-leap-153 --putln=root --putln=redhat
+[vncput@jiyin-opensuse-leap-153]> root key:enter redhat key:enter
+$ vm vnc jiyin-opensuse-leap-153 --get
+[vncget@jiyin-opensuse-leap-153]:
+jiyin-opensuse-leap-153:~ # exit
+logout
+jiyin-opensuse-leap-153 login: root
+Password:
+Last login: Fri Apr 29 03:14:03 on tty1
+openSUSE Leap 15.3 x86_64 (64-bit)
+As "root" use the:
+- zypper command for package management
+- yast command for configuration management
+Have a lot of fun...
+jiyin-opensuse-leap-153:~ #
+```
 
 Q: What other functions or usages does kiss-mv support?  
 A: just run: 'vm help' to get more usage/examples info; and there are some useful scirpts under the utils dir.
