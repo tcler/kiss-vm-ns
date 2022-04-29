@@ -75,6 +75,7 @@ getSafeCommandLine() {
 }
 
 run() {
+	#ref: https://superuser.com/questions/927544/run-command-in-detached-tmux-session-and-log-console-output-to-file
 	local _runtype= _debug= _rc=0
 	local _nohup= _nohuplogf=
 	local _user= _SUDO=
