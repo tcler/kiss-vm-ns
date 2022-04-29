@@ -1,7 +1,7 @@
 ![kiss-vm](https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/Images/kiss-vm.gif)
 
 # Summary
-Here we provide three tools **vm, ns, netns** that used to auto create "Linux/FreeBSD/Windows VM", Container and "net ns" on Linux host.
+Here we provide three CLI tools **vm, ns, netns** that used to auto create "Linux/FreeBSD/Windows VM", Container and "net ns" on Linux host.
 
 # Install
 ```
