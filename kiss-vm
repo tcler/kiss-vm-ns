@@ -931,6 +931,33 @@ vmlogin() {
 	done
 }
 
+vmadd_iso() {
+	local vmname=$1
+	local isof=$2
+	[[ -f "$isof" ]] || {
+		echo -e "{VM:WARN} iso file '$isof' not exist ..."
+		return
+	}
+	local xml=$(virsh dumpxml $vmname)
+	for _target in sd{c..z}; do echo "$xml"|grep -q -w $_target || break; done
+	virsh attach-disk $vmname $isof $_target --targetbus=sata --type cdrom --mode readonly
+}
+
+vmadd_disk() {
+}
+
+vmadd_if() {
+}
+
+vmadd_if_macvtap() {
+}
+
+vmadd_if_bridge() {
+}
+
+vmpassthr() {
+}
+
 vmexec() { EXEC=yes vmlogin "$@"; }
 vmlist() { virsh list --all; }
 netls() { virsh net-list; }
@@ -1789,6 +1816,7 @@ Usage() {
 	  $P clone <VM> [new-vmname]  #clone VM    //see also: virt-clone + virt-sysprep
 	  $P cpfrom <VM> <file/dir_in_vm> <dst_dir/file_in_host>
 	  $P cpto   <VM> <files/dirs_in_host ...> <dst_dir_in_vm>
+	  $P add.iso <VM> <iso-file>
 
 	  $P netls             #list all virtual network
 	  $P netcreat netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
@@ -2249,6 +2277,12 @@ run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 	rootdir) shift; [[ "$1" = -d ]] && shift; vmrootdir "$@"; exit $?;;
 	homedir) shift; [[ "$1" = -d ]] && shift; vmhomedir "$@"; exit $?;;
 	clone) shift; [[ "$1" = -d ]] && shift; vmclone "$@"; exit $?;;
+	add.iso) shift; [[ "$1" = -d ]] && shift; vmadd_iso "$@"; exit $?;;
+	add.disk) shift; [[ "$1" = -d ]] && shift; vmadd_disk "$@"; exit $?;;
+	add.if) shift; [[ "$1" = -d ]] && shift; vmadd_if "$@"; exit $?;;
+	add.if.macvtap) shift; [[ "$1" = -d ]] && shift; vmadd_if_macvtap "$@"; exit $?;;
+	add.if.bridge) shift; [[ "$1" = -d ]] && shift; vmadd_if_bridge "$@"; exit $?;;
+	passthr) shift; [[ "$1" = -d ]] && shift; vmpassthr "$@"; exit $?;;
 	netls) shift; [[ "$1" = -d ]] && shift; netls "$@"; exit $?;;
 	net|netcreat*) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
 	netinfo) shift; [[ "$1" = -d ]] && shift; netinfo "$@"; exit $?;;

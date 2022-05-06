@@ -26,7 +26,7 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir)
+    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso)
 
     for w in "${words[@]}"; do
         [[ $w =~ ^-.* && $w != "--" ]] || let narg++
@@ -57,7 +57,8 @@ _vm()
             else
                 case $prev in
                 -i|-l|-C|--xcdrom|--disk|--win-openssh|--win-download-url|--win-virtio-drv)
-                    COMPREPLY=( $( compgen -A file -- "$cur" ) )
+                    #COMPREPLY=( $( compgen -A file -- "$cur" ) )
+                    _filedir
                     ;;
                 --diskbus|--bus)
                     COMPREPLY=( $( compgen -W "ide sata scsi virtio" -- "$cur" ) )
@@ -98,6 +99,17 @@ _vm()
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             fi
             ;;
+        add.iso)
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --all --name)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                #COMPREPLY=( $( compgen -A file -- "${cur}" ) )
+                _filedir
+            else
+                COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            fi
+            ;;
         vi|vie|view*|lo|log|log*|co|con|cons|cons*|if|ifaddr)
             if [[ $narg -le 3 ]]; then
                 vmlist=$(virsh list --name)
@@ -133,7 +145,8 @@ _vm()
             elif [[ $narg -le 4 ]]; then
                 COMPREPLY=( $( compgen -W "# #<file-or-dir-in-vm>" -- "$cur" ) )
             else
-                COMPREPLY=( $( compgen -A file -- "$cur" ) )
+                #COMPREPLY=( $( compgen -A file -- "$cur" ) )
+                _filedir
             fi
             ;;
         cpto)
@@ -141,7 +154,8 @@ _vm()
                 vmlist=$(virsh list --name)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             else
-                COMPREPLY=( $( compgen -A file -- "$cur" ) )
+                #COMPREPLY=( $( compgen -A file -- "$cur" ) )
+                _filedir
             fi
             ;;
         e|ex|exe|exec)
