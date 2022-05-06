@@ -51,6 +51,7 @@ DEFAULT_IF_MODEL=virtio
 defaultPasswd=redhat
 defaultWindowsPasswd=Sesame~0pen
 orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6)
+{ QEMU_USER=qemu; id ${QEMU_USER} &>/dev/null || QEMU_USER=libvirt-qemu; }
 
 getSafeCommandLine() {
 	#if only one parameter, treat it as a piece of script
@@ -1292,11 +1293,10 @@ COMM
 
 	su $vmuser -s /bin/bash -c "mkdir -p $VMSHOME"
 
-	{ _user=qemu; id qemu 2>/dev/null || _user=libvirt-qemu; }
-	echo -e "{VM:INFO} setfacl -mu:${_user}:rx $vmuserhome ..."
-	setfacl -mu:${_user}:rx $vmuserhome
-	setfacl -mu:${_user}:rx -R $VMSHOME
-	setfacl -mu:${_user}:rx -R $vmuserhome/.cache/virt-manager 2>/dev/null
+	echo -e "{VM:INFO} setfacl -mu:${QEMU_USER}:rx $vmuserhome ..."
+	setfacl -mu:${QEMU_USER}:rx $vmuserhome
+	setfacl -mu:${QEMU_USER}:rx -R $VMSHOME
+	setfacl -mu:${QEMU_USER}:rx -R $vmuserhome/.cache/virt-manager 2>/dev/null
 	getfacl $vmuserhome
 	getfacl $VMSHOME
 
@@ -2477,6 +2477,7 @@ fi
 	VMpath=$VMSHOME/$Distro/$vmname
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
 	run -as=$VMUSER mkdir -p $VMpath
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx -R $VMSHOME
 	if [[ "$VMSHARE" != yes ]]; then
 		setfacl -d -mg::--- -mo::--- $VMpath
 	fi
@@ -2751,8 +2752,7 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	format=${format:-qcow2}
 	devfile=nvme$c.$format
 	qemu-img create -f $format $VMpath/$devfile ${fsize}G
-	{ _user=qemu; id qemu 2>/dev/null || _user=libvirt-qemu; }
-	setfacl -mu:qemu:rwx -mg:qemu:rwx $VMpath/$devfile
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $VMpath/$devfile
 	chcon system_u:object_r:qemu_var_run_t:s0 $VMpath/$devfile #system_u:object_r:virt_cache_t:s0 also works
 	getfacl $VMpath/$devfile
 	ls -lZ $VMpath/$devfile
