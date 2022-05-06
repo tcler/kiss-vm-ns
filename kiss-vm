@@ -944,6 +944,7 @@ vmadd_iso() {
 }
 
 vmadd_disk() {
+	:
 }
 
 vmadd_if() {
@@ -963,12 +964,15 @@ vmadd_if_direct() {
 }
 
 vmadd_if_bridge() {
+	:
 }
 
 vmadd_if_hostif() {
+	:
 }
 
 vmpassthr() {
+	:
 }
 
 vmexec() { EXEC=yes vmlogin "$@"; }
