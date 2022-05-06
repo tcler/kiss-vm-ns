@@ -947,12 +947,25 @@ vmadd_disk() {
 }
 
 vmadd_if() {
+	local vmname=$1
+	local network=$2
+
+	virsh attach-interface --type network --domain $vmname --source $network \
+		--model virtio --config --live
 }
 
-vmadd_if_macvtap() {
+vmadd_if_direct() {
+	local vmname=$1
+	local srcif=${srcif:-$(get_default_if)}
+
+	virsh attach-interface --type direct --domain $vmname --source $srcif \
+		--model virtio --config --live
 }
 
 vmadd_if_bridge() {
+}
+
+vmadd_if_hostif() {
 }
 
 vmpassthr() {
@@ -1817,6 +1830,8 @@ Usage() {
 	  $P cpfrom <VM> <file/dir_in_vm> <dst_dir/file_in_host>
 	  $P cpto   <VM> <files/dirs_in_host ...> <dst_dir_in_vm>
 	  $P add.iso <VM> <iso-file>
+	  $P add.if <VM> <network>
+	  $P add.if.direct <VM> <srcif>
 
 	  $P netls             #list all virtual network
 	  $P netcreat netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
@@ -2280,8 +2295,9 @@ run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 	add.iso) shift; [[ "$1" = -d ]] && shift; vmadd_iso "$@"; exit $?;;
 	add.disk) shift; [[ "$1" = -d ]] && shift; vmadd_disk "$@"; exit $?;;
 	add.if) shift; [[ "$1" = -d ]] && shift; vmadd_if "$@"; exit $?;;
-	add.if.macvtap) shift; [[ "$1" = -d ]] && shift; vmadd_if_macvtap "$@"; exit $?;;
+	add.if.direct) shift; [[ "$1" = -d ]] && shift; vmadd_if_direct "$@"; exit $?;;
 	add.if.bridge) shift; [[ "$1" = -d ]] && shift; vmadd_if_bridge "$@"; exit $?;;
+	add.if.hostif) shift; [[ "$1" = -d ]] && shift; vmadd_if_hostif "$@"; exit $?;;
 	passthr) shift; [[ "$1" = -d ]] && shift; vmpassthr "$@"; exit $?;;
 	netls) shift; [[ "$1" = -d ]] && shift; netls "$@"; exit $?;;
 	net|netcreat*) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;

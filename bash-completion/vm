@@ -26,7 +26,7 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso)
+    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.if add.if.direct)
 
     for w in "${words[@]}"; do
         [[ $w =~ ^-.* && $w != "--" ]] || let narg++
@@ -108,6 +108,26 @@ _vm()
                 _filedir
             else
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            fi
+            ;;
+        add.if)
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --all --name)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                netlist="$(virsh net-list --name --all)"
+                COMPREPLY=( $( compgen -W "$netlist" -- "${cur}" ) )
+            else
+                COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            fi
+            ;;
+        add.if.direct)
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --all --name)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                ifaces=$(ip route | awk '/^default/{print $5}')
+                COMPREPLY=( $( compgen -W "#<Enter> $ifaces" -- "${cur}" ) )
             fi
             ;;
         vi|vie|view*|lo|log|log*|co|con|cons|cons*|if|ifaddr)
