@@ -935,10 +935,18 @@ vmlogin() {
 vmadd_iso() {
 	local vmname=$1
 	local isof=$2
-	[[ -f "$isof" ]] || {
+	local homedir=$(vm homedir $vmname |& head -1)
+	if [[ ! -d "$homedir" ]]; then
+		echo -e "{VM:ERROR} empty or invalide vm-homedir($homedir)"
+		return
+	fi
+	if [[ -f "$isof" ]]; then
+		cp "$isof" $homedir/.
+		isof=$homedir/${isof##*/}
+	else
 		echo -e "{VM:WARN} iso file '$isof' not exist ..."
 		return
-	}
+	fi
 	local xml=$(virsh dumpxml $vmname)
 	for _target in sd{c..z}; do echo "$xml"|grep -q -w $_target || break; done
 	virsh attach-disk $vmname $isof $_target --targetbus=sata --type cdrom --mode readonly
