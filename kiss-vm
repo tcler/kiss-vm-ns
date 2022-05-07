@@ -948,8 +948,8 @@ vmadd_iso() {
 		return
 	fi
 
-	local xml=$(virsh dumpxml $vmname)
-	for _target in sd{c..z}; do echo "$xml"|grep -q -w $_target || break; done
+	local xmls=$(virsh dumpxml $vmname; virsh dumpxml --inactive $vmname)
+	for _target in sd{c..z}; do echo "$xmls"|grep -q -w $_target || break; done
 	virsh attach-disk $vmname "$isof" $_target --targetbus=sata --type cdrom --mode readonly
 }
 
@@ -966,8 +966,8 @@ vmadd_disk() {
 		diskf=$homedir/${diskf##*/}
 	fi
 
-	local xml=$(virsh dumpxml $vmname)
-	for _target in sd{a..z}; do echo "$xml"|grep -q -w $_target || break; done
+	local xmls=$(virsh dumpxml $vmname; virsh dumpxml --inactive $vmname)
+	for _target in sd{a..z}; do echo "$xmls"|grep -q -w $_target || break; done
 	virsh attach-disk $vmname "$diskf" $_target
 }
 
