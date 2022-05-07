@@ -948,7 +948,13 @@ vmadd_iso() {
 
 	local xmls=$(virsh dumpxml $vmname; virsh dumpxml --inactive $vmname)
 	for _target in sd{c..z}; do echo "$xmls"|grep -q -w $_target || break; done
-	virsh attach-disk $vmname "$isof" $_target --targetbus=sata --type cdrom --mode readonly
+	run -debug virsh attach-disk $vmname "$isof" $_target --targetbus=sata --type cdrom --mode readonly
+	if [[ $? != 0 ]]; then
+		local _type= _dev= target= _image=
+		read _type _dev target _image < <(_vmblklist $vmname | awk '$2=="cdrom"')
+		echo -e "{VM:INFO} retry->push iso into existed cdrom: $target"
+		run -debug virsh attach-disk $vmname "$isof" $target --type cdrom --mode readonly
+	fi
 }
 
 vmadd_disk() {
@@ -966,14 +972,14 @@ vmadd_disk() {
 
 	local xmls=$(virsh dumpxml $vmname; virsh dumpxml --inactive $vmname)
 	for _target in sd{a..z}; do echo "$xmls"|grep -q -w $_target || break; done
-	virsh attach-disk $vmname "$diskf" $_target
+	run -debug virsh attach-disk $vmname "$diskf" $_target
 }
 
 vmadd_if() {
 	local vmname=$1
 	local network=$2
 
-	virsh attach-interface --type network --domain $vmname --source $network \
+	run -debug virsh attach-interface --type network --domain $vmname --source $network \
 		--model virtio --config --live
 }
 
@@ -981,7 +987,7 @@ vmadd_if_direct() {
 	local vmname=$1
 	local srcif=${srcif:-$(get_default_if)}
 
-	virsh attach-interface --type direct --domain $vmname --source $srcif \
+	run -debug virsh attach-interface --type direct --domain $vmname --source $srcif \
 		--model virtio --config --live
 }
 
@@ -3645,7 +3651,7 @@ esac
 
 if [[ "$GenerateImage" = yes ]]; then
 	run -as=$VMUSER mkdir -p $ImagePath/$Distro
-	read image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
+	read _type _dev _target image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
 	imgfilename=${imgfilename#${VMUSER}-}
 	newimage=$ImagePath/$Distro/${imgfilename}
