@@ -1856,10 +1856,10 @@ Usage() {
 	  $P clone <VM> [new-vmname]  #clone VM    //see also: virt-clone + virt-sysprep
 	  $P cpfrom <VM> <file/dir_in_vm> <dst_dir/file_in_host>
 	  $P cpto   <VM> <files/dirs_in_host ...> <dst_dir_in_vm>
-	  $P add.iso <VM> <iso-file>
-	  $P add.disk <VM> <disk-file>
-	  $P add.if <VM> <network>
-	  $P add.if.direct <VM> <srcif>
+	  $P add.iso <VM> <iso-file>               //alias of virsh attach-disk \$vm \$iso \$target --targetbus=sata --type cdrom --mode readonly
+	  $P add.disk <VM> <disk-file>             //alias of virsh attach-disk \$vm \$diskf \$target
+	  $P add.if <VM> <network>                 //alias of virsh attach-interface --type network --domain \$vm --source \$network
+	  $P add.if.direct <VM> <srcif>            //alias of virsh attach-interface --type direct --domain \$vm --source \$(get_default_if)
 
 	  $P netls             #list all virtual network
 	  $P netcreat netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
