@@ -26,7 +26,7 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.if add.if.direct)
+    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.direct)
 
     for w in "${words[@]}"; do
         [[ $w =~ ^-.* && $w != "--" ]] || let narg++
@@ -99,7 +99,7 @@ _vm()
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             fi
             ;;
-        add.iso)
+        add.iso|add.disk)
             if [[ $narg -le 3 ]]; then
                 vmlist=$(virsh list --all --name)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
