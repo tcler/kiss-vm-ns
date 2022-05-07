@@ -202,9 +202,7 @@ _vmblklist() {
 		return 1
 	}
 
-	local blklist=$(virsh domblklist "$_vmname" |
-		awk 'NR>2 && NF==2{print $2}')
-
+	local blklist=$(virsh domblklist "$_vmname" --details | awk 'NR>2{print}')
 	echo "$blklist" | egrep "/$_vmname/"     | egrep "$_pat"
 	echo "$blklist" | egrep -v "/$_vmname/"  | egrep "$_pat"
 }
@@ -220,7 +218,7 @@ vmhomedir() {
 	local _vmname=$1
 	local _vmdir= _image=
 
-	read _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
+	read _type _dev _target _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
 	if test -n "$_image"; then
 		_vmdir=$(dirname $_image)
 	elif test -d $VMSHOME/PXE/$_vmname; then
@@ -277,7 +275,7 @@ _vmdelete() {
 	fi
 
 	local _vmdir= _image=
-	read _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
+	read _type _dev _target _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
 	if test -n "$_image"; then
 		_vmdir=$(dirname $_image)
 	elif test -d $VMSHOME/PXE/$_vmname; then
@@ -662,7 +660,7 @@ vmclone() {
 	#Note: https://www.reddit.com/r/archlinux/comments/obn999/ownership_of_qcow2_images_created_by_virtmanager/
 	#^^^^ why don't use virt-clone directly
 
-	read srcimage < <(_vmblklist "$srcname")
+	read _type _dev _target srcimage < <(_vmblklist "$srcname")
 	cp -v --sparse=always $srcimage $dstpath/${dstname}.qcow2
 	if [[ $(id -u) = 0 ]]; then
 		chown $VMUSER:$(id -g -u $VMUSER) -R $dstpath
