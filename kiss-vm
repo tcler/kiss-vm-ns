@@ -2505,7 +2505,7 @@ fi
 	VMpath=$VMSHOME/$Distro/$vmname
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
 	run -as=$VMUSER mkdir -p $VMpath
-	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx -R $VMSHOME
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx -R $VMSHOME 2>/dev/null
 	if [[ "$VMSHARE" != yes ]]; then
 		setfacl -d -mg::--- -mo::--- $VMpath
 	fi
@@ -3388,8 +3388,11 @@ elif [[ "$InstallType" = cdrom ]]; then
 		run -as=$VMUSER touch $VMpath/ansf-usb.image
 		WIN_USER=${WIN_USER:-Administrator}
 		WIN_PASS=${WIN_PASS:-${defaultWindowsPasswd}}
-		WIN_WIM_IMAGE_INDEX=${WIN_WIM_IMAGE_INDEX:-4}
-		[[ "$VM_OS_VARIANT" = win10 || "${Distro,,}" =~ (win|windows-?)1[01] ]] && WIN_WIM_IMAGE_INDEX=1
+		if [[ -z "$WIN_WIM_IMAGE_INDEX" ]]; then
+			WIN_WIM_IMAGE_INDEX=4
+			[[ "$VM_OS_VARIANT" = win10 || "${Distro,,}" =~ (win|windows-?)1[01] ]] && {
+				WIN_WIM_IMAGE_INDEX=1; }
+		fi
 		WIN_WIM_IMAGE_INDEX_OPT="--wim-index=$WIN_WIM_IMAGE_INDEX"
 		if [[ "$DFS" = yes && -z "$DFS_TARGET" ]]; then
 			make-samba-server.sh --users=$WIN_USER,smbfoo,smbbar \
