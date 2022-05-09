@@ -38,19 +38,35 @@ Function virtio-win-install() {
 			}
 		}
 	}
-	while ($true) {
+	for ($loop=1; $loop -le 8; $loop++) {
 		if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
 			Out-Host "`n==> win7 virtio-win driver: ${D}\w7\ ..."
 			PnPutil.exe -i -a ${drvDir}\NetKVM\w7\amd64\*.inf
 			PnPutil.exe -i -a ${drvDir}\amd64\w7\*.inf
 		} elseif ($msifile -and (Test-Path -Path $msifile)) {
-			Out-Host "`n==> install virtio-win driver: $msifile ..."
-			powershell "msiexec.exe /i $msifile /passive /qn /norestart"
-			#powershell "$exefile install /qn /passive /norestart"
+			if ($loop -lt 4) {
+				Out-Host "`n==> install virtio-win driver: $msifile ..."
+				powershell "msiexec.exe /i $msifile /passive /qn /norestart"
+				#powershell "$exefile install /qn /passive /norestart"
+			} else {
+				$osname = (systeminfo.exe /fo csv | ConvertFrom-Csv | select OS*Name).'OS Name'
+				$Ver = switch -wildcard ($osname) {
+					"*Windows Server 2012 *" { "2k12" }
+					"*Windows Server 2012 R2*" { "2k12R2" }
+					"*Windows Server 2016 *" { "2k16" }
+					"*Windows Server 2019 *" { "2k19" }
+					"*Windows Server 2022 *" { "2k22" }
+					"*Windows 10 *" { "w10" }
+					"*Windows 11 *" { "w11" }
+				}
+				Out-Host "`n==> install virtio-win driver: ${drvDir}\NetKVM\$Ver\amd64,${drvDir}\amd64\$Ver ..."
+				PnPutil.exe -i -a ${drvDir}\NetKVM\$Ver\amd64\*.inf
+				PnPutil.exe -i -a ${drvDir}\amd64\$Ver\*.inf
+			}
 		}
 		Start-Sleep -s 2
 		$ifs = @(ipconfig | Select-String -Pattern "^Eth")
-		if ($ifs.Count -ge 2) { break }
+		if ($ifs.Count -ge 2) { break } else { Start-Sleep -s 2 }
 	}
 	Out-Host "`n==> virtio-win install done!"
 }
@@ -222,7 +238,7 @@ switch($Stage) {
 		Out-Host "`n---> NIC int info: ip($(GetIPAddrFromNic $NicInt)), desc: $($NicInt.ifDesc)"
 		if ($NicRDMA) {Out-Host "`n---> NIC int info: ip($(GetIPAddrFromNic $NicRDMA)), desc: $($NicRDMA.ifDesc)"}
 
-		if ($STATIC_IP_INT) {
+		if ($NicInt -and $STATIC_IP_INT) {
 			$oldIntAddrs = @(Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicInt.InterfaceIndex)
 			$IntIpConf = (Get-NetIPConfiguration -InterfaceIndex $NicInt.ifIndex)
 
@@ -233,30 +249,33 @@ switch($Stage) {
 		}
 
 		# change address of EXT NIC from DHCP to STATIC
-		#while ($true) {
-		while (Get-Command Get-NetIPAddress -errorAction SilentlyContinue) {
-			$oldExtAddrs = @(Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicExt.InterfaceIndex)
-			if ($null -ne $oldExtAddrs -and $null -ne $oldExtAddrs[0].IPAddress `
-				-and $oldExtAddrs[0].IPAddress -is [string] -and $oldExtAddrs[0].IPAddress.Trim() -notlike "169.254.*") {
-				break
-			} else {
-				Start-Sleep -s 5
-				Out-Host "`n---> renew IP on ext NIC: $($NicExt.ifAlias)"
-				ipconfig /release $NicExt.ifAlias
-				ipconfig /renew $NicExt.ifAlias
+		if ($NicExt) {
+			if (Get-Command Get-NetIPAddress -errorAction SilentlyContinue) {
+				for ($loop=1; $loop -le 8; $loop++) {
+					$oldExtAddrs = @(Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicExt.InterfaceIndex)
+					if ($null -ne $oldExtAddrs -and $null -ne $oldExtAddrs[0].IPAddress `
+						-and $oldExtAddrs[0].IPAddress -is [string] -and $oldExtAddrs[0].IPAddress.Trim() -notlike "169.254.*") {
+						break
+					} else {
+						Start-Sleep -s 5
+						Out-Host "`n---> renew IP on ext NIC: $($NicExt.ifAlias)"
+						ipconfig /release $NicExt.ifAlias
+						ipconfig /renew $NicExt.ifAlias
+					}
+				}
 			}
+			$extStaticIp = $oldExtAddrs[0].IPAddress.Trim()
+			$extIpConf = (Get-NetIPConfiguration -InterfaceIndex $NicExt.ifIndex)
+			if ($STATIC_IP_EXT) {
+				$extStaticIp=$STATIC_IP_EXT
+			} else {
+				Remove-NetIPAddress -IPAddress $extStaticIp -Confirm:$false
+			}
+			Out-Host "`n---> set static IP($extStaticIp) on ext NIC: $($NicExt.ifAlias)"
+			New-NetIPAddress -InterfaceIndex $NicExt.InterfaceIndex -AddressFamily IPv4 `
+				-IPAddress $extStaticIp -PrefixLength $oldExtAddrs[0].PrefixLength `
+				-DefaultGateway $extIpConf.IPv4DefaultGateway[0].NextHop
 		}
-		$extStaticIp = $oldExtAddrs[0].IPAddress.Trim()
-		$extIpConf = (Get-NetIPConfiguration -InterfaceIndex $NicExt.ifIndex)
-		if ($STATIC_IP_EXT) {
-			$extStaticIp=$STATIC_IP_EXT
-		} else {
-			Remove-NetIPAddress -IPAddress $extStaticIp -Confirm:$false
-		}
-		Out-Host "`n---> set static IP($extStaticIp) on ext NIC: $($NicExt.ifAlias)"
-		New-NetIPAddress -InterfaceIndex $NicExt.InterfaceIndex -AddressFamily IPv4 `
-			-IPAddress $extStaticIp -PrefixLength $oldExtAddrs[0].PrefixLength `
-			-DefaultGateway $extIpConf.IPv4DefaultGateway[0].NextHop
 
 		# disabling DNS registration on the network interface
 		if ($NicInt) {
