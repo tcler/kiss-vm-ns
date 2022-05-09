@@ -148,11 +148,12 @@ fastesturl() {
 echo
 ! command -v vncdo && {
 	pipOpts="--default-timeout=60 --retries=10"
-	pipMirrorList="https://files.pythonhosted.org
+	pipDefaultUrl=https://files.pythonhosted.org
+	pipMirrorList="$pipDefaultUrl
 	https://pypi.tuna.tsinghua.edu.cn/simple
 	https://mirrors.aliyun.com/pypi/simple"
 	fastUrl=$(fastesturl $pipMirrorList)
-	[[ -n "$fastUrl" ]] && pipInstallOpts="-i $fastUrl"
+	[[ -n "$fastUrl" && "$fastUrl" != "$pipDefaultUrl" ]] && pipInstallOpts="-i $fastUrl"
 	echo -e "\n{ggv-install} install vncdotool ..."
 	case ${OS,,} in
 	slackware*)
