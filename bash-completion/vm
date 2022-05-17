@@ -26,7 +26,7 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.direct)
+    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct)
 
     for w in "${words[@]}"; do
         [[ $w =~ ^-.* && $w != "--" ]] || let narg++
@@ -119,6 +119,15 @@ _vm()
                 COMPREPLY=( $( compgen -W "$netlist" -- "${cur}" ) )
             else
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            fi
+            ;;
+        add.if.bridge)
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --all --name)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                brgs=$(bridge link show | awk -F'[ :]+' '{print $2}')
+                COMPREPLY=( $( compgen -W "#<Enter> $brgs" -- "${cur}" ) )
             fi
             ;;
         add.if.direct)
