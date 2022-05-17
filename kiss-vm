@@ -999,12 +999,25 @@ vmadd_if_direct() {
 		--model virtio --config --live
 }
 
-vmadd_if_bridge() {
-	:
+nic2pcislot() {
+	local nic=$1
+	local eventf=/sys/class/net/$nic/device/uevent
+	if [[ -e $eventf ]]; then
+		awk -F= '/PCI_SLOT_NAME/{print "pci_" $2}' $eventf | sed 's/[:.]/_/g'
+	fi
 }
 
-vmadd_if_hostif() {
-	:
+vmadd_if_passthr() {
+	local vmname=$1
+	local _hostif=$2
+	local pci_addr=$2
+	local eventf=/sys/class/net/$_hostif/device/uevent
+	if [[ -e $eventf ]]; then
+		pci_addr=$(nic2pcislot $_hostif)
+	fi
+
+	run -debug virsh attach-interface --type hostdev --domain $vmname --source $pci_addr \
+		--config --live
 }
 
 vmpassthr() {
@@ -1873,6 +1886,7 @@ Usage() {
 	  $P add.if <VM> <network>                 //alias of virsh attach-interface --type network --domain \$vm --source \$network
 	  $P add.if.bridge <VM> <bridge>           //alias of virsh attach-interface --type network --domain \$vm --source \$bridge
 	  $P add.if.direct <VM> <srcif>            //alias of virsh attach-interface --type direct --domain \$vm --source \$(get_default_if)
+	  $P add.if.passthru <VM> <hostif|pciAddr> //alias of virsh attach-interface --type hostdev --domain \$vm --source \$hostif_or_pciaddr
 
 	  $P netls             #list all virtual network
 	  $P netcreat netname=nat-net brname=virbrM subnet=10 [forward=nat]  #create network 'nat-net' with 'nat' and subnet: 192.168.10.0
@@ -2339,6 +2353,7 @@ run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 	add.if.direct) shift; [[ "$1" = -d ]] && shift; vmadd_if_direct "$@"; exit $?;;
 	add.if.bridge) shift; [[ "$1" = -d ]] && shift; vmadd_if_bridge "$@"; exit $?;;
 	add.if.hostif) shift; [[ "$1" = -d ]] && shift; vmadd_if_hostif "$@"; exit $?;;
+	add.if.passthr) shift; [[ "$1" = -d ]] && shift; vmadd_if_passthr "$@"; exit $?;;
 	passthr) shift; [[ "$1" = -d ]] && shift; vmpassthr "$@"; exit $?;;
 	netls) shift; [[ "$1" = -d ]] && shift; netls "$@"; exit $?;;
 	net|netcreat*) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
@@ -2702,13 +2717,6 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 }
 
 ### hostdev option
-nic2pcislot() {
-	local nic=$1
-	local eventf=/sys/class/net/$nic/device/uevent
-	if [[ -e $eventf ]]; then
-		awk -F= '/PCI_SLOT_NAME/{print "pci_" $2}' $eventf | sed 's/[:.]/_/g'
-	fi
-}
 HOST_DEV_OPTS=()
 for dev in "${HOST_DEV_LIST[@]}"; do
 	HOST_DEV_OPTS+=("--hostdev=$dev")

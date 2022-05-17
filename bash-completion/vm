@@ -26,7 +26,7 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct)
+    subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthr)
 
     for w in "${words[@]}"; do
         [[ $w =~ ^-.* && $w != "--" ]] || let narg++
@@ -137,6 +137,15 @@ _vm()
             elif [[ $narg -le 4 ]]; then
                 ifaces=$(ip route | awk '/^default/{print $5}')
                 COMPREPLY=( $( compgen -W "#<Enter> $ifaces" -- "${cur}" ) )
+            fi
+            ;;
+        add.if.passthr)
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --all --name)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                hostifs=$(for if in /sys/class/net/*; do [[ -f $if/device/uevent ]] && echo ${if##*/} ; done)
+                COMPREPLY=( $( compgen -W "#<Enter> $hostifs" -- "${cur}" ) )
             fi
             ;;
         vi|vie|view*|lo|log|log*|co|con|cons|cons*|if|ifaddr)
