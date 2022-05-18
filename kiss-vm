@@ -1360,6 +1360,13 @@ COMM
 		fi
 	}
 
+	#delete virbr0 if net-start default fail
+	grep -q 'virbr0: File exists' < <(virsh net-start default 2>&1 >/dev/null) && {
+		echo -e "{*INFO*} remove virbr0 ..."
+		ip link delete virbr0
+		virsh net-start default
+	}
+
 	#re-define default network, if 192.168.122.0 has been used by other ifs
 	grep -q 'Network is already in use' < <(virsh net-start default 2>&1 >/dev/null) && {
 		echo -e "{*INFO*} re-create Network default ..."
