@@ -963,11 +963,21 @@ vmadd_disk() {
 	local homedir=$(vm homedir $vmname |& head -1)
 	if [[ ! -d "$homedir" ]]; then
 		echo -e "{VM:ERROR} empty or invalide vm-homedir($homedir)"
-		return
+		return 1
 	fi
 	if [[ -f "$diskf" ]]; then
 		cp "$diskf" $homedir/.
 		diskf=$homedir/${diskf##*/}
+	elif [[ ! -e "$diskf" && "$diskf" != */* ]]; then
+		read _fname _attrs <<< "${diskf//,/ }"
+		diskf="$homedir/$_fname"
+		eval "$_attrs"
+		qemu-img create -f qcow2 "${diskf}" ${size:-80}G
+	fi
+
+	if [[ ! -e "$diskf" ]]; then
+		echo -e "{VM:ERROR} file '$diskf' not exist"
+		return 2
 	fi
 
 	local xmls=$(virsh dumpxml $vmname; virsh dumpxml --inactive $vmname)
