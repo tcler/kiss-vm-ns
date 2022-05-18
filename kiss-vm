@@ -965,14 +965,26 @@ vmadd_disk() {
 		echo -e "{VM:ERROR} empty or invalide vm-homedir($homedir)"
 		return 1
 	fi
+	local subdrv_opt=
+	local tgtbus_opt=
+	local diskprefix=sd
+
+	read diskf _attrs <<< "${diskf//,/ }"
+	eval "$_attrs"  #drv=qcow2,raw,... bus=virtio,scsi,sata,...
+	[[ -n "$drv" ]] && subdrv_opt=--subdriver=$drv
+	[[ -n "$bus" ]] && tgtbus_opt=--targetbus=$drv
+
 	if [[ -f "$diskf" ]]; then
 		cp "$diskf" $homedir/.
 		diskf=$homedir/${diskf##*/}
+		file "$diskf"|grep -iq "QEMU QCOW Image" && subdrv_opt=--subdriver=qcow2
+	elif [[ -b "$diskf" ]]; then
+		:
 	elif [[ ! -e "$diskf" && "$diskf" != */* ]]; then
-		read _fname _attrs <<< "${diskf//,/ }"
-		diskf="$homedir/$_fname"
-		eval "$_attrs"
+		diskf="$homedir/$diskf"
+		[[ -f "$diskf" ]] && { echo -e "{VM:WARN} '$diskf' already exist."; return; }
 		qemu-img create -f qcow2 "${diskf}" ${size:-80}G
+		subdrv_opt=${subdrv_opt:---subdriver=qcow2}
 	fi
 
 	if [[ ! -e "$diskf" ]]; then
@@ -980,9 +992,10 @@ vmadd_disk() {
 		return 2
 	fi
 
+	[[ "$tgtbus_opt" = *virtio* ]] && diskprefix=vd
 	local xmls=$(virsh dumpxml $vmname; virsh dumpxml --inactive $vmname)
-	for _target in sd{a..z}; do echo "$xmls"|grep -q -w $_target || break; done
-	run -debug virsh attach-disk $vmname "$diskf" $_target
+	for _target in $diskprefix{a..z}; do echo "$xmls"|grep -q -w $_target || break; done
+	run -debug virsh attach-disk $vmname $subdrv_opt $tgtbus_opt "$diskf" $_target
 }
 
 vmadd_if() {
@@ -1899,7 +1912,7 @@ Usage() {
 	  $P cpfrom <VM> <file/dir_in_vm> <dst_dir/file_in_host>
 	  $P cpto   <VM> <files/dirs_in_host ...> <dst_dir_in_vm>
 	  $P add.iso <VM> <iso-file>               //alias of virsh attach-disk \$vm \$iso \$target --targetbus=sata --type cdrom --mode readonly
-	  $P add.disk <VM> <disk-file>             //alias of virsh attach-disk \$vm \$diskf \$target
+	  $P add.disk <VM> <disk-file[size=,drv=,bus=]> //alias of virsh attach-disk \$vm \$diskf \$target [--subdriver=qcow2,raw, --targetbus=scsi,sata,virtio,]
 	  $P add.if <VM> <network>                 //alias of virsh attach-interface --type network --domain \$vm --source \$network
 	  $P add.if.bridge <VM> <bridge>           //alias of virsh attach-interface --type network --domain \$vm --source \$bridge
 	  $P add.if.direct <VM> <srcif>            //alias of virsh attach-interface --type direct --domain \$vm --source \$(get_default_if)
