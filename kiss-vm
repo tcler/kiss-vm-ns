@@ -2968,7 +2968,8 @@ if [[ "$InstallType" = location ]]; then
 		cat ${KSPath}
 	}
 
-	ls -l ${imagefile}
+	ls -l ${imagefile} &&
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
 
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
@@ -3168,7 +3169,8 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	}
 
-	ls -l ${imagefile}
+	ls -l ${imagefile} &&
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
@@ -3327,7 +3329,8 @@ elif [[ "$InstallType" = pxe ]]; then
 	echo -e "{VM:INFO} creating VM from pxe"
 	run -as=$VMUSER touch $VMpath/.kiss-vm
 
-	ls -l ${imagefile}
+	ls -l ${imagefile} &&
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
@@ -3429,7 +3432,8 @@ elif [[ "$InstallType" = cdrom ]]; then
 	echo -e "{VM:INFO} creating VM install from cdrom($isofilepath)"
 	run -as=$VMUSER touch $VMpath/.kiss-vm
 
-	ls -lhZ ${imagefile}
+	ls -lhZ ${imagefile} &&
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
 
 	if [[ "$WIN_AUTO" = yes ]]; then
 		run -as=$VMUSER touch $VMpath/ansf-usb.image
