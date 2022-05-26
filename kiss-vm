@@ -34,7 +34,7 @@ INTERACT=yes
 Intranet=yes
 VIRT_READY=unkown
 _MSIZE=1536
-DSIZE=27
+DSIZE=64
 baudrate=115200
 GRAPHICS_OPT="--graphics=vnc,listen=0.0.0.0"
 VIDEO_OPT="--video=qxl"
