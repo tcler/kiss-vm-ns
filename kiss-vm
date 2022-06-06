@@ -2338,7 +2338,7 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 else
 	virtualizationOption=--virt-type=qemu
 fi
-[[ "$GuestARCH" != x86_64 ]] && VIDEO_OPT="--video=virtio"
+case "$GuestARCH" in (s390x) VIDEO_OPT="--video=virtio";; esac
 
 support_nested_kvm() {
 	local rc=1
