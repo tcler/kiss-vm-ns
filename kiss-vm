@@ -37,7 +37,9 @@ _MSIZE=1536
 DSIZE=64
 baudrate=115200
 GRAPHICS_OPT="--graphics=vnc,listen=0.0.0.0"
+HostARCH=$(uname -m)
 VIDEO_OPT="--video=qxl"
+[[ "$HostARCH" != x86_64 ]] && VIDEO_OPT="--video=virtio"
 SOUND_OPT=""
 QEMU_OPTS=()
 QEMU_ENV=()
@@ -1267,7 +1269,7 @@ install_requires() {
 			sudo wget https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo   -O /etc/yum.repos.d/virtio-win.repo
 			sudo yum install -y virtio-win
 		}
-		[[ "$OSV" = 7 && $(arch) = x86_64 ]] && { yum remove -y tmux && yum install -y ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/assmannst/CentOS_7/x86_64/tmux-2.6-3.1.x86_64.rpm; }
+		[[ "$OSV" = 7 && $HostARCH = x86_64 ]] && { yum remove -y tmux && yum install -y ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/assmannst/CentOS_7/x86_64/tmux-2.6-3.1.x86_64.rpm; }
 		;;
 	debian*|ubuntu*)
 		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl"
@@ -1322,6 +1324,9 @@ prepare_kiss_vm() {
 	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
 	ggv-install.sh
+
+	#install packages qemu-system-*
+	qemu-system-archs-install.sh aarch64 s390x riscv
 
 	echo -e "{VM:INFO} configure libvirt-nss ..."
 	grep -q '^hosts:.*libvirt libvirt_guest' /etc/nsswitch.conf || {
@@ -1443,7 +1448,7 @@ if [[ $Intranet = yes ]]; then
 	distro2location() {
 		local distro=$1
 		local variant=${2:-Server}
-		local arch=$(uname -m)
+		local arch=$GuestARCH
 
 		distrotrees=$(fetch_distro_trees $distro $arch)
 		[[ -z "$distrotrees" ]] && return 1
@@ -1461,7 +1466,7 @@ if [[ $Intranet = yes ]]; then
 		local imagenames=$(curl -L -s -k ${parenturl} | sed -nr '/.*"([^"]+'"${suffix_pattern}"')".*/{s//\1/;p}')
 		local qcow2Imgs= rawImgs= otherImgs=
 
-		local arch=$(uname -m)
+		local arch=$GuestARCH
 		[[ $arch = aarch64 || $arch = arm64 ]] && arch="(aarch64|arm64)"
 		[[ $arch = x86_64 || $arch = amd64 ]] && arch="(x86_64|amd64)"
 		imgs=$(egrep "$arch" <<< "$imagenames")
@@ -1529,8 +1534,8 @@ if [[ $Intranet = yes ]]; then
 				${osv}-debuginfo:${debug_url}
 				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
 				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$(uname -m)/extras/os
-				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$(uname -m)/os
+				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$GuestARCH/extras/os
+				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$GuestARCH/os
 			)
 			;;
 		rhel-7*|rhel7*|centos7*|centos-7*)
@@ -1550,8 +1555,8 @@ if [[ $Intranet = yes ]]; then
 				${osv}-RT-debuginfo:${debug_url/$osv/${osv}-RT}
 				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
 				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$(uname -m)/extras/os
-				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$(uname -m)/os
+				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$GuestARCH/extras/os
+				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$GuestARCH/os
 				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux7
 			)
 			;;
@@ -1681,6 +1686,7 @@ Usage() {
 	                 #number of virtual cpus, default: sockets=1,cores=2,threads=2
 	                 #see also: virt-install --vcpus=?
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
+	  --arch         #Guest cpu arch
 	  --boot <arg>   #pass thru to virt-install's --boot options
 	                 #see also: `virt-install --boot=?`
 	  --graphics <TYPE,opt1=arg1,opt2=arg2,...>
@@ -1994,6 +2000,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long getvmname \
 	--long nocloud-init --long nocloud \
 	--long cpus: --long vcpus: \
+	--long arch: \
 	--long boot: \
 	--long video: \
 	--long sound: \
@@ -2112,6 +2119,7 @@ while true; do
 	--dsize)         dsizeflag=1; DSIZE="${2%[Gg]}"; shift 2;;
 	--msize)         MSIZE="$2"; shift 2;;
 	--cpus|--vcpus)  VCPUS="$2"; shift 2;;
+	--arch)	         GuestARCH="$2"; shift 2;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
 	--graphics)      GRAPHICS_OPT="--graphics=$2"; shift 2;;
 	--video)         VIDEO_OPT="--video=$2"; shift 2;;
@@ -2325,9 +2333,16 @@ enable_nested_kvm() {
 	exit $?
 }
 
+GuestARCH=${GuestARCH:-$HostARCH}
+if [[ "$GuestARCH" = "$HostARCH" ]]; then
+	virtualizationOption=--hvm
+else
+	virtualizationOption=--virt-type=qemu
+fi
+
 support_nested_kvm() {
 	local rc=1
-	if [[ "$OSTYPE" = linux-gnu* ]]; then
+	if [[ "$OSTYPE" = linux-gnu* && "$HostARCH" = "$GuestARCH" ]]; then
 		local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 		local paramf=/sys/module/$kmodule/parameters/nested
 
@@ -2517,7 +2532,7 @@ if [[ "$VTPM" = yes ]]; then
 fi
 
 [[ -n "$QEMU_KVM" ]] && {
-	DISPLAY= timeout 0.1 $QEMU_KVM -vga qxl |& grep -q 'QXL VGA not available' && VIDEO_OPT=--video=virtio
+	DISPLAY= timeout 0.1 $QEMU_KVM -vga qxl |& grep -q 'QXL VGA not available' && VIDEO_OPT=${VIDEO_OPT:+--video=virtio}
 	$QEMU_KVM -machine help|grep -q q35 && Q35=support
 }
 [[ "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
@@ -2973,7 +2988,7 @@ if [[ "$InstallType" = location ]]; then
 
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
-	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
@@ -2982,6 +2997,7 @@ if [[ "$InstallType" = location ]]; then
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
+	  --arch ${GuestARCH} \
 	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  $NETWORK_OPTS \
@@ -3172,7 +3188,7 @@ elif [[ "$InstallType" = import ]]; then
 	ls -l ${imagefile} &&
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
 
-	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
@@ -3181,6 +3197,7 @@ elif [[ "$InstallType" = import ]]; then
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
+	  --arch ${GuestARCH} \
 	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  $CLOUD_INIT_OPT \
@@ -3332,7 +3349,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	ls -l ${imagefile} &&
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
 
-	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
@@ -3341,6 +3358,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
+	  --arch ${GuestARCH} \
 	  $MEM_OPTS \
 	  ${NETWORK_OPTS} \
 	  "${HOST_DEV_OPTS[@]}" \
@@ -3510,7 +3528,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 		ANSF_DISK_OPT="--disk path=$VMpath/ansf-usb.image,bus=usb,removable=on"
 	fi
 
-	run -debug -nohup unbuffer virt-install --connect=qemu:///system --hvm --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
+	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
@@ -3520,6 +3538,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
+	  --arch ${GuestARCH} \
 	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  $NETWORK_OPTS \
