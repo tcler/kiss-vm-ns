@@ -39,7 +39,6 @@ baudrate=115200
 GRAPHICS_OPT="--graphics=vnc,listen=0.0.0.0"
 HostARCH=$(uname -m)
 VIDEO_OPT="--video=qxl"
-[[ "$HostARCH" != x86_64 ]] && VIDEO_OPT="--video=virtio"
 SOUND_OPT=""
 QEMU_OPTS=()
 QEMU_ENV=()
@@ -2339,6 +2338,7 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 else
 	virtualizationOption=--virt-type=qemu
 fi
+[[ "$GuestARCH" != x86_64 ]] && VIDEO_OPT="--video=virtio"
 
 support_nested_kvm() {
 	local rc=1
