@@ -28,28 +28,25 @@ red?hat|centos*|rocky*)
 esac
 
 #install qemu-system-*
+#archlist=$(yum search qemu-system- | sed -n '/^qemu-system-/ {s///; s/.x86_64.*$//; p}' | grep -v core)
 archlist="$*"
-[[ -z "$archlist" ]] && archlist=$(yum search qemu-system- | sed -n '/^qemu/ {s/qemu-system-//; s/.x86_64.*$//; p}' | grep -v core)
-for arch in $archlist; do
-	_cmd=qemu-system-$arch
-	_pkg=qemu-system-$arch
-	command -v $_cmd && continue
-	case ${OS,,} in
-	slackware*)
-		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install $_pkg
-		;;
-	fedora*|red?hat*|centos*|rocky*)
-		yum $yumOpt install -y $_pkg
-		yum $yumOpt install -y qemu-device-display-virtio-gpu-ccw
-		;;
-	debian*|ubuntu*)
-		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $_pkg
-		;;
-	opensuse*|sles*)
-		zypper in --no-recommends -y $_pkg
-		;;
-	*)
-		: #fixme add more platform
-		;;
-	esac
-done
+[[ -z "$archlist" ]] && archlist="aarch64 riscv s390x"
+pkglist=$(printf "qemu-system-%s " $archlist)
+case ${OS,,} in
+slackware*)
+	/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install $pkglist
+	;;
+fedora*|red?hat*|centos*|rocky*)
+	yum $yumOpt install -y $pkglist
+	yum $yumOpt install -y qemu-device-display-virtio-gpu-ccw
+	;;
+debian*|ubuntu*)
+	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $pkglist
+	;;
+opensuse*|sles*)
+	zypper in --no-recommends -y $pkglist
+	;;
+*)
+	: #fixme add more platform
+	;;
+esac
