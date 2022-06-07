@@ -185,12 +185,14 @@ vmname_gen() {
 	local distro=$1
 	local cname=$2
 	local name=${Distro//./}
+	local archsuffix=
 	name=${name,,}
 
 	if [[ -n "$cname" ]]; then
 		name=${cname}
 	else
-		name=${VMUSER}-${name}
+		[[ -n "$GuestARCH" && "$GuestARCH" != "$HostARCH" ]] && archsuffix=.$GuestARCH
+		name=${VMUSER}-${name}$archsuffix
 	fi
 	echo -n $name
 }
@@ -2735,6 +2737,9 @@ osvariants=$(virt-install --os-variant list 2>/dev/null) ||
 	if grep -q "^ $VM_OS_VARIANT " <<<"$osvariants"; then
 		OS_VARIANT_OPT=--os-variant=$VM_OS_VARIANT
 	fi
+}
+[[ -z "$OS_VARIANT_OPT" ]] && {
+	man virt-install|grep -q detect=on && OS_VARIANT_OPT=--os-variant=detect=on,require=off
 }
 
 # Phase-2: start create VM
