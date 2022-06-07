@@ -91,7 +91,7 @@ vm create CentOS-9-stream --arch aarch64
 ```
 
 Q: What other functions or usages does kiss-mv support?  
-A: just run: 'vm help' to get more usage/examples info; and there are some useful scirpts under the utils dir.
+A: just run: 'vm help' to get more usage/examples info; and there are some useful scirpts under the [utils](https://github.com/tcler/kiss-vm-ns/tree/master/utils) dir.
 
 
 ## kiss-ns
