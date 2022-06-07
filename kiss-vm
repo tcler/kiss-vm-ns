@@ -1688,6 +1688,7 @@ Usage() {
 	                 #see also: virt-install --vcpus=?
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
 	  --arch         #Guest cpu arch
+	  --qemucpu      #see also: `qemu-system-$arch -machine <$machine> -cpu help`
 	  --boot <arg>   #pass thru to virt-install's --boot options
 	                 #see also: `virt-install --boot=?`
 	  --graphics <TYPE,opt1=arg1,opt2=arg2,...>
@@ -2002,6 +2003,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long nocloud-init --long nocloud \
 	--long cpus: --long vcpus: \
 	--long arch: \
+	--long qemucpu: \
 	--long boot: \
 	--long video: \
 	--long sound: \
@@ -2121,6 +2123,7 @@ while true; do
 	--msize)         MSIZE="$2"; shift 2;;
 	--cpus|--vcpus)  VCPUS="$2"; shift 2;;
 	--arch)	         GuestARCH="$2"; shift 2;;
+	--qemucpu)       QEMU_CPU=$2; QEMU_OPTS+=("--qemu-commandline=-cpu $2"); shift 2;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
 	--graphics)      GRAPHICS_OPT="--graphics=$2"; shift 2;;
 	--video)         VIDEO_OPT="--video=$2"; shift 2;;
@@ -2339,8 +2342,18 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 	virtualizationOption=--hvm
 else
 	virtualizationOption=--virt-type=qemu
+	case "$GuestARCH" in
+	(aarch64)
+		#set default qemu cpu type cortex-a72 for aarch64, it works on RHEL aarch64 build
+		[[ -z "$QEMU_CPU" ]] && QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
+		;;
+
+	(s390x)
+		#qemu-system-s390x doesn't support --video=sql on fedora-35
+		VIDEO_OPT="--video=virtio"
+		;;
+	esac
 fi
-case "$GuestARCH" in (s390x) VIDEO_OPT="--video=virtio";; esac
 
 support_nested_kvm() {
 	local rc=1
