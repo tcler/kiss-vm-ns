@@ -88,6 +88,7 @@ now we only verified that creating s390x,aarch64 RHEL-8/RHEL-9/c8s/c9s Guest on 
 vm create CentOS-8-stream --arch aarch64
 vm create CentOS-9-stream --arch s390x
 vm create CentOS-9-stream --arch aarch64
+vm create CentOS-9-stream --arch ppc64le
 ```
 
 Q: What other functions or usages does kiss-mv support?  
