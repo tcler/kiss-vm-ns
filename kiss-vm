@@ -2348,7 +2348,7 @@ else
 		[[ -z "$QEMU_CPU" ]] && QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
 		;;
 
-	(s390x)
+	(s390x|ppc*)
 		#qemu-system-s390x doesn't support --video=sql on fedora-35
 		VIDEO_OPT="--video=virtio"
 		;;
