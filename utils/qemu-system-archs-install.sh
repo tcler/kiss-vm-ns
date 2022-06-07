@@ -30,7 +30,7 @@ esac
 #install qemu-system-*
 #archlist=$(yum search qemu-system- | sed -n '/^qemu-system-/ {s///; s/.x86_64.*$//; p}' | grep -v core)
 archlist="$*"
-[[ -z "$archlist" ]] && archlist="aarch64 riscv s390x"
+[[ -z "$archlist" ]] && archlist="aarch64 riscv ppc s390x"
 pkglist=$(printf "qemu-system-%s " $archlist)
 case ${OS,,} in
 slackware*)

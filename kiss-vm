@@ -1327,7 +1327,7 @@ prepare_kiss_vm() {
 	ggv-install.sh
 
 	#install packages qemu-system-*
-	qemu-system-archs-install.sh aarch64 s390x riscv
+	qemu-system-archs-install.sh aarch64 s390x ppc riscv
 
 	echo -e "{VM:INFO} configure libvirt-nss ..."
 	grep -q '^hosts:.*libvirt libvirt_guest' /etc/nsswitch.conf || {
