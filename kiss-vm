@@ -1687,7 +1687,7 @@ Usage() {
 	                 #number of virtual cpus, default: sockets=1,cores=2,threads=2
 	                 #see also: virt-install --vcpus=?
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
-	  --arch         #Guest cpu arch
+	  --arch         #Guest cpu arch. Note: require qemu-system-$arch already installed
 	  --qemucpu      #see also: `qemu-system-$arch -machine <$machine> -cpu help`
 	  --boot <arg>   #pass thru to virt-install's --boot options
 	                 #see also: `virt-install --boot=?`
