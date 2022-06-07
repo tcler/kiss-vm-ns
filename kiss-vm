@@ -2737,23 +2737,26 @@ MSIZE=${MSIZE:-$_MSIZE}
 }
 
 echo "{VM:INFO} guess/verify os-variant ..."
-[[ -z "$VM_OS_VARIANT" ]] && {
+if [[ -z "$VM_OS_VARIANT" ]]; then
 	VM_OS_VARIANT=${Distro/-/}
 	VM_OS_VARIANT=${VM_OS_VARIANT%%-*}
 	VM_OS_VARIANT=${VM_OS_VARIANT,,}
-}
-osvariants=$(virt-install --os-variant list 2>/dev/null) ||
-	osvariants=$(osinfo-query os 2>/dev/null)
-[[ -n "$osvariants" ]] && {
-	grep -q "^ $VM_OS_VARIANT " <<<"$osvariants" || VM_OS_VARIANT=${VM_OS_VARIANT/.*/-unknown}
-	grep -q "^ $VM_OS_VARIANT " <<<"$osvariants" || VM_OS_VARIANT=${VM_OS_VARIANT/[0-9]*/-unknown}
-	if grep -q "^ $VM_OS_VARIANT " <<<"$osvariants"; then
-		OS_VARIANT_OPT=--os-variant=$VM_OS_VARIANT
-	fi
-}
-[[ -z "$OS_VARIANT_OPT" ]] && {
-	man virt-install|grep -q detect=on && OS_VARIANT_OPT=--os-variant=detect=on,require=off
-}
+
+	osvariants=$(virt-install --os-variant list 2>/dev/null) ||
+		osvariants=$(osinfo-query os 2>/dev/null)
+	[[ -n "$osvariants" ]] && {
+		grep -q "^ $VM_OS_VARIANT " <<<"$osvariants" || VM_OS_VARIANT=${VM_OS_VARIANT/.*/-unknown}
+		grep -q "^ $VM_OS_VARIANT " <<<"$osvariants" || VM_OS_VARIANT=${VM_OS_VARIANT/[0-9]*/-unknown}
+		if grep -q "^ $VM_OS_VARIANT " <<<"$osvariants"; then
+			OS_VARIANT_OPT=--os-variant=$VM_OS_VARIANT
+		fi
+	}
+	[[ -z "$OS_VARIANT_OPT" ]] && {
+		man virt-install|grep -q detect=on && OS_VARIANT_OPT=--os-variant=detect=on,require=off
+	}
+else
+	OS_VARIANT_OPT=--os-variant=$VM_OS_VARIANT
+fi
 
 # Phase-2: start create VM
 # prepare ssh pub key
