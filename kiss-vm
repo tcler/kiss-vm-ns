@@ -191,7 +191,7 @@ vmname_gen() {
 	if [[ -n "$cname" ]]; then
 		name=${cname}
 	else
-		[[ -n "$GuestARCH" && "$GuestARCH" != "$HostARCH" ]] && archsuffix=.$GuestARCH
+		[[ -n "$GuestARCH" && "$GuestARCH" != "$HostARCH" ]] && archsuffix=_$GuestARCH
 		name=${VMUSER}-${name}$archsuffix
 	fi
 	echo -n $name
