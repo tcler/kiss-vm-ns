@@ -81,6 +81,15 @@ Have a lot of fun...
 jiyin-opensuse-leap-153:~ #
 ```
 
+Q: Does kiss-vm support create aarch64,s390x Guest on x86_64 host
+A: Yes, since kiss-vm v2.1.0. and it requires qemu-system-$arch has been installed on your x86_64 linux Host.
+now we only verified that creating s390x,aarch64 RHEL-8/RHEL-9/c8s/c9s Guest on x86_64 Fedora-35/Fedora-36 Host.
+```
+vm create CentOS-8-stream --arch aarch64
+vm create CentOS-9-stream --arch s390x
+vm create CentOS-9-stream --arch aarch64
+```
+
 Q: What other functions or usages does kiss-mv support?  
 A: just run: 'vm help' to get more usage/examples info; and there are some useful scirpts under the utils dir.
 
