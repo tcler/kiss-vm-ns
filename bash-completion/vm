@@ -16,69 +16,96 @@ is_intranet() {
 	is_available_url $iurl 
 }
 
+option_arg_complete() {
+    local hasarg=$1
+    local opt=${hasarg:-$prev}
+    case $opt in
+    -i|-l|-C|--xcdrom|--disk|--win-openssh|--win-download-url|--win-virtio-drv)
+        [[ -n "$hasarg" ]] && return 0
+        #COMPREPLY=( $( compgen -A file -- "$cur" ) )
+        _filedir
+        ;;
+    --diskbus|--bus)
+        [[ -n "$hasarg" ]] && return 0
+        COMPREPLY=( $( compgen -W "ide sata scsi virtio" -- "$cur" ) )
+        ;;
+    --if-model)
+        [[ -n "$hasarg" ]] && return 0
+        COMPREPLY=( $( compgen -W "e1000 rtl8139 virtio" -- "$cur" ) )
+        ;;
+    --video)
+        [[ -n "$hasarg" ]] && return 0
+        COMPREPLY=( $( compgen -W "virtio vga qxl cirrus" -- "$cur" ) )
+        ;;
+    --sound)
+        [[ -n "$hasarg" ]] && return 0
+        COMPREPLY=( $( compgen -W "ich6 ich9 ac97 es1370 sb16 pcspk default" -- "$cur" ) )
+        ;;
+    --graphics)
+        [[ -n "$hasarg" ]] && return 0
+        COMPREPLY=( $( compgen -W "vnc, spice, none" -- "$cur" ) )
+        ;;
+    --arch)
+        [[ -n "$hasarg" ]] && return 0
+        archlist=$(ls /usr/bin/qemu-system-* |& awk -F- 'NF==3{a=$3; if(a=="ppc64")a="ppc64le"; print a}')
+        COMPREPLY=( $( compgen -W "$archlist" -- "$cur" ) )
+        ;;
+    *)
+        [[ -n "$hasarg" ]] && return 1
+        COMPREPLY=( $( compgen -W "${opts[*]}" -- "$cur" ) )
+        ;;
+    esac
+}
+
+distro_list_complete() {
+    local distroList=() dlist=()
+    distroList=( $(source /etc/kiss-vm-ns/distro-db.bash; printf "%s\n" ${!distroInfo[@]}) )
+    if is_intranet; then
+        distroList+=(RHEL-9% RHEL-8% RHEL-7% RHEL-6%)
+    fi
+    dlist=( "${distroList[@]}" Windows-11 Windows-10 Windows-7 Windows-server-{2012r2,2016,2019,2022} "#<aDistroFamilyName>" "#<Enter>" )
+    COMPREPLY=( $( compgen -W "${dlist[*]}" -- "$cur" ) )
+}
+
 _vm()
 {
     local w= cur= prev= words= cword=
-    local narg=
+    local narg=0
     local subcommandList=()
-    local distroList=() dlist=()
     local vmlist=
     local netparams= netlist=
     _init_completion || return
 
     subcommandList=(prepare enable-nested-vm help h create ls list clone login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthr)
 
-    for w in "${words[@]}"; do
-        [[ $w =~ ^-.* && $w != "--" ]] || let narg++
-    done
-
+    for ((i=0; i<${#words[@]}; i++)); do w=${words[$i]}; if option_arg_complete $w; then let i++; continue; elif [[ "$w" != -* ]]; then let narg++; fi; done
     local opts=( $( _parse_help "$1" ) -h )
 
     if [[ $narg -le 2 ]]; then
-        if [[ "$cur" == -* && $prev = create ]]; then
-            COMPREPLY=( $( compgen -W "${opts[*]}" -- "$cur" ) )
+        if [[ "$cur" != -* ]]; then
+            if option_arg_complete $prev; then
+                 option_arg_complete
+            elif [[ ${words[1]} = create ]]; then
+                distro_list_complete
+            elif [[ $prev = vm ]]; then
+                COMPREPLY=( $( compgen -W "${subcommandList[*]}" -- "$cur" ) )
+            fi
         else
-            COMPREPLY=( $( compgen -W "${subcommandList[*]}" -- "$cur" ) )
+            COMPREPLY=( $( compgen -W "${opts[*]}" -- "$cur" ) )
         fi
     else
         case "${words[1]}" in
         create)
             if [[ $narg -le 3 ]]; then
-                if [[ "$cur" == -* ]]; then
+                if option_arg_complete $prev; then
+                    option_arg_complete
+                elif [[ "$cur" == -* ]]; then
                     COMPREPLY=( $( compgen -W "${opts[*]}" -- "$cur" ) )
                 else
-                    distroList=( $(source /etc/kiss-vm-ns/distro-db.bash; printf "%s\n" ${!distroInfo[@]}) )
-                    if is_intranet; then
-                        distroList+=(RHEL-9% RHEL-8% RHEL-7% RHEL-6%)
-                    fi
-                    dlist=( "${distroList[@]}" Windows-11 Windows-10 Windows-7 Windows-server-{2012r2,2016,2019,2022} "#<aDistroFamilyName>" "#<Enter>" )
-                    COMPREPLY=( $( compgen -W "${dlist[*]}" -- "$cur" ) )
+                    distro_list_complete
                 fi
             else
-                case $prev in
-                -i|-l|-C|--xcdrom|--disk|--win-openssh|--win-download-url|--win-virtio-drv)
-                    #COMPREPLY=( $( compgen -A file -- "$cur" ) )
-                    _filedir
-                    ;;
-                --diskbus|--bus)
-                    COMPREPLY=( $( compgen -W "ide sata scsi virtio" -- "$cur" ) )
-                    ;;
-                --if-model)
-                    COMPREPLY=( $( compgen -W "e1000 rtl8139 virtio" -- "$cur" ) )
-                    ;;
-                --video)
-                    COMPREPLY=( $( compgen -W "virtio vga qxl cirrus" -- "$cur" ) )
-                    ;;
-                --sound)
-                    COMPREPLY=( $( compgen -W "ich6 ich9 ac97 es1370 sb16 pcspk default" -- "$cur" ) )
-                    ;;
-                --graphics)
-                    COMPREPLY=( $( compgen -W "vnc, spice, none" -- "$cur" ) )
-                    ;;
-                *)
-                    COMPREPLY=( $( compgen -W "${opts[*]}" -- "$cur" ) )
-                    ;;
-                esac
+                option_arg_complete
             fi
             ;;
         del|delete|stop|start|stat|blk*|srcfiles|homedir)
