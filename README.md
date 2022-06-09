@@ -102,7 +102,7 @@ vm create --arch aarch64 debian-11
 vm create --arch ppc64   debian-11
 ```
 
-Q: What other functions or usages does kiss-mv support?  
+Q: What other functions or usages does kiss-vm support?  
 A: just run: 'vm help' to get more usage/examples info; and there are some useful scirpts under the [utils](https://github.com/tcler/kiss-vm-ns/tree/master/utils) dir.
 
 
