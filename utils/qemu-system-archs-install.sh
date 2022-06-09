@@ -1,10 +1,14 @@
 #!/bin/bash
 # this script is used to install qemu-system-${arch}
 
-[[ $(id -u) != 0 ]] && {
-	echo -e "{WARN} $0 need root permission, please try:\n  sudo $0 ${@}" | GREP_COLORS='ms=1;31' grep --color=always . >&2
-	exit 126
+P=$0; [[ $0 = /* ]] && P=${0##*/}
+switchroot() {
+	[[ $(id -u) != 0 ]] && {
+		echo -e "{WARN} $P need root permission, switch to:\n  sudo $P $@" | GREP_COLORS='ms=1;30' grep --color=always . >&2
+		exec sudo $P "$@"
+	}
 }
+switchroot
 
 . /etc/os-release
 OS=$NAME
