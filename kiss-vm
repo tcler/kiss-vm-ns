@@ -2126,7 +2126,7 @@ while true; do
 	--qemucpu)       QEMU_CPU=$2; QEMU_OPTS+=("--qemu-commandline=-cpu $2"); shift 2;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
 	--graphics)      GRAPHICS_OPT="--graphics=$2"; shift 2;;
-	--video)         VIDEO_OPT="--video=$2"; shift 2;;
+	--video)         SPECIFIED_VIDEO=yes; VIDEO_OPT="--video=$2"; shift 2;;
 	--sound)         SOUND_OPT="--sound=$2"; shift 2;;
 	--nointeract)    INTERACT="no"; shift 1;;
 	--noauto)        NOAUTO="yes"; shift 1;;
@@ -2350,7 +2350,7 @@ else
 
 	(s390x|ppc*)
 		#qemu-system-s390x doesn't support --video=sql on fedora-35
-		VIDEO_OPT="--video=virtio"
+		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
 		;;
 	esac
 fi
@@ -2547,7 +2547,9 @@ if [[ "$VTPM" = yes ]]; then
 fi
 
 [[ -n "$QEMU_KVM" ]] && {
-	DISPLAY= timeout 0.1 $QEMU_KVM -vga qxl |& grep -q 'QXL VGA not available' && VIDEO_OPT=${VIDEO_OPT:+--video=virtio}
+	DISPLAY= timeout 0.1 $QEMU_KVM -vga qxl |& grep -q 'QXL VGA not available' && {
+		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
+	}
 	$QEMU_KVM -machine help|grep -q q35 && Q35=support
 }
 [[ "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
