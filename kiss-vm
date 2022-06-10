@@ -2126,7 +2126,7 @@ while true; do
 	--qemucpu)       QEMU_CPU=$2; QEMU_OPTS+=("--qemu-commandline=-cpu $2"); shift 2;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
 	--graphics)      GRAPHICS_OPT="--graphics=$2"; shift 2;;
-	--video)         SPECIFIED_VIDEO=yes; VIDEO_OPT="--video=$2"; shift 2;;
+	--video)         SPECIFIED_VIDEO=yes; [[ -z "$2" || "$2" = auto ]] && VIDEO_OPT= || VIDEO_OPT="--video=$2"; shift 2;;
 	--sound)         SOUND_OPT="--sound=$2"; shift 2;;
 	--nointeract)    INTERACT="no"; shift 1;;
 	--noauto)        NOAUTO="yes"; shift 1;;

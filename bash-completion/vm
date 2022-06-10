@@ -35,7 +35,7 @@ option_arg_complete() {
         ;;
     --video)
         [[ -n "$hasarg" ]] && return 0
-        COMPREPLY=( $( compgen -W "virtio vga qxl cirrus" -- "$cur" ) )
+        COMPREPLY=( $( compgen -W "auto virtio vga qxl cirrus" -- "$cur" ) )
         ;;
     --sound)
         [[ -n "$hasarg" ]] && return 0
