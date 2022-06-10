@@ -3344,7 +3344,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 			if port_available "$_vmaddr" 22; then
 				expect -c "
 					spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$_vmaddr
-					expect -re "Password for .*:" {send \"$defaultPasswd\\r\"}
+					expect -re Password.for.*: {send \"$defaultPasswd\\r\"}
 					expect eof
 				"
 			fi
