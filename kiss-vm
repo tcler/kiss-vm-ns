@@ -3271,27 +3271,60 @@ elif [[ "$InstallType" = import ]]; then
 	else
 		if grep -i -q freebsd <<<"$Distro"; then
 			echo -e "{VM:INFO} waiting login: prompt ..."
-                        while ! grep "^login:" < <(vm vnc "$vmname" -get); do sleep 10; done
-			vm vnc "$vmname" -putln root
-			vm vnc "$vmname" -putln "hostname ${vmname}" \
-				-putln "echo 'hostname=\"${vmname}\"' >>/etc/rc.conf" \
-				-putln "service syslogd reload" \
-				-putln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf" \
-				-putln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config" \
-				-putln "grep '^[^#]' /etc/rc.conf" \
-				-putln "grep '^[^#]' /etc/ssh/sshd_config"
-			timeout 5 vm vnc "$vmname" -get
-			vm vnc "$vmname" -putln "pw useradd foo -G wheel" \
-				-putln "passwd foo" -put "" -putln "$defaultPasswd" -put "" -putln "$defaultPasswd" \
-				-putln "passwd root" -put "" -putln "$defaultPasswd" -put "" -putln "$defaultPasswd" \
-				-putln "/etc/rc.d/sshd start"
-			timeout 5 vm vnc "$vmname" -get
-			read _vmaddr < <(vmifaddr $vmname)
-			expect -c "
-				spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$_vmaddr
-				expect -re .*: {send \"$defaultPasswd\\r\"}
-				expect eof
-			"
+			firstScreen=$(vm vnc "$vmname" -get)
+			if [[ "$firstScreen" = "Guest has not initialized the display*" ]]; then
+				while ! grep "^login:" < <(vm vnc "$vmname" -get); do sleep 10; done
+				vm vnc "$vmname" -putln root
+				vm vnc "$vmname" -putln "hostname ${vmname}" \
+					-putln "echo 'hostname=\"${vmname}\"' >>/etc/rc.conf" \
+					-putln "service syslogd reload" \
+					-putln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf" \
+					-putln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config" \
+					-putln "grep '^[^#]' /etc/rc.conf" \
+					-putln "grep '^[^#]' /etc/ssh/sshd_config"
+				timeout 5 vm vnc "$vmname" -get
+				vm vnc "$vmname" -putln "pw useradd foo -G wheel" \
+					-putln "passwd foo" -put "" -putln "$defaultPasswd" -put "" -putln "$defaultPasswd" \
+					-putln "passwd root" -put "" -putln "$defaultPasswd" -put "" -putln "$defaultPasswd" \
+					-putln "/etc/rc.d/sshd start"
+				timeout 5 vm vnc "$vmname" -get
+				read _vmaddr < <(vmifaddr $vmname)
+				expect -c "
+					spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$_vmaddr
+					expect -re .*: {send \"$defaultPasswd\\r\"}
+					expect eof
+				"
+			else
+				INTERACT=$INTERACT SHUTDOWN=$GenerateImage LANG=C expect -c '
+					set intc 0
+					set timeout -1
+					spawn virsh console '"$vmname"'
+					trap {
+						send_user "You pressed Ctrl+C [incr intc]/8\n"
+						if {$intc >= 8} {
+							interact
+						}
+					} SIGINT
+					expect "*login:" {
+						send "root\n"
+					}
+					expect "*:~ #" {
+						send {hostname '"${vmname}"';
+echo hostname='"${vmname}"' >>/etc/rc.conf;
+service syslogd reload;
+echo sshd_enable=\"YES\" >>/etc/rc.conf;
+printf "PermitRootLogin yes\nPasswordAuthentication yes\n" >>/etc/ssh/sshd_config;
+grep "^[^#]" /etc/rc.conf /etc/ssh/sshd_config;
+pw useradd foo -G wheel;
+echo '"$defaultPasswd"' | pw usermod foo -h 0;
+echo '"$defaultPasswd"' | pw usermod root -h 0;
+/etc/rc.d/sshd start;}
+						send "\n"
+					}
+					if {$env(INTERACT) == "no"} { exit 0 }
+					interact
+				'
+			fi
 		else
 			trap - SIGINT
 			for ((i=0; i<31; i++)); do
