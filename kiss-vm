@@ -693,9 +693,15 @@ sshtest() {
 	[[ -z "${RuntimeTmp}" ]] && tmpf=$(mktemp)
 	local _cmd=  #work-around for avoiding hang while test against windows openssh-server
 	[[ "${target,,}" = administrator@* ]] && _cmd=exit
-	ssh -v -n -o Batchmode=yes $sshOpts $target $_cmd &>$tmpf
-	if [[ $? = 0 ]]; then
+	ssh -v -n -o Batchmode=yes $sshOpts $target $_cmd &>$tmpf; sshrc=$?
+	[[ "$DEBUG" = yes ]] && {
+		echo "[sshtest:debug] sshrc=$sshrc" >&2
+		echo -e "\033[32m$(tail -n 20 $tmpf)\033[0m" >&2
+	}
+	if [[ $sshrc = 0 ]]; then
 		result=0  #can login or run command without password
+	elif grep -iq '^Bytes per second:' $tmpf; then
+		result=0  #freebsd "publickey" login
 	elif grep -v ^debug1: $tmpf|grep -iq "Permission denied (.*password.*)"; then
 		result=1  #can login or run command with password
 	elif grep -iq "no matching key exchange method found. Their offer:" $tmpf; then
@@ -3348,8 +3354,8 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 					expect eof
 				"
 			fi
-			[[ INTERACT != no ]] && {
-				vm login $vmname
+			[[ "$INTERACT" != no ]] && {
+				vmlogin $vmname
 			}
 		else
 			trap - SIGINT
