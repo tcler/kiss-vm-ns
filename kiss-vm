@@ -1749,6 +1749,7 @@ Usage() {
 	                 #`e.g: --postrepo=beaker-tasks:http://beaker.engineering.fedora.com/rpms
 	  --repo <name:url>
 	                 #add dnf/yum <repo> before install, only for CentOS/RHEL/Fedora
+	  --restraint    #enable restraint and start restraintd by default. only for rh-intranet
 	  --nosshkey     #don't inject sshkey
 	  --debug        #debug mode
 	  --vncwait,--vncwait-after-install <pattern,send,timeout>
@@ -2039,6 +2040,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long fips \
 	--long postrepo: \
 	--long repo: \
+	--long restraint \
 	--long nosshkey \
 	--long getsc --long vncgetsc \
 	--long get --long vncget \
@@ -2171,6 +2173,7 @@ while true; do
 	--fips)          fips=yes; shift 1;;
 	--postrepo)      POST_REPOS+=("$2"); shift 2;;
 	--repo)          _REPO_OPTS+=" --repo $2"; shift 2;;
+	--restraint)     export RESTRAINT=yes; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
 	--get|--vncget)  VNCGET=yes; shift 1;;
@@ -2954,12 +2957,15 @@ if [[ "$InstallType" = location ]]; then
 
 		END
 		[[ $Intranet = yes ]] && cat <<-END >>$postscript
-		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] systemctl start restraintd ..."
-		yum install -y restraint && systemctl start restraintd
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install $BPKGS ..."
 		wget -O /usr/bin/brewinstall.sh -N -q $bkrClientImprovedUrl/utils/brewinstall.sh --no-check-certificate
 		chmod +x /usr/bin/brewinstall.sh
 		brewinstall.sh $(for b in $BPKGS; do echo "'$b' "; done) -noreboot
+
+		END
+		[[ $Intranet = yes && "$RESTRAINT" = yes ]] && cat <<-END >>$postscript
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] systemctl start restraintd ..."
+		yum install -y restraint && systemctl start restraintd
 
 		END
 
