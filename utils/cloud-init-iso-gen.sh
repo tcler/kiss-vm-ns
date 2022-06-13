@@ -129,14 +129,14 @@ runcmd:
   - command -v yum && yum install -y curl wget $PKGS
   -   command -v apt && apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y curl wget $PKGS
   -   command -v zypper && zypper in --no-recommends -y curl wget $PKGS
-  -   command -v pacman && pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; pacman -S --needed --noconfirm curl wget $PKGS
+  -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; pacman -S --needed --noconfirm curl wget $PKGS; }
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
   - command -v yum && curl -L -k -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
     chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo "'$b' "; done) -noreboot
 IntranetCMD
 [[ $Intranet = yes && "$RESTRAINT" = yes ]] && cat <<Restraint
-  - yum install -y restraint && systemctl start restraintd
+  - command -v yum && yum install -y restraint && systemctl start restraintd
 Restraint
 )
 $(
