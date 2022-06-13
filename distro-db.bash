@@ -42,8 +42,9 @@ distroInfo[archlinux]="https://linuximages.de/openstack/arch/arch-openstack-LATE
 
 #### only available in intranet
 if [[ -n "$IntranetBaseUrl" && "$GuestARCH" = x86_64 ]]; then
+	distroInfo[FreeBSD-13.1]="$IntranetBaseUrl/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	distroInfo[FreeBSD-13.0]="$IntranetBaseUrl/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
-	distroInfo[FreeBSD-12.2]="$IntranetBaseUrl/vm-images/FreeBSD-12.2/FreeBSD-12.2-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
+	distroInfo[FreeBSD-12.3]="$IntranetBaseUrl/vm-images/FreeBSD-12.2/FreeBSD-12.2-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	for _d in RHEL-7.{1..2} RHEL-6.{0..10} RHEL5-Server-U{10..11}; do
 		distroInfo[$_d]="$IntranetBaseUrl/vm-images/$_d/"
 	done
