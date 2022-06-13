@@ -1649,8 +1649,11 @@ if [[ $Intranet = yes ]]; then
 
 		for repo in "${Repos[@]}"; do
 			read _name _url <<<"${repo/:/ }"
-			is_available_url $_url &&
+			if is_available_url $_url; then
 				echo "$repo"
+			else
+				echo -e "\033[31m[VM:WARN] this url not available: $_url"\033[0m >&2
+			fi
 		done
 	}
 fi
@@ -2442,7 +2445,7 @@ declare -A distroInfo
 dbfile=${_confdir}/distro-db.bash
 owndbfile=$perConfDir/distro-db.bash
 if is_intranet; then
-	timeout 2 hostname -A|grep -q '\.pek2\.' && downhostname=${downhostname/devel/eng.pek2}
+	#timeout 2 hostname -A|grep -q '\.pek2\.' && downhostname=${downhostname/devel/eng.pek2}
 	IntranetBaseUrl=http://$downhostname/qa/rhts/lookaside
 else
 	Intranet=no
