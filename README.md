@@ -100,6 +100,8 @@ vm create --arch ppc64   debian-12
 
 vm create --arch aarch64 debian-11
 vm create --arch ppc64   debian-11
+
+vm create --arch aarch64 FreeBSD-13.1
 ```
 
 Q: What other functions or usages does kiss-vm support?  
