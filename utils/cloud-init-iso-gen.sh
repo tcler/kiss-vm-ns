@@ -132,6 +132,7 @@ runcmd:
   -   command -v pacman && pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; pacman -S --needed --noconfirm curl wget $PKGS
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
+  - yum install -y restraint && systemctl start restraintd
   - command -v yum && curl -L -k -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
     chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo "'$b' "; done) -noreboot
 IntranetCMD

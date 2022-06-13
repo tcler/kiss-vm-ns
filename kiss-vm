@@ -2944,6 +2944,7 @@ if [[ "$InstallType" = location ]]; then
 
 		cat <<-END >>$postscript
 		test -f /etc/yum.repo.d/cdn_os.repo && sed -i 's/enabled = 1/enabled = 0/' /etc/yum.repo.d/cdn_os.repo
+		test -f /etc/dnf/dnf.conf && { test -f /usr/bin/yum || ln -s /usr/bin/{dnf,yum}; }
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] configure hostname ..."
 		test -f /etc/hostname && echo ${vmhostname} >/etc/hostname || echo HOSTNAME=${vmhostname} >>/etc/sysconfig/network
@@ -2953,6 +2954,8 @@ if [[ "$InstallType" = location ]]; then
 
 		END
 		[[ $Intranet = yes ]] && cat <<-END >>$postscript
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] systemctl start restraintd ..."
+		yum install -y restraint && systemctl start restraintd
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install $BPKGS ..."
 		wget -O /usr/bin/brewinstall.sh -N -q $bkrClientImprovedUrl/utils/brewinstall.sh --no-check-certificate
 		chmod +x /usr/bin/brewinstall.sh
