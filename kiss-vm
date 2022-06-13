@@ -1515,6 +1515,11 @@ if [[ $Intranet = yes ]]; then
 
 		shopt -s nocasematch
 		case ${distro,,} in
+		fedora*)
+			Repos+=(
+				beaker-harness:https://download.devel.redhat.com/beakerrepos/harness/Fedora\$releasever/
+			)
+			;;
 		rhel-5*|rhel5*)
 			{ read; read os arch verytag verxosv _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug}
@@ -3395,6 +3400,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 					expect "Password:" {
 						send "'"$defaultPasswd"'\r"
 						send "\r\r\r\r\r\r"
+						expect "* ~\]#" {}
 						if {$env(SHUTDOWN) == "yes"} {
 							send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
 							send "\r\n"
@@ -3428,6 +3434,9 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 			done
 
 			echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
+			[[ "$RESTRAINT" = yes ]] && {
+				vm exec -v $vmname -- bash -c "rpm -q restraint || { yum install -y restraint && systemctl start restraintd; }; systemctl status restraintd"
+			}
 
 			[[ -f "$cloudinitiso" && "$iso_bus_type" != *=usb ]] && {
 				echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
