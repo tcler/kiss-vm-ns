@@ -1646,13 +1646,17 @@ if [[ $Intranet = yes ]]; then
 			;;
 		esac
 		shopt -u nocasematch
+		[[ "$RESTRAINT" = yes ]] && {
+			_latest=$(curl -sk https://beaker.engineering.redhat.com/repos/ | tac | sed -rn '/.*>([0-9]+\/)<.*/{s//\1/;p;q}')
+			Repos+=(beaker-task:https://beaker.engineering.redhat.com/repos/$_latest)
+		}
 
 		for repo in "${Repos[@]}"; do
 			read _name _url <<<"${repo/:/ }"
 			if is_available_url $_url; then
 				echo "$repo"
 			else
-				echo -e "\033[31m[VM:WARN] this url not available: $_url"\033[0m >&2
+				echo -e "\033[31m[VM:WARN] this url not available: $_url\033[0m" >&2
 			fi
 		done
 	}
