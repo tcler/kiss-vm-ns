@@ -1640,8 +1640,8 @@ if [[ $Intranet = yes ]]; then
 				RT-debuginfo:${debug_url/BaseOS/RT}
 				SAP-debuginfo:${debug_url/BaseOS/SAP}
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
-				Buildroot:http://$downhostname/rhel-9/$dtype/BUILDROOT-9/latest-BUILDROOT-$ver/compose/Buildroot/$arch/os
-				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux8
+				Buildroot:http://$downhostname/rhel-9/$dtype/BUILDROOT-9/latest-BUILDROOT-9-RHEL-9/compose/Buildroot/$arch/os
+				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux9
 			)
 			;;
 		esac
