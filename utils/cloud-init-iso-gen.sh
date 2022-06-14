@@ -136,7 +136,7 @@ $(
     chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo "'$b' "; done) -noreboot
 IntranetCMD
 [[ $Intranet = yes && "$RESTRAINT" = yes ]] && cat <<Restraint
-  - command -v yum && yum install -y restraint && systemctl start restraintd
+  - command -v yum && yum install -y restraint-rhts rhts-test-env beakerlib && systemctl start restraintd
 Restraint
 )
 $(
