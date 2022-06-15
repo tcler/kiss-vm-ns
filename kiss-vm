@@ -2977,7 +2977,7 @@ if [[ "$InstallType" = location ]]; then
 		END
 		[[ $Intranet = yes && "$RESTRAINT" = yes ]] && cat <<-END >>$postscript
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] systemctl start restraintd ..."
-		yum install -y restraint-rhts rhts-test-env beakerlib && systemctl start restraintd
+		yum install -y restraint-rhts  beakerlib && systemctl start restraintd
 
 		END
 
@@ -3442,7 +3442,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 
 			echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
 			[[ "$RESTRAINT" = yes ]] && {
-				_pkglist="restraint-rhts rhts-test-env beakerlib"
+				_pkglist="restraint-rhts  beakerlib"
 				vm exec -v $vmname -- bash -c "rpm -q $_pkglist || { yum install -y $_pkglist && systemctl start restraintd; }; systemctl status restraintd"
 			}
 
