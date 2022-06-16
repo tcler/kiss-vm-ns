@@ -1327,6 +1327,7 @@ prepare_kiss_vm() {
 
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
+	{ QEMU_USER=qemu; id ${QEMU_USER} &>/dev/null || QEMU_USER=libvirt-qemu; }
 
 	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
@@ -3033,8 +3034,7 @@ if [[ "$InstallType" = location ]]; then
 		cat ${KSPath}
 	}
 
-	ls -l ${imagefile} &&
-	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
+	ls -l ${imagefile}
 
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
@@ -3235,8 +3235,7 @@ elif [[ "$InstallType" = import ]]; then
 		}
 	}
 
-	ls -l ${imagefile} &&
-	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
+	ls -l ${imagefile}
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
@@ -3460,8 +3459,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	echo -e "{VM:INFO} creating VM from pxe"
 	run -as=$VMUSER touch $VMpath/.kiss-vm
 
-	ls -l ${imagefile} &&
-	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
+	ls -l ${imagefile}
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
@@ -3564,8 +3562,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	echo -e "{VM:INFO} creating VM install from cdrom($isofilepath)"
 	run -as=$VMUSER touch $VMpath/.kiss-vm
 
-	ls -lhZ ${imagefile} &&
-	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${imagefile%/*}/*
+	ls -lhZ ${imagefile}
 
 	if [[ "$WIN_AUTO" = yes ]]; then
 		run -as=$VMUSER touch $VMpath/ansf-usb.image
