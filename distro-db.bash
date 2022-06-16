@@ -41,20 +41,23 @@ distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/1
 distroInfo[archlinux]="https://linuximages.de/openstack/arch/arch-openstack-LATEST-image-bootstrap.qcow2"
 
 #### only available in intranet
-if [[ -n "$IntranetBaseUrl" && "$GuestARCH" = x86_64 ]]; then
+if [[ -n "$IntranetBaseUrl" ]]; then
 	distroInfo[FreeBSD-13.1]="$IntranetBaseUrl/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	distroInfo[FreeBSD-13.0]="$IntranetBaseUrl/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	distroInfo[FreeBSD-12.3]="$IntranetBaseUrl/vm-images/FreeBSD-12.2/FreeBSD-12.2-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
-	for _d in RHEL-7.{1..2} RHEL-6.{0..10} RHEL5-Server-U{10..11}; do
-		distroInfo[$_d]="$IntranetBaseUrl/vm-images/$_d/"
-	done
-	distroInfo[Windows-server-2022]="cdrom:$IntranetBaseUrl/windows-images/Win2022-Evaluation.iso"
-	distroInfo[Windows-server-2019]="cdrom:$IntranetBaseUrl/windows-images/Win2019-Evaluation.iso"
-	distroInfo[Windows-server-2016]="cdrom:$IntranetBaseUrl/windows-images/Win2016-Evaluation.iso"
-	distroInfo[Windows-server-2012r2]="cdrom:$IntranetBaseUrl/windows-images/Win2012r2-Evaluation.iso"
-	distroInfo[Windows-11]="cdrom:$IntranetBaseUrl/windows-images/Win11-Evaluation.iso"
-	distroInfo[Windows-10]="cdrom:$IntranetBaseUrl/windows-images/Win10-Evaluation.iso"
-	distroInfo[Windows-7]="cdrom:$IntranetBaseUrl/windows-images/Win7-cn.iso"
-	distroInfo[Windows-7cn]="cdrom:$IntranetBaseUrl/windows-images/Win7-cn.iso"
-	distroInfo[Windows-7en]="cdrom:$IntranetBaseUrl/windows-images/Win7-en.iso"
+
+	if [[ "$GuestARCH" = x86_64 ]]; then
+		for _d in RHEL-7.{1..2} RHEL-6.{0..10} RHEL5-Server-U{10..11}; do
+			distroInfo[$_d]="$IntranetBaseUrl/vm-images/$_d/"
+		done
+		distroInfo[Windows-server-2022]="cdrom:$IntranetBaseUrl/windows-images/Win2022-Evaluation.iso"
+		distroInfo[Windows-server-2019]="cdrom:$IntranetBaseUrl/windows-images/Win2019-Evaluation.iso"
+		distroInfo[Windows-server-2016]="cdrom:$IntranetBaseUrl/windows-images/Win2016-Evaluation.iso"
+		distroInfo[Windows-server-2012r2]="cdrom:$IntranetBaseUrl/windows-images/Win2012r2-Evaluation.iso"
+		distroInfo[Windows-11]="cdrom:$IntranetBaseUrl/windows-images/Win11-Evaluation.iso"
+		distroInfo[Windows-10]="cdrom:$IntranetBaseUrl/windows-images/Win10-Evaluation.iso"
+		distroInfo[Windows-7]="cdrom:$IntranetBaseUrl/windows-images/Win7-cn.iso"
+		distroInfo[Windows-7cn]="cdrom:$IntranetBaseUrl/windows-images/Win7-cn.iso"
+		distroInfo[Windows-7en]="cdrom:$IntranetBaseUrl/windows-images/Win7-en.iso"
+	fi
 fi
