@@ -725,12 +725,13 @@ vmcopyto() {
 		echo "Usage: vm cpto vmname <src files/dirs ...> <dst dir in vm>"
 		return 1
 	}
-	local _vmname=$1
+	local _vmname=$1 _addr=
 	shift 1
 	local dstdir=${@: -1}
 	local srcarray=("${@:1: $#-1}")
 
-	port_available $_vmname 22 || {
+	read _addr < <(vmifaddr "$_vmname")
+	port_available $_addr 22 || {
 		echo -e "{VM:ERR} port $_vmname:22 is not available"
 		return 1
 	}
@@ -741,18 +742,18 @@ vmcopyto() {
 	vmhomedir $_vmname | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
-	sshOpts=$(sshtest $U@$_vmname "$sshOpts")
+	sshOpts=$(sshtest $U@$_addr "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 	if [[ $sshstat = yes ]]; then
-		scp $sshOpts -r "${srcarray[@]}" $U@${_vmname}:$dstdir/.
+		scp $sshOpts -r "${srcarray[@]}" $U@${_addr}:$dstdir/.
 		rc=$?
 		[[ $rc = 0 ]] && {
-			ssh $sshOpts $U@${_vmname} ls -l $dstdir
+			ssh $sshOpts $U@${_addr} ls -l $dstdir
 		}
 	elif [[ $sshstat = passwd ]]; then
 		expect <(cat <<-EOF
 		set timeout 120
-		spawn scp $sshOpts -r "${srcarray[@]}" $U@${_vmname}:$dstdir/.
+		spawn scp $sshOpts -r "${srcarray[@]}" $U@${_addr}:$dstdir/.
 		expect {
 			"password:" { send "$defaultPasswd\r"; exp_continue }
 			"Password for" { send "$defaultPasswd\r"; exp_continue }
@@ -792,15 +793,16 @@ vmcopyfrom() {
 	vmhomedir $_vmname | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
-	sshOpts=$(sshtest $U@$_vmname "$sshOpts")
+	read _addr < <(vmifaddr "$_vmname")
+	sshOpts=$(sshtest $U@$_addr "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 	if [[ $sshstat = yes ]]; then
-		scp $sshOpts -r $U@${_vmname}:$src $dstf
+		scp $sshOpts -r $U@${_addr}:$src $dstf
 		rc=$?
 	elif [[ $sshstat = passwd ]]; then
 		expect <(cat <<-EOF
 		set timeout 120
-		spawn scp $sshOpts -r $U@${_vmname}:$src $dstf
+		spawn scp $sshOpts -r $U@${_addr}:$src $dstf
 		expect {
 			"password:" { send "$defaultPasswd\r"; exp_continue }
 			"Password for" { send "$defaultPasswd\r"; exp_continue }
