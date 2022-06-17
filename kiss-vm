@@ -553,7 +553,8 @@ vmreboot() {
 	virsh start "$_vmname"
 	[[ "$WAIT" = yes ]] && {
 		echo -e "{VM:INFO} waiting restart finish ..."
-		until port_available ${_vmname} 22; do sleep 1; done
+		read _addr < <(vmifaddr "$_vmname")
+		until port_available ${_addr} 22; do sleep 1; done
 	}
 }
 
@@ -782,7 +783,8 @@ vmcopyfrom() {
 	local dstf=${2}
 	[[ -d "$dstf" ]] && dstf=$(readlink -f $dstf)/.
 
-	port_available $_vmname 22 || {
+	read _addr < <(vmifaddr "$_vmname")
+	port_available $_addr 22 || {
 		echo -e "{VM:ERR} port $_vmname:22 is not available"
 		return 1
 	}
@@ -793,7 +795,6 @@ vmcopyfrom() {
 	vmhomedir $_vmname | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
-	read _addr < <(vmifaddr "$_vmname")
 	sshOpts=$(sshtest $U@$_addr "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 	if [[ $sshstat = yes ]]; then
@@ -3368,7 +3369,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 				fi
 			fi
 
-			read _vmaddr < <(vmifaddr $vmname)
+			read _vmaddr < <(vmifaddr "$vmname")
 			if port_available "$_vmaddr" 22; then
 				expect -c "
 					spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$_vmaddr
@@ -4006,7 +4007,8 @@ COMM
 }
 [[ "$REBOOT" = yes ]] && {
 	vm exec -v $vmname -- "reboot; exit"
-	until port_available ${vmname} 22; do sleep 1; done
+	read _vmaddr < <(vmifaddr "$vmname")
+	until port_available ${_vmaddr} 22; do sleep 1; done
 }
 
 echo -e "\n{VM:INFO} you can try login $vmname again by using:"
