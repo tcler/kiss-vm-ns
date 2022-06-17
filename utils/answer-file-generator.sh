@@ -358,6 +358,7 @@ ANSF_IMG_PATH=${ANSF_IMG_PATH:-ansf-usb.image}
 # ====================================================================
 # Generate answerfiles media(USB)
 # ====================================================================
+unix2dosf() { sed -ri 's/([^\r])$/\1\r/' -- "$@"; }
 process_ansf() {
 	local destdir=$1; shift
 	for f; do fname=${f##*/}; cp ${f} $destdir/${fname%.in}; done
@@ -397,7 +398,7 @@ process_ansf() {
 		echo -e "{INFO} enable UEFI ..."
 		sed -i -e '/remove me to enable UEFI/d' -e '/PartitionID/s/1/3/' $destdir/*.xml
 	}
-	unix2dos $destdir/* >/dev/null
+	unix2dosf $destdir/* >/dev/null
 
 	if [[ -n "$OpenSSHUrl" ]]; then
 		[[ -f "$OpenSSHUrl" ]] && OpenSSHUrl=file://$(readlink -f "$OpenSSHUrl")
@@ -430,7 +431,7 @@ process_ansf() {
 		for _cmd in "${RUN_POST_CMDS[@]}"; do
 			echo "$_cmd" >>$runpostf
 		done
-		unix2dos $runf $runpostf >/dev/null
+		unix2dosf $runf $runpostf >/dev/null
 	fi
 }
 

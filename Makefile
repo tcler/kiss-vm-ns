@@ -22,9 +22,9 @@ i in ins inst install:
 	$(SUDO) mkdir -p $(_confdir)
 	@$(SUDO) ln -s $(_confdir) $(_oldconfdir)
 	$(SUDO) cp -af distro-db.bash $(_confdir)/.
-	@command -v yum >/dev/null && $(SUDO) yum install -y bash-completion bind-utils dos2unix 2>/dev/null || :
-	@command -v apt >/dev/null && $(SUDO) apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion bind-utils dos2unix 2>/dev/null || :
-	@command -v zypper >/dev/null && $(SUDO) zypper in --no-recommends -y bash-completion bind-utils dos2unix 2>/dev/null || :
+	@command -v yum >/dev/null && $(SUDO) yum install -y bash-completion bind-utils 2>/dev/null || :
+	@command -v apt >/dev/null && $(SUDO) apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion bind-utils 2>/dev/null || :
+	@command -v zypper >/dev/null && $(SUDO) zypper in --no-recommends -y bash-completion bind-utils 2>/dev/null || :
 	$(SUDO) cp -r AnswerFileTemplates /usr/share/.
 	$(SUDO) cp bash-completion/* $(completion_path)/.
 	@$(SUDO) wget -qO- http://api.github.com/repos/tcler/$(_repon)/commits/master -O $(_confdir)/version

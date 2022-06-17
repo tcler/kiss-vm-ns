@@ -4,6 +4,8 @@ vmname=$1
 [[ -z "$vmname" ]] && exit 1
 
 WIN_ENV_FILE=/tmp/$vmname.env
+dos2unixf() { sed -i 's/\r$//' -- "$@"; }
+
 echo "[INFO] generating windows env file: $WIN_ENV_FILE"
 
 # Get install and ipconfig log
@@ -16,7 +18,7 @@ else
 	vm exec $vmname ipconfig </dev/null >$WIN_DATA/ipconfig.log
 	vm exec $vmname cat C:/win.env </dev/null >$WIN_DATA/win.env
 fi
-dos2unix $WIN_DATA/*
+dos2unixf $WIN_DATA/*
 
 # Save relative variables into a log file
 VM_INT_IP=$(awk '/^ *IPv4 Address/ {if ($NF ~ /^192/) print $NF}' $WIN_DATA/ipconfig.log)
@@ -24,7 +26,7 @@ VM_EXT_IP=$(awk '/^ *IPv4 Address/ {if ($NF !~ /^(192|169.254)/) print $NF}' $WI
 VM_EXT_IP6=$(awk '/^ *IPv6 Address/ {printf("%s,", $NF)}'  $WIN_DATA/ipconfig.log)
 [[ -z "$VM_EXT_IP" ]] && VM_EXT_IP=${VM_EXT_IP6%%,*}
 
-cat $WIN_DATA/win.env - <<-EOF | tee $WIN_ENV_FILE
+cat $WIN_DATA/win.env - <<-EOF | grep -v '^#' | tee $WIN_ENV_FILE
 
 	VM_INT_IP=$VM_INT_IP
 	VM_EXT_IP=$VM_EXT_IP
