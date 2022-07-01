@@ -1,12 +1,22 @@
 #!/bin/bash
 
 vmname=$1
-[[ -z "$vmname" ]] && exit 1
+if [[ -z "$vmname" ]]; then
+	echo "[win-envf:WARN] Usage: $0 <vmname>";
+	exit 1;
+else
+	vm stat -- "$vmname"
+	if [[ "$?" != 0 ]]; then
+		echo "[win-envf:ERROR] seems vm '$vmname' not ready";
+		exit 1;
+	fi
+	vm exec $vmname -- echo "hello kiss-vm"
+fi
 
 WIN_ENV_FILE=/tmp/$vmname.env
 dos2unixf() { sed -i 's/\r$//' -- "$@"; }
 
-echo "[INFO] generating windows env file: $WIN_ENV_FILE"
+echo "[win-envf:INFO] generating windows env file: $WIN_ENV_FILE"
 
 # Get install and ipconfig log
 WIN_DATA=/tmp/$vmname-data
