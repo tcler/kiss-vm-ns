@@ -5,8 +5,10 @@ if [[ -z "$vmname" ]]; then
 	echo "[win-envf:WARN] Usage: $0 <vmname>";
 	exit 1;
 else
-	vm stat -- "$vmname"
-	if [[ "$?" != 0 ]]; then
+	vmstat=$(vm stat -- "$vmname")
+	statrc=$?
+	echo "[win-envf:INFO] vm($vmname) stat $vmstat"
+	if [[ "$statrc" != 0 ]]; then
 		echo "[win-envf:ERROR] seems vm '$vmname' not ready";
 		exit 1;
 	fi
