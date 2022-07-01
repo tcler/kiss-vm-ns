@@ -191,7 +191,7 @@ vmname_gen() {
 	if [[ -n "$cname" ]]; then
 		name=${cname}
 	else
-		[[ -n "$GuestARCH" && "$GuestARCH" != "$HostARCH" ]] && archsuffix=_$GuestARCH
+		[[ -n "$GuestARCH" ]] && archsuffix=_$GuestARCH
 		name=${VMUSER}-${name}$archsuffix
 	fi
 	echo -n $name
@@ -2146,7 +2146,7 @@ while true; do
 	--dsize)         dsizeflag=1; DSIZE="${2%[Gg]}"; shift 2;;
 	--msize)         MSIZE="$2"; shift 2;;
 	--cpus|--vcpus)  VCPUS="$2"; shift 2;;
-	--arch)	         GuestARCH="$2"; shift 2;;
+	--arch)	         GuestARCH="$2"; ARCH_OPT=--arch=$GuestARCH; shift 2;;
 	--qemucpu)       QEMU_CPU=$2; QEMU_OPTS+=("--qemu-commandline=-cpu $2"); shift 2;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
 	--graphics)      GRAPHICS_OPT="--graphics=$2"; shift 2;;
@@ -3050,7 +3050,7 @@ if [[ "$InstallType" = location ]]; then
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
-	  --arch ${GuestARCH} \
+	  ${ARCH_OPT} \
 	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  $NETWORK_OPTS \
@@ -3249,7 +3249,7 @@ elif [[ "$InstallType" = import ]]; then
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
-	  --arch ${GuestARCH} \
+	  ${ARCH_OPT} \
 	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  $CLOUD_INIT_OPT \
@@ -3473,7 +3473,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
-	  --arch ${GuestARCH} \
+	  ${ARCH_OPT} \
 	  $MEM_OPTS \
 	  ${NETWORK_OPTS} \
 	  "${HOST_DEV_OPTS[@]}" \
@@ -3652,7 +3652,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
-	  --arch ${GuestARCH} \
+	  ${ARCH_OPT} \
 	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  $NETWORK_OPTS \
