@@ -94,7 +94,7 @@ WIN_DFS_SHARE=dfsroot
 WIN_DFS_SHARE1=dfsroot/local
 WIN_DFS_SHARE2=dfsroot/remote
 WIN_NFS_SHARE1=/nfstest
-WIN_NFS_SHARE2=/nfssch" | Set-Content -Encoding utf8 $envf
+WIN_NFS_SHARE2=/nfssch" | out-file -Encoding ascii $envf
 }
 
 $mypath = $MyInvocation.Mycommand.Path
