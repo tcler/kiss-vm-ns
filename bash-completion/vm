@@ -29,7 +29,7 @@ option_arg_complete() {
         [[ -n "$hasarg" ]] && return 0
         COMPREPLY=( $( compgen -W "ide sata scsi virtio" -- "$cur" ) )
         ;;
-    --if-model)
+    --if-model|--win-if-model)
         [[ -n "$hasarg" ]] && return 0
         COMPREPLY=( $( compgen -W "e1000 rtl8139 virtio" -- "$cur" ) )
         ;;
