@@ -7,6 +7,8 @@ param (
 	[switch]$kdc = $false
 )
 
+$utf8NoBOM = New-Object System.Text.UTF8Encoding $false
+
 Function Out-Host {
 	$str = $args[0]
 	Write-Host "$str"
@@ -77,7 +79,7 @@ Function GetIPAddrFromNic() {
 
 Function Generate-Env-File() {
 	param([string]$envf = "C:\win.env")
-	echo "#windows env file
+	$content = "#windows env file
 #VM_INT_IP=
 #VM_EXT_IP=
 #VM_EXT_IP6=
@@ -94,7 +96,8 @@ WIN_DFS_SHARE=dfsroot
 WIN_DFS_SHARE1=dfsroot/local
 WIN_DFS_SHARE2=dfsroot/remote
 WIN_NFS_SHARE1=/nfstest
-WIN_NFS_SHARE2=/nfssch" | out-file -Encoding ascii $envf
+WIN_NFS_SHARE2=/nfssch"
+	Set-Content -Value $utf8NoBOM.GetBytes($content) -Encoding Byte -Path $envf
 }
 
 $mypath = $MyInvocation.Mycommand.Path
@@ -425,8 +428,8 @@ if (Test-Path -Path $AutoRunFilePath) {
 
 # complete
 Out-Host "`n==> save ipconfig info and generate install complete file !!!"
-ipconfig | out-file -encoding utf8 $LogPath\@IPCONFIG_LOGF@
-echo "install complete" | out-file -encoding utf8 $LogPath\@INSTALL_COMPLETE_FILE@
+ipconfig | Set-Content -encoding utf8 $LogPath\@IPCONFIG_LOGF@
+echo "install complete" | Set-Content -encoding utf8 $LogPath\@INSTALL_COMPLETE_FILE@
 foreach ($dir in ("$ansfDriveLetter")) {
 	if (Test-Path -Path $dir) {
 		Copy-Item -Path @POST_INSTALL_LOG@ -Destination $LogPath
