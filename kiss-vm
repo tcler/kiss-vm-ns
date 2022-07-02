@@ -830,6 +830,24 @@ vmcopyfrom() {
 	return $rc
 }
 
+vmport_available() {
+	local _vmname=$1
+	local _port=${2:-22}
+	local wait_opt=
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-console $resf && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+	local _addr=$(vm ifaddr "$_vmname"|head -1)
+	if [[ "$WAIT" = yes ]]; then
+		port-available.sh "$_addr" $_port -w
+	else
+		port-available.sh "$_addr" $_port
+	fi
+	return $?
+}
+
 vmconsole() {
 	local _vmname=$1
 	shift
@@ -2414,6 +2432,7 @@ run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 	create|creat) shift;;
 	r|rm|d|de|del*) shift; [[ "$1" = -d ]] && shift; vmdelete "$@"; exit $?;;
 	co|con|cons*) shift; [[ "$1" = -d ]] && shift; vmconsole "$@"; exit $?;;
+	port|port*) shift; [[ "$1" = -d ]] && shift; vmport_available "$@"; exit $?;;
 	l|lo|log*) shift; [[ "$1" = -d ]] && shift; vmlogin "$@"; exit $?;;
 	cpfrom|cpf*) shift; [[ "$1" = -d ]] && shift; vmcopyfrom "$@"; exit $?;;
 	cpto|cpt*) shift; [[ "$1" = -d ]] && shift; vmcopyto "$@"; exit $?;;
@@ -3754,7 +3773,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 				esac
 				;;
 			esac
-			port-available.sh $vmn 22 &>/dev/null && break
+			vm port-available $vmn 22 &>/dev/null && break
 		done'
 	fi
 
@@ -3800,7 +3819,7 @@ fi
 
 if [[ "$WAIT" = yes ]]; then
 	echo -e "\n{VM:INFO} wait port($WAIT_PORT) of $vmname available ..."
-	port-available.sh $vmname $WAIT_PORT -w
+	vm port-available $vmname $WAIT_PORT -w
 	[[ $? = 0 && "$WIN_AUTO" = yes ]] && {
 		kill_installer_tmux_session ${vmname}
 		win-env-file-gen.sh $vmname
