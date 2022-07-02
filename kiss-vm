@@ -2824,9 +2824,12 @@ fi
 	elif [[ "$WIN_AUTO" = yes ]]; then
 		gen_virt_mac() { echo -n 54:52:00$(od -txC -An -N3 /dev/random | tr \  :); }
 		WIN_MAC_INT=$(gen_virt_mac); WIN_MAC_EXT=$(gen_virt_mac)
-		[[ "$CUSTOM_WIN_IF_MODEL" != yes ]] &&
+		if [[ "$CUSTOM_WIN_IF_MODEL" = yes ]]; then
+			intIfModel=${WIN_IF_MODEL}
+		else
 			case "$WIN_TEMPLATE" in (base) WIN_IF_MODEL=virtio;; esac
-		intIfModel=$WIN_IF_MODEL; [[ "${Distro,,}" =~ (win|windows)-?(10|11) ]] && intIfModel=e1000
+			intIfModel=e1000
+		fi
 		NETWORK_OPTS="--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}"
 	else
 		NETWORK_OPTS="--network=network=default,model=${DEFAULT_IF_MODEL} --network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}"
