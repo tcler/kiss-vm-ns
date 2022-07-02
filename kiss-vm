@@ -841,6 +841,10 @@ vmport_available() {
 	}
 	local _addr=$(vm ifaddr "$_vmname"|head -1)
 	if [[ "$WAIT" = yes ]]; then
+		while [[ -z "$_addr" ]]; do
+			sleep 8
+			_addr=$(vm ifaddr "$_vmname"|head -1)
+		done
 		port-available.sh "$_addr" $_port -w
 	else
 		port-available.sh "$_addr" $_port
