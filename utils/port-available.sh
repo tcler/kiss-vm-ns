@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [[ $# = 0 ]]; then
+	echo "Usage: $0 <hostname|ipaddr> [port] [--wait|-w[=retry]]" >&2
+	exit 1
+fi
+
 _at=()
 for arg; do
 	case "$arg" in
