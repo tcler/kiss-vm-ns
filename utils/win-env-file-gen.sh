@@ -16,7 +16,9 @@ else
 fi
 
 WIN_ENV_FILE=/tmp/$vmname.env
-dos2unixf() { sed -i 's/\r$//' -- "$@"; }
+dos2unixf() { for f; do vi -c ":set nobomb" -c ":set ff=unix" -c ":wq" -- "$f"; done; }
+dos2unixf() { LANG=C LC_ALL=C sed -i -e '1s/^\xef\xbb\xbf//' -e 's/\r$//' -- "$@"; }
+
 
 echo "[win-envf:INFO] generating windows env file: $WIN_ENV_FILE"
 
