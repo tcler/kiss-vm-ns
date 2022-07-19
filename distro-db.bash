@@ -1,6 +1,7 @@
 declare -A distroInfo
 
 #### CentOS stream and CentOS
+distroInfo[Rocky-9]="https://dl.rockylinux.org/pub/rocky/9/images/$GuestARCH/ https://download.rockylinux.org/pub/rocky/9/BaseOS/$GuestARCH/os/"
 distroInfo[Rocky-8]="https://mirrors.nju.edu.cn/rocky/8/images/ https://mirrors.nju.edu.cn/rocky/8/BaseOS/$GuestARCH/os/"
 distroInfo[CentOS-9-stream]="https://cloud.centos.org/centos/9-stream/$GuestARCH/images/ http://mirror.stream.centos.org/9-stream/BaseOS/$GuestARCH/os/"
 distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/$GuestARCH/images/ http://mirror.centos.org/centos/8-stream/BaseOS/$GuestARCH/os/"
