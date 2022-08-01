@@ -133,7 +133,7 @@ runcmd:
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
   - command -v yum && curl -L -k -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
-    chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo "'$b' "; done) -noreboot
+    chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot
 IntranetCMD
 [[ $Intranet = yes && "$RESTRAINT" = yes ]] && cat <<Restraint
   - command -v yum && yum install -y restraint-rhts  beakerlib && systemctl start restraintd
