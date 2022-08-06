@@ -2417,11 +2417,20 @@ support_nested_kvm() {
 support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 [[ "$ENABLE_L2VM" = yes ]] && {
 	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
-	vendor=${kmodule#kvm_}
+	cpuvendor=${kmodule#kvm_}
 	qemucpu=${QEMU_CPU:-host}
-	case $vendor in
+	if [[ "$qemucpu" != host ]]; then
+		_cpulist=$($QEMU_KVM -cpu help|grep "$qemucpu")
+		if echo "$_cpulist"|grep -qw Intel; then
+			cpuvendor=intel
+		elif echo "$_cpulist"|grep -qw AMD; then
+			cpuvendor=amd
+		fi
+	fi
+	case $cpuvendor in
 	intel) QEMU_OPTS+=("--qemu-commandline=-cpu $qemucpu,+vmx");;
 	amd) QEMU_OPTS+=("--qemu-commandline=-cpu $qemucpu,+svm");;
+	*) QEMU_OPTS+=("--qemu-commandline=-cpu $qemucpu,+fixme");;
 	esac
 }
 
