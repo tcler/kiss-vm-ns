@@ -197,8 +197,18 @@ vmname_gen() {
 	echo -n $name
 }
 
+vmname_extract() {
+	local allopt=
+	[[ "$1" = -all || "$1" = --all ]] && { shift; allopt=--all; }
+	for vm; do
+		for _vm in $(virsh list --name ${allopt}); do
+			[[ "$_vm" = $vm ]] && echo $_vm
+		done
+	done
+}
+
 _vmblklist() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	local _pat=${2:-.}
 	[[ -z "$_vmname" ]] && {
 		echo "Usage: vmblklist <vmname> [pattern]"
@@ -218,7 +228,7 @@ vmrootdir() {
 }
 
 vmhomedir() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	local _vmdir= _image=
 
 	read _type _dev _target _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
@@ -345,6 +355,7 @@ vmdelete() {
 		[[ -z "$rmList" ]] && { return; }
 		eval set $rmList
 	}
+	set -- $(vmname_extract -all "$@")
 	for vm; do _vmdelete $vm; done
 }
 
@@ -354,7 +365,7 @@ vmifaddr() {
 		local GETENT=yes
 	}
 
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-ifaddr $resf && _vmname=$(sed 's/"//g' $resf)
@@ -375,13 +386,15 @@ vmviewer() {
 	local logf=$RuntimeTmp/vmviewer-$$.log
 	local waitopt=
 	[[ "$WAIT" = yes ]] && waitopt=-w
+
+	set -- $(vmname_extract "$@")
 	run -debug -nohup=$logf virt-viewer -s -v $waitopt "$@"
 	sleep 1; cat $logf 2>/dev/null
 }
 
 vncgetsc() {
 	local vncport=$1
-	local _vmname=$2
+	local _vmname=$(vmname_extract -all "$2")
 
 	! command -v vncdo >/dev/null && {
 		echo "{VM:WARN} command vncdo is needed by 'vncgetsc/vncgetscreen' function!" >&2
@@ -481,9 +494,12 @@ vncput() {
 	done
 }
 
-_vmvncport() { local _vmn=$1; virsh dumpxml "$_vmn" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}"; }
+_vmvncport() {
+	local _vmn=$1;
+	virsh dumpxml "$_vmn" | sed -rn "/.* type=.vnc. port=.([0-9]+).*/{s//\1/;p}";
+}
 vmvncproc() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-vncproc $resf all && _vmname=$(sed 's/"//g' $resf)
@@ -516,7 +532,7 @@ vmvncproc() {
 }
 
 vmxml() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-dumpxml $resf all && _vmname=$(sed 's/"//g' $resf)
@@ -527,7 +543,7 @@ vmxml() {
 }
 
 vmedit() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-edit $resf all && _vmname=$(sed 's/"//g' $resf)
@@ -542,7 +558,7 @@ port_available() {
 }
 
 vmreboot() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-reboot $resf all && _vmname=$(sed 's/"//g' $resf)
@@ -559,7 +575,7 @@ vmreboot() {
 }
 
 vmstop() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract "$1")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogchecklist vm-shutdown $resf all && vmList=$(< $resf)
@@ -567,23 +583,25 @@ vmstop() {
 		eval set $vmList
 	}
 
+	set -- $(vmname_extract "$@")
 	for vm; do virsh destroy "$vm"; done
 }
 
 vmstart() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogchecklist vm-start $resf all && vmList=$(< $resf)
 		[[ -z "$vmList" ]] && { return; }
 		eval set $vmList
 	}
-
+ 
+	set -- $(vmname_extract -all "$@")
 	for vm; do virsh start "$vm"; done
 }
 
 vmstat() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogchecklist vm-stat $resf all && vmList=$(< $resf)
@@ -591,6 +609,7 @@ vmstat() {
 		eval set $vmList
 	}
 
+	set -- $(vmname_extract -all "$@")
 	for vm; do
 		virsh domstate "$vm"
 	done
@@ -607,7 +626,7 @@ vmclone() {
 		egrep --color=always "[][~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$nvmname"
 	}
 
-	local srcname=$1
+	local srcname=$(vmname_extract -all "$1"|head -1)
 	local dstname=$2
 	[[ -z "$srcname" ]] && {
 		resf=$RuntimeTmp/vmlist
@@ -726,8 +745,9 @@ vmcopyto() {
 		echo "Usage: vm cpto vmname <src files/dirs ...> <dst dir in vm>"
 		return 1
 	}
-	local _vmname=$1 _addr=
+	local _vmname=$(vmname_extract "$1"|head -1)
 	shift 1
+	local _addr=
 	local dstdir=${@: -1}
 	local srcarray=("${@:1: $#-1}")
 
@@ -777,7 +797,7 @@ vmcopyfrom() {
 		echo "Usage: vm cpfrom vmname <file/dir> <dst dir>"
 		return 1
 	}
-	local _vmname=$1
+	local _vmname=$(vmname_extract "$1"|head -1)
 	shift 1
 	local src=${1%/}
 	local dstf=${2}
@@ -831,7 +851,7 @@ vmcopyfrom() {
 }
 
 vmport_available() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	local _port=${2:-22}
 	local wait_opt=
 	[[ -z "$_vmname" ]] && {
@@ -853,7 +873,7 @@ vmport_available() {
 }
 
 vmconsole() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	shift
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
@@ -865,7 +885,7 @@ vmconsole() {
 }
 
 vmlogin() {
-	local _vmname=$1
+	local _vmname=$(vmname_extract -all "$1")
 	shift
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
@@ -965,7 +985,7 @@ vmlogin() {
 }
 
 vmadd_iso() {
-	local vmname=$1
+	local vmname=$(vmname_extract -all "$1")
 	local isof=$2
 	local homedir=$(vm homedir $vmname |& head -1)
 	if [[ ! -d "$homedir" ]]; then
@@ -992,7 +1012,7 @@ vmadd_iso() {
 }
 
 vmadd_disk() {
-	local vmname=$1
+	local vmname=$(vmname_extract -all "$1")
 	local diskf=$2
 	local homedir=$(vm homedir $vmname |& head -1)
 	if [[ ! -d "$homedir" ]]; then
@@ -1033,7 +1053,7 @@ vmadd_disk() {
 }
 
 vmadd_if() {
-	local vmname=$1
+	local vmname=$(vmname_extract -all "$1")
 	local network=$2
 
 	run -debug virsh attach-interface --type network --domain $vmname --source $network \
@@ -1041,7 +1061,7 @@ vmadd_if() {
 }
 
 vmadd_if_bridge() {
-	local vmname=$1
+	local vmname=$(vmname_extract -all "$1")
 	local brg=$2
 
 	run -debug virsh attach-interface --type bridge --domain $vmname --source $brg \
@@ -1049,7 +1069,7 @@ vmadd_if_bridge() {
 }
 
 vmadd_if_direct() {
-	local vmname=$1
+	local vmname=$(vmname_extract -all "$1")
 	local srcif=${srcif:-$(get_default_if)}
 
 	run -debug virsh attach-interface --type direct --domain $vmname --source $srcif \
@@ -1065,7 +1085,7 @@ nic2pcislot() {
 }
 
 vmadd_if_passthr() {
-	local vmname=$1
+	local vmname=$(vmname_extract -all "$1")
 	local _hostif=$2
 	local pci_addr=$2
 	local eventf=/sys/class/net/$_hostif/device/uevent
