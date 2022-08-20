@@ -3171,7 +3171,7 @@ if [[ "$InstallType" = location ]]; then
 				trap {
 					send_user "You pressed Ctrl+C [incr intc]/8\n"
 					if {$intc >= 8} {
-						interact
+						interact; exit
 					}
 				} SIGINT
 				expect {
@@ -3197,7 +3197,7 @@ if [[ "$InstallType" = location ]]; then
 					"Which would you like to install through" {
 						# see: [RHEL 6.1] Anaconda requires user interaction in case of kickstart network activation failing
 						send "\r"
-						interact
+						interact; exit
 					}
 
 					"reboot: Power down" { exit 0 }
@@ -3224,7 +3224,7 @@ if [[ "$InstallType" = location ]]; then
 				}
 
 				if {$env(INTERACT) == "no"} { exit 0 }
-				interact
+				interact; exit
 			'
 			ReturnCode=$?
 			[[ $ReturnCode = 0 || $ReturnCode = 255 ]] && break
@@ -3374,7 +3374,7 @@ elif [[ "$InstallType" = import ]]; then
 				trap {
 					send_user "You pressed Ctrl+C [incr intc]/8\n"
 					if {$intc >= 8} {
-						interact
+						interact; exit
 					}
 				} SIGINT
 
@@ -3456,7 +3456,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 					trap {
 						send_user "You pressed Ctrl+C [incr intc]/8\n"
 						if {$intc >= 8} {
-							interact
+							interact; exit
 						}
 					} SIGINT
 					expect {
@@ -3478,6 +3478,10 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 						expect {
 							"* ~\]#" {}
 							":~#" {}
+							"Login incorrect" {
+								if {$env(INTERACT) == "no"} { exit 0 }
+								interact; exit 0
+							}
 						}
 						if {$env(SHUTDOWN) == "yes"} {
 							send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; poweroff}
@@ -3503,7 +3507,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 					}
 
 					if {$env(INTERACT) == "no"} { exit 0 }
-					interact
+					interact; exit
 				'
 				ReturnCode=$?
 				[[ $ReturnCode = 0 || $ReturnCode = 255 ]] && break
