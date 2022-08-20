@@ -2187,7 +2187,7 @@ while true; do
 	--nocloud*)      NO_CLOUD_INIT="yes"; shift 1;;
 	--dsize)         dsizeflag=1; DSIZE="${2%[Gg]}"; shift 2;;
 	--msize)         MSIZE="$2"; shift 2;;
-	--cpus|--vcpus)  VCPUS="$2"; shift 2;;
+	--cpus|--vcpus)  SPECIFIED_VCPUS=yes; VCPUS="$2"; shift 2;;
 	--arch)	         GuestARCH="$2"; ARCH_OPT=--arch=$GuestARCH; shift 2;;
 	--qemucpu)       QEMU_CPU=$2; QEMU_OPTS+=("--qemu-commandline=-cpu $2"); shift 2;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
@@ -2424,7 +2424,7 @@ else
 	(riscv*)
 		[[ -z "$MACHINE_OPT" ]] && QEMU_OPTS+=("--qemu-commandline=-machine virt")
 		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT=""
-		VCPUS=8
+		[[ -z "$SPECIFIED_VCPUS" ]] && VCPUS=8
 		;;
 	esac
 fi
