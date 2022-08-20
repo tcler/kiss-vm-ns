@@ -2199,7 +2199,12 @@ while true; do
 	--if-model)      DEFAULT_IF_MODEL="$2"; shift 2;;
 	--net)
 		read netname _arg <<<"${2/,/ }"
-		NETWORK_OPTS+=" --network=network=$netname,$(_netarg $_arg)"; shift 2;;
+		if [[ -n "$netname" && "$netname" != none ]]; then
+			NETWORK_OPTS+=" --network=network=$netname,$(_netarg $_arg)";
+		else
+			NETWORK_OPTS=" "
+		fi
+		shift 2;;
 	--net-br)
 		read brname _arg <<<"${2/,/ }"
 		NETWORK_OPTS+=" --network=bridge=$brname,$(_netarg $_arg)"; shift 2;;
