@@ -2331,8 +2331,6 @@ fi
 	curlOpt=-s
 }
 
-VCPUN=$(vcpuN "$VCPUS")
-
 # __main__
 # check if support Virtualization
 support_virtualization() {
@@ -2419,10 +2417,14 @@ else
 		#set default qemu cpu type cortex-a72 for aarch64, it works on RHEL aarch64 build
 		[[ -z "$QEMU_CPU" ]] && QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
 		;;
-
 	(s390x|ppc*)
 		#qemu-system-s390x doesn't support --video=sql on fedora-35
 		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
+		;;
+	(riscv*)
+		[[ -z "$MACHINE_OPT" ]] && QEMU_OPTS+=("--qemu-commandline=-machine virt")
+		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT=""
+		VCPUS=8
 		;;
 	esac
 fi
@@ -2458,6 +2460,8 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 	*) QEMU_OPTS+=("--qemu-commandline=-cpu $qemucpu,+fixme");;
 	esac
 }
+
+VCPUN=$(vcpuN "$VCPUS")
 
 run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 
