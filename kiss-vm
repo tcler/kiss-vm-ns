@@ -3300,7 +3300,8 @@ elif [[ "$InstallType" = import ]]; then
 		_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
 		[[ "$_size" -lt $((DSIZE*1024*1024*1024)) ]] && {
 			echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
-			qemu-img resize ${imagefile} ${DSIZE}G
+			[[ "${imagefile}" = *.raw ]] && fmtOpt="-f raw"
+			qemu-img resize $fmtOpt ${imagefile} ${DSIZE}G
 		}
 	}
 
@@ -3411,7 +3412,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 				Console=no
 				echo -e "{VM:INFO} waiting vnc login: prompt ..."
 				Scrn=$(vm vnc "$vmname" -get)
-				if [[ -n "$Scrn" && "$Scrn" != "Guest has not initialized the display*" ]]; then
+				if [[ -n "$Scrn" && "$Scrn" != "Guest has not initialized the display"* ]]; then
 					vm vnc "$vmname" -get
 					while ! grep "^login:" < <(vm vnc "$vmname" -get); do sleep 10; done
 					vm vnc "$vmname" -putln root
