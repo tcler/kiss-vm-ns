@@ -3432,7 +3432,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 				else
 					vm vnc "$vmname" -get
 					echo "{VM:ERR} Both Guest's console and vnc are not available."
-					#exit 1
+					exit 1
 				fi
 			fi
 
