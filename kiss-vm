@@ -200,10 +200,14 @@ vmname_gen() {
 vmname_extract() {
 	local allopt=
 	[[ "$1" = -all || "$1" = --all ]] && { shift; allopt=--all; }
+
+	local i=0
 	for vm; do
+		let i=0
 		for _vm in $(virsh list --name ${allopt}); do
-			[[ "$_vm" = $vm ]] && echo $_vm
+			[[ "$_vm" = $vm ]] && { echo $_vm; let i++; }
 		done
+		[[ $i -eq 0 ]] && echo "$vm"
 	done
 }
 
