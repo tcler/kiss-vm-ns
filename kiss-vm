@@ -1527,7 +1527,7 @@ if [[ $Intranet = yes ]]; then
 		[[ $arch = aarch64 || $arch = arm64 ]] && arch="(aarch64|arm64)"
 		[[ $arch = x86_64 || $arch = amd64 ]] && arch="(x86_64|amd64)"
 		imgs=$(egrep "$arch" <<< "$imagenames")
-		[[ -n "$imgs" ]] && imagenames="$imgs"
+		if [[ -n "$imgs" ]]; then imagenames="$imgs"; else return 1; fi
 
 		for imagename in $imagenames; do
 			case $imagename in
@@ -2763,7 +2763,7 @@ if [[ "$InstallType" = import ]]; then
 				imageLocation=${imageLocation/Cloud/CloudImages}
 			read Imageurl _ < <(getimageurls $imageLocation "${_Imagepattern}"|sort -Vr)
 			if [[ $? != 0 ]]; then
-				echo "{VM:INFO} can not find imageUrl of '$Distro' in database, switching to Location mode" >&2
+				echo "{VM:INFO} can not find imageUrl of '${Distro}:${GuestARCH}' in database, switching to Location mode" >&2
 				InstallType=location
 				Imageurl=
 			fi
@@ -2774,6 +2774,7 @@ if [[ "$InstallType" = import ]]; then
 	if [[ "$InstallType" = import ]]; then
 		if [[ ! -f "$Imageurl" ]]; then
 			if ! egrep -q '\.(qcow2c|qcow2|qcow2.xz|raw|raw.xz|img)$' <<<"$Imageurl"; then
+				ImageurlOrig=$Imageurl
 				read Imageurl _ < <(getimageurls ${Imageurl} "${_Imagepattern}"|sort -Vr)
 			fi
 		fi
@@ -2785,7 +2786,7 @@ if [[ "$InstallType" = import ]]; then
 				echo -e "image url: \e[4m$Imageurl\e[0m"
 			fi
 		else
-			echo "{VM:WARN} not found image from ${Imageurl} by pattern(${_Imagepattern})" >&2
+			echo "{VM:WARN} not found '$GuestARCH' image from '${ImageurlOrig}' by pattern(${_Imagepattern})" >&2
 			exit 1
 		fi
 	fi
