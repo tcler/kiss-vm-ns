@@ -33,7 +33,7 @@ for arg; do
 done
 set -- "${argv[@]}"
 
-distro=${1:-RHEL-8.5.0}
+distro=${1:-RHEL-8.6.0}
 echo -e "\n================ [DEBUG] ===============\n= distro/family: $distro"
 
 #---------------------------------------------------------------
