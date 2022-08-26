@@ -113,7 +113,7 @@ else
 	echo
 
 	eval $(echo "$fcontent"|awk -F: '/Objects/ {print $2}')
-	echo -e "objects-allocated: $acl    \t#Number of objects allocated"
+	echo -e "objects-allocated: $alc    \t#Number of objects allocated"
 	echo -e "objects-allocte-fail: $nal    \t#Number of object allocation failures"
 	echo -e "objects-available: $avl    \t#Number of objects that reached the available state"
 	echo -e "objects-dead: $ded    \t#Number of objects that reached the dead state"
