@@ -6,12 +6,18 @@ enable_nested_kvm() {
 
 	{
 	echo "options kvm-$vendor nested=1"
-
-	[[ "$vendor" = intel ]] && cat <<-EOF
-	options kvm-$vendor enable_shadow_vmcs=1
-	options kvm-$vendor enable_apicv=1
-	options kvm-$vendor ept=1
-	EOF
+	case "$vendor" in
+	intel)
+		cat <<-EOF
+		options kvm-$vendor enable_shadow_vmcs=1
+		options kvm-$vendor enable_apicv=1
+		options kvm-$vendor ept=1
+		EOF
+		;;
+	amd|*)
+		: #do nothing
+		;;
+	esac
 	} | sudo tee /etc/modprobe.d/kvm-nested.conf >/dev/null
 
 	if [[ $(< /sys/module/$kmodule/parameters/nested) != [Yy1] ]]; then
