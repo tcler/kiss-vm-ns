@@ -31,6 +31,12 @@ get_default_if() {
 	echo $iface
 }
 
+run() {
+	[[ $# -eq 0 ]] && return 0
+	[[ "$DEBUG" = yes ]] && echo "[sys]" "$@"
+	"$@"
+}
+
 addipvlan() {
 	local fname=${FUNCNAME[0]}
 	Usage() { echo -e "Usage:\n  $fname [-updev=updev] [-mode={l2|l3}] iv1 [iv2 ...]"; }

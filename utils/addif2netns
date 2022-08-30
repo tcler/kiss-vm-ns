@@ -1,5 +1,11 @@
 #!/bin/bash
 
+run() {
+	[[ $# -eq 0 ]] && return 0
+	[[ "$DEBUG" = yes ]] && echo "[sys]" "$@"
+	"$@"
+}
+
 addif2netns() {
 	local ns=$1
 	local if=$2

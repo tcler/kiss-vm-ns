@@ -1,5 +1,11 @@
 #!ddif2bridge/bin/bash
 
+run() {
+	[[ $# -eq 0 ]] && return 0
+	[[ "$DEBUG" = yes ]] && echo "[sys]" "$@"
+	"$@"
+}
+
 addif2br-vrf-and-so-on() {
 	local netdevname=$1
 	local if=$2
