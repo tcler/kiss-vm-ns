@@ -14,4 +14,10 @@ adddummy() {
 		ip link add name $ifname type dummy && ip link set $ifname up
 	done
 }
+
+#return if I'm being sourced
+(return 0 2>/dev/null) && sourced=yes || sourced=no
+if [[ $sourced = yes ]]; then return 0; fi
+
+#__main__
 adddummy "$@"
