@@ -2,7 +2,10 @@
 
 procf=/proc/fs/fscache/stats
 if [[ ! -f $procf ]]; then
-	echo "[Error] proc file '$procf' doesn't exit!"
+	cat <<-EOF >&2
+	[Warn] proc file '$procf' doesn't exit. you might need to start cachefilesd service by running:
+	    sudo systemctl start cachefilesd"
+	EOF
 	exit 1
 fi
 
@@ -150,7 +153,7 @@ else
 
 	eval $(echo "$fcontent"|awk -F: '/Invals/ {print $2}') 2>/dev/null && {
 	echo -e "invalidations: $n    \t#Number of invalidations"
-	echo -e "invalidations-run: $run    \t#Number of invalidations: run"
+	echo -e "invalidations-run: $run    \t#Number of invalidations granted CPU time?"
 	echo; }
 
 	eval $(echo "$fcontent"|awk -F: '/Updates/ {print $2}')
