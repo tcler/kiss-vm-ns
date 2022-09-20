@@ -5,7 +5,7 @@ LANG=C
 P=$0; [[ $0 = /* ]] && P=${0##*/}; AT=("$@")
 switchroot() {
 	[[ $(id -u) != 0 ]] && {
-		echo -e "{NETNS:WARN} $P need root permission, switch to:\n  sudo $P ${AT[@]}" | GREP_COLORS='ms=1;30' grep --color=always . >&2
+		echo -e "{WARN} $P need root permission, switch to:\n  sudo $P ${AT[@]}" | GREP_COLORS='ms=1;30' grep --color=always . >&2
 		exec sudo $P "${AT[@]}"
 	}
 }
