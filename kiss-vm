@@ -54,7 +54,7 @@ defaultWindowsPasswd=Sesame~0pen
 orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6)
 { QEMU_USER=qemu; id ${QEMU_USER} &>/dev/null || QEMU_USER=libvirt-qemu; }
 
-getSafeCommandLine() {
+getReusableCommandLine() {
 	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
 
@@ -107,7 +107,7 @@ run() {
 	[[ $# -eq 0 ]] && return 0
 	[[ $# -eq 1 && -z "$_runtype" ]] && _runtype=eval
 	[[ "${_runtype}" = eval && -n "$_SUDO" ]] && _SUDO+=\ -s
-	local _cmdl=$(getSafeCommandLine "$@")
+	local _cmdl=$(getReusableCommandLine "$@")
 
 	if [[ "$_debug" = yes ]]; then
 		if [[ "${_runtype}" = tmux ]]; then
@@ -901,7 +901,7 @@ vmlogin() {
 		return 1
 	}
 
-	local sshCommand=$(getSafeCommandLine "$@")
+	local sshCommand=$(getReusableCommandLine "$@")
 	local U=root
 	vmhomedir $_vmname | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;

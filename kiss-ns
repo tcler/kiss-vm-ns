@@ -222,7 +222,7 @@ ns_pstree() {
 	'
 }
 
-getSafeCommandLine() {
+getReusableCommandLine() {
 	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
 
@@ -247,7 +247,7 @@ getSafeCommandLine() {
 _nsexec() {
 	local initpid=$1
 	shift
-	local _cmdline=$(getSafeCommandLine "$@")
+	local _cmdline=$(getReusableCommandLine "$@")
 
 	nsenter --target "$initpid" --mount --uts --ipc --net --pid -- bash -c "$_cmdline"
 }
@@ -257,7 +257,7 @@ nsexec() {
 	local nsdir=$NSHome/$ns
 	shift
 	local initpid=$(ns_init_pid $ns)
-	[[ "$VERBOSE" = yes ]] && echo "[NS:$ns]> $(getSafeCommandLine "$@")" | GREP_COLORS='ms=01;36' grep --color . >&2
+	[[ "$VERBOSE" = yes ]] && echo "[NS:$ns]> $(getReusableCommandLine "$@")" | GREP_COLORS='ms=01;36' grep --color . >&2
 	_nsexec "$initpid" "$@"
 	rc=$?
 
