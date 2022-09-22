@@ -2433,6 +2433,10 @@ else
 	esac
 fi
 
+case "$GuestARCH" in
+(s390*) _MSIZE=2048;;
+esac
+
 support_nested_kvm() {
 	local rc=1
 	if [[ "$OSTYPE" = linux-gnu* && "$HostARCH" = "$GuestARCH" ]]; then
@@ -3522,7 +3526,6 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 			done
 
 			echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
-
 			[[ "$(vmstat $vmname)" = running* ]] || { vm start $vmname; }
 
 			[[ "$RESTRAINT" = yes ]] && {
@@ -3534,6 +3537,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 				echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
 				virsh change-media $vmname $cloudinitiso --eject 2>/dev/null
 			}
+			[[ "$(vmstat $vmname)" = running* ]] || { vm start $vmname; }
 		fi
 	fi
 elif [[ "$InstallType" = pxe ]]; then
