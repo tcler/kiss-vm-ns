@@ -4097,6 +4097,7 @@ COMM
 	until port_available ${_vmaddr} 22; do sleep 1; done
 }
 
+[[ "$(vmstat $vmname)" = running* ]] || { vm start $vmname; }
 echo -e "\n{VM:INFO} you can try login $vmname again by using:"
 echo -e "  $ vm login $vmname          #from host"
 for vncaddr in $(vmvncproc $vmname); do
