@@ -53,27 +53,27 @@ done
 shopt -s nocasematch
 case ${Distro,,} in
 rhel-5*|rhel5*|centos5*|centos-5*)
-	Packages="@base @cifs-file-server @nfs-file-server redhat-lsb-core vim-enhanced git iproute screen wget"
+	Packages="@base @cifs-file-server @nfs-file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion"
 
 	NetCommand="network --device=eth0 --bootproto=dhcp"
 	KeyCommand="key --skip"
 	Bootloader='bootloader --location=mbr --append="console=ttyS0,9600 rhgb quiet"'
 	;;
 rhel-6*|rhel6*|centos6*|centos-6*)
-	Packages="-iwl* @base @cifs-file-server @nfs-file-server redhat-lsb-core vim-enhanced git iproute screen wget"
+	Packages="-iwl* @base @cifs-file-server @nfs-file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion"
 
 	NetCommand="network --device=eth0 --bootproto=dhcp"
 	KeyCommand="key --skip"
 	;;
 rhel-7*|rhel7*|centos7*|centos-7*)
-	Packages="-iwl* @base @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
+	Packages="-iwl* @base @file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion"
 	;;
 rhel-8*|rhel8*|centos8*|centos-8*|rocky8*|rocky-8*)
-	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
+	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion"
 	AuthConfigure=
 	;;
 rhel-9*|rhel9*|centos9*|centos-9*|rocky9*|rocky-9*|fedora-*)
-	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget"
+	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion"
 	AuthConfigure=
 	;;
 esac

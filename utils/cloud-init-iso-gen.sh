@@ -126,10 +126,10 @@ runcmd:
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; }
   - sed -ri -e '/^#?PasswordAuthentication /{s/no/yes/;s/^#//}' -e 's/^#?(PermitRootLogin) .*$/\1 yes/' /etc/ssh/sshd_config && service sshd restart || systemctl restart sshd
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
-  - command -v yum && yum install -y curl wget $PKGS
-  -   command -v apt && apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y curl wget $PKGS
-  -   command -v zypper && zypper in --no-recommends -y curl wget $PKGS
-  -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; pacman -S --needed --noconfirm curl wget $PKGS; }
+  - command -v yum && yum install -y bash-completion curl wget $PKGS
+  -   command -v apt && apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget $PKGS
+  -   command -v zypper && zypper in --no-recommends -y bash-completion curl wget $PKGS
+  -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; pacman -S --needed --noconfirm bash-completion curl wget $PKGS; }
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
   - command -v yum && curl -L -k -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
