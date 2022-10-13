@@ -79,7 +79,7 @@ Usage() {
 	  $P host,ve0.a-host,192.168.0.1---ns0,ve0.b-ns0,192.168.0.2  host,mv-host0,192.168.100.1 ns0,mv-ns0,192.168.100.2
 	  $P exec -v -x ns0 -- ping -c 2 192.168.0.1
 	  $P exec -v -x ns0 -- ping -c 2 192.168.100.1
-	  #curl -s -L https://raw.githubusercontent.com/tcler/linux-network-filesystems/master/tools/configure-nfs-server.sh | sudo bash
+	  #curl -s -L https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/utils/make-nfs-server.sh | sudo bash
 	  sudo systemctl start nfs-server
 	  sudo exportfs -o ro,no_root_squash "*:/usr/share"
 	  sudo firewall-cmd --add-service=nfs --add-service=mountd --add-service=rpc-bind
