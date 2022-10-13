@@ -5,11 +5,11 @@
 # used to create netns and add ifs into it
 
 LANG=C
-P=$0
-[[ $0 = /* ]] && P=${0##*/}
+P=$0; [[ $0 = /* ]] && P=${0##*/}
 AT=("$@")
 
 switchroot() {
+	local P=$0; [[ $0 = /* ]] && P=${0##*/}
 	[[ $(id -u) != 0 ]] && {
 		echo -e "{NETNS:WARN} $P need root permission, switch to:\n  sudo $P ${AT[@]}" | GREP_COLORS='ms=1;30' grep --color=always . >&2
 		exec sudo $P "${AT[@]}"
@@ -493,7 +493,7 @@ while true; do
 	esac
 done
 
-switchroot
+switchroot "$@"
 # __prepare__
 command -v tmux >/dev/null || dep+=\ tmux
 command -v dhclient >/dev/null || dep+=\ dhclient

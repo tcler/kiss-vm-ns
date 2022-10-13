@@ -5,12 +5,12 @@
 # used to create light container/ns for nfs/cifs test on RHEL/CentOS 7 or later
 
 LANG=C
-P=$0
-[[ $0 = /* ]] && P=${0##*/}
+P=$0; [[ $0 = /* ]] && P=${0##*/}
 NSHome=/opt/NS
 AT=("$@")
 
 switchroot() {
+	local P=$0; [[ $0 = /* ]] && P=${0##*/}
 	[[ $(id -u) != 0 ]] && {
 		echo -e "{NS:WARN} $P need root permission, switch to:\n  sudo $P ${AT[@]}" | GREP_COLORS='ms=1;30' grep --color=always . >&2
 		exec sudo $P "${AT[@]}"
@@ -442,17 +442,17 @@ command -v systemd-nspawn >/dev/null || dep+=\ systemd-container
 # __main__
 subcmd=$1
 case $subcmd in
-jj|jinja) switchroot; shift
+jj|jinja) switchroot "$@"; shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 	nsjinja $NS "$@"
 	exit $?;;
-exec|exe|ex|e) switchroot; shift
+exec|exe|ex|e) switchroot "$@"; shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 	nsexec $NS "$@"
 	exit $?;;
-install|ins*) switchroot; shift
+install|ins*) switchroot "$@"; shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 	NSdir=$NSHome/$NS
@@ -463,7 +463,7 @@ ps) shift
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 	ns_pstree $NS
 	exit $?;;
-del*|del|de|d) switchroot; shift
+del*|del|de|d) switchroot "$@"; shift
 	[[ -z "$NS" ]] && { NS=$1; shift; }
 	[[ -z "$NS" ]] && { Usage >&2; exit 1; }
 	nsdelete $NS "$@" $(test $subcmd = delete && echo /home)
@@ -477,7 +477,7 @@ esac
 
 [[ -z "$NS" ]] && { Usage >&2; exit 1; }
 
-switchroot;
+switchroot "$@";
 
 NSdir=$NSHome/$NS
 
