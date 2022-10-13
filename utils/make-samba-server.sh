@@ -5,7 +5,7 @@
 export LANG=C
 
 ## global var
-GROUP=MYGROUP
+GROUP=RHTS
 PREFIX=/smbshare
 USERLIST=smbuser1,smbuser2
 PASSWORD=redhat
@@ -52,8 +52,8 @@ done
 
 
 ## install related packages
-yum install -y samba samba-common-tools >/dev/null
-yum install -y samba-client cifs-utils tree >/dev/null
+yum install -y samba samba-common-tools &>/dev/null
+yum install -y samba-client cifs-utils tree &>/dev/null
 
 [[ "$FSTYPE" = ext4 ]] && {
 	mkdir -p $PREFIX
@@ -78,14 +78,17 @@ done
 echo -e "$PASSWORD\n$PASSWORD" | smbpasswd -a -s root
 mkdir -vp $PREFIX/{pub,upload}
 chmod a+w $PREFIX/{pub,upload}
-mkdir -vp $PREFIX/share
+mkdir -vp $PREFIX/{share1,share2}
+chmod -R 777 $PREFIX
 chcon -R -t samba_share_t $PREFIX
-
 
 ## generate smb config file
 cat <<EOF >/etc/samba/smb.conf
 [global]
     workgroup = $GROUP
+    realm = RHQE.COM
+    server signing = auto
+    kerberos method = system keytab
     server string = Samba Server Version %v
    
     log file = /var/log/samba/log.%m
@@ -97,7 +100,6 @@ cat <<EOF >/etc/samba/smb.conf
     path = $HOMEDIR/%S
     public = no
     writable = yes
-    readable = yes
     printable = no
     guest ok = no
     valid users = %S
@@ -114,9 +116,13 @@ cat <<EOF >/etc/samba/smb.conf
     path = $PREFIX/upload
     writable = yes
 
-[share]
-    path = $PREFIX/share
-    writeable = no
+[share1]
+    path = $PREFIX/share1
+    writeable = yes
+
+[share2]
+    path = $PREFIX/share2
+    writeable = yes
 EOF
 
 
