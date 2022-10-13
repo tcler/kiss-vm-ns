@@ -4,6 +4,7 @@ _bin=/usr/bin
 _repon=kiss-vm-ns
 _confdir=/etc/$(_repon)
 _oldconfdir=/etc/kiss-vm
+_libdir=/usr/lib/bash
 completion_path=/usr/share/bash-completion/completions
 ifeq ("$(wildcard $(completion_path))", "")
 	completion_path=/usr/local/share/bash-completion/completions
@@ -20,9 +21,10 @@ i in ins inst install:
 	$(SUDO) cp -af kiss-ns $(_bin)/ns
 	$(SUDO) cp -af kiss-netns $(_bin)/netns
 	@test -d $(_oldconfdir) && $(SUDO) mv $(_oldconfdir) $(_confdir) || true
-	$(SUDO) mkdir -p $(_confdir)
+	$(SUDO) mkdir -p $(_confdir) $(_libdir)
 	@$(SUDO) ln -s $(_confdir) $(_oldconfdir)
 	$(SUDO) cp -af distro-db.bash $(_confdir)/.
+	$(SUDO) cp -af lib/* $(_libdir)/.
 	@command -v yum >/dev/null && $(SUDO) yum install -y bash-completion bind-utils 2>/dev/null || :
 	@command -v apt >/dev/null && $(SUDO) apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion bind-utils 2>/dev/null || :
 	@command -v zypper >/dev/null && $(SUDO) zypper in --no-recommends -y bash-completion bind-utils 2>/dev/null || :
