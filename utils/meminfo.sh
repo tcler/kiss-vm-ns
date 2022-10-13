@@ -2,8 +2,8 @@
 #
 
 LANG=C
-P=$0; [[ $0 = /* ]] && P=${0##*/}; AT=("$@")
 switchroot() {
+	local P=$0; [[ $0 = /* ]] && P=${0##*/}; AT=("$@")
 	[[ $(id -u) != 0 ]] && {
 		echo -e "{WARN} $P need root permission, switch to:\n  sudo $P ${AT[@]}" | GREP_COLORS='ms=1;30' grep --color=always . >&2
 		exec sudo $P "${AT[@]}"
@@ -28,7 +28,7 @@ meminfo_by_lshw() {
 }
 
 #__main__
-switchroot
+switchroot "$@"
 
 by=lshw
 [[ -n "$1" && "$1" != ls* ]] && by=dmidecode

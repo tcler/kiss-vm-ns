@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-P=$0; [[ $0 = /* ]] && P=${0##*/}
 switchroot() {
+	local P=$0; [[ $0 = /* ]] && P=${0##*/}
 	[[ $(id -u) != 0 ]] && {
 		echo -e "{WARN} $P need root permission, switch to:\n  sudo $P $@" | GREP_COLORS='ms=1;30' grep --color=always . >&2
 		exec sudo $P "$@"
 	}
 }
-switchroot
+switchroot "$@"
 
 . /etc/os-release
 OS=$NAME
