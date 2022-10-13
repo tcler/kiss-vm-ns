@@ -99,4 +99,4 @@ if [[ $sourced = yes ]]; then return 0; fi
 
 #__main__
 switchroot "$@"
-ls --color=always /root
+run -debug  ls --color=always /root
