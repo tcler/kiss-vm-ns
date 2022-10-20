@@ -3,12 +3,24 @@
 repoUrl=$1
 reponame=repo$RANDOM
 verx=$(rpm -E %rhel)
+[[ "$verx" != %rhel && "$verx" -le 7 ]] && yum install -y yum-utils &>/dev/null
 
 : <<\COMMENT
-if [[ "$verx" -le 7 ]]; then
+if [[ "$verx" != %rhel && "$verx" -le 7 ]]; then
+	#yumdownloader does not support --repofrompath= option,sh*t
+	repof=/etc/yum.repos.d/${reponame}.repo
+	cat <<-REPO >$repof
+	[$reponame]
+	name=$reponame
+	baseurl=$repoUrl
+	enabled=1
+	gpgcheck=0
+	skip_if_unavailable=1
+	REPO
 	urls=$(yumdownloader --url --disablerepo=* --enablerepo=$reponame \*)
+	rm -f $repof
 else
-	urls=$(yum download --url --disablerepo=* --repofrompath=$repopath \*)
+	urls=$(yum download --url --disablerepo=* --repofrompath=$reponame,$repoUrl \*)
 fi
 COMMENT
 
