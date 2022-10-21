@@ -93,6 +93,8 @@ vm create --arch s390x   CentOS-9-stream
 vm create --arch aarch64 CentOS-9-stream
 vm create --arch ppc64le CentOS-9-stream
 
+vm create --arch aarch64 fedora-36
+
 vm create --arch aarch64 openSUSE-leap-15.3
 
 vm create --arch aarch64 debian-12
