@@ -1722,10 +1722,12 @@ Usage() {
 	  -h,--help      #Display this help.
 
 	Options for sub-command create:
+	  -i <url/path[,bus=$bus[,...]]>
+	                 #create VM by import existing disk image, value can be url or local path
 	  -I             #create VM by import existing disk image, auto search url according distro name
-	  -i <url/path>  #create VM by import existing disk image, value can be url or local path
+	  -l <url/path[,bus=$bus[,...]]>
+	                 #create VM by using specified location url or local iso file path
 	  -L             #create VM by using location, auto search url according distro name
-	  -l <url/path>  #create VM by using specified location url or local iso file path
 	  -C <iso path>  #create VM by using ISO image
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  -n,--vmname <name>
@@ -2171,7 +2173,7 @@ while true; do
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
 	-C)        InstallType=cdrom; Isourl=$2; shift 2;;
-	-l)        InstallType=location; Location=$2; shift 2;;
+	-l)        InstallType=location; LocationInfo=$2; shift 2;;
 	-L)        InstallType=location; shift 1;;
 	-i)        InstallType=import; ImportImageInfo=${2}; shift 2;;
 	-I)        InstallType=import; shift 1;;
@@ -2545,6 +2547,8 @@ done
 
 Imageurl=
 [[ -n "$ImportImageInfo" ]] && read Imageurl BOOT_DISK_ATTRS <<<"${ImportImageInfo/,/ }"
+Location=
+[[ -n "$LocationInfo" ]] && read Location BOOT_DISK_ATTRS <<<"${LocationInfo/,/ }"
 
 #thanks: https://stackoverflow.com/questions/49733211/bash-jump-to-bottom-of-terminal
 # { echo -ne "\E[${LINES};0H"; }  works the same as { tput cup $(tput lines) 0; }
