@@ -3957,7 +3957,7 @@ if [[ "$GenerateImage" = yes ]]; then
 	ls -lh ${newimage}
 
 	echo -e "\n{VM:INFO} xz compress image ..."
-	time xz -z -f -T 0 ${XZ:--9} ${newimage}
+	time xz -z -f -T 0 ${XZ:--6} ${newimage}
 	ls -lh ${newimage}.xz
 
 	echo -e "\n{VM:INFO} remove temporary VM $vmname ..."
