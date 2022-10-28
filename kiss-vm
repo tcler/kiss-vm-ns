@@ -2173,9 +2173,9 @@ while true; do
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
 	-C)        InstallType=cdrom; Isourl=$2; shift 2;;
-	-l)        InstallType=location; LocationInfo=$2; shift 2;;
+	-l)        InstallType=location; read Location BOOT_DISK_ATTRS <<<"${2/,/ }"; shift 2;;
 	-L)        InstallType=location; shift 1;;
-	-i)        InstallType=import; ImportImageInfo=${2}; shift 2;;
+	-i)        InstallType=import; read Imageurl BOOT_DISK_ATTRS <<<"${2/,/ }"; shift 2;;
 	-I)        InstallType=import; shift 1;;
 	-P|--pxe)  InstallType=pxe; shift 1;;
 	--diskless) DISKLESS=yes; shift 1;;
@@ -2544,11 +2544,6 @@ fi
 for disk in "${EXTRA_DISKS[@]}"; do
 	read size fstype _ <<<"${disk//,/ }"
 done
-
-Imageurl=
-[[ -n "$ImportImageInfo" ]] && read Imageurl BOOT_DISK_ATTRS <<<"${ImportImageInfo/,/ }"
-Location=
-[[ -n "$LocationInfo" ]] && read Location BOOT_DISK_ATTRS <<<"${LocationInfo/,/ }"
 
 #thanks: https://stackoverflow.com/questions/49733211/bash-jump-to-bottom-of-terminal
 # { echo -ne "\E[${LINES};0H"; }  works the same as { tput cup $(tput lines) 0; }
