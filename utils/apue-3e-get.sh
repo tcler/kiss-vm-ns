@@ -24,5 +24,5 @@ pushd /usr/src
 
 	echo
 	readlink -f $dir
-	ls -l $dir
+	ls --color -l $dir
 popd >/dev/null
