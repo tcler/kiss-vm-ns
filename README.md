@@ -57,7 +57,8 @@ vm create Fedora-35 --pxe [--net=$pxenet] [--diskless]
 ```
 
 Q: How does [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) realize automatic installation?  
-A: We mainly achieve the goal of automation by implementing Redhat based kickstart file generator, cloud-init generator, windows answerfile generator; then in some special scenarios, we use [OCR](https://en.wikipedia.org/wiki/Optical_character_recognition) technology and [VNC CLI client](https://github.com/sibson/vncdotool) to solve the problem.
+A: We mainly achieve the goal of automation by implementing [Redhat based kickstart file generator](https://github.com/tcler/kiss-vm-ns/blob/master/utils/ks-generator.sh), [cloud-init generator](https://github.com/tcler/kiss-vm-ns/blob/master/utils/cloud-init-iso-gen.sh), [windows answerfile generator](https://github.com/tcler/kiss-vm-ns/blob/master/utils/answer-file-generator.sh); then in some special scenarios, we use [OCR](https://en.wikipedia.org/wiki/Optical_character_recognition) technology and [VNC CLI client](https://github.com/sibson/vncdotool) to solve the problem.  
+\[2022-10] just found a website: [Windows Answer File Generator](https://www.windowsafg.com/win10x86_x64_uefi.html), paste here for people want to customize answerfile interactively
 ```
 $ vm vnc jiyin-opensuse-leap-153 --get
 [vncget@jiyin-opensuse-leap-153]:
