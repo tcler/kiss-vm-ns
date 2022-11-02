@@ -2,10 +2,10 @@
 # this script is used to install qemu-system-${arch}
 
 switchroot() {
-	local P=$0; [[ $0 = /* ]] && P=${0##*/}
+	local P=$0 SH=; [[ $0 = /* ]] && P=${0##*/}; [[ -x $0 ]] || SH=$SHELL
 	[[ $(id -u) != 0 ]] && {
-		echo -e "{WARN} $P need root permission, switch to:\n  sudo $P $@" | GREP_COLORS='ms=1;30' grep --color=always . >&2
-		exec sudo $P "$@"
+		echo -e "\E[1;30m{WARN} $P need root permission, switch to:\n  sudo $SH $P $@\E[0m"
+		exec sudo $SH $P "$@"
 	}
 }
 switchroot "$@"
