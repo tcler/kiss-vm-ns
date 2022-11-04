@@ -4,8 +4,13 @@ switchroot() {
 	local P=$0 SH=; [[ $0 = /* ]] && P=${0##*/}; [[ -e $P && ! -x $P ]] && SH=$SHELL
 	#[[ $# -eq 0 ]] && set -- "${BASH_ARGV[@]}" #need enable extdebug: shopt -s extdebug
 	[[ $(id -u) != 0 ]] && {
-		echo -e "\E[1;30m{WARN} $P need root permission, switch to:\n  sudo $SH $P $@\E[0m"
-		exec sudo $SH $P "$@"
+		if [[ "${SHELL##*/}" = $P ]]; then
+			echo -e "\E[1;31m{WARN} $P need root permission, please add sudo before $P\E[0m" >&2
+			exit
+		else
+			echo -e "\E[1;30m{WARN} $P need root permission, switch to:\n  sudo $SH $P $@\E[0m" >&2
+			exec sudo $SH $P "$@"
+		fi
 	}
 }
 
