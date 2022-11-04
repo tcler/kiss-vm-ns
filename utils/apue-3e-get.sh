@@ -17,10 +17,10 @@ dir=apue.3e
 pushd /usr/src
 	wget http://www.apuebook.com/$tarf -O $tarf
 	tar zxf $tarf
-	make -C $dir/lib &&
+	gmake -C $dir/lib &&
 		cp $dir/lib/libapue.a /usr/lib/. &&
 		cp $dir/include/apue.h /usr/include/.
-	make -C $dir/lib clean
+	gmake -C $dir/lib clean
 
 	echo
 	readlink -f $dir
