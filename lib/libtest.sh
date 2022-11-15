@@ -14,6 +14,28 @@ switchroot() {
 	}
 }
 
+_range2list() {
+	local range=$1  #like: 1,3,5,11-100,127
+	local list=()
+	for rc in ${range//,/ }; do
+		if [[ "$rc" =~ ^[0-9]+$ ]]; then
+			list+=($rc)
+		elif [[ "$rc" =~ ^[0-9]+-[0-9]+$ ]]; then
+			eval list+=({${rc/-/..}})
+		fi
+	done
+	echo -n ${list[@]}
+}
+_list_contains() {
+	[[ "$1" =~ (^|[[:space:]])$2($|[[:space:]]) ]] && return 0 || return 1
+}
+rc_isexpected() {
+	local rc=$1
+	local range=$2
+	local rangelist=$(_range2list $range)
+	_list_contains "$rangelist" $rc
+}
+
 getReusableCommandLine() {
 	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
@@ -36,39 +58,63 @@ getReusableCommandLine() {
 	echo
 }
 
-LOGPATH=${LOGPATH:-.}
+TEST_LOGPATH=${TEST_LOGPATH:-.}
 run() {
 	#ref: https://superuser.com/questions/927544/run-command-in-detached-tmux-session-and-log-console-output-to-file
 	local _runtype= _debug= _rc=0
 	local _nohup= _nohuplogf=
 	local _user= _SUDO=
-	local _defaultlogf=${LOGPATH:-.}/nohup.log
+	local _default_nohuplogf=${TEST_LOGPATH:-.}/nohup.log
 	local _tmuxSession= _tmuxlogf=
+	local _xrcrange= _chkrc=no
 
 	while true; do
 		case "$1" in
-		-debug) _debug=yes; shift;;
+		-d|-debug) _debug=yes; shift;;
 		-eval*) _runtype=eval; shift;;
 		-bash*) _runtype=bash; shift;;
 		-tmux*) _runtype=tmux;
 			[[ $1 = *=* ]] && _tmuxSession=${1#*=}
 			_tmuxSession=${_tmuxSession:-$$-${USER}}
-			_tmuxlogf=${LOGPATH:-/tmp}/run-tmux-${_tmuxSession}.log
+			_tmuxlogf=${TEST_LOGPATH:-/tmp}/run-tmux-${_tmuxSession}.log
 			shift;;
 		-nohu*) _nohup=yes
 			[[ $1 = *=* ]] && _nohuplogf=${1#*=}
-			_nohuplogf=${_nohuplogf:-$_defaultlogf}
+			_nohuplogf=${_nohuplogf:-$_default_nohuplogf}
 			shift;;
 		-as=*)  _U=${1#*=}; [[ "$_U" = "$USER" ]] || _SUDO="sudo -u $_U"; shift;;
+		-x*|-x=*) _chkrc=yes;
+			_xrcrange=${1:2}; _xrcrange=${_xrcrange#=}
+			[[ -z "$_xrcrange" ]] && _xrcrange=0
+			shift;;
 		-*)     shift;;
 		*)      break;;
 		esac
 	done
 
+	[[ $# -eq 0 ]] && {
+		cat <<-\EOF >&2
+		Usage: run [options] command [cmd-opts] [args]
+		Examples:
+		  run -d 'echo "$exportdir *(rw,no_root_squash)" >/etc/exports'
+		  run -d 'var=$(ls)'
+		  run -d 'find . -type f | grep ^$path$'
+		  run -d systemctl restart nfs-server
+		  run -d -as=user -x0 touch /root/file
+		  run -d -x0 grep pattern /path/to/file
+
+		  run -d -nohup tail -f /path/to/file
+		  run -d -nohup=nohup-log-file tail -f /path/to/file
+		  run -d -tmux=sessoin-name tail -f /path/to/file
+		EOF
+		return 0
+	}
+
 	[[ $# -eq 0 ]] && return 0
 	[[ $# -eq 1 && -z "$_runtype" ]] && _runtype=eval
 	[[ "${_runtype}" = eval && -n "$_SUDO" ]] && _SUDO+=\ -s
 	local _cmdl=$(getReusableCommandLine "$@")
+	local _cmdlx=
 
 	if [[ "$_debug" = yes ]]; then
 		if [[ "${_runtype}" = tmux ]]; then
@@ -76,11 +122,12 @@ run() {
 		elif [[ "$_nohup" = yes ]]; then
 			_cmdl="nohup $_cmdl &>${_nohuplogf} &"
 		fi
-		echo "[${_runtype:-direct} run]" "$_SUDO $_cmdl"
+		[[ -n "$_SUDO" ]] && _cmdlx="$_SUDO $_cmdl" || _cmdlx=$_cmdl
+		echo -e "[$(date +%T) $USER $PWD]\nrun(${_runtype:-plat})> $_cmdlx"
 	fi | GREP_COLORS='ms=0;33;44' grep --color .
 
-	case ${_runtype:-direct} in
-	direct)
+	case ${_runtype:-plat} in
+	plat)
 		if [[ -n "$_nohup" ]]; then
 			$_SUDO touch "${_nohuplogf}"
 			$_SUDO nohup "$@" &>${_nohuplogf} &
@@ -93,13 +140,24 @@ run() {
 	tmux)   $_SUDO tmux new -s $_tmuxSession -d "$_cmdl" \; pipe-pane "cat >$_tmuxlogf"; _rc=$?;;
 	esac
 
+	[[ "$_chkrc" = yes ]] && {
+		if rc_isexpected $_xrcrange $_rc; then
+			echo -e "\E[1;34m[TEST PASS]\E[0m"
+		else
+			echo -e "\E[1;31m[TEST FAIL]\E[0m"
+		fi
+	}
 	return $_rc
 }
+trun() { run -d "$@"; }
 
 #return if I'm being sourced
 (return 0 2>/dev/null) && sourced=yes || sourced=no
 if [[ $sourced = yes ]]; then return 0; fi
 
 #__main__
-switchroot "$@"
-run -debug  ls --color=always /root
+echo "[INFO] this is a lib file, run internal test:"
+trun -x ls --color=always /root
+run switchroot "$@"
+trun 'for ((i=0; i<8; i++)); do echo $i; done'
+trun 'var=$(ls -l)'
