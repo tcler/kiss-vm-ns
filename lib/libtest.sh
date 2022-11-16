@@ -115,7 +115,9 @@ run() {
 		  run -d 'echo "$exportdir *(rw,no_root_squash)" >/etc/exports'
 		  run -d 'var=$(ls)'
 		  run -d 'find . -type f | grep ^$path$'
-		  run -d systemctl restart nfs-server
+		  run -d systemctl restart nfs-server'
+		  run -d 'systemctl restart nfs-server | grep inactive'
+		  run -d -eval systemctl restart nfs-server \| grep inactive
 		  run -d -as=user -x0 touch /root/file
 		  run -d -x0 grep pattern /path/to/file
 
@@ -179,3 +181,5 @@ trun 'grep RHEL /etc/os-release'
 	chkrc 0 "there should be RHEL string in /etc/os-release"
 trun 'systemctl status nfs-server | grep inactive'
 	chkrc 1 "nfs-server should has been started"
+
+trun -eval systemctl status nfs-server \| grep inactive
