@@ -35,6 +35,21 @@ rc_isexpected() {
 	local rangelist=$(_range2list $range)
 	_list_contains "$rangelist" $rc
 }
+chkrc() {
+	local xrange=$1; shift
+	local comment=
+	if [[ $# -eq 0 ]]; then
+		comment="return code($_RC), expected range($xrange)"
+	else
+		comment="$*"
+	fi
+	if rc_isexpected "$xrange" $_RC; then
+		echo -e "\E[1;34m{TEST PASS} $comment\E[0m"
+	else
+		echo -e "\E[1;31m{TEST FAIL} $comment\E[0m"
+	fi
+	return $_RC
+}
 
 getReusableCommandLine() {
 	#if only one parameter, treat it as a piece of script
@@ -59,6 +74,7 @@ getReusableCommandLine() {
 }
 
 TEST_LOGPATH=${TEST_LOGPATH:-.}
+_RC=0
 run() {
 	#ref: https://superuser.com/questions/927544/run-command-in-detached-tmux-session-and-log-console-output-to-file
 	local _runtype= _debug= _rc=0
@@ -123,8 +139,8 @@ run() {
 			_cmdl="nohup $_cmdl &>${_nohuplogf} &"
 		fi
 		[[ -n "$_SUDO" ]] && _cmdlx="$_SUDO $_cmdl" || _cmdlx=$_cmdl
-		echo -e "[$(date +%T) $USER $PWD]\nrun(${_runtype:-plat})> $_cmdlx"
-	fi | GREP_COLORS='ms=0;33;44' grep --color .
+		echo -e "[$(date +%T) $USER $PWD]\n\E[0;33;44mrun(${_runtype:-plat})> $_cmdlx\E[0m"
+	fi
 
 	case ${_runtype:-plat} in
 	plat)
@@ -140,13 +156,8 @@ run() {
 	tmux)   $_SUDO tmux new -s $_tmuxSession -d "$_cmdl" \; pipe-pane "cat >$_tmuxlogf"; _rc=$?;;
 	esac
 
-	[[ "$_chkrc" = yes ]] && {
-		if rc_isexpected $_xrcrange $_rc; then
-			echo -e "\E[1;34m[TEST PASS]\E[0m"
-		else
-			echo -e "\E[1;31m[TEST FAIL]\E[0m"
-		fi
-	}
+	_RC=$_rc
+	[[ "$_chkrc" = yes ]] && { chkrc $_xrcrange; }
 	return $_rc
 }
 trun() { run -d "$@"; }
@@ -161,3 +172,9 @@ trun -x ls --color=always /root
 run switchroot "$@"
 trun 'for ((i=0; i<8; i++)); do echo $i; done'
 trun 'var=$(ls -l)'
+trun 'grep OS /etc/os-release'
+	chkrc 1 "there should not be OS string in /etc/os-release"
+trun 'grep RHEL /etc/os-release'
+	chkrc 0 "there should be RHEL string in /etc/os-release"
+trun 'systemctl status nfs-server | grep inactive'
+	chkrc 1 "nfs-server should has been started"
