@@ -131,6 +131,7 @@ run() {
 	[[ "${_runtype}" = eval && -n "$_SUDO" ]] && _SUDO+=\ -s
 	local _cmdl=$(getReusableCommandLine "$@")
 	local _cmdlx=
+	[[ $# -ne 1 && "$_runtype" = eval ]] && _cmdl=$(eval echo $_cmdl)
 
 	if [[ "$_debug" = yes ]]; then
 		if [[ "${_runtype}" = tmux ]]; then
