@@ -115,8 +115,8 @@ run() {
 		elif [[ "$_nohup" = yes ]]; then
 			_cmdl="nohup $_cmdl &>${_nohuplogf} &"
 		fi
-		echo "[${_runtype:-plat} run]" "$_SUDO $_cmdl"
-	fi | GREP_COLORS='ms=0;33;44' grep --color .
+		echo -e "\E[0;33;44m[${_runtype:-plat} run]" "$_SUDO $_cmdl\E[0m"
+	fi
 
 	case ${_runtype:-plat} in
 	plat)
@@ -909,7 +909,7 @@ vmlogin() {
 	[[ "${EXEC}" = yes ]] && {
 		[[ $# = 0 ]] && set "exit 0";
 		[[ "$VERBOSE" = yes ]] &&
-			echo "[$U@$_vmname]> $sshCommand" | GREP_COLORS='ms=01;36' grep --color . >&2
+			echo -e "\E[01;36m[$U@$_vmname]> $sshCommand\E[0m" >&2
 	}
 
 	#sometimes there's bug in libnss. get more than one addr but some one
@@ -925,7 +925,7 @@ vmlogin() {
 	echo "$sshCommand" >$RuntimeTmp/sshcmd
 	for addr in $addrs; do
 		[[ "$DEBUG" = yes ]] &&
-			echo "[vmlogin:debug] detect port ${addr}:22 ..." | GREP_COLORS='ms=01;36' grep --color . >&2
+			echo -e "\E[01;36m[vmlogin:debug] detect port ${addr}:22 ...\E[0m" >&2
 
 		port_available $addr 22 || {
 			echo -e "{VM:WARN} port $addr:22 is not available"
@@ -933,7 +933,7 @@ vmlogin() {
 		}
 
 		[[ "$DEBUG" = yes ]] &&
-			echo "[vmlogin:debug] port ${addr}:22 available ..." | GREP_COLORS='ms=01;36' grep --color . >&2
+			echo -e "\E[01;36m[vmlogin:debug] port ${addr}:22 available ...\E[0m" >&2
 
 		sshstat=unavailable
 		sshOpts=$(sshtest $U@$addr "$sshOpts")
