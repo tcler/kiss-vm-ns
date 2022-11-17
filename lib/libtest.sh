@@ -51,7 +51,7 @@ chkrc() {
 	return $_RC
 }
 
-_EVAL=no
+_LAZY=no
 getReusableCommandLine() {
 	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
@@ -59,7 +59,7 @@ getReusableCommandLine() {
 	local shpattern='^[][0-9a-zA-Z~@%^_+=:,./-]+$'
 
 	for at; do
-		if [[ "$_EVAL" = yes ]]; then
+		if [[ "$_LAZY" = yes ]]; then
 			case "$at" in
 			\||\;|\>*|\&\>*|[0-9]\>*|\<|\<*)
 				echo -n "$at "
@@ -144,7 +144,7 @@ run() {
 	local _cmdl=$(getReusableCommandLine "$@")
 	local _cmdlx=
 	[[ $# -ne 1 && "$_runtype" = eval ]] &&
-		_cmdl=$(_EVAL=yes getReusableCommandLine "$@")
+		_cmdl=$(_LAZY=yes getReusableCommandLine "$@")
 
 	if [[ "$_debug" = yes ]]; then
 		if [[ "${_runtype}" = tmux ]]; then
