@@ -51,6 +51,7 @@ chkrc() {
 	return $_RC
 }
 
+_EVAL=no
 getReusableCommandLine() {
 	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
@@ -58,6 +59,15 @@ getReusableCommandLine() {
 	local shpattern='^[][0-9a-zA-Z~@%^_+=:,./-]+$'
 
 	for at; do
+		if [[ "$_EVAL" = yes ]]; then
+			case "$at" in
+			\||\;|\>*|\&\>*|[0-9]\>*|\<|\<*)
+				echo -n "$at "
+				continue
+				;;
+			esac
+		fi
+
 		if [[ -z "$at" ]]; then
 			echo -n "'' "
 		elif [[ "$at" =~ $shpattern ]]; then
@@ -133,7 +143,8 @@ run() {
 	[[ "${_runtype}" = eval && -n "$_SUDO" ]] && _SUDO+=\ -s
 	local _cmdl=$(getReusableCommandLine "$@")
 	local _cmdlx=
-	[[ $# -ne 1 && "$_runtype" = eval ]] && _cmdl=$(eval echo $_cmdl)
+	[[ $# -ne 1 && "$_runtype" = eval ]] &&
+		_cmdl=$(_EVAL=yes getReusableCommandLine "$@")
 
 	if [[ "$_debug" = yes ]]; then
 		if [[ "${_runtype}" = tmux ]]; then
