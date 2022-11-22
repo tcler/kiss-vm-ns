@@ -51,7 +51,20 @@ chkrc() {
 	return $_RC
 }
 
-_MULTI_CODE_SNIPPETS=no
+quote() {
+	local at=$1
+	if [[ -z "$at" ]]; then
+		echo -n "'' "
+	elif [[ "$at" =~ "'" && ! "$at" =~ ([\`\"$]+|\\\\) ]]; then
+		echo -n "\"$at\" "
+	else
+		echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
+			-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
+			-e "s/^''//" -e "s/'' $/ /"
+	fi
+}
+
+_CODE_IN_ARGV=no
 getReusableCommandLine() {
 	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
@@ -59,19 +72,9 @@ getReusableCommandLine() {
 	local shpattern='^[][0-9a-zA-Z~@%^_+=:,./-]+$'
 
 	for at; do
-		if [[ "$_MULTI_CODE_SNIPPETS" = yes ]]; then
-			if [[ -z "$at" ]]; then
-				echo -n "'' "
-			elif [[ "$at" =~ [^[:print:]]+ ]]; then
-				echo -n "$(builtin printf %q "$at") "
-			elif [[ "$at" =~ [[:space:]]+ ]]; then
-				if [[ "$at" =~ "'" && ! "$at" =~ [\`\"\\$]+ ]]; then
-					echo -n "\"$at\""
-				else
-					echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
-						-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
-						-e "s/^''//" -e "s/'' $/ /"
-				fi
+		if [[ "$_CODE_IN_ARGV" = yes ]]; then
+			if [[ -z "$at" || "$at" =~ ^q#.+$ ]]; then
+				quote "${at:2}"
 			else
 				echo -n "$at "
 			fi
@@ -79,20 +82,12 @@ getReusableCommandLine() {
 			continue
 		fi
 
-		if [[ -z "$at" ]]; then
-			echo -n "'' "
-		elif [[ "$at" =~ $shpattern ]]; then
+		if [[ "$at" =~ $shpattern ]]; then
 			echo -n "$at "
-		elif [[ "$at" =~ [^[:print:]]+ ]]; then
-			echo -n "$(builtin printf %q "$at") "
+		elif [[ "$at" =~ [^[:print:]]+ || "$at" = *$'\t'* || "$at" = *$'\n'* ]]; then
+			builtin printf %q "$at"; echo -n " "
 		else
-			if [[ "$at" =~ "'" && ! "$at" =~ [\`\"\\$]+ ]]; then
-				echo -n "\"$at\""
-			else
-				echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
-					-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
-					-e "s/^''//" -e "s/'' $/ /"
-			fi
+			quote "$at"
 		fi
 	done
 	echo
@@ -135,20 +130,22 @@ run() {
 
 	[[ $# -eq 0 ]] && {
 		cat <<-\EOF >&2
-		Usage: run [options] command [cmd-opts] [args]
+		Usage: trun [options] command [cmd-opts] [args]
 		Examples:
-		  run -d 'echo "$exportdir *(rw,no_root_squash)" >/etc/exports'
-		  run -d 'var=$(ls)'
-		  run -d 'find . -type f | grep ^$path$'
-		  run -d systemctl restart nfs-server'
-		  run -d 'systemctl restart nfs-server | grep inactive'
-		  run -d -eval systemctl restart nfs-server \| grep inactive
-		  run -d -as=user -x0 touch /root/file
-		  run -d -x0 grep pattern /path/to/file
+		  trun  'echo "$exportdir *(rw,no_root_squash)" >/etc/exports'
+		  trun  'ls *.sh -l'
+		  trun  'var=$(ls)'
+		  trun  'find . -type f | grep ^$path$'
+		  trun  systemctl restart nfs-server'
+		  trun  echo 'say "hello world"' "I'm a student"
+		  trun  'systemctl restart nfs-server | grep inactive'
+		  trun  -eval systemctl restart nfs-server \| grep inactive
+		  trun  -as=user -x0 touch /root/file
+		  trun  -x0 grep pattern /path/to/file
 
-		  run -d -nohup tail -f /path/to/file
-		  run -d -nohup=nohup-log-file tail -f /path/to/file
-		  run -d -tmux=sessoin-name tail -f /path/to/file
+		  trun -nohup tail -f /path/to/file
+		  trun -nohup=nohup-log-file tail -f /path/to/file
+		  trun -tmux=sessoin-name tail -f /path/to/file
 		EOF
 		return 0
 	}
@@ -159,7 +156,7 @@ run() {
 	local _cmdl=$(getReusableCommandLine "$@")
 	local _cmdlx=
 	[[ $# -ne 1 && "$_runtype" =~ (eval|bash) ]] &&
-		_cmdl=$(_MULTI_CODE_SNIPPETS=yes getReusableCommandLine "$@")
+		_cmdl=$(_CODE_IN_ARGV=yes getReusableCommandLine "$@")
 
 	if [[ "$_debug" = yes ]]; then
 		if [[ "${_runtype}" = tmux ]]; then
@@ -168,7 +165,9 @@ run() {
 			_cmdl="nohup $_cmdl &>${_nohuplogf} &"
 		fi
 		[[ -n "$_SUDO" ]] && _cmdlx="$_SUDO $_cmdl" || _cmdlx=$_cmdl
-		echo -e "[$(date +%T) $USER $PWD]\n\E[0;33;44mrun(${_runtype:-plat})> $_cmdlx\E[0m"
+		echo -en "[$(date +%T) $USER $PWD]\n\E[0;33;44mrun(${_runtype:-plat})> ";
+		echo -n "$_cmdlx"
+		echo -e "\E[0m"
 	fi
 
 	case ${_runtype:-plat} in
