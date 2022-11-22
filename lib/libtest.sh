@@ -51,7 +51,7 @@ chkrc() {
 	return $_RC
 }
 
-_LAZY_EVAL=no
+_MULTI_CODE_SNIPPETS=no
 getReusableCommandLine() {
 	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
@@ -59,13 +59,24 @@ getReusableCommandLine() {
 	local shpattern='^[][0-9a-zA-Z~@%^_+=:,./-]+$'
 
 	for at; do
-		if [[ "$_LAZY_EVAL" = yes ]]; then
-			case "$at" in
-			\||\;|\>*|\&\>*|[0-9]\>*|\<|\<*)
+		if [[ "$_MULTI_CODE_SNIPPETS" = yes ]]; then
+			if [[ -z "$at" ]]; then
+				echo -n "'' "
+			elif [[ "$at" =~ [^[:print:]]+ ]]; then
+				echo -n "$(builtin printf %q "$at") "
+			elif [[ "$at" =~ [[:space:]]+ ]]; then
+				if [[ "$at" =~ "'" && ! "$at" =~ [\`\"\\$]+ ]]; then
+					echo -n "\"$at\""
+				else
+					echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
+						-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
+						-e "s/^''//" -e "s/'' $/ /"
+				fi
+			else
 				echo -n "$at "
-				continue
-				;;
-			esac
+			fi
+
+			continue
 		fi
 
 		if [[ -z "$at" ]]; then
@@ -75,9 +86,13 @@ getReusableCommandLine() {
 		elif [[ "$at" =~ [^[:print:]]+ ]]; then
 			echo -n "$(builtin printf %q "$at") "
 		else
-			echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
-				-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
-				-e "s/^''//" -e "s/'' $/ /"
+			if [[ "$at" =~ "'" && ! "$at" =~ [\`\"\\$]+ ]]; then
+				echo -n "\"$at\""
+			else
+				echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
+					-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
+					-e "s/^''//" -e "s/'' $/ /"
+			fi
 		fi
 	done
 	echo
@@ -143,8 +158,8 @@ run() {
 	[[ "${_runtype}" = eval && -n "$_SUDO" ]] && _SUDO+=\ -s
 	local _cmdl=$(getReusableCommandLine "$@")
 	local _cmdlx=
-	[[ $# -ne 1 && "$_runtype" = eval ]] &&
-		_cmdl=$(_LAZY_EVAL=yes getReusableCommandLine "$@")
+	[[ $# -ne 1 && "$_runtype" =~ (eval|bash) ]] &&
+		_cmdl=$(_MULTI_CODE_SNIPPETS=yes getReusableCommandLine "$@")
 
 	if [[ "$_debug" = yes ]]; then
 		if [[ "${_runtype}" = tmux ]]; then
