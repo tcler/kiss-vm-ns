@@ -54,6 +54,18 @@ defaultWindowsPasswd=Sesame~0pen
 orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6)
 { QEMU_USER=qemu; id ${QEMU_USER} &>/dev/null || QEMU_USER=libvirt-qemu; }
 
+quote() {
+	local at=$1
+	if [[ -z "$at" ]]; then
+		echo -n "'' "
+	elif [[ "$at" =~ "'" && ! "$at" =~ ([\`\"$]+|\\\\) ]]; then
+		echo -n "\"$at\" "
+	else
+		echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
+			-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
+			-e "s/^''//" -e "s/'' $/ /"
+	fi
+}
 getReusableCommandLine() {
 	#if only one parameter, treat it as a piece of script
 	[[ $# = 1 ]] && { echo "$1"; return; }
@@ -61,16 +73,12 @@ getReusableCommandLine() {
 	local shpattern='^[][0-9a-zA-Z~@%^_+=:,./-]+$'
 
 	for at; do
-		if [[ -z "$at" ]]; then
-			echo -n "'' "
-		elif [[ "$at" =~ $shpattern ]]; then
+		if [[ "$at" =~ $shpattern ]]; then
 			echo -n "$at "
-		elif [[ "$at" =~ [^[:print:]]+ ]]; then
-			echo -n "$(builtin printf %q "$at") "
+		elif [[ "$at" =~ [^[:print:]]+ || "$at" = *$'\t'* || "$at" = *$'\n'* ]]; then
+			builtin printf %q "$at"; echo -n " "
 		else
-			echo -n "$at" | sed -r -e ':a;$!{N;ba};' \
-				-e "s/'+/'\"&\"'/g" -e "s/^/'/" -e "s/$/' /" \
-				-e "s/^''//" -e "s/'' $/ /"
+			quote "$at"
 		fi
 	done
 	echo
@@ -115,7 +123,9 @@ run() {
 		elif [[ "$_nohup" = yes ]]; then
 			_cmdl="nohup $_cmdl &>${_nohuplogf} &"
 		fi
-		echo -e "\E[0;33;44m[${_runtype:-plat} run]" "$_SUDO $_cmdl\E[0m"
+		echo -en "\E[0;33;44m[${_runtype:-plat} run]"
+		echo -n "$_SUDO $_cmdl"
+		echo -e "\E[0m"
 	fi
 
 	case ${_runtype:-plat} in
