@@ -159,12 +159,13 @@ run() {
 		_cmdl=$(_CODE_IN_ARGV=yes getReusableCommandLine "$@")
 
 	if [[ "$_debug" = yes ]]; then
+		_cmdlx=$_cmdl
 		if [[ "${_runtype}" = tmux ]]; then
-			_cmdl="tmux new -s $_tmuxSession -d '$_cmdl' \\; pipe-pane 'cat >$_tmuxlogf'"
+			_cmdlx="tmux new -s $_tmuxSession -d '$_cmdl' \\; pipe-pane 'cat >$_tmuxlogf'"
 		elif [[ "$_nohup" = yes ]]; then
-			_cmdl="nohup $_cmdl &>${_nohuplogf} &"
+			_cmdlx="nohup $_cmdl &>${_nohuplogf} &"
 		fi
-		[[ -n "$_SUDO" ]] && _cmdlx="$_SUDO $_cmdl" || _cmdlx=$_cmdl
+		[[ -n "$_SUDO" ]] && _cmdlx="$_SUDO  $_cmdlx"
 		echo -en "[$(date +%T) $USER $PWD]\n\E[0;33;44mrun(${_runtype:-plat})> ";
 		echo -n "$_cmdlx"
 		echo -e "\E[0m"
