@@ -136,10 +136,10 @@ run() {
 		  trun  'ls *.sh -l'
 		  trun  'var=$(ls)'
 		  trun  'find . -type f | grep ^$path$'
-		  trun  systemctl restart nfs-server'
+		  trun  sudo systemctl restart nfs-server
 		  trun  echo 'say "hello world"' "I'm a student"
-		  trun  'systemctl restart nfs-server | grep inactive'
-		  trun  -eval systemctl restart nfs-server \| grep inactive
+		  trun  'systemctl status nfs-server | grep inactive'
+		  trun  -eval systemctl status nfs-server \| grep inactive
 		  trun  -as=user -x0 touch /root/file
 		  trun  -x0 grep pattern /path/to/file
 
