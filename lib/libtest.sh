@@ -55,6 +55,8 @@ quote() {
 	local at=$1
 	if [[ -z "$at" ]]; then
 		echo -n "'' "
+	elif [[ "$at" =~ [^[:print:]]+ || "$at" = *$'\t'* || "$at" = *$'\n'* ]]; then
+		builtin printf %q "$at"; echo -n " "
 	elif [[ "$at" =~ "'" && ! "$at" =~ ([\`\"$]+|\\\\) ]]; then
 		echo -n "\"$at\" "
 	else
@@ -84,8 +86,6 @@ getReusableCommandLine() {
 
 		if [[ "$at" =~ $shpattern ]]; then
 			echo -n "$at "
-		elif [[ "$at" =~ [^[:print:]]+ || "$at" = *$'\t'* || "$at" = *$'\n'* ]]; then
-			builtin printf %q "$at"; echo -n " "
 		else
 			quote "$at"
 		fi
@@ -159,16 +159,14 @@ run() {
 		_cmdl=$(_CODE_IN_ARGV=yes getReusableCommandLine "$@")
 
 	if [[ "$_debug" = yes ]]; then
-		_cmdlx=$_cmdl
+		_cmdlx="$_cmdl"
 		if [[ "${_runtype}" = tmux ]]; then
 			_cmdlx="tmux new -s $_tmuxSession -d '$_cmdl' \\; pipe-pane 'cat >$_tmuxlogf'"
 		elif [[ "$_nohup" = yes ]]; then
 			_cmdlx="nohup $_cmdl &>${_nohuplogf} &"
 		fi
 		[[ -n "$_SUDO" ]] && _cmdlx="$_SUDO  $_cmdlx"
-		echo -en "[$(date +%T) $USER $PWD]\n\E[0;33;44mrun(${_runtype:-plat})> ";
-		echo -n "$_cmdlx"
-		echo -e "\E[0m"
+		echo "[$(date +%T) $USER $PWD]"$'\n\E[0;33;44m'"run(${_runtype:-plat})> $_cmdlx"$'\E[0m'
 	fi
 
 	case ${_runtype:-plat} in
