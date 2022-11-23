@@ -12,6 +12,7 @@ distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/%%GenericCloud.qc
 #### Fedora
 # https://ord.mirror.rackspace.com/fedora/releases/$version/Cloud/
 distroInfo[fedora-rawhide]="https://ord.mirror.rackspace.com/fedora/development/rawhide/Cloud/$GuestARCH/images/"
+distroInfo[fedora-37]="https://ord.mirror.rackspace.com/fedora/releases/37/Cloud/$GuestARCH/images/"
 distroInfo[fedora-36]="https://ord.mirror.rackspace.com/fedora/releases/36/Cloud/$GuestARCH/images/"
 distroInfo[fedora-35]="https://ord.mirror.rackspace.com/fedora/releases/35/Cloud/$GuestARCH/images/"
 distroInfo[fedora-34]="https://ord.mirror.rackspace.com/fedora/releases/34/Cloud/$GuestARCH/images/"
