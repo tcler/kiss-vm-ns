@@ -225,6 +225,8 @@ quote() {
 	local at=$1
 	if [[ -z "$at" ]]; then
 		echo -n "'' "
+	elif [[ "$at" =~ [^[:print:]]+ || "$at" = *$'\t'* || "$at" = *$'\n'* ]]; then
+		builtin printf %q "$at"; echo -n " "
 	elif [[ "$at" =~ "'" && ! "$at" =~ ([\`\"$]+|\\\\) ]]; then
 		echo -n "\"$at\" "
 	else
@@ -242,8 +244,6 @@ getReusableCommandLine() {
 	for at; do
 		if [[ "$at" =~ $shpattern ]]; then
 			echo -n "$at "
-		elif [[ "$at" =~ [^[:print:]]+ || "$at" = *$'\t'* || "$at" = *$'\n'* ]]; then
-			builtin printf %q "$at"; echo -n " "
 		else
 			quote "$at"
 		fi
