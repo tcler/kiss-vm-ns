@@ -2355,11 +2355,12 @@ support_virtualization() {
 	case ${OSTYPE,,} in
 	linux-gnu*) egrep -q -wo '(vmx|svm)' /proc/cpuinfo && rc=0;;
 	freebsd)    dmesg | grep -q -e VT-x: -e SVM: && rc=0;;
-	*)          echo -e "{VM:WARN} unsupported OS/platform.\n  $PROG -h";;
+	*)          echo "{VM:WARN} unsupported OS/platform." >&2;;
 	esac
+	return $rc
 }
 if ! support_virtualization; then
-	echo -e "{VM:WARN} current machine doesn't support Virtualization, show help info with\n  $PROG -h"
+	echo -e "{VM:WARN} current machine doesn't support Virtualization, show help info with\n  $P -h"
 	exit 1
 fi
 
