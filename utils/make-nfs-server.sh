@@ -59,6 +59,7 @@ EOF
 
 
 ## start nfs-server service
+systemctl enable nfs-server
 systemctl restart nfs-server
 
 ## test/verify
