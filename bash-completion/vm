@@ -109,16 +109,16 @@ _vm()
             fi
             ;;
         del|delete|stop|start|stat|blk*|srcfiles|homedir)
-            vmlist=$(virsh list --all --name)
+            vmlist=$(virsh list --all --name 2>/dev/null)
             COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             ;;
         reboot)
-            vmlist=$(virsh list --all --name)
+            vmlist=$(virsh list --all --name 2>/dev/null)
             COMPREPLY=( $( compgen -W "-w $vmlist" -- "$cur" ) )
             ;;
         clone)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --all --name)
+                vmlist=$(virsh list --all --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 COMPREPLY=( $( compgen -W "#new-vm-name" -- "$cur" ) )
@@ -128,7 +128,7 @@ _vm()
             ;;
         add.iso|add.disk)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --all --name)
+                vmlist=$(virsh list --all --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 #COMPREPLY=( $( compgen -A file -- "${cur}" ) )
@@ -139,10 +139,10 @@ _vm()
             ;;
         add.if)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --all --name)
+                vmlist=$(virsh list --all --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
-                netlist="$(virsh net-list --name --all)"
+                netlist="$(virsh net-list --name --all 2>/dev/null)"
                 COMPREPLY=( $( compgen -W "$netlist" -- "${cur}" ) )
             else
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
@@ -150,7 +150,7 @@ _vm()
             ;;
         add.if.bridge)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --all --name)
+                vmlist=$(virsh list --all --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 brgs=$(bridge link show | awk -F'[ :]+' '{print $2}')
@@ -159,7 +159,7 @@ _vm()
             ;;
         add.if.direct)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --all --name)
+                vmlist=$(virsh list --all --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 ifaces=$(ip route | awk '/^default/{print $5}')
@@ -168,7 +168,7 @@ _vm()
             ;;
         add.if.passthr)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --all --name)
+                vmlist=$(virsh list --all --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 hostifs=$(for if in /sys/class/net/*; do [[ -f $if/device/uevent ]] && echo ${if##*/} ; done)
@@ -177,7 +177,7 @@ _vm()
             ;;
         vi|vie|view*|lo|log|log*|co|con|cons|cons*|if|ifaddr|port*)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --name)
+                vmlist=$(virsh list --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             else
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
@@ -185,7 +185,7 @@ _vm()
             ;;
         x|xm|xml|ed|edit)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --all --name)
+                vmlist=$(virsh list --all --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             else
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
@@ -196,7 +196,7 @@ _vm()
                 if [[ "$cur" == -* ]]; then
                     COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln" -- "$cur" ) )
                 else
-                    vmlist=$(virsh list --name)
+                    vmlist=$(virsh list --name 2>/dev/null)
                     COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
                 fi
             else
@@ -205,7 +205,7 @@ _vm()
             ;;
         cpfrom)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --name)
+                vmlist=$(virsh list --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 COMPREPLY=( $( compgen -W "# #<file-or-dir-in-vm>" -- "$cur" ) )
@@ -216,7 +216,7 @@ _vm()
             ;;
         cpto)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --name)
+                vmlist=$(virsh list --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             else
                 #COMPREPLY=( $( compgen -A file -- "$cur" ) )
@@ -225,7 +225,7 @@ _vm()
             ;;
         e|ex|exe|exec)
             if [[ $narg -le 3 ]]; then
-                vmlist=$(virsh list --name --state-running)
+                vmlist=$(virsh list --name --state-running 2>/dev/null)
                 COMPREPLY=( $( compgen -W "-v -x $vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 COMPREPLY=( $( compgen -W "--" -- "$cur" ) )
@@ -238,11 +238,11 @@ _vm()
             COMPREPLY=( $( compgen -W "$netparams" -- "$cur" ) )
             ;;
         netinfo)
-            netlist="$(virsh net-list --name --all)"
+            netlist="$(virsh net-list --name --all 2>/dev/null)"
             COMPREPLY=( $( compgen -W "$netlist" -- "$cur" ) )
             ;;
         netdel|netstart)
-            netlist="$(virsh net-list --name --all)"
+            netlist="$(virsh net-list --name --all 2>/dev/null)"
             COMPREPLY=( $( compgen -W "$netlist" -- "$cur" ) )
             ;;
         prepare)
