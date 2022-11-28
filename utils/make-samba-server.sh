@@ -127,7 +127,7 @@ EOF
 
 
 ## start samba service
-service smb restart
+systemctl restart smb
 
 ## test/verify
 smbclient -L //localhost -U root%$PASSWORD
