@@ -48,13 +48,14 @@ chmod -R 777 $PREFIX
 
 
 ## generate exports config file
+defaultOpts=${defaultOpts:-insecure}
 cat <<EOF >/etc/exports
-$PREFIX/ro *(ro)
-$PREFIX/rw *(rw,no_root_squash)
-$PREFIX/async *(rw,no_root_squash,async)
-$PREFIX/labelled-nfs *(rw,no_root_squash,security_label)
-$PREFIX/krb5-nfs1 *(rw,no_root_squash,sec=sys:krb5:krb5i:krb5p)
-$PREFIX/krb5-nfs2 *(rw,no_root_squash,sec=sys:krb5:krb5i:krb5p)
+$PREFIX/ro *(${defaultOpts},ro)
+$PREFIX/rw *(${defaultOpts},rw,no_root_squash)
+$PREFIX/async *(${defaultOpts},rw,no_root_squash,async)
+$PREFIX/labelled-nfs *(${defaultOpts},rw,no_root_squash,security_label)
+$PREFIX/krb5-nfs1 *(${defaultOpts},rw,no_root_squash,sec=sys:krb5:krb5i:krb5p)
+$PREFIX/krb5-nfs2 *(${defaultOpts},rw,no_root_squash,sec=sys:krb5:krb5i:krb5p)
 EOF
 
 
