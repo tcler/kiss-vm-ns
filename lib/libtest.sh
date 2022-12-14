@@ -36,8 +36,10 @@ rc_isexpected() {
 	_list_contains "$rangelist" $rc
 }
 chkrc() {
-	local xrange=$1; shift
+	local _rc=$?
+	local xrange=${1:-0}; shift
 	local comment=
+	_RC=${_rc}
 	if [[ $# -eq 0 ]]; then
 		comment="return code($_RC), expected range($xrange)"
 	else
@@ -94,7 +96,7 @@ getReusableCommandLine() {
 }
 
 TEST_LOGPATH=${TEST_LOGPATH:-.}
-_RC=0
+_RC=
 run() {
 	#ref: https://superuser.com/questions/927544/run-command-in-detached-tmux-session-and-log-console-output-to-file
 	local _runtype= _debug= _rc=0
@@ -188,6 +190,7 @@ run() {
 	return $_rc
 }
 trun() { run -d "$@"; }
+xrc() { chkrc "$@"; }
 
 #return if I'm being sourced
 (return 0 2>/dev/null) && sourced=yes || sourced=no
@@ -199,11 +202,12 @@ trun -x ls --color=always /root
 run switchroot "$@"
 trun 'for ((i=0; i<8; i++)); do echo $i; done'
 trun 'var=$(ls -l)'
+trun -x 'grep OS /etc/os-release'
 trun 'grep OS /etc/os-release'
-	chkrc 1 "there should not be OS string in /etc/os-release"
+	xrc 1 "there should not be OS string in /etc/os-release"
 trun 'grep RHEL /etc/os-release'
-	chkrc 0 "there should be RHEL string in /etc/os-release"
+	xrc 0 "there should be RHEL string in /etc/os-release"
 trun 'systemctl status nfs-server | grep inactive'
-	chkrc 1 "nfs-server should has been started"
+	xrc 1 "nfs-server should has been started"
 
 trun -eval systemctl status nfs-server \| grep inactive
