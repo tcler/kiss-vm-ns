@@ -299,9 +299,10 @@ if (Test-Path -Path $OpenSSHPath) {
 $AutoRunFilePath = "$ansfDriveLetter\@AUTORUN_DIR@\autorun-post.ps1"
 if (Test-Path -Path $AutoRunFilePath) {
 	Out-Host "`n==> exec autorun-post file"
+	$opath = pwd
 	cd "$ansfDriveLetter\@AUTORUN_DIR@"
 	powershell -ExecutionPolicy Bypass -File autorun-post.ps1
-	cd -
+	cd $opath
 }
 
 # complete

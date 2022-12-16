@@ -309,6 +309,8 @@ switch($Stage) {
 Generate-Env-File
 
 # installing openssh
+# see: https://github.com/PowerShell/Win32-OpenSSH/issues/139, seems doesn't work
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v "EnableLinkedConnections" /t REG_DWORD /d 0x00000001 /f
 $OpenSSHPath = "$ansfDriveLetter\OpenSSH.zip"
 if (Test-Path -Path $OpenSSHPath) {
 	Out-Host "`n==> install and start ssh server"
@@ -320,9 +322,10 @@ if (Test-Path -Path $OpenSSHPath) {
 $AutoRunFilePath = "$ansfDriveLetter\@AUTORUN_DIR@\autorun-post.ps1"
 if (Test-Path -Path $AutoRunFilePath) {
 	Out-Host "`n==> exec autorun-post file"
+	$opath = pwd
 	cd "$ansfDriveLetter\@AUTORUN_DIR@"
 	powershell -ExecutionPolicy Bypass -File autorun-post.ps1
-	cd -
+	cd $opath
 }
 
 # complete
