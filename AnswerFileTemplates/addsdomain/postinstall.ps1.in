@@ -303,6 +303,7 @@ if (Test-Path -Path $AutoRunFilePath) {
 	cd "$ansfDriveLetter\@AUTORUN_DIR@"
 	powershell -ExecutionPolicy Bypass -File autorun-post.ps1
 	cd $opath
+	Out-Host "`n==> autorun-post end"
 }
 
 # complete
