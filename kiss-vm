@@ -375,12 +375,18 @@ vmdelete() {
 }
 
 vmifaddr() {
-	[[ "$1" = /x ]] && {
-		shift
-		local GETENT=yes
-	}
+	local GETENT=no
+	local VERBOSEIF=no
+	while :; do
+		case "$1" in
+		/x) GETENT=yes; shift;;
+		/v) VERBOSEIF=yes; shift;;
+		*)  break;;
+		esac
+	done
 
 	local _vmname=$(vmname_extract -all "$1")
+	VERBOSEIF=${2:+yes}
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-ifaddr $resf && _vmname=$(sed 's/"//g' $resf)
@@ -391,7 +397,11 @@ vmifaddr() {
 	if [[ "$GETENT" = yes ]]; then
 		addrs=$(getent hosts "$_vmname"|awk '{print $1}'|tac)
 	else
-		addrs=$(virsh --quiet domifaddr "$_vmname" | awk '{print gensub("/.*","",1,$4)}')
+		if [[ "$VERBOSEIF" = yes ]]; then
+			addrs=$(virsh --quiet domifaddr "$_vmname" | awk '{print $4}')
+		else
+			addrs=$(virsh --quiet domifaddr "$_vmname" | awk '{print gensub("/.*","",1,$4)}')
+		fi
 	fi
 	[[ -n "$addrs" ]] && echo "$addrs"
 }
