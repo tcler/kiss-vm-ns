@@ -125,7 +125,7 @@ run() {
 		elif [[ "$_nohup" = yes ]]; then
 			_cmdlx="nohup $_cmdl &>${_nohuplogf} &"
 		fi
-		[[ -n "$_SUDO" ]] && _cmdlx="$_SUDO  $_cmdlx"
+		[[ -n "$_SUDO" ]] && _cmdlx="[$_SUDO] $_cmdlx"
 		echo $'\E[0;33;44m'"[${_runtype:-plat} run] $_cmdlx"$'\E[0m'
 	fi
 
@@ -375,8 +375,8 @@ vmdelete() {
 }
 
 vmifaddr() {
-	local GETENT=no
-	local VERBOSEIF=no
+	local GETENT=
+	local VERBOSEIF=
 	while :; do
 		case "$1" in
 		/x) GETENT=yes; shift;;
@@ -397,10 +397,9 @@ vmifaddr() {
 	if [[ "$GETENT" = yes ]]; then
 		addrs=$(getent hosts "$_vmname"|awk '{print $1}'|tac)
 	else
-		if [[ "$VERBOSEIF" = yes ]]; then
-			addrs=$(virsh --quiet domifaddr "$_vmname" | awk '{print $4}')
-		else
-			addrs=$(virsh --quiet domifaddr "$_vmname" | awk '{print gensub("/.*","",1,$4)}')
+		addrs=$(virsh --quiet domifaddr "$_vmname" | awk '{print $4}')
+		if [[ -z "$VERBOSEIF" ]]; then
+			addrs=$(echo "$addrs" | awk -F/ '{print $1}')
 		fi
 	fi
 	[[ -n "$addrs" ]] && echo "$addrs"
