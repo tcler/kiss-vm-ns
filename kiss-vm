@@ -121,7 +121,7 @@ run() {
 	if [[ "$_debug" = yes ]]; then
 		_cmdlx=$_cmdl
 		if [[ "${_runtype}" = tmux ]]; then
-			_cmdlx="tmux new -s $_tmuxSession -d '$_cmdl' \\; pipe-pane 'cat >$_tmuxlogf'"
+			_cmdlx="tmux new -s $_tmuxSession -d \"$_cmdl\" \\; pipe-pane \"cat >$_tmuxlogf\""
 		elif [[ "$_nohup" = yes ]]; then
 			_cmdlx="nohup $_cmdl &>${_nohuplogf} &"
 		fi
