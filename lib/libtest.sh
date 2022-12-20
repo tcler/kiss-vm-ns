@@ -39,7 +39,7 @@ chkrc() {
 	local _rc=$?
 	local xrange=${1:-0}; shift
 	local comment=
-	_RC=${_rc}
+	_RC=${_RC:-${_rc}}
 	if [[ $# -eq 0 ]]; then
 		comment="return code($_RC), expected range($xrange)"
 	else
