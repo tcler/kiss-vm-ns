@@ -39,18 +39,19 @@ chkrc() {
 	local _rc=$?
 	local xrange=${1:-0}; shift
 	local comment=
-	_RC=${_RC:-${_rc}}
+	local RC=$(printenv _RC)
+	RC=${RC:-${_rc}}
 	if [[ $# -eq 0 ]]; then
-		comment="return code($_RC), expected range($xrange)"
+		comment="return code($RC), expected range($xrange)"
 	else
 		comment="$*"
 	fi
-	if rc_isexpected "$xrange" $_RC; then
+	if rc_isexpected "$xrange" $RC; then
 		echo -e "\E[1;34m{TEST PASS} $comment\E[0m"
 	else
 		echo -e "\E[1;31m{TEST FAIL} $comment\E[0m"
 	fi
-	return $_RC
+	return $RC
 }
 
 quote() {
@@ -186,7 +187,7 @@ run() {
 	esac
 
 	_RC=$_rc
-	[[ "$_chkrc" = yes ]] && { chkrc $_xrcrange; }
+	[[ "$_chkrc" = yes ]] && { _RC=$_RC chkrc $_xrcrange; }
 	return $_rc
 }
 trun() { run -d "$@"; }
