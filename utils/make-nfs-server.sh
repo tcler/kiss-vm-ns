@@ -65,3 +65,37 @@ systemctl restart nfs-server
 
 ## test/verify
 showmount -e localhost
+
+## one more test about nfsv4 pseudo-filesystem
+cat <<EOF >/etc/systemd/system/home2.automount
+[Unit]
+Description=EFI System Partition Automount
+Documentation=TBD
+[Automount]
+Where=/home2
+TimeoutIdleSec=120
+EOF
+
+cat <<EOF >/etc/systemd/system/home2.mount
+[Unit]
+Description=EFI System Partition Automount
+Documentation=TBD
+[Mount]
+What=/home
+Where=/home2
+Type=$(stat -f -c %T /home)
+Options=ro,bind
+EOF
+
+systemctl start home2.automount
+
+nfsmp=/mnt/nfsmp-$$
+mkdir -p $nfsmp
+mount localhost:/ $nfsmp
+mount -t nfs,nfs4 | grep $nfsmp
+ls -l $nfsmp
+{ umount $nfsmp || umount -fl $nfsmp; } && rm -rf $nfsmp
+mountpoint $nfsmp && {
+	systemctl stop home2.mount
+	{ umount $nfsmp || umount -fl $nfsmp; } && rm -rf $nfsmp
+}
