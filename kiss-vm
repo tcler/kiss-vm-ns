@@ -21,6 +21,7 @@ ksauto=
 MacvtapMode=bridge
 VMName=
 InstallType=import
+VirtInstallTimeOut=64
 
 VMUSER=$(whoami)
 [[ $(id -u) = 0 && -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
@@ -1771,6 +1772,8 @@ Usage() {
 	                 # you can get [-osv variant] info by using:
 	                 $ osinfo-query os  #RHEL-7 and later
 	                 $ virt-install --os-variant list  #RHEL-6
+	  --timeo <timeout>
+	                 #timeout of virt-install log wait
 	  --nointeract   #exit from virsh console after install finish
 	  --noauto       #enter virsh console after installing start, or disable windows auto install
 	  --saveimage [path]
@@ -2089,6 +2092,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long ks: \
 	--long rm \
 	--long osv: \
+	--long timeo: \
 	--long os-variant: \
 	--long force \
 	--long vmname: \
@@ -2218,6 +2222,7 @@ while true; do
 	-b|--brewinstall) BPKGS+=" $2"; shift 2;;
 	-p|--pkginstall)  PKGS+=" $2"; shift 2;;
 	--osv|--os-variant) VM_OS_VARIANT="$2"; shift 2;;
+	--timeo)         VirtInstallTimeOut="$2"; shift 2;;
 	--nocloud*)      NO_CLOUD_INIT="yes"; shift 1;;
 	--dsize)         dsizeflag=1; DSIZE="${2%[Gg]}"; shift 2;;
 	--msize)         MSIZE="$2"; shift 2;;
@@ -3181,6 +3186,7 @@ if [[ "$InstallType" = location ]]; then
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
+		set timeout $VirtInstallTimeOut
 		expect {
 			{* to complete the installation process.} { exit }
 			{*\r} { exp_continue }
@@ -3388,7 +3394,7 @@ elif [[ "$InstallType" = import ]]; then
 
 	[[ -z "$XML" ]] && while true; do test -f $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
-		set timeout 32
+		set timeout $VirtInstallTimeOut
 		expect {
 			{*Domain creation completed.} { exit }
 			{*\r} { exp_continue }
@@ -3634,6 +3640,7 @@ elif [[ "$InstallType" = pxe ]]; then
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
+		set timeout $VirtInstallTimeOut
 		expect {
 			{Waiting for the installation to complete} { exit }
 			{*\r} { exp_continue }
@@ -3824,6 +3831,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
+		set timeout $VirtInstallTimeOut
 		expect {
 			{Waiting for the installation to complete} { exit }
 			{*\r} { exp_continue }
