@@ -1783,7 +1783,7 @@ Usage() {
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
 	  --arch         #Guest cpu arch. Note: require qemu-system-$arch already installed
 	  --qemucpu      #see also: `qemu-system-$arch -machine <$machine> -cpu help`
-	  --nvmeboot     #configure the boot disk as nvme device
+	  --nvmeboot,--NB #configure the boot disk as nvme device
 	                 #ref1: https://blog.christophersmart.com/2019/12/18/kvm-guests-with-emulated-ssd-and-nvme-drives/#comment-1060169
 	                 #ref2: https://www.qemu.org/docs/master/system/bootindex.html
 	  --boot <arg>   #pass thru to virt-install's --boot options
@@ -2102,7 +2102,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long cpus: --long vcpus: \
 	--long arch: \
 	--long qemucpu: \
-	--long nvmeboot \
+	--long nvmeboot --long NB \
 	--long boot: \
 	--long video: \
 	--long sound: \
@@ -2224,7 +2224,7 @@ while true; do
 	--cpus|--vcpus)  SPECIFIED_VCPUS=yes; VCPUS="$2"; shift 2;;
 	--arch)	         GuestARCH="$2"; ARCH_OPT=--arch=$GuestARCH; shift 2;;
 	--qemucpu)       QEMU_CPU=$2; QEMU_OPTS+=("--qemu-commandline=-cpu $2"); shift 2;;
-	--nvmeboot)      NVME_BOOT=yes; shift 1;;
+	--nvmeboot|--NB) NVME_BOOT=yes; shift 1;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
 	--graphics)      GRAPHICS_OPT="--graphics=$2"; shift 2;;
 	--video)         SPECIFIED_VIDEO=yes; [[ -z "$2" || "$2" = auto ]] && VIDEO_OPT= || VIDEO_OPT="--video=$2"; shift 2;;
