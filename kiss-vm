@@ -230,7 +230,11 @@ _vmblklist() {
 		return 1
 	}
 
-	local blklist=$(virsh domblklist "$_vmname" --details | awk 'NR>2{print}')
+	local blklist=$(virsh domblklist "$_vmname" --details | awk 'NR>2{print}' | sed -r '/^$/d')
+	if [[ -z "$(grep -v cdrom <<<"$blklist")" ]]; then
+		blklist+=$'\n'$(virsh dumpxml nfs-server |
+			sed -rn '/qemu:commandline/,/\/qemu:commandline/{/.*file=([^,]+),.*/{s//_ _ _ \1/;p}}')
+	fi
 	echo "$blklist" | egrep "/$_vmname/"     | egrep "$_pat"
 	echo "$blklist" | egrep -v "/$_vmname/"  | egrep "$_pat"
 }
@@ -281,7 +285,7 @@ _vmdelete() {
 	}
 
 	local userhome=$(getent passwd "$VMUSER" | cut -d: -f6)
-	blk=$(virsh domblklist "$_vmname" | sed 1,2d)
+	blk=$(_vmblklist "$_vmname")
 	if test -n "$blk"; then
 		! grep -q "$userhome/VM[sS]/" <<<"$blk" && {
 			echo -e "{VM:DEBUG} blklist in '$_vmname':\n$blk"
@@ -2974,7 +2978,7 @@ for _iso in "${EXTRA_CDROMS[@]}"; do
 done
 
 ### nvme option
-c=0
+c=1
 for devinfo in "${NVME_DEVS[@]}"; do
 	for attr in ${devinfo//,/ }; do
 		case $attr in
@@ -3134,6 +3138,16 @@ if [[ "$InstallType" = location ]]; then
 
 	ls -l ${imagefile}
 
+	BOOT_DISK_OPT=
+	if [[ -z "$NVME_BOOT" ]]; then
+		BOOT_DISK_OPT="--disk path=${imagefile},${BOOT_DISK_ATTRS}"
+	else
+		BOOT_DISK_OPT="--disk none"
+		setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $imagefile
+		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile #system_u:object_r:virt_cache_t:s0 also works
+		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=qcow2,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=-1")
+	fi
+
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
@@ -3141,7 +3155,7 @@ if [[ "$InstallType" = location ]]; then
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
 	  --location $Location \
-	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
+	  $BOOT_DISK_OPT \
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
@@ -3336,12 +3350,21 @@ elif [[ "$InstallType" = import ]]; then
 
 	ls -l ${imagefile}
 
+	BOOT_DISK_OPT=
+	if [[ -z "$NVME_BOOT" ]]; then
+		BOOT_DISK_OPT="--disk path=${imagefile},${BOOT_DISK_ATTRS}"
+	else
+		setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $imagefile
+		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile #system_u:object_r:virt_cache_t:s0 also works
+		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=qcow2,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0")
+	fi
+
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
 	  --import \
-	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
+	  $BOOT_DISK_OPT \
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
@@ -3563,19 +3586,34 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 elif [[ "$InstallType" = pxe ]]; then
 	imagefile=$VMpath/${vmname}.qcow2
 	diskOpt=path=${imagefile},bus=virtio,size=${DSIZE}
-	[[ "$DISKLESS" = yes ]] && diskOpt=none
+	if [[ "$DISKLESS" = yes ]]; then
+		diskOpt=none
+	else
+		qemu-img create -f qcow2 ${imagefile} ${DSIZE}G
+	fi
 
 	echo -e "{VM:INFO} creating VM from pxe"
 	run -as=$VMUSER touch $VMpath/.kiss-vm
 
 	ls -l ${imagefile}
 
+	BOOT_DISK_OPT=
+	if [[ -z "$NVME_BOOT" ]]; then
+		BOOT_DISK_OPT="--disk $diskOpt"
+	else
+		[[ "$DISKLESS" != yes ]] && {
+			setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $imagefile
+			chcon system_u:object_r:qemu_var_run_t:s0 $imagefile #system_u:object_r:virt_cache_t:s0 also works
+			QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=qcow2,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0")
+		}
+	fi
+
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
 	  --pxe \
-	  --disk $diskOpt \
+	  $BOOT_DISK_OPT \
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
 	  --vcpus ${VCPUS} \
@@ -3748,12 +3786,21 @@ elif [[ "$InstallType" = cdrom ]]; then
 		ANSF_DISK_OPT="--disk path=$VMpath/ansf-usb.image,bus=usb,removable=on"
 	fi
 
+	BOOT_DISK_OPT=
+	if [[ -z "$NVME_BOOT" ]]; then
+		BOOT_DISK_OPT="--disk path=${imagefile},${BOOT_DISK_ATTRS}"
+	else
+		setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $imagefile
+		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile #system_u:object_r:virt_cache_t:s0 also works
+		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=qcow2,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0")
+	fi
+
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
 	  --cdrom $isofilepath \
-	  --disk path=${imagefile},${BOOT_DISK_ATTRS} \
+	  $BOOT_DISK_OPT \
 	  $ANSF_DISK_OPT \
 	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
