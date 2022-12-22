@@ -87,15 +87,31 @@ Type=$(stat -f -c %T /home)
 Options=ro,bind
 EOF
 
+systemctl daemon-reload
 systemctl start home2.automount
+echo $'\n'"{Info} getting status of systemd unit home2.mount"
+systemctl status home2.mount | grep Active:
 
 nfsmp=/mnt/nfsmp-$$
 mkdir -p $nfsmp
+echo $'\n'"{Info} mount localhost:/ $nfsmp"
 mount localhost:/ $nfsmp
 mount -t nfs,nfs4 | grep $nfsmp
+echo $'\n'"{Info} ls -l $nfsmp"
 ls -l $nfsmp
+
+echo $'\n'"{Info} umount $nfsmp"
 { umount $nfsmp || umount -fl $nfsmp; } && rm -rf $nfsmp
-mountpoint $nfsmp && {
+if mountpoint $nfsmp 2>/dev/null; then
 	systemctl stop home2.mount
 	{ umount $nfsmp || umount -fl $nfsmp; } && rm -rf $nfsmp
-}
+fi
+
+echo $'\n'"{Info} getting status of systemd unit home2.mount again"
+systemctl status home2.mount | grep Active:
+if systemctl status home2.mount | grep -q mounted; then
+	echo $'\n'"{Info} stop systemd unit home2.mount"
+	systemctl stop home2.mount
+	echo $'\n'"{Info} umount /home2"
+	umount /home2
+fi
