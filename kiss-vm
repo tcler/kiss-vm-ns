@@ -2708,6 +2708,7 @@ fi
 			echo "{VM:INFO} VM $vmname has been there, remove it ..."
 			_vmdelete $vmname || {
 				echo "{VM:ERR} delete $vmname fail, exit."
+				exit 2
 			}
 		elif [[ "${DOWNLOAD_ONLY}" != "yes" ]]; then
 			echo "{VM:INFO} VM $vmname has been there, if you want overwrite please use --force option"
