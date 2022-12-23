@@ -43,7 +43,7 @@ vm create FreeBSD-13.0 --msize 4096 --dsize 120G
 ```
 
 Q: does [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) support auto Windows/Windows-server Guest installing?  
-A: yes, it does since v2.0.0 (by using answer-file-generator.sh), and like Linux/FreeBSD it enable sshd by default on Windows Guest and support ssh login without password
+A: yes, it does since [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) v2.0.0 (by using answer-file-generator.sh), and like Linux/FreeBSD it enable sshd by default on Windows Guest and support ssh login without password
 ```
 vm create Windows-10 -C ~/Downloads/Win10-Evaluation.iso -f
 vm create Windows-11 -C ~/Downloads/Win11-Evaluation.iso -f
@@ -81,6 +81,10 @@ As "root" use the:
 Have a lot of fun...
 jiyin-opensuse-leap-153:~ #
 ```
+
+Q: does [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) support boot from emulated nvme device?  
+A: yes, it does since [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) v2.3.0, by adding --nvmeboot|--NB option.
+
 
 Q: Does [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) support creating aarch64,s390x Guest on x86_64 host  
 A: Yes, since [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) v2.1.0. and it requires qemu-system-$arch has been installed on your x86_64 linux Host.
