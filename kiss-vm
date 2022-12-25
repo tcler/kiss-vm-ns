@@ -3351,12 +3351,13 @@ elif [[ "$InstallType" = import ]]; then
 	run -as=$VMUSER bash -c "touch $VMpath/.kiss-vm"
 	run -as=$VMUSER bash -c "echo $Imageurl >$VMpath/url"
 
+	imginfo=$(qemu-img info ${imagefile})
+	imgfmt=$(echo "${imginfo}"|awk -F': ' '/file format/{print $2}')
 	[[ "$dsizeflag" = 1 || "$NOAUTO" != yes ]] && {
-		_size=$(qemu-img info ${imagefile}|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
+		_size=$(echo "${imginfo}"|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
 		[[ "$_size" -lt $((DSIZE*1024*1024*1024)) ]] && {
 			echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
-			[[ "${imagefile}" = *.raw ]] && fmtOpt="-f raw"
-			qemu-img resize $fmtOpt ${imagefile} ${DSIZE}G
+			qemu-img resize -f $imgfmt ${imagefile} ${DSIZE}G
 		}
 	}
 
@@ -3368,7 +3369,7 @@ elif [[ "$InstallType" = import ]]; then
 	else
 		setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $imagefile
 		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile #system_u:object_r:virt_cache_t:s0 also works
-		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=qcow2,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0")
+		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=$imgfmt,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0")
 	fi
 
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
