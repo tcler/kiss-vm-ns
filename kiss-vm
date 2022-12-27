@@ -234,7 +234,7 @@ _vmblklist() {
 	local blklist=$(virsh domblklist "$_vmname" --details | awk 'NR>2{print}' | sed -r '/^$/d')
 	if [[ -z "$(grep -v cdrom <<<"$blklist")" ]]; then
 		blklist+=$'\n'$(virsh dumpxml "$_vmname" |
-			sed -rn '/qemu:commandline/,/\/qemu:commandline/{/.*file=([^,]+),.*/{s//_ _ _ \1/;p}}')
+			sed -rn '/qemu:commandline/,/\/qemu:commandline/{/.*file=([^,]+),.*/{s//file _ _ \1/;p}}')
 	fi
 	echo "$blklist" | egrep "/$_vmname/"     | egrep "$_pat"
 	echo "$blklist" | egrep -v "/$_vmname/"  | egrep "$_pat"
