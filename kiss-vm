@@ -1347,8 +1347,7 @@ install_requires() {
 		#install virtio driver for Windows Guest
 		#see: https://github.com/virtio-win/virtio-win-pkg-scripts/blob/master/README.md
 		rpm -q virtio-win &>/dev/null || {
-			sudo wget https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo   -O /etc/yum.repos.d/virtio-win.repo
-			sudo yum install -y virtio-win
+			sudo tmux new -s install-virtio-win -d install-virtio-win-iso.sh
 		}
 		[[ "$OSV" = 7 && $HostARCH = x86_64 ]] && { yum remove -y tmux && yum install -y ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/assmannst/CentOS_7/x86_64/tmux-2.6-3.1.x86_64.rpm; }
 		;;
