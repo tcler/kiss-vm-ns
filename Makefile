@@ -16,7 +16,7 @@ endif
 
 i in ins inst install:
 	$(SUDO) cp -af utils/* $(_bin)/.
-	@$(SUDO) rm -f /usr/local/bin/port-available.sh
+	@$(SUDO) rm -f $(_bin)/install-sbopkg.sh /usr/local/bin/port-available.sh
 	$(SUDO) cp -af kiss-vm $(_bin)/vm
 	$(SUDO) cp -af kiss-ns $(_bin)/ns
 	$(SUDO) cp -af kiss-netns $(_bin)/netns

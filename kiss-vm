@@ -1320,7 +1320,7 @@ install_requires() {
 		done
 
 		echo -e "{VM:INFO} install sbopkg ..."
-		install-sbopkg.sh
+		sbopkg-install.sh
 
 		sbopkglist="qemu libvirt virt-manager virt-viewer ovmf"
 		for pkg in $sbopkglist; do

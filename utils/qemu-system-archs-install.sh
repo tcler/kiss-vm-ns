@@ -15,7 +15,7 @@ OS=$NAME
 
 case ${OS,,} in
 slackware*)
-	install-sbopkg.sh
+	sbopkg-install.sh
 	sbopkg_install() {
 		local pkg=$1
 		sudo /usr/sbin/sqg -p $pkg
