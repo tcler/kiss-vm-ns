@@ -39,6 +39,11 @@ curl_download() {
 }
 curl_download_x() { until curl_download "$@"; do sleep 1; done; }
 
+#return if I'm being sourced
+(return 0 2>/dev/null) && sourced=yes || sourced=no
+if [[ $sourced = yes ]]; then return 0; fi
+
+#__main__
 [[ "$#" < 2 ]] && {
 	echo "Usage: $0 <filename> <url> [timeo=<time>] [curl options]" >&2
 	exit 1
