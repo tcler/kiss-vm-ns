@@ -224,7 +224,7 @@ vmname_extract() {
 }
 
 _vmblklist() {
-	local _vmname=$(vmname_extract -all "$1")
+	local _vmname=$(vmname_extract -all "$1"|head -n1)
 	local _pat=${2:-.}
 	[[ -z "$_vmname" ]] && {
 		echo "Usage: vmblklist <vmname> [pattern]"
