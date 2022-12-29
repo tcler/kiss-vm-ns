@@ -3193,6 +3193,7 @@ if [[ "$InstallType" = location ]]; then
 			{</domain>} { exit }
 		}
 	"
+	grep ^ERROR $VMpath/nohup.log && exit 1
 	[[ -n "$XML" ]] && {
 		#cp $VMpath/nohup.log $VMpath/vm.xml
 		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
@@ -3402,6 +3403,7 @@ elif [[ "$InstallType" = import ]]; then
 			{</domain>} { exit }
 		}
 	"
+	grep ^ERROR $VMpath/nohup.log && exit 1
 	[[ -n "$XML" ]] && {
 		#cp $VMpath/nohup.log $VMpath/vm.xml
 		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
@@ -3648,6 +3650,7 @@ elif [[ "$InstallType" = pxe ]]; then
 			{</domain>} { exit }
 		}
 	"
+	grep ^ERROR $VMpath/nohup.log && exit 1
 	[[ -n "$XML" ]] && {
 		#cp $VMpath/nohup.log $VMpath/vm.xml
 		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
@@ -3839,6 +3842,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 			{</domain>} { exit }
 		}
 	"
+	grep ^ERROR $VMpath/nohup.log && exit 1
 	[[ -n "$XML" ]] && {
 		#cp $VMpath/nohup.log $VMpath/vm.xml
 		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
