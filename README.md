@@ -8,6 +8,8 @@ Here we provide three CLI tools **vm, ns, netns** that used to auto create KVM G
 curl -s https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/utils/kiss-update.sh|sudo bash && sudo vm prepare
 #or
 git clone https://github.com/tcler/kiss-vm-ns && sudo make -C kiss-vm-ns && sudo vm prepare
+#or (for poor network quality)
+for ((i=0;i<8;i++)); do git clone https://github.com/tcler/kiss-vm-ns && break; done && sudo make -C kiss-vm-ns && sudo vm prepare
 ```
 
 # FAQ & Examples
