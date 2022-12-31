@@ -3189,9 +3189,9 @@ if [[ "$InstallType" = location ]]; then
 		set timeout $VirtInstallTimeOut
 		expect {
 			{* to complete the installation process.} { exit }
-			{*\r} { exp_continue }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
+			{*\r} { exp_continue }
 		}
 	"
 	grep ^ERROR $VMpath/nohup.log && exit 1
@@ -3400,9 +3400,9 @@ elif [[ "$InstallType" = import ]]; then
 		set timeout $VirtInstallTimeOut
 		expect {
 			{*Domain creation completed.} { exit }
-			{*\r} { exp_continue }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
+			{*\r} { exp_continue }
 		}
 	"
 	grep ^ERROR $VMpath/nohup.log && exit 1
@@ -3648,9 +3648,9 @@ elif [[ "$InstallType" = pxe ]]; then
 		set timeout $VirtInstallTimeOut
 		expect {
 			{Waiting for the installation to complete} { exit }
-			{*\r} { exp_continue }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
+			{*\r} { exp_continue }
 		}
 	"
 	grep ^ERROR $VMpath/nohup.log && exit 1
@@ -3841,9 +3841,9 @@ elif [[ "$InstallType" = cdrom ]]; then
 		set timeout $VirtInstallTimeOut
 		expect {
 			{Waiting for the installation to complete} { exit }
-			{*\r} { exp_continue }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
+			{*\r} { exp_continue }
 		}
 	"
 	grep ^ERROR $VMpath/nohup.log && exit 1
