@@ -2352,7 +2352,7 @@ if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
 		exit 1
 	fi
 fi
-if [[ "${#NVME_DEVS[@]}" -gt 0 ]]; then
+if [[ "${#NVME_DEVS[@]}" -gt 0 || -n "$NVME_BOOT" ]]; then
 	if ! grep -q nvme < <($QEMU_KVM -device help); then
 		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvme driver."
 		exit 1
