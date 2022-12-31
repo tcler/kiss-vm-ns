@@ -84,6 +84,7 @@ jiyin-opensuse-leap-153:~ #
 
 Q: does [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) support boot from emulated nvme device?  
 A: yes, it does since [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) v2.3.0, by adding --nvmeboot|--NB option.
+BTW: the nvme driver has not been enabled on qemu-kvm in RHEL, it's only enabled on Fedora release.
 
 
 Q: Does [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) support creating aarch64,s390x Guest on x86_64 host  
