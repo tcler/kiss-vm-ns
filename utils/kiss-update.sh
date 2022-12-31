@@ -43,6 +43,8 @@ install_kiss_tools() {
 }
 
 tmpf=$(mktemp)
+cleanup() { rm -rf $tmp; }
+trap cleanup SIGINT SIGQUIT SIGTERM
 wget -qO- http://api.github.com/repos/tcler/$_repon/commits/master -O $tmpf
 if cmp $tmpf $_confdir/version 2>/dev/null; then
 	echo "[Info] you are using the latest version"
