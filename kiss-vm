@@ -21,7 +21,7 @@ ksauto=
 MacvtapMode=bridge
 VMName=
 InstallType=import
-VirtInstallTimeOut=64
+VirtInstallTimeOut=128
 
 VMUSER=$(whoami)
 [[ $(id -u) = 0 && -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
@@ -2452,6 +2452,7 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 	virtualizationOption=--hvm
 else
 	virtualizationOption=--virt-type=qemu
+	VirtInstallTimeOut=1024
 	case "$GuestARCH" in
 	(aarch64)
 		#set default qemu cpu type cortex-a72 for aarch64, it works on RHEL aarch64 build
