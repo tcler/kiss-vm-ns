@@ -3190,6 +3190,7 @@ if [[ "$InstallType" = location ]]; then
 		expect {
 			{* to complete the installation process.} { exit }
 			{*\r} { exp_continue }
+			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
 		}
 	"
@@ -3400,6 +3401,7 @@ elif [[ "$InstallType" = import ]]; then
 		expect {
 			{*Domain creation completed.} { exit }
 			{*\r} { exp_continue }
+			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
 		}
 	"
@@ -3647,6 +3649,7 @@ elif [[ "$InstallType" = pxe ]]; then
 		expect {
 			{Waiting for the installation to complete} { exit }
 			{*\r} { exp_continue }
+			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
 		}
 	"
@@ -3839,6 +3842,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 		expect {
 			{Waiting for the installation to complete} { exit }
 			{*\r} { exp_continue }
+			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
 		}
 	"
