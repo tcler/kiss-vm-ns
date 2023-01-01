@@ -5,6 +5,8 @@ if [[ -z "$(ls $iommuGrpsRoot)" ]]; then
 	cat <<-\EOF >&2
 		{WARN} your host has not enabled iommu feature, please try follow command and reboot:
 		   sudo grubby --args="intel_iommu=on iommu=pt" --update-kernel="$(/sbin/grubby --default-kernel)"
+		   #or
+		   sudo grubby --args="intel_iommu=on iommu=pt" --update-kernel=DEFAULT
 	EOF
 	exit 1
 fi
