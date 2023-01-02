@@ -232,7 +232,7 @@ _vmblklist() {
 	}
 
 	local blklist=$(virsh domblklist "$_vmname" --details | awk 'NR>2{print}' | sed -r '/^$/d')
-	if [[ -z "$(grep -v cdrom <<<"$blklist")" ]]; then
+	if [[ -z "$(grep -E -v 'cdrom|ansf-usb.image' <<<"$blklist")" ]]; then
 		blklist+=$'\n'$(virsh dumpxml "$_vmname" |
 			sed -rn '/qemu:commandline/,/\/qemu:commandline/{/.*file=([^,]+),.*,id=NVME.*/I{s//file disk nvme \1/;p}}')
 	fi
@@ -789,7 +789,7 @@ vmcopyto() {
 	local sshstat=unavailable
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR"
 	local U=root
-	vmhomedir $_vmname | grep -q -i windows && {
+	vmhomedir $_vmname | grep -E -q -i -e windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
 	sshOpts=$(sshtest $U@$_addr "$sshOpts")
