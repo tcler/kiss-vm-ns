@@ -1852,6 +1852,7 @@ Usage() {
 	  --xml          #just generate xml
 	  --machine <machine type>
 	                 #specify machine type #get supported type by: qemu-kvm -machine help
+	  --uefi         #an alias option equivalent to: --boot=uefi --machine=q35
 	  --uefi-tpm-sb  #an alias option equivalent to: --boot=firmware=efi,loader_secure=yes --machine=q35 --vtpm
 	                  and --vncwait="boot.manager,key:enter key:down key:down key:enter key:enter key:enter"
 	  --hostdev,--host-device <device from "virsh nodedev-list">
@@ -2145,6 +2146,7 @@ _at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long vncput-after-install: \
 	--long xml \
 	--long machine: \
+	--long uefi \
 	--long uefi-tpm-sb \
 	--long hostdev: --long host-device: \
 	--long hostif: --long hostnic: --long host-nic: \
@@ -2286,6 +2288,7 @@ while true; do
 	--vncput-after-install) VNCPUT_AFTER_INSTALL="$2"; shift 2;;
 	--xml)           XML=--print-xml; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
+	--uefi)          UEFI=yes; shift 1;;
 	--uefi-tpm-sb)   UEFI_TPM_SB=yes; shift 1;;
 	--hostdev|--host-device)    HOST_DEV_LIST+=("$2"); shift 2;;
 	--hostif|--hostnic|--host-nic)  HOST_NIC_LIST+=("$2"); shift 2;;
@@ -2647,7 +2650,9 @@ if [[ "$UEFI_TPM_SB" = yes ]]; then
 	BOOT_OPTS+=(--boot=firmware=efi,loader_secure=yes)
 	VTPM=yes
 	MACHINE_OPT="--machine=q35"
-	VNCWAIT_AFTER_INSTALL+=("boot.manager,key:enter key:down key:down key:enter key:enter key:enter")
+elif [[ "$UEFI" = yes ]]; then
+	BOOT_OPTS+=(--boot=uefi)
+	MACHINE_OPT="--machine=q35"
 fi
 
 case "${BOOT_OPTS[*]}" in
