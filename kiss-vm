@@ -2656,7 +2656,13 @@ elif [[ "$UEFI" = yes ]]; then
 fi
 
 case "${BOOT_OPTS[*]}" in
-	(*uefi*|*firmware=efi*) VNCWAIT_AFTER_INSTALL+=("boot.manager,key:enter key:down key:down key:enter key:enter key:enter");;
+(*uefi*|*firmware=efi*)
+	if [[ -z "$NVME_BOOT" ]]; then
+		VNCWAIT_AFTER_INSTALL+=("boot.manager,key:enter key:down key:down key:enter key:enter key:enter")
+	else
+		VNCWAIT_AFTER_INSTALL+=("boot.manager,key:enter key:down key:down key:enter key:down key:enter key:enter")
+	fi
+	;;
 esac
 
 if [[ -n "$BOOT_DISK_ATTRS" ]]; then
