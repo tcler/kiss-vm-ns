@@ -2,9 +2,17 @@
 
 repoUrl=$1
 reponame=repo$RANDOM
+if ! { command -v yum &>/dev/null || command -v dnf &>/dev/null; }; then
+	echo "{WARN} OS is not supported."
+	exit 1
+fi
+if [[ -z "$repoUrl" ]]; then
+	echo "Usage: $0 <repo_url>"
+	exit 1
+fi
+
 verx=$(rpm -E %rhel)
 [[ "$verx" != %rhel && "$verx" -le 7 ]] && yum install -y yum-utils &>/dev/null
-
 : <<\COMMENT
 if [[ "$verx" != %rhel && "$verx" -le 7 ]]; then
 	#yumdownloader does not support --repofrompath= option,sh*t
@@ -23,7 +31,6 @@ else
 	urls=$(yum download --url --disablerepo=* --repofrompath=$reponame,$repoUrl \*)
 fi
 COMMENT
-
 stderrf=/tmp/stderr-$$.log
 trap 'rm -f ${stderrf}' EXIT
 if [[ "$verx" != %rhel && "$verx" -le 7 ]]; then
