@@ -2369,9 +2369,11 @@ if [[ ${#SHARE_DIRS[@]} -gt 0 ]]; then
 fi
 if [[ ${#HOST_DEV_LIST[@]} -gt 0 ]]; then
 	if [[ -z "$(ls $iommuGrpsRoot)" ]]; then
+		kernelopts="intel_iommu=on iommu=pt"
+		grep -q AuthenticAMD /proc/cpuinfo && kernelopts="amd_iommu=on"
 		cat <<-MSG
 			{VM:WARN} iommu has not been enabled on your HOST, please change kernel options and reboot:"
-			  sudo grubby --args="intel_iommu=on iommu=pt" --update-kernel=DEFAULT; sudo reboot
+			  sudo grubby --args="$kernelopts" --update-kernel=DEFAULT; sudo reboot
 		MSG
 		exit 1
 	fi
