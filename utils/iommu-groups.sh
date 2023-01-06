@@ -14,7 +14,7 @@ if [[ -z "$(ls $iommuGrpsRoot)" ]]; then
 			   sudo grubby --args="$kernelopts" --update-kernel=DEFAULT
 			   #or
 			   sudo sed -i '/'"$kernelopts"'/!{/GRUB_CMDLINE_LINUX/s/"$/'" $kernelopts"'"/}' /etc/default/grub
-			   sudo grub2-mkconfig | sudo tee /boot/grub2/grub.cfg /boot/efi/EFI/fedora/grub.cfg
+			   sudo grub2-mkconfig | sudo tee $(find /boot -name grub.cfg)
 		EOF
 	else
 		echo "{WARN} your host has not enabled iommu feature."
