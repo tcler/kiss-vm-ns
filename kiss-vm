@@ -1752,7 +1752,8 @@ Usage() {
 	  -l <url/path[,bus=$bus[,...]]>
 	                 #create VM by using specified location url or local iso file path
 	  -L             #create VM by using location, auto search url according distro name
-	  -C <iso path>  #create VM by using ISO image
+	  -C,-F <iso/image path>
+			 #create VM by using ISO or image file
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  -n,--vmname <name>
 	                 #VM name, will auto generate according distro name if omitting
@@ -2083,7 +2084,7 @@ get_default_if() {
 
 # command line parse
 orig_at=("$@")
-_at=`getopt -o hu:d:Ll:C:fn:gb:p:Ii:rvdx::Pqw:: \
+_at=`getopt -o hu:d:Ll:C:F:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long help \
 	--long prepare \
 	--long user: \
@@ -2205,7 +2206,7 @@ while true; do
 		;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
-	-C)        InstallType=cdrom; Isourl=$2; shift 2;;
+	-C|-F)     InstallType=cdrom_image; Isourl=$2; shift 2;;
 	-l)        InstallType=location; read Location BOOT_DISK_ATTRS <<<"${2/,/ }"; shift 2;;
 	-L)        InstallType=location; shift 1;;
 	-i)        InstallType=import; read Imageurl BOOT_DISK_ATTRS <<<"${2/,/ }"; shift 2;;
@@ -3727,7 +3728,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	fi
 
 	exit 0
-elif [[ "$InstallType" = cdrom ]]; then
+elif [[ "$InstallType" = cdrom_image ]]; then
 	[[ -f $Isourl ]] && Isourl=file://$(readlink -f ${Isourl})
 	isofilename=${Isourl##*/}
 	isofilepath=$VMpath/$isofilename
@@ -3755,7 +3756,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	imagefile=$VMpath/${vmname}.qcow2
 	qemu-img create -f qcow2 ${imagefile} ${DSIZE}G
 
-	echo -e "{VM:INFO} creating VM install from cdrom($isofilepath)"
+	echo -e "{VM:INFO} creating VM install from cdrom/image($isofilepath)"
 	run -as=$VMUSER touch $VMpath/.kiss-vm
 
 	ls -lhZ ${imagefile}
@@ -3844,11 +3845,13 @@ elif [[ "$InstallType" = cdrom ]]; then
 		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=qcow2,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0,addr=0x10")
 	fi
 
+	bootOption="--cdrom $isofilepath"
+	file -b --mime-type $isofilepath | grep -q iso || bootOption="--disk path=$isofilepath,$BOOT_DISK_ATTRS"
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
 	  --name $vmname \
-	  --cdrom $isofilepath \
+	  $bootOption \
 	  $BOOT_DISK_OPT \
 	  $ANSF_DISK_OPT \
 	  $MACHINE_OPT \
