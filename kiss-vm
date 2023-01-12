@@ -3014,7 +3014,7 @@ for disk in "${DISKS[@]}"; do
 		_fmt=$(qemu-img info $img|awk '/file.format:/{print $NF}')
 		[[ -n "$_fmt" ]] && _fmt=",format=$_fmt"
 	}
-	DISK_OPTS+=" --disk path=$VMpath/$img,${_args}${_fmt}"
+	DISK_OPTS+=" --disk path=$VMpath/${img##*/},${_args}${_fmt}"
 done
 
 ### xcdrom option
