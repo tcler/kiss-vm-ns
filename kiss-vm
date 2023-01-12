@@ -2779,6 +2779,16 @@ if [[ "$VM_OS_VARIANT" = win* || "${VMpath,,}" =~ (win|windows(-server)?)-?[0-9]
 	fi
 fi
 
+for ((i=0; i<${#BOOT_OPTS[@]}; i++)); do
+	bootopt=${BOOT_OPTS[$i]}
+	if [[ "${bootopt}" = *nvram=* ]]; then
+		nvramfpath=$(echo "${bootopt}"|sed -r 's/.*nvram=([^,]+).*/\1/')
+		nvramfname=${nvramfpath##*/}
+		cp $nvramfpath $VMpath/.
+		BOOT_OPTS[$i]=$(echo "$bootopt"|sed "s|=$nvramfpath|=$VMpath/$nvramfname|")
+	fi
+done
+
 # Phase-1: get distro's Location or Image url
 _Imagepattern='(qcow2c|qcow2|qcow2.xz|raw|raw.xz|img)'
 [[ -n "${distroInfo[$Distro]}" ]] && {
