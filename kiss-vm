@@ -2521,8 +2521,8 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 
 	alreadyHaveCpuOption=no
 	for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
-		if [[ "${QEMU_OPTS[$i]}" = -cpu\ * ]]; then
-			QEMU_OPTS[$i]+=",$cpuParam"
+		if [[ "${QEMU_OPTS[$i]}" = *-cpu\ * ]]; then
+			QEMU_OPTS[$i]="${QEMU_OPTS[$i]/-cpu /-cpu ${cpuParam},}"
 			alreadyHaveCpuOption=yes
 			break
 		fi
