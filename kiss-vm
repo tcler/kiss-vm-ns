@@ -2286,7 +2286,7 @@ while true; do
 	--putln|--vncputln)     [[ -n "$2" ]] && VNCPUTS+=("$2" "key:enter") || VNCPUTS+=("key:enter"); shift 2;;
 	--vncwait|--vncwait-after-install) VNCWAIT_AFTER_INSTALL+=("$2"); shift 2;;
 	--vncput-after-install) VNCPUT_AFTER_INSTALL="$2"; shift 2;;
-	--xml)           XML=--print-xml; shift 1;;
+	--xml)           XML=--print-xml=1; shift 1;;
 	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
 	--uefi)          UEFI=yes; shift 1;;
 	--uefi-tpm-sb)   UEFI_TPM_SB=yes; shift 1;;
@@ -2514,10 +2514,20 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 		fi
 	fi
 	case $cpuvendor in
-	intel) QEMU_OPTS+=("--qemu-commandline=-cpu $qemucpu,+vmx");;
-	amd) QEMU_OPTS+=("--qemu-commandline=-cpu $qemucpu,+svm");;
-	*) QEMU_OPTS+=("--qemu-commandline=-cpu $qemucpu,+fixme");;
+	intel) cpuParam="$qemucpu,+vmx";;
+	amd) cpuParam="$qemucpu,+svm";;
+	*) cpuParam="$qemucpu,+fixme";;
 	esac
+
+	alreadyHaveCpuOption=no
+	for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
+		if [[ "${QEMU_OPTS[$i]}" = -cpu\ * ]]; then
+			QEMU_OPTS[$i]+=",$cpuParam"
+			alreadyHaveCpuOption=yes
+			break
+		fi
+	done
+	[[ $alreadyHaveCpuOption != yes ]] && QEMU_OPTS+=("--qemu-commandline=-cpu $cpuParam")
 }
 
 VCPUN=$(vcpuN "$VCPUS")
@@ -3219,8 +3229,7 @@ if [[ "$InstallType" = location ]]; then
 	"
 	grep ^ERROR $VMpath/nohup.log && exit 1
 	[[ -n "$XML" ]] && {
-		#cp $VMpath/nohup.log $VMpath/vm.xml
-		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
+		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		rm -f $VMpath/*
 		exit
@@ -3430,8 +3439,7 @@ elif [[ "$InstallType" = import ]]; then
 	"
 	grep ^ERROR $VMpath/nohup.log && exit 1
 	[[ -n "$XML" ]] && {
-		#cp $VMpath/nohup.log $VMpath/vm.xml
-		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
+		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		exit
 	}
@@ -3678,8 +3686,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	"
 	grep ^ERROR $VMpath/nohup.log && exit 1
 	[[ -n "$XML" ]] && {
-		#cp $VMpath/nohup.log $VMpath/vm.xml
-		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
+		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		exit
 	}
@@ -3871,8 +3878,7 @@ elif [[ "$InstallType" = cdrom ]]; then
 	"
 	grep ^ERROR $VMpath/nohup.log && exit 1
 	[[ -n "$XML" ]] && {
-		#cp $VMpath/nohup.log $VMpath/vm.xml
-		sed -n '/^<domain/ {:L /\n<.domain>/! {N; b L}; p; q}' $VMpath/nohup.log >$VMpath/vm.xml
+		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
 		exit
 	}
