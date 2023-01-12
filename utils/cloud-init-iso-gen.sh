@@ -97,6 +97,14 @@ $(for F in $sshkeyf; do echo "      -" $(tail -n1 ${F}); done)
     ssh_authorized_keys:
 $(for F in $sshkeyf; do echo "      -" $(tail -n1 ${F}); done)
 
+  - name: bar
+    group: users, admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    plain_text_passwd: redhat
+    lock_passwd: false
+    ssh_authorized_keys:
+$(for F in $sshkeyf; do echo "      -" $(tail -n1 ${F}); done)
+
 chpasswd: { expire: False }
 
 $(
