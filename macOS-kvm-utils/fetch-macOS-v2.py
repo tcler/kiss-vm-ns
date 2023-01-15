@@ -164,7 +164,7 @@ def save_image(url, sess, filename='', directory=''):
     if filename.find('/') >= 0 or filename == '':
         raise RuntimeError('Invalid save path ' + filename)
 
-    print('Saving ' + url + ' to ' + filename + '...')
+    print(f"Saving {url} to {directory}/{filename}")
 
     with open(os.path.join(directory, filename), 'wb') as fhandle:
         response = run_query(url, headers, raw=True)
@@ -173,9 +173,9 @@ def save_image(url, sess, filename='', directory=''):
         # print(total_size)
         if total_size < 1:
             total_size = response.headers['content-length']
-            print("Note: The total download size is %s bytes" % total_size)
+            print(f"Note: The total download size is {total_size} bytes")
         else:
-            print("Note: The total download size is %0.2f MB" % total_size)
+            print(f"Note: The total download size is {total_size:.2f} MB")
         size = 0
         while True:
             chunk = response.read(2 ** 20)
@@ -183,9 +183,9 @@ def save_image(url, sess, filename='', directory=''):
                 break
             fhandle.write(chunk)
             size += len(chunk)
-            print('\r{} MBs downloaded...'.format(size / (2 ** 20)), end='')
+            print(f'\r{(size / (2 ** 20))} MBs downloaded...', end='')
             sys.stdout.flush()
-        print('\rDownload complete!' + ' ' * 32)
+        print(f'\rDownload complete!{" " * 32}')
 
 
 def action_download(args):
@@ -221,7 +221,7 @@ def action_download(args):
                           diag=args.diagnostics, os_type=args.os_type)
     if args.verbose:
         print(info)
-    print('Downloading ' + info[INFO_PRODUCT] + '...')
+    print(f'Downloading {info[INFO_PRODUCT]} ...')
     dmgname = '' if args.basename == '' else args.basename + '.dmg'
     save_image(info[INFO_IMAGE_LINK], info[INFO_IMAGE_SESS], dmgname, args.outdir)
     cnkname = '' if args.basename == '' else args.basename + '.chunklist'
@@ -270,7 +270,7 @@ def action_selfcheck(args):
 
     if valid_default[INFO_PRODUCT] == valid_latest[INFO_PRODUCT]:
         # Valid MLB must give different default and latest if this is not a too new product.
-        print('ERROR: Cannot determine any previous product, got {}'.format(valid_default[INFO_PRODUCT]))
+        print(f'ERROR: Cannot determine any previous product, got {valid_default[INFO_PRODUCT]}')
         return 1
 
     if product_default[INFO_PRODUCT] != product_latest[INFO_PRODUCT]:
@@ -335,13 +335,13 @@ def action_verify(args):
     # Here we have matching default and latest products. This can only be true for very
     # new models. These models get either latest or special builds.
     if uvalid_default[INFO_PRODUCT] == generic_latest[INFO_PRODUCT]:
-        print('UNKNOWN: {} MLB can be valid if very new!'.format(args.mlb))
+        print(f'UNKNOWN: {args.mlb} MLB can be valid if very new!')
         return 0
     if uproduct_default[INFO_PRODUCT] != uvalid_default[INFO_PRODUCT]:
         print('UNKNOWN: {} MLB looks invalid, other models use product {} instead of {}!'.format(
             args.mlb, uproduct_default[INFO_PRODUCT], uvalid_default[INFO_PRODUCT]))
         return 0
-    print('UNKNOWN: {} MLB can be valid if very new and using special builds!'.format(args.mlb))
+    print(f'UNKNOWN: {args.mlb} MLB can be valid if very new and using special builds!')
     return 0
 
 
@@ -434,7 +434,7 @@ def main():
                         help='use specified os type, defaults to default ' + MLB_ZERO)
     parser.add_argument('-diag', '--diagnostics', action='store_true', help='download diagnostics image')
     parser.add_argument('-s', '--shortname', type=str, default='',
-                        help='available options: high-sierra, mojave, catalina, big-sur, monterey')
+                        help='available options: high-sierra, mojave, catalina, big-sur, monterey, ventura')
     parser.add_argument('-v', '--verbose', action='store_true', help='print debug information')
     parser.add_argument('-db', '--board-db', type=str, default=os.path.join(SELF_DIR, 'boards.json'),
                         help='use custom board list for checking, defaults to boards.json')
@@ -458,11 +458,16 @@ def main():
         return action_guess(args)
 
     # No action specified, so present a download menu instead
+    # https://mrmacintosh.com/list-of-mac-boardid-deviceid-model-identifiers-machine-models/
     # https://github.com/acidanthera/OpenCorePkg/blob/master/Utilities/macrecovery/boards.json
     products = [
             {"name": "High Sierra (10.13)", "b": "Mac-7BA5B2D9E42DDD94", "m": "00000000000J80300", "short": "high-sierra"},
             {"name": "Mojave (10.14)", "b": "Mac-7BA5B2DFE22DDD8C", "m": "00000000000KXPG00", "short": "mojave"},
             {"name": "Catalina (10.15)", "b": "Mac-00BE6ED71E35EB86", "m": "00000000000000000", "short": "catalina"},
+            {"name": "Catalina (10.15)", "b": "Mac-66F35F19FE2A0D05", "m": "00000000000000000", "short": "catalina-book2012-11inch"},
+            {"name": "Catalina (10.15)", "b": "Mac-2E6FAB96566FE58C", "m": "00000000000000000", "short": "catalina-book2012-13inch"},
+            {"name": "Catalina (10.15)", "b": "Mac-AFD8A9D944EA4843", "m": "00000000000000000", "short": "catalina-bookpro-2013-13inch"},
+            {"name": "Catalina (10.15)", "b": "Mac-C3EC7CD22292981F", "m": "00000000000000000", "short": "catalina-bookpro-2013-15inch"},
             {"name": "Big Sur (11.7) - RECOMMENDED", "b": "Mac-2BD1B31983FE1663", "m": "00000000000000000", "short": "big-sur"},
             {"name": "Monterey (12.6)", "b": "Mac-B809C3757DA9BB8D", "m": "00000000000000000", "os_type": "latest", "short": "monterey"},
             {"name": "Ventura (13)", "b": "Mac-7BA5B2D9E42DDD94", "m": "00000000000000000", "os_type": "latest", "short": "ventura"}
@@ -470,7 +475,9 @@ def main():
 
     for index, product in enumerate(products):
         name = product["name"]
-        print('%s. %12s' % (index + 1, name))
+        bid = product["b"]
+        sname = product["short"]
+        print(f'{index+1}. {name:12s} {bid} {sname}')
 
     # test locally using args.shortname = 'mojave'
     if not args.shortname or args.shortname == '':
@@ -489,8 +496,6 @@ def main():
             else:
                 index = index+1
 
-
-
     # action
     product = products[index]
     print(product['name'])
@@ -498,9 +503,9 @@ def main():
         os_type = product["os_type"]
     except:
         os_type = "default"
-    #args = gdata(mlb = product["m"], board_id = product["b"], diagnostics =
-    #        False, os_type = os_type, verbose=False, basename="", outdir=".")
-    action_download(args)
+    nargs = gdata(mlb = product["m"], board_id = product["b"], diagnostics = False,
+                 os_type = os_type, verbose=False, basename=args.basename, outdir=args.outdir)
+    action_download(nargs)
 
 
 if __name__ == '__main__':
