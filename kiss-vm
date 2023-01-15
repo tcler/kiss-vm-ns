@@ -2515,15 +2515,15 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 		fi
 	fi
 	case $cpuvendor in
-	intel) cpuParam="$qemucpu,+vmx";;
-	amd) cpuParam="$qemucpu,+svm";;
-	*) cpuParam="$qemucpu,+fixme";;
+	intel) feature=+vmx; cpuParam="$qemucpu,$feature";;
+	amd)   feature=+svm; cpuParam="$qemucpu,$feature";;
+	*)     feature=+fixme; cpuParam="$qemucpu,$feature";;
 	esac
 
 	alreadyHaveCpuOption=no
 	for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
 		if [[ "${QEMU_OPTS[$i]}" = *-cpu\ * ]]; then
-			QEMU_OPTS[$i]="${QEMU_OPTS[$i]/-cpu /-cpu ${cpuParam},}"
+			QEMU_OPTS[$i]+=,${feature}
 			alreadyHaveCpuOption=yes
 			break
 		fi
