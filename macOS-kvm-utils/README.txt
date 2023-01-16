@@ -3,22 +3,28 @@
 # I just tried converting the xml template macOS-libvirt-Catalina.xml
 # into command line arguments for virt-install/kiss-vm, thus simplifying the
 # steps of making macOS-in-KVM
+#
+# And this README.txt is also a valid bash script, you can run it:
+#   bash /path/to/README.txt
+# after installed kiss-vm: https://github.com/tcler/kiss-vm-ns
 #-------------------------------------------------------------------------------
 
 ## here, we assuming the macOS-kvm-utils directory has been installed to /usr/share
 eval img_download_dir=~/myimages/download
-macos_release=high-sierra   #availables: high-sierra, mojave, catalina, big-sur, monterey
-macos_release=mojave        #availables: high-sierra, mojave, catalina, big-sur, monterey
-macos_release=catalina      #availables: high-sierra, mojave, catalina, big-sur, monterey
-macos_release=big-sur       #availables: high-sierra, mojave, catalina, big-sur, monterey
-macos_release=monterey      #availables: high-sierra, mojave, catalina, big-sur, monterey
-macos_release=catalina-bookpro-2013-13inch  #availables: high-sierra, mojave, catalina, big-sur, monterey
-macos_release=catalina-bookpro-2013-15inch  #availables: high-sierra, mojave, catalina, big-sur, monterey
-macos_vmname=macos-${macos_release}-x
-mkdir -p $img_download_dir
 
+macos_release=high-sierra   #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+macos_release=mojave        #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+macos_release=catalina      #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+macos_release=catalina-bookpro-2013-13inch  #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+macos_release=catalina-bookpro-2013-15inch  #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+macos_release=big-sur       #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+macos_release=monterey      #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+macos_release=catalina      #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+
+macos_vmname=macos-${macos_release}
 macos_image=BaseSystem-mac-$macos_release
 
+mkdir -p $img_download_dir
 if [[ ! -f $img_download_dir/${macos_image}.img ]]; then
 	/usr/share/macOS-kvm-utils/fetch-macOS-v2.py -o $img_download_dir -n ${macos_image} -s $macos_release
 	command -v dmg2img || { echo "{ERROR} command dmg2img is required."; exit 1; }
