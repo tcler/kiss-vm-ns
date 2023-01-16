@@ -2510,7 +2510,25 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 		[[ "${qemuopt}" = *-cpu\ * ]] && IFS=, read qemucpu _ <<<"${qemuopt/*[= ]-cpu /}"
 	done
 	if [[ "$qemucpu" != host ]]; then
-		_cpulist=$($QEMU_KVM -cpu help|grep "$qemucpu")
+		#fuzzy match
+		oqemucpu=$qemucpu
+		qemucpu=$(qemu-kvm -cpu ?| awk -v modelname=$qemucpu -v pat=".*${qemucpu,,}.*" '{
+			if ($2 == modelname) {
+				yes++
+			} else if (tolower($2) ~ pat) {
+				if (length(m) == 0 || length(m) >= length($2)) { m=$2 }
+			} }
+			END {
+				if (yes) { print modelname } else { print m }
+			}')
+		if [[ -z "$qemucpu" ]]; then
+			echo "{VM:ERROR}: can not find cpu model name '$oqemucpu', please check: qemu-kvm -cpu ?" >&2
+			exit 2
+		fi
+		if $QEMU_KVM -cpu help|grep "$qemucpu .*alias of"; then
+			qemucpu=$($QEMU_KVM -cpu help|sed -rn "/$qemucpu/"'{s/.*alias of (.+)\).*/\1/;p}')
+		fi
+		_cpulist=$($QEMU_KVM -cpu help|sed -n "/$qemucpu/{s/)$//; p}")
 		if echo "$_cpulist"|grep -qw Intel; then
 			cpuvendor=intel
 		elif echo "$_cpulist"|grep -qw AMD; then
@@ -2527,6 +2545,7 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 	for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
 		if [[ "${QEMU_OPTS[$i]}" = *-cpu\ * ]]; then
 			QEMU_OPTS[$i]+=,${flag}
+			QEMU_OPTS[$i]=$(echo "$QEMU_OPTS[$i]"|sed -r "s/-cpu [^,]+/-cpu $qemucpu/")
 			alreadyHaveCpuOption=yes
 			echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print $1}'
 			break
