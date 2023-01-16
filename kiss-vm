@@ -2506,6 +2506,9 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 	cpuvendor=${kmodule#kvm_}
 	qemucpu=${QEMU_CPU:-host}
+	for qemuopt in "${QEMU_OPTS[@]}"; do
+		[[ "${qemuopt}" = *-cpu\ * ]] && IFS=, read qemucpu _ <<<"${qemuopt/*[= ]-cpu /}"
+	done
 	if [[ "$qemucpu" != host ]]; then
 		_cpulist=$($QEMU_KVM -cpu help|grep "$qemucpu")
 		if echo "$_cpulist"|grep -qw Intel; then
@@ -2515,16 +2518,17 @@ support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 		fi
 	fi
 	case $cpuvendor in
-	intel) feature=+vmx; cpuParam="$qemucpu,$feature";;
-	amd)   feature=+svm; cpuParam="$qemucpu,$feature";;
-	*)     feature=+fixme; cpuParam="$qemucpu,$feature";;
+	intel) flag=+vmx; cpuParam="$qemucpu,$flag";;
+	amd)   flag=+svm; cpuParam="$qemucpu,$flag";;
+	*)     flag=+fixme; cpuParam="$qemucpu,$flag";;
 	esac
 
 	alreadyHaveCpuOption=no
 	for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
 		if [[ "${QEMU_OPTS[$i]}" = *-cpu\ * ]]; then
-			QEMU_OPTS[$i]+=,${feature}
+			QEMU_OPTS[$i]+=,${flag}
 			alreadyHaveCpuOption=yes
+			echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print $1}'
 			break
 		fi
 	done
