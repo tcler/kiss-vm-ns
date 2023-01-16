@@ -14,7 +14,7 @@ ifeq (, $(shell which sudo))
 	SUDO=
 endif
 
-i in ins inst install:
+i in ins inst install: _install_macos_kvm_utils
 	$(SUDO) cp -af utils/* $(_bin)/.
 	@$(SUDO) rm -f $(_bin)/install-sbopkg.sh /usr/local/bin/port-available.sh
 	$(SUDO) cp -af kiss-vm $(_bin)/vm
@@ -35,6 +35,9 @@ i in ins inst install:
 p pu pull u up update:
 	git pull --rebase || :
 	@echo
+
+_install_macos_kvm_utils:
+	$(SUDO) cp -r macOS-kvm-utils /usr/share/.
 
 _isroot:
 	@test `id -u` = 0 || { echo "[Warn] need root permission" >&2; exit 1; }
