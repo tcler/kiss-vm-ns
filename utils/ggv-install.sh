@@ -81,7 +81,7 @@ echo
 		sbopkg_install gocr
 		;;
 	fedora*|red?hat*|centos*|rocky*)
-		yum $yumOpt install -y gocr;;
+		yum $yumOpt install -y gocr || yum-install-from-fedora.sh gocr;;
 	debian*|ubuntu*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr;;
 	opensuse*|sles*)

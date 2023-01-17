@@ -34,7 +34,7 @@ command -v wiminfo || {
 		sbopkg_install wimlib
 		;;
 	fedora*|red?hat*|centos*|rocky*)
-		yum $yumOpt install -y wimlib-utils
+		yum $yumOpt install -y wimlib-utils || yum-install-from-fedora.sh wimlib-utils
 		;;
 	debian*|ubuntu*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y wimtools
