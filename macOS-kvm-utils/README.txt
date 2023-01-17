@@ -19,6 +19,8 @@ macos_release=catalina-bookpro-2013-13inch  #availables: high-sierra, mojave, ca
 macos_release=catalina-bookpro-2013-15inch  #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
 macos_release=big-sur       #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
 macos_release=monterey      #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+macos_release=ventura       #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
+
 macos_release=catalina      #availables: high-sierra, mojave, catalina, big-sur, monterey, ventura
 
 macos_vmname=macos-${macos_release}
@@ -40,7 +42,7 @@ case $cpu_vendor in
 	#verified on host(thindpad-T460P: {CPU: Intel i7-6700HQ, OS: fedora-37}) with all macOS version
 	qemucpu_opt="-cpu host,vendor=GenuineIntel,+hypervisor,+invtsc,kvm=on,+fma,+avx,+avx2,+aes,+ssse3,+sse4_2,+popcnt,+sse4a,+bmi1,+bmi2";;
 *AMD)
-	#verified on host(deskmini-x300: {CPU: AMD R7-5700G, OS: fedora-36}) with catalina, high-sierra
+	#verified on host(deskmini-x300: {CPU: AMD R7-5700G, OS: fedora-36}) with high-sierra,catalina,big-sur
 	#yes, we need emulate Intel CPU on AMD cpu. here we use model: Haswell[2013](or Broadwell[2015]) for better compatible
 	qemucpu_opt="-cpu Haswell,vendor=GenuineIntel,+hypervisor,+invtsc,kvm=on,+fma,+avx,+avx2,+aes,+ssse3,+sse4_2,+popcnt,+sse4a,+bmi1,+bmi2";;
 esac

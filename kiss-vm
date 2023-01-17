@@ -2571,9 +2571,12 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 		for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
 			qemuopt="${QEMU_OPTS[$i]}"
 			if [[ "${qemuopt}" = *-cpu\ * ]]; then
-				QEMU_OPTS[$i]+=,${flag}
-				[[ "$omodelname" != "$modelname" ]] &&
-					QEMU_OPTS[$i]=$(echo "$QEMU_OPTS[$i]"|sed -r "s/-cpu [^,]+/-cpu $modelname/")
+				qemuopt+=,${flag}
+				if [[ "$omodelname" != "$modelname" ]]; then
+					QEMU_OPTS[$i]=$(echo "$qemuopt"|sed -r "s/-cpu [^,]+/-cpu $modelname/")
+				else
+					QEMU_OPTS[$i]="$qemuopt"
+				fi
 				echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print $1}'
 				break
 			fi
@@ -2592,7 +2595,7 @@ else
 				exit 2
 			fi
 			[[ "$omodelname" != "$modelname" ]] &&
-				QEMU_OPTS[$i]=$(echo "$QEMU_OPTS[$i]"|sed -r "s/-cpu [^,]+/-cpu $modelname/")
+				QEMU_OPTS[$i]=$(echo "$qemuopt"|sed -r "s/-cpu [^,]+/-cpu $modelname/")
 			echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print $1}'
 			break
 		fi
