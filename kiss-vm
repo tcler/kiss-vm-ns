@@ -655,6 +655,7 @@ vmclone() {
 		egrep --color=always "[][~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$nvmname"
 	}
 
+	echo -e "{VM:INFO} checking source and destination VM status ..."
 	local srcname=$(vmname_extract -all "$1"|head -1)
 	local dstname=$2
 	[[ -z "$srcname" ]] && {
@@ -671,6 +672,10 @@ vmclone() {
 		[[ "$APPEND" = yes ]] && dstname=${srcname}-${dstname}
 	fi
 	is_invalid_vmname "$dstname" && return 1
+	virsh desc $dstname &>/dev/null && {
+		echo -e "{VM:WARN} Guest $dstname has been there ..."
+		return 1
+	}
 
 	#get src vm path
 	srcpath=$(vmhomedir $srcname 2>/dev/null|head -n1)
@@ -690,44 +695,62 @@ vmclone() {
 	}
 
 	#virsh suspend "$srcname"
-	virsh destroy "$srcname" 2>/dev/null
+	echo -e "{VM:INFO} stoping source VM '${srcname}' ..."
+	virsh destroy "$srcname" &>/dev/null
 	[[ "$(vmstat $srcname)" = running* ]] && {
 		echo -e "{VM:WARN} Guest $srcname is still running, please stop it before clone ..."
 		return 1
 	}
 
 	# do clone
+	echo -e "{VM:INFO} cloning $srcname to $dstname ..."
 	local distron=$(awk -F/ '{print $(NF-1)}' <<<"${srcpath}")
 	local dstpath=$VMSHOME/$distron/$dstname
 	run -as=$VMUSER mkdir -p $dstpath
+	rm -f $dstpath/*
 	if [[ "$VMSHARE" != yes ]]; then
 		setfacl -d -mg::--- -mo::--- $dstpath
 	fi
+	chcon --reference=${srcpath} $dstpath
 	run -as=$VMUSER touch $dstpath/.kiss-vm
-	rm -f $dstpath/${dstname}.qcow2
-	run -as=$VMUSER bash -c "virt-clone -o ${srcname} --name ${dstname} --file $dstpath/${dstname}.qcow2 \
+
+	fileopts=$(_vmblklist $srcname|sed -rn '/( -|\.iso)$/!{ s|^.* | --file |;'"s|$srcpath|$dstpath|;s%/${srcname}([^/]+)\$%/${dstname}\1%;"' p}')
+	run -debug -as=$VMUSER bash -c "virt-clone -o ${srcname} --name ${dstname} $fileopts \
 		--check path_exists=off \
 		--print-xml >$dstpath/${dstname}.xml"
 	[[ -s $dstpath/${dstname}.xml ]] || return 1
+	sed -i "s|$srcpath|$dstpath|g" $dstpath/${dstname}.xml
 	#Note: https://www.reddit.com/r/archlinux/comments/obn999/ownership_of_qcow2_images_created_by_virtmanager/
 	#^^^^ why don't use virt-clone directly
 
-	read _type _dev _target srcimage < <(_vmblklist "$srcname")
-	cp -v --sparse=always $srcimage $dstpath/${dstname}.qcow2
+	#copy file
+	for f in ${srcpath}/*; do
+		fname=${f##*/}
+		df=$dstpath/$fname
+		[[ "${fname}" = nohup.log ]] && continue
+		if [[ "${fname}" = ${srcname}[-.]* ]]; then
+			dfname=${fname/$srcname/$dstname}
+			df="$dstpath/${dfname}"
+			sed -i "s|/$fname|/$dfname|g" $dstpath/${dstname}.xml
+		fi
+		run -debug cp -p --sparse=always --preserve=context "$f" "$df"
+		#if the cp --preserve=context does not work, use:
+		#run -debug chcon --reference="$f" "$df"
+	done
+
 	if [[ $(id -u) = 0 ]]; then
 		chown $VMUSER:$(id -g -u $VMUSER) -R $dstpath
 	fi
-	chcon --reference=${srcpath%/*} -R $dstpath
-	run -as=$VMUSER virsh define $dstpath/${dstname}.xml
+	run -debug -as=$VMUSER virsh define $dstpath/${dstname}.xml
 	vmhomedir ${dstname}
 
 		#--enable customize,user-account,ssh-hostkeys,net-hostname,net-hwaddr,machine-id \
-	LIBGUESTFS_BACKEND=direct virt-sysprep -d ${dstname} \
+	LIBGUESTFS_BACKEND=direct run -debug virt-sysprep -d ${dstname} \
 		--enable customize,user-account,net-hostname,net-hwaddr,machine-id \
 		--hostname $dstname \
 		--remove-user-accounts bar \
 		--run-command "ls -l"
-	virsh start $dstname
+	run -debug -as=$VMUSER virsh start $dstname
 
 	#virsh resume "$srcname"
 	#virsh start "$srcname"
