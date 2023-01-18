@@ -707,6 +707,7 @@ vmclone() {
 	local distron=$(awk -F/ '{print $(NF-1)}' <<<"${srcpath}")
 	local dstpath=$VMSHOME/$distron/$dstname
 	run -as=$VMUSER mkdir -p $dstpath
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $dstpath 2>/dev/null
 	rm -f $dstpath/*
 	if [[ "$VMSHARE" != yes ]]; then
 		setfacl -d -mg::--- -mo::--- $dstpath
