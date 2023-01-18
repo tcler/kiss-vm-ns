@@ -714,12 +714,12 @@ vmclone() {
 	chcon --reference=${srcpath} $dstpath
 	run -as=$VMUSER touch $dstpath/.kiss-vm
 
-	fileopts=$(_vmblklist $srcname|sed -rn '/( -|\.iso)$/!{ s|^.* | --file |;'"s|$srcpath|$dstpath|;s%/${srcname}([^/]+)\$%/${dstname}\1%;"' p}')
+	fileopts=$(_vmblklist $srcname|sed -rn '/( -|\.iso)$/!{ s|^.* | --file |;'"s|$srcpath|$dstpath|;s%/${srcname}([^/]+)\$%/${dstname}\1%;"' p}'|xargs)
 	run -debug -as=$VMUSER bash -c "virt-clone -o ${srcname} --name ${dstname} $fileopts \
-		--check path_exists=off \
+		--check path_exists=off --check disk_size=off \
 		--print-xml >$dstpath/${dstname}.xml"
 	[[ -s $dstpath/${dstname}.xml ]] || return 1
-	sed -i "s|$srcpath|$dstpath|g" $dstpath/${dstname}.xml
+	sed -i "s|$srcpath|$dstpath|" $dstpath/${dstname}.xml
 	#Note: https://www.reddit.com/r/archlinux/comments/obn999/ownership_of_qcow2_images_created_by_virtmanager/
 	#^^^^ why don't use virt-clone directly
 
