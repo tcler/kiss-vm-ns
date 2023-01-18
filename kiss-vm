@@ -733,10 +733,16 @@ vmclone() {
 			df="$dstpath/${dfname}"
 			sed -i "s|/$fname|/$dfname|g" $dstpath/${dstname}.xml
 		fi
-		run -debug cp -p --sparse=always --preserve=context "$f" "$df"
+		run -debug cp -p --sparse=always --preserve=all "$f" "$df"
 		#if the cp --preserve=context does not work, use:
 		#run -debug chcon --reference="$f" "$df"
 	done
+
+	#virt-clone get wrong nvram path/filename, fix it.
+	if grep -q "<nvram>$dstpath/" $dstpath/${dstname}.xml; then
+		nvramline=$(virsh dumpxml "$srcname"|sed -n "/<nvram>/{s#$srcpath#$dstpath#; p}")
+		sed -i "/<nvram>/s#^.*\$#${nvramline}#" $dstpath/${dstname}.xml
+	fi
 
 	if [[ $(id -u) = 0 ]]; then
 		chown $VMUSER:$(id -g -u $VMUSER) -R $dstpath
