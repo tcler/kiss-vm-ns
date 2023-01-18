@@ -1464,7 +1464,7 @@ COMM
 				: #do nothing
 			else
 				echo -e "{*INFO*} run: usermod -a -G libvirt $vmuser ..."
-				usermod -a -G libvirt $vmuser  #or gpasswd -a $vmuser libvirt
+				usermod -a -G libvirt,${QEMU_USER} $vmuser  #or gpasswd -a $vmuser libvirt
 			fi
 		fi
 	}
