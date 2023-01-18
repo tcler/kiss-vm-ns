@@ -411,13 +411,13 @@ vmifaddr() {
 }
 
 vmviewer() {
-	echo "{VM:INFO} redirect to: virt-viewer -s ..."
+	echo "{VM:INFO} redirect to: virt-viewer -s -v -r ..."
 	local logf=$RuntimeTmp/vmviewer-$$.log
 	local waitopt=
 	[[ "$WAIT" = yes ]] && waitopt=-w
 
 	set -- $(vmname_extract "$@")
-	run -debug -nohup=$logf virt-viewer -s -v $waitopt "$@"
+	run -debug -nohup=$logf virt-viewer -s -v -r $waitopt "$@"
 	sleep 1; cat $logf 2>/dev/null
 }
 
@@ -2869,7 +2869,7 @@ _Imagepattern='(qcow2c|qcow2|qcow2.xz|raw|raw.xz|img)'
 		read _Imageurl _Imagepattern <<<"${_Imageurl/\%\%/ }"
 	}
 	if [[ "$_Imageurl" = cdrom:* ]]; then
-		InstallType=cdrom
+		InstallType=cdrom_image
 		Isourl=${Isourl:-${_Imageurl#cdrom:}}
 		Imageurl=
 	else
@@ -3777,7 +3777,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	vm vnc $vmname -get
 
 	if [[ -n $DISPLAY ]]; then
-		run -debug -nohup=/dev/null virt-viewer -sv $vmname
+		run -debug -nohup=/dev/null virt-viewer -s -v -r $vmname
 		echo -e "\n{VM:INFO} pxe guest $vmname booting ..."
 	else
 		echo -e "\n{VM:INFO} please connect vnc to continue/complete the install:"
@@ -4062,13 +4062,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	fi
 
 	if [[ -n $DISPLAY ]]; then
-		run -debug virt-viewer -s -v $vmname |& tee $VMpath/virt-viewer.log
-		if grep -iq "server closed the connection" $VMpath/virt-viewer.log; then
-			run -debug -nohup=/dev/null virt-viewer -s -v $vmname
-			echo -e "\n{VM:INFO} guest $vmname install finished"
-		else
-			echo -e "\n{VM:INFO} virt-viewer exit, but seems install has not finished; you can run: 'virt-viewer -s $vmname' to finish install later"
-		fi
+		run -debug -nohup=/dev/null virt-viewer -s -v -r $vmname
 	else
 		echo -e "\n{VM:INFO} please connect vnc to continue install:"
 		for vncaddr in $(vmvncproc $vmname); do
