@@ -28,7 +28,7 @@ macos_image=BaseSystem-mac-$macos_release
 
 mkdir -p $img_download_dir
 if [[ ! -f $img_download_dir/${macos_image}.img ]]; then
-	/usr/share/macOS-kvm-utils/fetch-macOS-v2.py -o $img_download_dir -n ${macos_image} -s $macos_release
+	/usr/share/macOS-kvm-utils/fetch-macOS-v2.py -o $img_download_dir -n ${macos_image} -s $macos_release -v
 	command -v dmg2img || { echo "{ERROR} command dmg2img is required."; exit 1; }
 	(cd $img_download_dir; dmg2img -i ${macos_image}.dmg)
 fi

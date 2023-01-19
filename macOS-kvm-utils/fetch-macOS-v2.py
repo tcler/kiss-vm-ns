@@ -83,7 +83,7 @@ def mlb_from_eeee(eeee):
 
     return '00000000000' + eeee + '00'
 
-def get_session(args):
+def get_session(verbose):
     headers = {
         'Host': 'osrecovery.apple.com',
         'Connection': 'close',
@@ -92,7 +92,7 @@ def get_session(args):
 
     headers, output = run_query('http://osrecovery.apple.com/', headers)
 
-    if args.verbose:
+    if verbose:
         print('Session headers:')
         for header in headers:
             print('{}: {}'.format(header, headers[header]))
@@ -187,7 +187,6 @@ def save_image(url, sess, filename='', directory=''):
             sys.stdout.flush()
         print(f'\rDownload complete!{" " * 32}')
 
-
 def action_download(args):
     """
     Reference information for queries:
@@ -216,11 +215,11 @@ def action_download(args):
     fg=B2E6AA07DB9088BE5BDB38DB2EA824FDDFB6C3AC5272203B32D89F9D8E3528DC
     """
 
-    session = get_session(args)
+    session = get_session(args.verbose)
     info = get_image_info(session, bid=args.board_id, mlb=args.mlb,
                           diag=args.diagnostics, os_type=args.os_type)
     if args.verbose:
-        print(info)
+        print(f'{"="*16} image info {"="*16}\n{info}\n{"="*16} image info {"="*16}')
     print(f'Downloading {info[INFO_PRODUCT]} ...')
     dmgname = '' if args.basename == '' else args.basename + '.dmg'
     save_image(info[INFO_IMAGE_LINK], info[INFO_IMAGE_SESS], dmgname, args.outdir)
@@ -246,7 +245,7 @@ def action_selfcheck(args):
     return default_recovery(ppp = ppp)              # Returns oldest.
     """
 
-    session = get_session(args)
+    session = get_session(args.verbose)
     valid_default = get_image_info(session, bid=RECENT_MAC, mlb=MLB_VALID,
                                    diag=False, os_type='default')
     valid_latest = get_image_info(session, bid=RECENT_MAC, mlb=MLB_VALID,
@@ -306,7 +305,7 @@ def action_verify(args):
     """
     Try to verify MLB serial number.
     """
-    session = get_session()
+    session = get_session(args.verbose)
     generic_latest = get_image_info(session, bid=RECENT_MAC, mlb=MLB_ZERO,
                                     diag=False, os_type='latest')
     uvalid_default = get_image_info(session, bid=args.board_id, mlb=args.mlb,
@@ -358,7 +357,7 @@ def action_guess(args):
 
     supported = {}
 
-    session = get_session(args)
+    session = get_session(args.verbose)
 
     generic_latest = get_image_info(session, bid=RECENT_MAC, mlb=MLB_ZERO,
                                     diag=False, os_type='latest')
@@ -404,7 +403,6 @@ def action_guess(args):
 
     print('UNKNOWN: Failed to determine supported models for MLB {}!'.format(mlb))
 
-
 # https://stackoverflow.com/questions/2280334/shortest-way-of-creating-an-object-with-arbitrary-attributes-in-python
 class gdata:
     """
@@ -412,7 +410,6 @@ class gdata:
     """
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
-
 
 def main():
     parser = argparse.ArgumentParser(description='Gather recovery information for Macs')
@@ -429,7 +426,7 @@ def main():
     parser.add_argument('-m', '--mlb', type=str, default=MLB_ZERO,
                         help='use specified logic board serial for downloading, defaults to ' + MLB_ZERO)
     parser.add_argument('-e', '--code', type=str, default='',
-                        help='generate product logic board serial with specified product EEEE code')
+                        help='generate product logic board serial with specified product EEEE code. will overwrite -m value')
     parser.add_argument('-os', '--os-type', type=str, default='default', choices=['default', 'latest'],
                         help='use specified os type, defaults to default ' + MLB_ZERO)
     parser.add_argument('-diag', '--diagnostics', action='store_true', help='download diagnostics image')
@@ -448,8 +445,6 @@ def main():
         print('ERROR: Cannot use MLBs in non 17 character format!')
         sys.exit(1)
 
-    if args.action == 'download':
-        return action_download(args)
     if args.action == 'selfcheck':
         return action_selfcheck(args)
     if args.action == 'verify':
@@ -457,7 +452,6 @@ def main():
     if args.action == 'guess':
         return action_guess(args)
 
-    # No action specified, so present a download menu instead
     # https://mrmacintosh.com/list-of-mac-boardid-deviceid-model-identifiers-machine-models/
     # https://github.com/acidanthera/OpenCorePkg/blob/master/Utilities/macrecovery/boards.json
     products = [
@@ -473,40 +467,45 @@ def main():
             {"name": "Ventura (13)", "b": "Mac-7BA5B2D9E42DDD94", "m": "00000000000000000", "os_type": "latest", "short": "ventura"}
     ]
 
+    # if no action specified use default download action, present a download menu:
     for index, product in enumerate(products):
         name = product["name"]
         bid = product["b"]
         sname = product["short"]
         print(f'{index+1}. {name:12s} {bid} {sname}')
 
-    # test locally using args.shortname = 'mojave'
-    if not args.shortname or args.shortname == '':
-        answer = input('\nChoose a product to download (1-%s): ' % len(products))
+    # if shortname option specified, use the validated combination of {board_id + mlb}
+    if args.shortname:
+        if args.shortname == '':
+            answer = input('\nChoose a product to download (1-%s): ' % len(products))
+            try:
+                index = int(answer) - 1
+                if index < 0:
+                    raise ValueError
+            except (ValueError, IndexError):
+                pass
+        else:
+            index = 0
+            for product in products:
+                if args.shortname == product['short']:
+                    break
+                else:
+                    index = index+1
+
+        # action
+        product = products[index]
+        print(product['name'])
         try:
-            index = int(answer) - 1
-            if index < 0:
-                raise ValueError
-        except (ValueError, IndexError):
-            pass
+            os_type = product["os_type"]
+        except:
+            os_type = "default"
+        nargs = gdata(mlb = product["m"], board_id = product["b"], diagnostics = False,
+                     os_type = os_type, verbose=args.verbose, basename=args.basename, outdir=args.outdir)
     else:
-        index = 0
-        for product in products:
-            if args.shortname == product['short']:
-                break
-            else:
-                index = index+1
+        print(f'Note: you are using default or specified board_id+mlb compose: bid={args.board_id},mlb={args.mlb}')
+        nargs = args
 
-    # action
-    product = products[index]
-    print(product['name'])
-    try:
-        os_type = product["os_type"]
-    except:
-        os_type = "default"
-    nargs = gdata(mlb = product["m"], board_id = product["b"], diagnostics = False,
-                 os_type = os_type, verbose=False, basename=args.basename, outdir=args.outdir)
     action_download(nargs)
-
 
 if __name__ == '__main__':
     sys.exit(main())
