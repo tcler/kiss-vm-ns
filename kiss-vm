@@ -148,13 +148,13 @@ run() {
 }
 
 create_vmhome() {
-	local vmhome=$1
+	local vmhome=${1%/}
 	if [[ -z "$vmhome" ]]; then
 		echo "{VM:ERROR} create_vmhost <vmhome>: argument vmhome is required"
 		return 1
 	fi
 	run -as=$VMUSER mkdir -p $vmhome
-	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx -R $vmhome 2>/dev/null
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${vmhome%/*} ${vmhome} 2>/dev/null
 }
 
 at_exit() {
