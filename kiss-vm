@@ -147,6 +147,16 @@ run() {
 	return $_rc
 }
 
+create_vmhome() {
+	local vmhome=$1
+	if [[ -z "$vmhome" ]]; then
+		echo "{VM:ERROR} create_vmhost <vmhome>: argument vmhome is required"
+		return 1
+	fi
+	run -as=$VMUSER mkdir -p $vmhome
+	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx -R $vmhome 2>/dev/null
+}
+
 at_exit() {
 	#echo -e "\n\n{VM:debug} Removing tmpdir: $RuntimeTmp"
 	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=$orig_disable_ipv6 &>/dev/null
@@ -706,8 +716,7 @@ vmclone() {
 	echo -e "{VM:INFO} cloning $srcname to $dstname ..."
 	local distron=$(awk -F/ '{print $(NF-1)}' <<<"${srcpath}")
 	local dstpath=$VMSHOME/$distron/$dstname
-	run -as=$VMUSER mkdir -p $dstpath
-	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $dstpath 2>/dev/null
+	create_vmhome $dstpath
 	rm -f $dstpath/*
 	if [[ "$VMSHARE" != yes ]]; then
 		setfacl -d -mg::--- -mo::--- $dstpath
@@ -1478,11 +1487,10 @@ prepare_kiss_vm() {
 	}
 COMM
 
-	su $vmuser -s /bin/bash -c "mkdir -p $VMSHOME"
+	run -as=$VMUSER mkdir -p "$VMSHOME"
 
-	echo -e "{VM:INFO} setfacl -mu:${QEMU_USER}:rx $vmuserhome ..."
-	setfacl -mu:${QEMU_USER}:rx $vmuserhome
-	setfacl -mu:${QEMU_USER}:rx -R $VMSHOME
+	echo -e "{VM:INFO} setfacl -mu:${QEMU_USER}:rx $vmuserhome $VMSHOME ..."
+	setfacl -mu:${QEMU_USER}:rx $vmuserhome $VMSHOME
 	setfacl -mu:${QEMU_USER}:rx -R $vmuserhome/.cache/virt-manager 2>/dev/null
 	getfacl $vmuserhome
 	getfacl $VMSHOME
@@ -2854,8 +2862,7 @@ fi
 
 	VMpath=$VMSHOME/$Distro/$vmname
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
-	run -as=$VMUSER mkdir -p $VMpath
-	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx -R $VMSHOME 2>/dev/null
+	create_vmhome $VMpath
 	if [[ "$VMSHARE" != yes ]]; then
 		setfacl -d -mg::--- -mo::--- $VMpath
 	fi
