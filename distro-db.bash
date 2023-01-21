@@ -35,7 +35,7 @@ distroInfo[openSUSE-leap-15.3]="https://download.opensuse.org/repositories/Cloud
 distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.$GuestARCH.qcow2"
 
 #### FreeBSD
-distroInfo[FreeBSD-12.3]="https://download.freebsd.org/ftp/releases/VM-IMAGES/12.3-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
+distroInfo[FreeBSD-12.4]="https://download.freebsd.org/ftp/releases/VM-IMAGES/12.4-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-13.1]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/14.0-CURRENT/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 
