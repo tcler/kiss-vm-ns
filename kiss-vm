@@ -1687,7 +1687,7 @@ if [[ $Intranet = yes ]]; then
 		rhel-8*|rhel8*)
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug\/tree}
-			read dtype distro <<< $(awk -F/+ '{
+			read rtype distro <<< $(awk -F/+ '{
 				for (i=3;i<NF;i++) { if ($(i+1) ~ /RHEL-/) {
 					d=$(i+1)
 					if (d ~ /RHEL-[0-9]$/) d=$(i+2)
@@ -1695,7 +1695,8 @@ if [[ $Intranet = yes ]]; then
 				}
 			}' <<<"$url")
 			read prefix ver time <<< ${distro//-/ }
-			[[ "$dtype" =~ rel-eng|nightly ]] || dtype=nightly
+			[[ "$rtype" =~ rel-eng|nightly ]] || rtype=nightly
+			verx=8
 			Repos+=(
 				BaseOS:${url}
 				AppStream:${url/BaseOS/AppStream}
@@ -1716,14 +1717,14 @@ if [[ $Intranet = yes ]]; then
 				RT-debuginfo:${debug_url/BaseOS/RT}
 				SAP-debuginfo:${debug_url/BaseOS/SAP}
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
-				Buildroot:http://$downhostname/rhel-8/$dtype/BUILDROOT-8/latest-BUILDROOT-$ver-RHEL-8/compose/Buildroot/$arch/os
+				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
 				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux8
 			)
 			;;
 		rhel-9*|rhel9*)
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug\/tree}
-			read dtype distro <<< $(awk -F/+ '{
+			read rtype distro <<< $(awk -F/+ '{
 				for (i=3;i<NF;i++) { if ($(i+1) ~ /RHEL-/) {
 					d=$(i+1)
 					if (d ~ /RHEL-[0-9]$/) d=$(i+2)
@@ -1731,7 +1732,8 @@ if [[ $Intranet = yes ]]; then
 				}
 			}' <<<"$url")
 			read prefix ver time <<< ${distro//-/ }
-			dtype=nightly
+			[[ "$rtype" =~ rel-eng|nightly ]] || rtype=nightly
+			verx=9
 			Repos+=(
 				BaseOS:${url}
 				AppStream:${url/BaseOS/AppStream}
@@ -1752,7 +1754,7 @@ if [[ $Intranet = yes ]]; then
 				RT-debuginfo:${debug_url/BaseOS/RT}
 				SAP-debuginfo:${debug_url/BaseOS/SAP}
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
-				Buildroot:http://$downhostname/rhel-9/$dtype/BUILDROOT-9/latest-BUILDROOT-9-RHEL-9/compose/Buildroot/$arch/os
+				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
 				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux9
 			)
 			;;
