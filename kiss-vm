@@ -39,6 +39,7 @@ DSIZE=64
 baudrate=115200
 GRAPHICS_OPT="--graphics=vnc,listen=0.0.0.0"
 HostARCH=$(uname -m)
+GuestARCH=$HostARCH
 VIDEO_OPT="--video=qxl"
 SOUND_OPT=""
 QEMU_OPTS=()
@@ -2389,7 +2390,14 @@ DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 	exit 1
 }
 
-QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm qemu-system-x86)
+QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm)
+if [[ "$GuestARCH" != "$HostARCH" ]]; then
+	QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-system-$GuestARCH)
+	if [[ -z "$QEMU_KVM" ]]; then
+		echo -e "{VM:ERROR} command 'qemu-system-$GuestARCH' not found"
+		exit 2
+	fi
+fi
 qemu_kvm_nvr() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
@@ -2541,13 +2549,15 @@ case "$GuestARCH" in
 esac
 
 fuzzy_match_cpu_model_name() {
+	local QEMU_CMD=$QEMU_KVM
 	local modelname=${1%%,*}
-	qemu-kvm -cpu ? | awk -v modelname=$modelname -v pat=".*${modelname,,}.*" '
+	$QEMU_CMD -cpu ? | sed -n '1,/^$/{/Available CPUs:/d;p}' | awk -v modelname=$modelname -v pat=".*${modelname,,}.*" '
 	{
-		if ($2 == modelname) {
+		if (length($2) > 0) { M=$2 } else { M=$1 }
+		if (M == modelname) {
 			yes++
-		} else if (tolower($2) ~ pat) {
-			if (length(m) == 0 || length(m) >= length($2)) { m=$2 }
+		} else if (tolower(M) ~ pat) {
+			if (length(m) == 0 || length(m) >= length($2)) { m=M }
 		}
 	}
 	END {
