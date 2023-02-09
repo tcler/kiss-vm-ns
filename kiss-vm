@@ -30,6 +30,7 @@ eval ImagePath=~$VMUSER/myimages
 eval perConfDir=~$VMUSER/.config/${_repon}
 eval oldperConfDir=~$VMUSER/.config/kiss-vm
 
+VM_DOMAIN=lab.kissvm.org
 RuntimeTmp=/tmp/vm-$$
 INTERACT=yes
 Intranet=yes
@@ -214,7 +215,7 @@ vmname_gen() {
 	if [[ -n "$cname" ]]; then
 		name=${cname//[._]/-}
 	else
-		[[ -n "$GuestARCH" ]] && archsuffix="+$GuestARCH"
+		[[ "$GuestARCH" != "$HostARCH" ]] && archsuffix="+$GuestARCH"
 		name=${VMUSER}-${name}$archsuffix
 	fi
 	echo -n $name
@@ -2869,7 +2870,7 @@ fi
 			exit
 		fi
 	}
-	vmhostname=$vmname
+	vmhostname=${vmname%+${GuestARCH}}
 	[[ "$GenerateImage" = yes ]] && vmhostname=${vmname#${VMUSER}-}
 
 	VMpath=$VMSHOME/$Distro/$vmname
@@ -3239,7 +3240,7 @@ if [[ "$InstallType" = location ]]; then
 		test -f /etc/dnf/dnf.conf && { test -f /usr/bin/yum || ln -s /usr/bin/{dnf,yum}; }
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] configure hostname ..."
-		test -f /etc/hostname && echo ${vmhostname} >/etc/hostname || echo HOSTNAME=${vmhostname} >>/etc/sysconfig/network
+		test -f /etc/hostname && echo ${vmhostname}.$VM_DOMAIN >/etc/hostname || echo HOSTNAME=${vmhostname}.$VM_DOMAIN >>/etc/sysconfig/network
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install pkgs ${PKGS} ..."
 		yum install -y wget ${PKGS} 2>/dev/null
@@ -3502,10 +3503,10 @@ elif [[ "$InstallType" = import ]]; then
 		}
 		[[ "$DEBUG" = yes ]] && DEBUG_OPT=--debug
 		if [[ "$NO_SSHKEY" = yes ]]; then
-			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" $DEBUG_OPT $REPO_OPTS \
+			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" -p "$PKGS" $DEBUG_OPT $REPO_OPTS \
 				 $_REPO_OPTS $FIPS_OPT $KDUMP_OPT
 		else
-			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname} -b "$BPKGS" -p "$PKGS" $DEBUG_OPT $REPO_OPTS \
+			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" -p "$PKGS" $DEBUG_OPT $REPO_OPTS \
 				 $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub
 		fi
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom$iso_bus_type"
