@@ -215,7 +215,7 @@ vmname_gen() {
 	if [[ -n "$cname" ]]; then
 		name=${cname//[._]/-}
 	else
-		[[ "$GuestARCH" != "$HostARCH" ]] && archsuffix="+$GuestARCH"
+		[[ "$GuestARCH" != "$HostARCH" ]] && archsuffix="_$GuestARCH"
 		name=${VMUSER}-${name}$archsuffix
 	fi
 	echo -n $name
@@ -292,7 +292,7 @@ _vmdelete() {
 		return 1
 	}
 
-	egrep -q "^$_vmname$" <(virsh list --name --all) || {
+	egrep -q "^${_vmname//+/.}$" <(virsh list --name --all) || {
 		echo -e "{VM:WARN} VM '$_vmname' does not exist"
 		return 1
 	}
@@ -2870,8 +2870,8 @@ fi
 			exit
 		fi
 	}
-	vmhostname=${vmname%+${GuestARCH}}
-	[[ "$GenerateImage" = yes ]] && vmhostname=${vmname#${VMUSER}-}
+	vmhostname=${vmname%_${GuestARCH}}
+	vmhostname=${vmname#${VMUSER}-}
 
 	VMpath=$VMSHOME/$Distro/$vmname
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
