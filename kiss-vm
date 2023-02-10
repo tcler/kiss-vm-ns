@@ -2801,10 +2801,10 @@ fi
 if [[ "$UEFI_TPM_SB" = yes ]]; then
 	BOOT_OPTS+=(--boot=firmware=efi,loader_secure=yes)
 	VTPM=yes
-	MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"
+	[[ "$GuestARCH" = x86_64 ]] && { MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"; }
 elif [[ "$UEFI" = yes ]]; then
 	BOOT_OPTS+=(--boot=uefi)
-	MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"
+	[[ "$GuestARCH" = x86_64 ]] && { MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"; }
 fi
 
 case "${BOOT_OPTS[*]}" in
@@ -2844,7 +2844,7 @@ fi
 	}
 	$QEMU_KVM -machine help|grep -q q35 && Q35=support
 }
-[[ "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
+[[ "$GuestARCH" = x86_64 && "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
 	echo -e "{VM:ERROR} Guest require machine type 'q35', but the qemu in your platform doesn't support 'q35'" >&2
 	exit 1
 }
