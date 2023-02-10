@@ -43,6 +43,8 @@ slackware*)
 fedora*|red?hat*|centos*|rocky*)
 	yum $yumOpt install -y $pkglist
 	yum $yumOpt install -y qemu-device-display-virtio-gpu-ccw
+	rpm -q $pkglist ||
+		yum-install-from-fedora.sh $pkglist qemu-device-display-virtio-gpu-ccw
 	;;
 debian*|ubuntu*)
 	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $pkglist
