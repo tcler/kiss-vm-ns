@@ -123,10 +123,12 @@ echo
 fastesturl() {
 	local minavg=
 	local fast=
+	local ipv4Opt=
+	ping -h |& grep -q '^ *-4' && ipv4Opt=-4
 
 	for url; do
 		read p host path <<<"${url//\// }";
-		cavg=$(ping -4 -w 4 -c 2 $host | awk -F / 'END {print $5}')
+		cavg=$(ping $ipv4Opt -w 4 -c 2 $host | awk -F / 'END {print $5}')
 		: ${minavg:=$cavg}
 
 		if [[ -z "$cavg" ]]; then
