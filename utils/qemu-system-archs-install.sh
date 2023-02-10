@@ -47,11 +47,19 @@ fedora*)
 red?hat*|centos*|rocky*)
 	OSV=$(rpm -E %rhel)
 	case "$OSV" in
-	7|8|9)
+	8|9)
 		yum-install-from-fedora.sh -rpm $pkglist qemu-device-display-virtio-gpu-ccw
 		;;
+	7)
+		echo "{WARN} OS version is not supported, quit."; exit 1
+		: <<-'COMM'
+		#                          -26 or higher version will break RHEL-7
+		yum-install-from-fedora.sh -24 -rpm $pkglist qemu-device-display-virtio-gpu-ccw
+		yum-install-from-fedora.sh -28 edk2-aarch64
+		COMM
+		;;
 	*)
-		echo "{WARN} OS is not supported, quit."; exit 1
+		echo "{WARN} OS version is not supported, quit."; exit 1
 		;;
 	esac
 	;;
