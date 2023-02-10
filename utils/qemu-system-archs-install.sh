@@ -40,11 +40,20 @@ case ${OS,,} in
 slackware*)
 	/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install $pkglist
 	;;
-fedora*|red?hat*|centos*|rocky*)
+fedora*)
 	yum $yumOpt install -y $pkglist
 	yum $yumOpt install -y qemu-device-display-virtio-gpu-ccw
-	rpm -q $pkglist ||
-		yum-install-from-fedora.sh $pkglist qemu-device-display-virtio-gpu-ccw
+	;;
+red?hat*|centos*|rocky*)
+	OSV=$(rpm -E %rhel)
+	case "$OSV" in
+	8|9)
+		yum-install-from-fedora.sh -rpm $pkglist qemu-device-display-virtio-gpu-ccw
+		;;
+	*)
+		echo "{WARN} OS is not supported, quit."; exit 1
+		;;
+	esac
 	;;
 debian*|ubuntu*)
 	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $pkglist
