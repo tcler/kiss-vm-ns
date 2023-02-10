@@ -2332,7 +2332,7 @@ while true; do
 	--vncwait|--vncwait-after-install) VNCWAIT_AFTER_INSTALL+=("$2"); shift 2;;
 	--vncput-after-install) VNCPUT_AFTER_INSTALL="$2"; shift 2;;
 	--xml)           XML=--print-xml=1; shift 1;;
-	--machine)       MACHINE_OPT="--machine=$2"; shift 2;;
+	--machine)       MACHINE_OPT="--machine=$2"; MACHINE_QEMUOPT="-machine $2"; shift 2;;
 	--uefi)          UEFI=yes; shift 1;;
 	--uefi-tpm-sb)   UEFI_TPM_SB=yes; shift 1;;
 	--hostdev|--host-device)    HOST_DEV_LIST+=("$2"); shift 2;;
@@ -2529,7 +2529,7 @@ else
 		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
 		;;
 	(riscv*)
-		[[ -z "$MACHINE_OPT" ]] && QEMU_OPTS+=("--qemu-commandline=-machine virt")
+		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
 		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT=""
 		[[ -z "$SPECIFIED_VCPUS" ]] && VCPUS=8
 		;;
@@ -2552,18 +2552,19 @@ esac
 fuzzy_match_cpu_model_name() {
 	local QEMU_CMD=$QEMU_KVM
 	local modelname=${1%%,*}
-	$QEMU_CMD -cpu ? | sed -n '1,/^$/{/Available CPUs:/d;p}' | awk -v modelname=$modelname -v pat=".*${modelname,,}.*" '
-	{
-		if (length($2) > 0) { M=$2 } else { M=$1 }
-		if (M == modelname) {
-			yes++
-		} else if (tolower(M) ~ pat) {
-			if (length(m) == 0 || length(m) >= length($2)) { m=M }
+	$QEMU_CMD $MACHINE_QEMUOPT -cpu ? | sed -n '1,/^$/{/Available CPUs:/d;p}' |
+		awk -v modelname=$modelname -v pat=".*${modelname,,}.*" '
+		{
+			if (length($2) > 0) { M=$2 } else { M=$1 }
+			if (M == modelname) {
+				yes++
+			} else if (tolower(M) ~ pat) {
+				if (length(m) == 0 || length(m) >= length($2)) { m=M }
+			}
 		}
-	}
-	END {
-		if (yes) { print modelname } else { print m }
-	}'
+		END {
+			if (yes) { print modelname } else { print m }
+		}'
 }
 support_nested_kvm() {
 	local rc=1
@@ -2793,10 +2794,10 @@ fi
 if [[ "$UEFI_TPM_SB" = yes ]]; then
 	BOOT_OPTS+=(--boot=firmware=efi,loader_secure=yes)
 	VTPM=yes
-	MACHINE_OPT="--machine=q35"
+	MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"
 elif [[ "$UEFI" = yes ]]; then
 	BOOT_OPTS+=(--boot=uefi)
-	MACHINE_OPT="--machine=q35"
+	MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"
 fi
 
 case "${BOOT_OPTS[*]}" in
@@ -3141,7 +3142,7 @@ done
 ### xcdrom option
 [[ ${#EXTRA_CDROMS[@]} > 0 && -z "$MACHINE_OPT" ]] && {
 	#Q35 support multi-cdrom
-	[[ "$Q35" = support ]] && MACHINE_OPT="--machine=q35"
+	[[ "$Q35" = support ]] && { MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"; }
 }
 for _iso in "${EXTRA_CDROMS[@]}"; do
 	isopath=$VMpath/${_iso##*/}
