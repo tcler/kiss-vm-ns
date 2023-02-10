@@ -3364,6 +3364,7 @@ if [[ "$InstallType" = location ]]; then
 			{* to complete the installation process.} { exit }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
+			{ERROR } { exit }
 			{*\r} { exp_continue }
 		}
 	"
@@ -3574,6 +3575,7 @@ elif [[ "$InstallType" = import ]]; then
 			{*Domain creation completed.} { exit }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
+			{ERROR } { exit }
 			{*\r} { exp_continue }
 		}
 	"
@@ -3821,6 +3823,7 @@ elif [[ "$InstallType" = pxe ]]; then
 			{Waiting for the installation to complete} { exit }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
+			{ERROR } { exit }
 			{*\r} { exp_continue }
 		}
 	"
@@ -4015,6 +4018,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 			{Waiting for the installation to complete} { exit }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
+			{ERROR } { exit }
 			{*\r} { exp_continue }
 		}
 	"
