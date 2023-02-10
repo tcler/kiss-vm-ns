@@ -26,7 +26,7 @@ arch=$(uname -m)
 case "$OSV" in
 6)	FEDORA_VER=$((13+2));;
 7)	FEDORA_VER=$((20+2));;
-8)	FEDORA_VER=$((28+2));;
+8)	FEDORA_VER=$((28+1));;
 9)	FEDORA_VER=$((34+2));;
 *)	echo "{WARN} OS is not supported, quit."; exit 1;;
 esac
@@ -43,7 +43,7 @@ mirrorList="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${FEDORA_VE
 fedora_repo=$(curl -L -s "$mirrorList"|sed -n 3p)
 frepon=fedora-${FEDORA_VER}
 if [[ $OSV -gt 7 ]]; then
-	yum install --nogpg --disablerepo="*" --repofrompath="$frepon,$fedora_repo" -y  "${pkgs[@]}"
+	yum install --nogpg --disablerepo="*" --repofrompath="$frepon,$fedora_repo" -y --setopt=strict=0 --allowerasing "${pkgs[@]}"
 else
 	trap 'rm -f /etc/yum.repos.d/${frepon}.repo' EXIT
 	cat <<-REPO >/etc/yum.repos.d/${frepon}.repo
@@ -55,5 +55,5 @@ else
 	gpgcheck=0
 	skip_if_unavailable=1
 	REPO
-	yum install --nogpg --disablerepo="*" --enablerepo="$frepon" -y  "${pkgs[@]}"
+	yum install --nogpg --disablerepo="*" --enablerepo="$frepon" -y --setopt=strict=0 --allowerasing "${pkgs[@]}"
 fi
