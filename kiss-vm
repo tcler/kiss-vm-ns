@@ -2522,7 +2522,14 @@ else
 	case "$GuestARCH" in
 	(aarch64)
 		#set default qemu cpu type cortex-a72 for aarch64, it works on RHEL aarch64 build
-		[[ -z "$QEMU_CPU" ]] && QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
+		if [[ -z "$QEMU_CPU" ]]; then
+			if $QEMU_KVM -cpu ? |& grep -q No.machine; then
+				MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"
+				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a57")
+			else
+				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
+			fi
+		fi
 		;;
 	(s390x|ppc*)
 		#qemu-system-s390x doesn't support --video=sql on fedora-35
