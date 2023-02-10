@@ -71,7 +71,9 @@ else
 	mkdir -p $tmpf
 	trap 'rm -rf $tmpf' EXIT
 	if [[ "$OSV" -le 7 ]]; then
-		yum install --nogpg --disablerepo="*" --enablerepo="$frepon" -y --setopt=strict=0 --downloadonly --destdir=$tmpf "${pkgs[@]}"
+		pushd $tmpf
+		yumdownloader --disablerepo=* --enablerepo=$frepon --setopt=strict=0 --destdir=$tmpf --resolve "${pkgs[@]}" --setopt=protected_multilib=false
+		popd
 	else
 		yum install --nogpg --disablerepo="*" --repofrompath="$frepon,$fedora_repo" -y --setopt=strict=0 --downloadonly --destdir=$tmpf "${pkgs[@]}"
 	fi
