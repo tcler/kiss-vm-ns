@@ -47,7 +47,7 @@ fedora*)
 red?hat*|centos*|rocky*)
 	OSV=$(rpm -E %rhel)
 	case "$OSV" in
-	8|9)
+	7|8|9)
 		yum-install-from-fedora.sh -rpm $pkglist qemu-device-display-virtio-gpu-ccw
 		;;
 	*)
