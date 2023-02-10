@@ -33,7 +33,11 @@ esac
 
 pkgs=()
 for arg; do
-	[[ "$arg" = -* ]] && { fver=${arg#-}; fver=${fver#*=}; } || pkgs+=("$arg")
+	case $arg in
+	-[0-9]*) fver=${arg#-}; fver=${fver#*=};;
+	-rpm)    InstallType=rpm;;
+	*)       pkgs+=("$arg");;
+	esac
 done
 [[ -n "$fver" ]] && FEDORA_VER=$fver
 
@@ -42,9 +46,8 @@ mirrorList="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${FEDORA_VE
 
 fedora_repo=$(curl -L -s "$mirrorList"|sed -n 3p)
 frepon=fedora-${FEDORA_VER}
-if [[ $OSV -gt 7 ]]; then
-	yum install --nogpg --disablerepo="*" --repofrompath="$frepon,$fedora_repo" -y --setopt=strict=0 --allowerasing "${pkgs[@]}"
-else
+if [[ "$OSV" -le 7 ]]; then
+	yum install -y yum-utils &>/dev/null
 	trap 'rm -f /etc/yum.repos.d/${frepon}.repo' EXIT
 	cat <<-REPO >/etc/yum.repos.d/${frepon}.repo
 	[$frepon]
@@ -55,5 +58,22 @@ else
 	gpgcheck=0
 	skip_if_unavailable=1
 	REPO
-	yum install --nogpg --disablerepo="*" --enablerepo="$frepon" -y --setopt=strict=0 --allowerasing "${pkgs[@]}"
+fi
+
+if [[ "$InstallType" != rpm ]]; then
+	if [[ $OSV -le 7 ]]; then
+		yum install --nogpg --disablerepo="*" --enablerepo="$frepon" -y --setopt=strict=0 --allowerasing "${pkgs[@]}"
+	else
+		yum install --nogpg --disablerepo="*" --repofrompath="$frepon,$fedora_repo" -y --setopt=strict=0 --allowerasing "${pkgs[@]}"
+	fi
+else
+	tmpf=$(mktemp -d)
+	mkdir -p $tmpf
+	trap 'rm -rf $tmpf' EXIT
+	if [[ "$OSV" -le 7 ]]; then
+		yum install --nogpg --disablerepo="*" --enablerepo="$frepon" -y --setopt=strict=0 --downloadonly --destdir=$tmpf "${pkgs[@]}"
+	else
+		yum install --nogpg --disablerepo="*" --repofrompath="$frepon,$fedora_repo" -y --setopt=strict=0 --downloadonly --destdir=$tmpf "${pkgs[@]}"
+	fi
+	rpm -ivh --force --nodeps $tmpf/*.rpm
 fi
