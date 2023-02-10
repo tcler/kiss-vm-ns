@@ -61,8 +61,8 @@ if [[ "$OSV" -le 7 ]]; then
 fi
 
 if [[ "$InstallType" != rpm ]]; then
-	if [[ $OSV -le 7 ]]; then
-		yum install --nogpg --disablerepo="*" --enablerepo="$frepon" -y --setopt=strict=0 --allowerasing "${pkgs[@]}"
+	if [[ "$OSV" -le 7 ]]; then
+		yum install --nogpg --disablerepo="*" --enablerepo="$frepon" -y --setopt=strict=0 "${pkgs[@]}"
 	else
 		yum install --nogpg --disablerepo="*" --repofrompath="$frepon,$fedora_repo" -y --setopt=strict=0 --allowerasing "${pkgs[@]}"
 	fi
