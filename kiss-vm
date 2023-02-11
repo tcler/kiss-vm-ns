@@ -2783,7 +2783,7 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 	Usage
 	exit 1
 }
-if egrep --color=always "[][~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$Distro"; then
+if egrep --color=always "[~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$Distro"; then
 	echo -e "{VM:WARN} ^^^ invalid character[s] in distro name: '$Distro'"
 	exit 1
 fi
@@ -2853,8 +2853,8 @@ fi
 	dpattern=${Distro//./\\.}
 	dpattern=${dpattern//\?/.}
 	dpattern=${dpattern//[%*]/.*}
-	#_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | head -1)
-	_distro=$(fetch_distro_list | grep -i "^${dpattern}$" | head -2 | tail -1)
+	#_distro=$(fetch_distro_list | grep -i -E "^${dpattern}$" | head -1)
+	_distro=$(fetch_distro_list | grep -i -E "^${dpattern}$" | head -2 | tail -1)
 	[[ -n "$_distro" ]] && Distro="$_distro"
 }
 
