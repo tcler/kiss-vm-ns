@@ -24,8 +24,8 @@ curl_download() {
 		curlopts+=' --continue-at -'
 	fi
 
-	echo "{VM:INFO} run: curl -o $filename \$url $curlopts $curlOpt $@"
-	run -as=$VMUSER curl -o $filename $url $curlopts $curlOpt "$@"
+	echo "{INFO} run: curl -o $filename \$url $curlopts $curlOpt $@"
+	curl -o $filename $url $curlopts $curlOpt "$@"
 	rc=$?
 	if [[ $rc != 0 && -s $filename ]]; then
 		fsizel=$(stat --printf %s $filename)
