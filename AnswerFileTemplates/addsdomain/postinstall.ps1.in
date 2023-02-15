@@ -65,8 +65,8 @@ Function Install-sshd() {
 	#create authorized_keys file
 	$sshConfDir="$HOME\.ssh"
 	New-Item "$sshConfDir" -ItemType Directory -ea 0
-	Get-Content -Path C:\sshkeys\id_*.pub | Set-Content "$sshConfDir\authorized_keys"
-	Get-Content -Path C:\sshkeys\id_*.pub | Set-Content "C:\ProgramData\ssh\administrators_authorized_keys"
+	Get-Content -Path C:\sshkeys\id_*.pub -Raw | Set-Content "$sshConfDir\authorized_keys"
+	Get-Content -Path C:\sshkeys\id_*.pub -Raw | Set-Content "C:\ProgramData\ssh\administrators_authorized_keys"
 }
 
 Function GetIPAddrFromNic() {
