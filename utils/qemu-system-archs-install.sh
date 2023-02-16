@@ -33,7 +33,9 @@ esac
 
 #install qemu-system-*
 #archlist=$(yum search qemu-system- | sed -n '/^qemu-system-/ {s///; s/.x86_64.*$//; p}' | grep -v core)
-archlist="$*"
+for arch; do
+	[[ "$arch" = -f ]] && { FORCE=yes; continue; } || archlist+="$arch "
+done
 [[ -z "$archlist" ]] && archlist="aarch64 riscv ppc s390x"
 pkglist=$(printf "qemu-system-%s " $archlist)
 case ${OS,,} in
@@ -48,7 +50,11 @@ red?hat*|centos*|rocky*)
 	OSV=$(rpm -E %rhel)
 	case "$OSV" in
 	8|9)
-		yum-install-from-fedora.sh -rpm $pkglist qemu-device-display-virtio-gpu-ccw
+		if [[ "$FORCE" = yes ]]; then
+			yum-install-from-fedora.sh -rpm $pkglist qemu-device-display-virtio-gpu-ccw
+		else
+			yum-install-from-fedora.sh $pkglist qemu-device-display-virtio-gpu-ccw
+		fi
 		;;
 	7)
 		echo "{WARN} OS version is not supported, quit."; exit 1
