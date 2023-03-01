@@ -14,7 +14,8 @@ mount_vdisk2() {
 
 	local path=$1
 	local mp=$2
-	local partN=${2:-1}
+	local partN=${3:-1}
+	[[ ! -d "$mp" && "$mp" = [0-9] ]] && partN=$mp
 	local dev= mntdev= mntopt= mntinfo=
 
 	read dev _ < <(losetup -j $path|awk -F'[: ]+' '{print $1, $2}')
@@ -48,6 +49,11 @@ mount_vdiskn() {
 	local path=$1
 	local mp=$2
 	local partN=${2:-1}
+	[[ ! -d "$mp" && "$mp" = [0-9] ]] && {
+		partN=$mp
+		eval mp=~/mnt
+		mkdir -p $mp
+	}
 	local fn=${FUNCNAME[0]}
 
 	local devlist=$(virt-filesystems -a "$path")
@@ -55,7 +61,8 @@ mount_vdiskn() {
 		read dev _ < <(echo "$devlist"|grep "[^0-9]${partN}$")
 	fi
 	[[ -z "$dev" ]] && read dev _ <<<"$devlist"
-	guestmount -a "path" -m $dev $mp
+	guestmount -a "$path" -m $dev $mp
+	mount | grep "$mp"
 }
 
 [[ $# -lt 1 ]] && {
@@ -70,4 +77,10 @@ mount_vdiskn() {
 	exit 1
 }
 
-mount_vdisk2 "$@"
+CNT=$(sed -rn -e '/(filesystem-mount"|loop-setup)/,/<\/action>/{/<allow_any>yes/p}' \
+	/usr/share/polkit-1/actions/org.freedesktop.??isks2.policy | wc -l)
+if [[ "$CNT" -lt 2 && $(id -u) -ne 0 ]]; then
+	mount_vdiskn "$@"
+else
+	mount_vdisk2 "$@"
+fi
