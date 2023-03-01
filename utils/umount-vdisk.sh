@@ -11,7 +11,7 @@ umount_vdisk2() {
 
 	_umount_mp() {
 		local _mp=$1
-		local mntinfo=$(mount | awk -v mp=$_mp '$3 == mp {print $0}')
+		local mntinfo=$(mount | grep -E "/dev/loop.* on ${mp} type")
 		if ! grep udisks2 <<<"$mntinfo"; then
 			echo "{$fn:warn} $_mp is not mounted by udisks2"
 			return 1
@@ -42,13 +42,22 @@ umount_vdisk2() {
 }
 
 for mp; do
-	[[ -b "${mp}" ]] && mp=$(findmnt -nr -o target -S "$mp"|sed 's/\\x20/ /g')
 	mp=${mp%/}
 
 	if [[ -f "${mp}" ]]; then
 		umount_vdisk2 "${mp}"
+	elif [[ -b "${mp}" ]]; then
+		if mount | grep -E "^${mp} .*udisks2"; then
+			mp=$(findmnt -nr -o target -S "${mp}"|sed 's/\\x20/ /g')
+			umount_vdisk2 "${mp}"
+		else
+			cat <<-COMM >&2
+				[WARN] device '${mp}' is not mounted by udisks2,
+				 please try use 'sudo umount "${mp}"' directly
+			COMM
+		fi
 	elif mountpoint -q "${mp}"; then
-		if mount | grep -E "/dev/loop.* on ${mp} type"; then
+		if mount | grep -E "/dev/loop.* on ${mp} type .*udisks2"; then
 			umount_vdisk2 "${mp}"
 		elif mount | grep -E "/dev/fuse on ${mp} type"; then
 			guestunmount "${mp}"
