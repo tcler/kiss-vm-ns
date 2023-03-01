@@ -42,7 +42,7 @@ mount_vdisk2() {
 	fi
 
 	echo -e "  $loinfo" >&2
-	mount | awk -v d=$mntdev '$1 == d {print $3}'
+	findmnt -nr -o target -S "$mntdev"|sed 's/\\x20/ /g'
 }
 
 mount_vdiskn() {

@@ -42,8 +42,10 @@ umount_vdisk2() {
 }
 
 for mp; do
+	[[ -b "${mp}" ]] && mp=$(findmnt -nr -o target -S "$mp"|sed 's/\\x20/ /g')
 	mp=${mp%/}
-	if [[ -f "$mp" ]]; then
+
+	if [[ -f "${mp}" ]]; then
 		umount_vdisk2 "${mp}"
 	elif mountpoint -q "${mp}"; then
 		if mount | grep -E "/dev/loop.* on ${mp} type"; then
