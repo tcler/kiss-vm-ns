@@ -53,7 +53,7 @@ mount_vdiskn() {
 	[[ -z "$mp" ]] && {
 		for ((i=0; i<256; i++)); do
 			eval mp=~/mnt/vdisk$i
-			mountpoint $mp 2>/dev/null || break
+			mountpoint -q $mp 2>/dev/null || break
 		done
 		mkdir -p $mp
 	}

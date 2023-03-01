@@ -44,7 +44,7 @@ umount_vdisk2() {
 for mp; do
 	if [[ -f "$mp" ]]; then
 		umount_vdisk2 "$mp"
-	elif mountpoint "$mp"; then
+	elif mountpoint -q "$mp"; then
 		if mount | grep -E "/dev/loop.* on $mp type"; then
 			umount_vdisk2 "$mp"
 		elif mount | grep -E "/dev/fuse on $mp type"; then
