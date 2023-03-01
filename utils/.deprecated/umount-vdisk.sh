@@ -25,22 +25,32 @@ umount_vdisk2() {
 		udisksctl loop-delete -b $lodev
 	}
 
-	local mp=
-	for mp; do
-		if [[ ! -f "$mp" ]]; then
-			_umount_mp $mp
-		else
-			local lodev= lodevs=
-			lodevs=$(losetup -j $mp|awk -F: '{print $1}')
-			for lodev in $lodevs; do
-				local _mps _mp
-				_mps=$(mount|awk "/^${lodev//\//.}(|p[0-9]+) /"'{print $3}')
-				for _mp in $_mps; do
-					_umount_mp $_mp
-				done
+	local mp=$1
+	if [[ ! -f "$mp" ]]; then
+		_umount_mp $mp
+	else
+		local lodev= lodevs=
+		lodevs=$(losetup -j $mp|awk -F: '{print $1}')
+		for lodev in $lodevs; do
+			local _mps _mp
+			_mps=$(mount|awk "/^${lodev//\//.}(|p[0-9]+) /"'{print $3}')
+			for _mp in $_mps; do
+				_umount_mp $_mp
 			done
-		fi
-	done
+		done
+	fi
 }
 
-umount_vdisk2 "$@"
+for mp; do
+	if [[ -f "$mp" ]]; then
+		umount_vdisk2 "$mp"
+	elif mountpoint "$mp"; then
+		if mount | grep -E "/dev/loop.* on $mp type"; then
+			umount_vdisk2 "$mp"
+		elif mount | grep -E "/dev/fuse on $mp type"; then
+			guestunmount "$mp"
+		fi
+	else
+		echo "[ERROR] dir '$mp' is not a mountpoint" >&2
+	fi
+done
