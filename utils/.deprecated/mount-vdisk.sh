@@ -48,10 +48,13 @@ mount_vdisk2() {
 mount_vdiskn() {
 	local path=$1
 	local mp=$2
-	local partN=${2:-1}
-	[[ ! -d "$mp" && "$mp" = [0-9] ]] && {
-		partN=$mp
-		eval mp=~/mnt
+	local partN=${3:-1}
+	[[ ! -d "$mp" && "$mp" = [0-9] ]] && { partN=$mp; mp=; }
+	[[ -z "$mp" ]] && {
+		for ((i=0; i<256; i++)); do
+			eval mp=~/mnt/vdisk$i
+			mountpoint $mp 2>/dev/null || break
+		done
 		mkdir -p $mp
 	}
 	local fn=${FUNCNAME[0]}
