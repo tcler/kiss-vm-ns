@@ -59,7 +59,7 @@ mount_vdiskn() {
 	}
 	local fn=${FUNCNAME[0]}
 
-	local devlist=$(virt-filesystems -a "$path")
+	local devlist=$(virt-filesystems -a "$path" --extra)
 	if [[ -n "$partN" ]]; then
 		read dev _ < <(echo "$devlist"|grep "[^0-9]${partN}$")
 	fi
