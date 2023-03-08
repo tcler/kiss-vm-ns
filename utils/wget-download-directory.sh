@@ -8,7 +8,7 @@ wget_download_directory() {
 	#https://stackoverflow.com/questions/3074288/get-final-url-after-curl-is-redirected
 	url=$(curl -Ls -o /dev/null -w %{url_effective} $url)
 	dirs=$(awk '{print length(gensub(/[^\/]/,"","g"))-3}' <<<"${url%/}")
-	wget -q --recursive --no-parent -nH --cut-dirs=$dirs -R "index.html*" $url
+	wget --recursive --no-parent -nH --cut-dirs=$dirs -R "index.html*" $url
 }
 
 #return if I'm being sourced
