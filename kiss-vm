@@ -1795,7 +1795,7 @@ Usage() {
 	                 #create VM by using specified location url or local iso file path
 	  -L             #create VM by using location, auto search url according distro name
 	  -C,-F <iso/image path>
-			 #create VM by using ISO or image file
+	                 #create VM by using ISO or image file
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  -n,--vmname <name>
 	                 #VM name, will auto generate according distro name if omitting
