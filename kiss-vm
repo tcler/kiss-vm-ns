@@ -1179,6 +1179,7 @@ netcreate() {
 	local brname=
 	local subnet=
 	local forward=nat
+	local domainname=
 
 	[[ $# = 0 ]] && { virsh net-list; return; }
 	Usage() {
@@ -1187,11 +1188,12 @@ netcreate() {
 		  vm netcreat netname=net10 brname=virbr10 subnet=10  #means 192.168.10.0
 		  vm netcreat netname=net10 brname=virbr10 subnet=172.25.252.0
 		  vm netcreat netname=net10 brname=virbr10 subnet=172.25.252.0 forward=no
-		  vm netcreat netname=net10 brname=virbr10 subnet=172.25.252.0 forward=nat [tftproot=/path] [bootpfile=]
+		  vm netcreat netname=net10 brname=virbr10 subnet=172.25.252.0 forward=nat [tftproot=/path] [bootpfile=] [domain=]
 		U
 	}
-	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile)=.* ]] || continue; eval "$opt"; done
+	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile|domain)=.* ]] || continue; eval "$opt"; done
 	[[ -z "$netname" || -z "$brname" ]] && { Usage >&2; return 1; }
+	domainname="${netname}.kissvm.org"
 
 	#https://libvirt.org/formatnetwork.html
 	[[ -n "$forward" && "$forward" != no ]] && {
@@ -1204,6 +1206,7 @@ netcreate() {
 	}
 	[[ -n "$tftproot" ]] && tftpNode="<tftp root='$tftproot'/>"
 	[[ -n "$bootpfile" ]] && bootpNode="<bootp file='$bootpfile'/>"
+	[[ -n "$domainname" ]] && domainNode="<domain name='$domainname' localOnly='yes'/>"
 	if [[ -n "$subnet" ]]; then
 		netmask=255.255.255.0
 		rx='([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
@@ -1243,6 +1246,7 @@ netcreate() {
 		  <name>$netname</name>
 		  <bridge name="$brname" />
 		  $forwardNode
+		  $domainNode
 		  $ipNode
 		</network>
 		NET
@@ -1520,6 +1524,15 @@ COMM
 	grep -q 'Network is already in use' < <(virsh net-start default 2>&1 >/dev/null) && {
 		echo -e "{*INFO*} re-create Network default ..."
 		default_xml=$(virsh net-dumpxml default|sed 's/\.122/.123/g')
+		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
+		virsh net-define --file <(echo "$default_xml")
+		virsh net-start default
+		virsh net-autostart default
+	}
+
+	#add domain setup in default network
+	virsh net-dumpxml default | grep '<domain name' || {
+		default_xml=$(virsh net-dumpxml default|sed "s;<mac .*;&\n  <domain name='lab.kissvm.org' localOnly='yes'/>;g")
 		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
 		virsh net-define --file <(echo "$default_xml")
 		virsh net-start default
