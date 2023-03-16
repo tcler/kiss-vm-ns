@@ -1006,6 +1006,7 @@ vmlogin() {
 		sshstat=unavailable
 		sshOpts=$(sshtest $U@$addr "$sshOpts")
 		case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
+		[[ "${EXEC}" = yes ]] && sshOpts+=" -n"
 		if [[ $sshstat = yes ]]; then
 			ssh $sshOpts $U@$addr "$sshCommand"
 			rc=$?
