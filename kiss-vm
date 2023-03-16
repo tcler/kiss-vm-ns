@@ -839,7 +839,9 @@ vmcopyto() {
 		scp $sshOpts -r "${srcarray[@]}" $U@${_addr}:$dstdir/.
 		rc=$?
 		[[ $rc = 0 ]] && {
-			ssh $sshOpts $U@${_addr} ls -l $dstdir
+			flist=()
+			for f in "${srcarray[@]}"; do f=${f%/}; flist+=("$dstdir/${f##*/}"); done
+			ssh $sshOpts $U@${_addr} ls -ld "${flist[@]}"
 		}
 	elif [[ $sshstat = passwd ]]; then
 		expect <(cat <<-EOF
