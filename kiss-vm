@@ -1184,7 +1184,6 @@ netcreate() {
 	local forward=nat
 	local domainname=
 
-	[[ $# = 0 ]] && { virsh net-list; return; }
 	Usage() {
 		cat <<-U
 		Example:
@@ -1194,6 +1193,7 @@ netcreate() {
 		  vm netcreat netname=net10 brname=virbr10 subnet=172.25.252.0 forward=nat [tftproot=/path] [bootpfile=] [domain=]
 		U
 	}
+	[[ $# = 0 ]] && { virsh net-list; Usage >&2; return; }
 	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile|domain)=.* ]] || continue; eval "$opt"; done
 	[[ -z "$netname" || -z "$brname" ]] && { Usage >&2; return 1; }
 	domainname="${netname}.kissvm.org"
