@@ -1860,8 +1860,8 @@ Usage() {
 	  --sound <type> #sound MODEL, Possible values are ich6, ich9, ac97, es1370, sb16, pcspk, or default
 	                 #see also: `virt-install --sound=?`
 	                 #Note: vnc server doesn't support audio well, please enable RDP(Remote Desktop Protocol) in your Guest for sound
-	  --msize <size> #memory size, default 2048
-	  --dsize <size> #disk size, default 16
+	  --ms,--msize,-m <size> #memory size, default 2048
+	  --ds,--dsize    <size> #disk size, default 16
 	  --if-model <>  #change default model(virtio) of virtual NICs: e1000,rtl8139 
 	  --net <$name[,model=$model[,mac=...]]>
 	                 #attach tun dev(vnetN) and connect to net $name, optional $model: virtio,e1000,...
@@ -2144,7 +2144,7 @@ get_default_if() {
 
 # command line parse
 orig_at=("$@")
-_at=`getopt -o hu:d:Ll:C:F:fn:gb:p:Ii:rvdx::Pqw:: \
+_at=`getopt -o hu:d:m:Ll:C:F:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long help \
 	--long prepare \
 	--long user: \
@@ -2172,8 +2172,8 @@ _at=`getopt -o hu:d:Ll:C:F:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long video: \
 	--long sound: \
 	--long graphics: \
-	--long msize: \
-	--long dsize: \
+	--long msize: --long ms: \
+	--long dsize: --long ds: \
 	--long if-model: \
 	--long net: \
 	--long net-br: \
@@ -2286,8 +2286,8 @@ while true; do
 	--osv|--os-variant) VM_OS_VARIANT="$2"; shift 2;;
 	--timeo)         VirtInstallTimeOut="$2"; shift 2;;
 	--nocloud*)      NO_CLOUD_INIT="yes"; shift 1;;
-	--dsize)         dsizeflag=1; DSIZE="${2%[Gg]}"; shift 2;;
-	--msize)         MSIZE="$2"; shift 2;;
+	--ds|--dsize)    dsizeflag=1; DSIZE="${2%[Gg]}"; shift 2;;
+	--ms|--msize|-m) MSIZE="$2"; shift 2;;
 	--cpus|--vcpus)  SPECIFIED_VCPUS=yes; VCPUS="$2"; shift 2;;
 	--arch)	         GuestARCH="$2"; ARCH_OPT=--arch=$GuestARCH; shift 2;;
 	--qemucpu)       QEMU_CPU=$2; QEMU_CPU_OPT="--qemu-commandline=-cpu $2"; shift 2;;
