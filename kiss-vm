@@ -30,7 +30,7 @@ eval ImagePath=~$VMUSER/myimages
 eval perConfDir=~$VMUSER/.config/${_repon}
 eval oldperConfDir=~$VMUSER/.config/kiss-vm
 
-VM_DOMAIN=lab.kissvm.org
+VM_DOMAIN=lab.kissvm.net
 RuntimeTmp=/tmp/vm-$$
 INTERACT=yes
 Intranet=yes
@@ -1196,7 +1196,7 @@ netcreate() {
 	[[ $# = 0 ]] && { virsh net-list; Usage >&2; return; }
 	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile|domain)=.* ]] || continue; eval "$opt"; done
 	[[ -z "$netname" || -z "$brname" ]] && { Usage >&2; return 1; }
-	domainname="${netname}.kissvm.org"
+	domainname="${netname}.kissvm.net"
 
 	#https://libvirt.org/formatnetwork.html
 	[[ -n "$forward" && "$forward" != no ]] && {
