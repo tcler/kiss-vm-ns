@@ -2408,7 +2408,7 @@ DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 }
 
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm)
-if [[ "$GuestARCH" != "$HostARCH" ]]; then
+if [[ "$GuestARCH" != "$HostARCH" || -z "$QEMU_KVM" ]]; then
 	QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-system-$GuestARCH)
 	if [[ -z "$QEMU_KVM" ]]; then
 		echo -e "{VM:ERROR} command 'qemu-system-$GuestARCH' not found"
@@ -2457,9 +2457,20 @@ fi
 support_virtualization() {
 	local rc=1
 	case ${OSTYPE,,} in
-	linux-gnu*) egrep -q -wo '(vmx|svm)' /proc/cpuinfo && rc=0;;
-	freebsd)    dmesg | grep -q -e VT-x: -e SVM: && rc=0;;
-	*)          echo "{VM:WARN} unsupported OS/platform." >&2;;
+	linux-gnu*)
+		case $(uname -m) in
+		x86_64|amd64)
+			egrep -q -wo '(vmx|svm)' /proc/cpuinfo && rc=0;;
+		aarch64|arm64)
+			test -d /sys/module/kvm && rc=0;;
+		*)
+			echo "{VM:WARN} unsupported OS/platform." >&2;;
+		esac
+		;;
+	freebsd)
+		dmesg | grep -q -e VT-x: -e SVM: && rc=0;;
+	*)
+		echo "{VM:WARN} unsupported OS/platform." >&2;;
 	esac
 	return $rc
 }
@@ -2532,6 +2543,14 @@ enable_nested_kvm() {
 GuestARCH=${GuestARCH:-$HostARCH}
 if [[ "$GuestARCH" = "$HostARCH" ]]; then
 	virtualizationOption=--hvm
+	case "$HostARCH" in
+	(aarch64)
+		virtualizationOption=
+		if [[ -z "$QEMU_CPU" ]]; then
+			QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
+		fi
+		;;
+	esac
 else
 	virtualizationOption=--virt-type=qemu
 	VirtInstallTimeOut=1200
