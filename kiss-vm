@@ -2644,7 +2644,7 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 			exit 2
 		fi
 
-		if $QEMU_KVM -cpu help|grep "$modelname .*alias of"; then
+		if $QEMU_KVM -cpu help|grep -q "$modelname .*alias of"; then
 			modelname=$($QEMU_KVM -cpu help|sed -rn "/$modelname/"'{s/.*alias of (.+)\).*/\1/;p}')
 		fi
 		_cpulist=$($QEMU_KVM -cpu help|sed -n "/$modelname/{s/)$//; p}")
@@ -2671,7 +2671,8 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 				else
 					QEMU_OPTS[$i]="$qemuopt"
 				fi
-				echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print $1}'
+				[[ "$DEBUG" = yes ]] &&
+					echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
 				break
 			fi
 		done
@@ -2690,7 +2691,8 @@ else
 			fi
 			[[ "$omodelname" != "$modelname" ]] &&
 				QEMU_OPTS[$i]=$(echo "$qemuopt"|sed -r "s/-cpu [^,]+/-cpu $modelname/")
-			echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print $1}'
+			[[ "$DEBUG" = yes ]] &&
+				echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
 			break
 		fi
 	done
