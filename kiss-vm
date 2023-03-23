@@ -2876,7 +2876,7 @@ if [[ "$VTPM" = yes ]]; then
 fi
 
 [[ -n "$QEMU_KVM" ]] && {
-	DISPLAY= timeout 0.1 $QEMU_KVM -vga qxl |& grep -q 'QXL VGA not available' && {
+	DISPLAY= timeout 0.5 $QEMU_KVM -vga qxl |& grep -q 'QXL VGA not available' && {
 		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
 	}
 	$QEMU_KVM -machine help|grep -q q35 && Q35=support
