@@ -2408,10 +2408,10 @@ DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 }
 
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm)
-if [[ "$GuestARCH" != "$HostARCH" || -z "$QEMU_KVM" ]]; then
+if [[ $1 != prepare ]] && [[ "$GuestARCH" != "$HostARCH" || -z "$QEMU_KVM" ]]; then
 	QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-system-$GuestARCH)
 	if [[ -z "$QEMU_KVM" ]]; then
-		echo -e "{VM:ERROR} command 'qemu-system-$GuestARCH' not found"
+		echo -e "{VM:ERROR} command 'qemu-kvm or qemu-system-$GuestARCH' not found"
 		exit 2
 	fi
 fi
