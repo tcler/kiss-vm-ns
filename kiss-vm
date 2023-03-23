@@ -2640,7 +2640,7 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 		#verify cpu model name. fuzzy match
 		modelname=$(fuzzy_match_cpu_model_name $modelname)
 		if [[ -z "$modelname" ]]; then
-			echo "{VM:ERROR}: can not find cpu model name '$omodelname', please check: qemu-kvm -cpu ?" >&2
+			echo "{VM:ERROR}: can not find cpu model name '$omodelname', please check: $QEMU_KVM -cpu ?" >&2
 			exit 2
 		fi
 
@@ -2686,7 +2686,7 @@ else
 			IFS=, read omodelname _ <<<"${qemuopt/*[= ]-cpu /}"
 			modelname=$(fuzzy_match_cpu_model_name $omodelname)
 			if [[ -z "$modelname" ]]; then
-				echo "{VM:ERROR}: can not find cpu model name '$omodelname', please check: qemu-kvm -cpu ?" >&2
+				echo "{VM:ERROR}: can not find cpu model name '$omodelname', please check: $QEMU_KVM -cpu ?" >&2
 				exit 2
 			fi
 			[[ "$omodelname" != "$modelname" ]] &&
