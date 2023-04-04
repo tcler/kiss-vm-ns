@@ -25,7 +25,7 @@ echo "[win-envf:INFO] generating windows env file: $WIN_ENV_FILE"
 # Get install and ipconfig log
 WIN_DATA=/tmp/$vmname-data
 rm -fr $WIN_DATA && mkdir -p $WIN_DATA && chmod a+rwx $WIN_DATA
-if ! vm homedir $vmname|egrep -iq '(win|windows)-?7'; then
+if ! vm homedir $vmname|grep -E -iq '(win|windows)-?7'; then
 	vm cpfrom $vmname C:/postinstall_logs/* $WIN_DATA
 	iconv -f UTF-16LE -t UTF-8 $WIN_DATA/postinstall.log -o $WIN_DATA/postinstall.log
 else

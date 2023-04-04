@@ -24,7 +24,7 @@ slackware*)
 	;;
 red?hat|centos*|rocky*)
 	OSV=$(rpm -E %rhel)
-	if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
+	if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
 			yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
 	fi

@@ -239,7 +239,7 @@ if [[ ! -d "$TemplateDir" ]]; then
 	exit 1
 fi
 
-if egrep -q "@PARENT_(DOMAIN|IP)@" -r "$TemplateDir"; then
+if grep -E -q "@PARENT_(DOMAIN|IP)@" -r "$TemplateDir"; then
 	[[ -z "$PARENT_DOMAIN" || -z "$PARENT_IP" ]] && {
 		echo "{ERROR} Missing parent-domain or parent-ip for template(${TemplateDir##*/})" >&2
 		Usage >&2

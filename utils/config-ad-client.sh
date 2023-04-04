@@ -251,13 +251,13 @@ run 'systemctl restart NetworkManager'
 run 'echo -e "make_resolv_conf(){\n    :\n}" >/etc/dhclient-enter-hooks'
 mv $RESOLV_CONF ${RESOLV_CONF}.orig
 {
-	egrep -i "^search.* ${AD_DS_NAME,,}( |$)" ${RESOLV_CONF}.orig ||
+	grep -E -i "^search.* ${AD_DS_NAME,,}( |$)" ${RESOLV_CONF}.orig ||
 		sed -n -e "/^search/{s//& ${AD_DS_NAME,,}/; p}" ${RESOLV_CONF}.orig
 	for nsaddr in $ROOT_DC ${AD_DC_IP_EXT:-$AD_DC_IP}; do
-		egrep -q "^nameserver $nsaddr" ${RESOLV_CONF}.orig ||
+		grep -E -q "^nameserver $nsaddr" ${RESOLV_CONF}.orig ||
 			echo "nameserver $nsaddr   #windows-ad"
 	done
-	egrep ^nameserver ${RESOLV_CONF}.orig | grep -v '#windows-ad'
+	grep -E ^nameserver ${RESOLV_CONF}.orig | grep -v '#windows-ad'
 } >$RESOLV_CONF
 
 run "cat $RESOLV_CONF"

@@ -248,8 +248,8 @@ _vmblklist() {
 		blklist+=$'\n'$(virsh dumpxml "$_vmname" |
 			sed -rn '/qemu:commandline/,/\/qemu:commandline/{/.*file=([^,]+),.*,id=NVME.*/I{s//file disk nvme \1/;p}}')
 	fi
-	echo "$blklist" | egrep "/$_vmname/"     | egrep "$_pat"
-	echo "$blklist" | egrep -v "/$_vmname/"  | egrep "$_pat"
+	echo "$blklist" | grep -E "/$_vmname/"     | grep -E "$_pat"
+	echo "$blklist" | grep -E -v "/$_vmname/"  | grep -E "$_pat"
 }
 
 vmrootdir() {
@@ -292,7 +292,7 @@ _vmdelete() {
 		return 1
 	}
 
-	egrep -q "^${_vmname//+/.}$" <(virsh list --name --all) || {
+	grep -E -q "^${_vmname//+/.}$" <(virsh list --name --all) || {
 		echo -e "{VM:WARN} VM '$_vmname' does not exist"
 		return 1
 	}
@@ -664,7 +664,7 @@ vmclone() {
 
 	is_invalid_vmname() {
 		local nvmname=$1
-		egrep --color=always "[][~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$nvmname"
+		grep -E --color=always "[][~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$nvmname"
 	}
 
 	echo -e "{VM:INFO} checking source and destination VM status ..."
@@ -1301,7 +1301,7 @@ vercmp() {
 	\<|lt) [ "$eq" != 1 -a "$vr" = "$vmax" ] && res=0;;
 	\>=|ge) [ "$vl" = "$vmax" ] && res=0;;
 	\<=|le) [ "$vr" = "$vmax" ] && res=0;;
-	*) echo "$vl" | egrep -q "$vr"; res=$?;;
+	*) echo "$vl" | grep -E -q "$vr"; res=$?;;
 	esac
 
 	return $res
@@ -1382,7 +1382,7 @@ install_requires() {
 		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
 
 		OSV=$(rpm -E %rhel)
-		if ! egrep -q '^!?epel' < <(yum repolist 2>/dev/null); then
+		if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 			[[ "$OSV" != "%rhel" ]] && yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
 		fi
 		rpm -q $pkglist || {
@@ -1476,7 +1476,7 @@ prepare_kiss_vm() {
 		echo -e "{*INFO*} confiure $virtdconf ..."
 		sh -c "
 			sed -ri -e '/#unix_sock_group = \"libvirt\"/s/^#//' -e '/#unix_sock_rw_perms = \"0770\"/s/^#//' $virtdconf
-			egrep -e ^unix_sock_group -e ^unix_sock_rw_perms $virtdconf
+			grep -E -e ^unix_sock_group -e ^unix_sock_rw_perms $virtdconf
 			systemctl restart libvirtd && systemctl restart virtlogd
 		"
 	}
@@ -1491,7 +1491,7 @@ prepare_kiss_vm() {
 : <<'COMM'
 	qemuconf=/etc/libvirt/qemu.conf
 	eval echo -e "{VM:INFO} checking if qemu can read image in ~$vmuser ..."
-	egrep -q '^#(user|group) =' "$qemuconf" && {
+	grep -E -q '^#(user|group) =' "$qemuconf" && {
 		sed -i '/^#(user|group) =/s/^#//' "$qemuconf"
 	}
 COMM
@@ -1506,8 +1506,8 @@ COMM
 
 	echo -e "{VM:INFO} checking if ${vmuser} has joined group libvirt ..."
 	[[ $(id -u $vmuser) != 0 ]] && {
-		if ! id -Gn $vmuser | egrep -q -w libvirt; then
-			if getent group libvirt|egrep -q -w $vmuser; then
+		if ! id -Gn $vmuser | grep -E -q -w libvirt; then
+			if getent group libvirt|grep -E -q -w $vmuser; then
 				: #do nothing
 			else
 				echo -e "{*INFO*} run: usermod -a -G libvirt $vmuser ..."
@@ -1574,12 +1574,12 @@ if [[ $Intranet = yes ]]; then
 		local arch=$2
 		local dtrees=
 
-		#dtrees=$(bkr distro-trees-list --name "$distro" --arch "$arch"|egrep '(released|compose)')
+		#dtrees=$(bkr distro-trees-list --name "$distro" --arch "$arch"|grep -E '(released|compose)')
 		install_distro_compose
-		dtrees=$(distro-compose -d "$distro" --distrotrees|egrep "(released|compose).*${arch}")
+		dtrees=$(distro-compose -d "$distro" --distrotrees|grep -E "(released|compose).*${arch}")
 
 		[[ -z "$dtrees" ]] &&
-			dtrees=$(distro-compose -d "$distro" --distrotrees|egrep "(Everything).*${arch}")
+			dtrees=$(distro-compose -d "$distro" --distrotrees|grep -E "(Everything).*${arch}")
 		echo "$dtrees"
 	}
 	distro2location() {
@@ -1606,7 +1606,7 @@ if [[ $Intranet = yes ]]; then
 		local arch=$GuestARCH
 		[[ $arch = aarch64 || $arch = arm64 ]] && arch="(aarch64|arm64)"
 		[[ $arch = x86_64 || $arch = amd64 ]] && arch="(x86_64|amd64)"
-		imgs=$(egrep "$arch" <<< "$imagenames")
+		imgs=$(grep -E "$arch" <<< "$imagenames")
 		if [[ -n "$imgs" ]]; then imagenames="$imgs"; else return 1; fi
 
 		for imagename in $imagenames; do
@@ -2460,7 +2460,7 @@ support_virtualization() {
 	linux-gnu*)
 		case $(uname -m) in
 		x86_64|amd64)
-			egrep -q -wo '(vmx|svm)' /proc/cpuinfo && rc=0;;
+			grep -E -q -wo '(vmx|svm)' /proc/cpuinfo && rc=0;;
 		aarch64|arm64)
 			test -d /sys/module/kvm && rc=0;;
 		*)
@@ -2496,7 +2496,7 @@ is_slackware && export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
 
 #first time
 [[ $(id -u) != 0 ]] && ! is_slackware && {
-	if ! id | egrep -qw libvirt; then
+	if ! id | grep -E -qw libvirt; then
 		expect <(cat <<-EOF
 		set timeout -1
 		log_user 0
@@ -2798,7 +2798,7 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 		familys=$(sed -e 's/.*/"&" "" 1/' $distropatternIntra $distropatternInter)
 		dialog --backtitle "$dialogTitle" --radiolist "please selet distro family/pattern:" 22 40 20 $familys 2>$dialogres || { distroSelectNull; exit 0; }
 		pattern=$(head -n1 $dialogres|sed 's/"//g')
-		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|egrep "$pattern")
+		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|grep -E "$pattern")
 		[[ "$Intranet" = yes ]] && grep -F "$pattern" $distropatternIntra && {
 			dialog --title "If include nightly build" \
 				--backtitle "Do you want nightly build distros?" \
@@ -2820,7 +2820,7 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 	Usage
 	exit 1
 }
-if egrep --color=always "[~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$Distro"; then
+if grep -E --color=always "[~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$Distro"; then
 	echo -e "{VM:WARN} ^^^ invalid character[s] in distro name: '$Distro'"
 	exit 1
 fi
@@ -3021,7 +3021,7 @@ if [[ "$InstallType" = import ]]; then
 	# if not swithed to Location mode
 	if [[ "$InstallType" = import ]]; then
 		if [[ ! -f "$Imageurl" ]]; then
-			if ! egrep -q '\.(qcow2c|qcow2|qcow2.xz|raw|raw.xz|img)$' <<<"$Imageurl"; then
+			if ! grep -E -q '\.(qcow2c|qcow2|qcow2.xz|raw|raw.xz|img)$' <<<"$Imageurl"; then
 				ImageurlOrig=$Imageurl
 				read Imageurl _ < <(getimageurls ${Imageurl} "${_Imagepattern}"|sort -Vr)
 			fi

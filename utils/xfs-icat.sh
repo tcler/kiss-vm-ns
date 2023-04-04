@@ -98,7 +98,7 @@ inode_extent_btree() {
 
 	local fsblocks
 	btree_node=$(xfs_db -r $_dev -c inode\ $_inum -c p 2>/dev/null)
-	read key eq fsblocks < <(egrep 'ptrs\[[0-9-]+] =' <<<"$btree_node")
+	read key eq fsblocks < <(grep -E 'ptrs\[[0-9-]+] =' <<<"$btree_node")
 
 	walkbtree() {
 		local _dev=$1
@@ -109,7 +109,7 @@ inode_extent_btree() {
 			read idx fsblock <<<"${_fsblock/:/ }"
 			nodeinfo=$(xfs_db -r $_dev -c fsblock\ $fsblock -c type\ bmapbta -c p)
 			if echo "$nodeinfo"|grep -q 'level = 0'; then
-				echo "$nodeinfo"|egrep '^[0-9]+:'
+				echo "$nodeinfo"|grep -E '^[0-9]+:'
 			else
 				walkbtree $_dev $(echo "$nodeinfo"|sed -rn '/ptrs\[[0-9-]+] =/{s///; p}')
 			fi
@@ -198,7 +198,7 @@ inode_extent_btree2() {
 			read idx _fsbno <<<"${_fsblock/:/ }"
 			nodeinfo=$(_treenodeinfo $_dev $_fsbno   $agblocks $blocksize)
 			if echo "$nodeinfo"|grep -q 'level = 0'; then
-				echo "$nodeinfo"|egrep '^[0-9]+:'
+				echo "$nodeinfo"|grep -E '^[0-9]+:'
 			else
 				walkbtree $_dev $agblocks $blocksize $(echo "$nodeinfo"|sed -rn '/ptrs\[[0-9-]+] =/{s///; p}')
 			fi
