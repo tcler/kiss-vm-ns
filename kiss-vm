@@ -3757,6 +3757,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 						expect {
 							"* ~\]#" {}
 							":~#" {}
+							":~ #" {}
 							"Login incorrect" {
 								if {$env(INTERACT) == "no"} { exit 0 }
 								interact; exit 0
