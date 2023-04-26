@@ -12,6 +12,8 @@ command -v vm >/dev/null || {
 	exit 1
 }
 
+. /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
+
 argv=()
 extrapkgs=()
 dracutSelinux=
@@ -33,7 +35,7 @@ for arg; do
 done
 set -- "${argv[@]}"
 
-distro=${1:-RHEL-8.6.0}
+distro=${1:-CentOS-8-stream}
 echo -e "\n================ [DEBUG] ===============\n= distro/family: $distro"
 
 #---------------------------------------------------------------
