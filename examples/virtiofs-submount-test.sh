@@ -2,7 +2,7 @@
 
 sharedir=~/sharedir
 vmname=vm-virtiofs-submount
-distro=${1:-rhel-8.6%}
+distro=${1:-CentOS-8-stream}
 user=$LOGNAME
 
 command -v vm >/dev/null || {
