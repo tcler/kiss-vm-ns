@@ -117,6 +117,8 @@ vm create --arch aarch64 FreeBSD-13.1
 Q: What other functions or usages does [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) support?  
 A: just run: 'vm help' to get more usage/examples info; and there are some useful scirpts under the [utils](https://github.com/tcler/kiss-vm-ns/tree/master/utils) dir.
 
+Q: ssh login to VM Guest fail with "Permission denied (publickey,gssapi-keyex,gssapi-with-mic)"
+A: try add **-o "HostKeyAlgorithms ssh-rsa"** option to ssh command
 
 ## [kiss-netns](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-netns)
 example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/nfs-stress/nfs-stress.sh#L176  
