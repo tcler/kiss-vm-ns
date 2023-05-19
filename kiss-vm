@@ -1124,7 +1124,7 @@ vmadd_disk() {
 
 	[[ "$tgtbus_opt" = *virtio* ]] && diskprefix=vd
 	local xmls=$(virsh dumpxml $vmname; virsh dumpxml --inactive $vmname)
-	for _target in $diskprefix{a..z}; do echo "$xmls"|grep -q -w $_target || break; done
+	for _target in ${diskprefix}{a..z}; do echo "$xmls"|grep -q -w $_target || break; done
 	run -debug virsh attach-disk $vmname $subdrv_opt $tgtbus_opt "$diskf" $_target
 }
 
