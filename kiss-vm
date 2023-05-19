@@ -1099,7 +1099,7 @@ vmadd_disk() {
 	read diskf _attrs <<< "${diskf//,/ }"
 	eval "$_attrs"  #drv=qcow2,raw,... bus=virtio,scsi,sata,...
 	[[ -n "$drv" ]] && subdrv_opt=--subdriver=$drv
-	[[ -n "$bus" ]] && tgtbus_opt=--targetbus=$drv
+	[[ -n "$bus" ]] && tgtbus_opt=--targetbus=$bus
 
 	if [[ -f "$diskf" ]]; then
 		cp "$diskf" $homedir/.
