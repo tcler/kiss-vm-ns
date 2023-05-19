@@ -1166,7 +1166,7 @@ vmadd_if_passthr() {
 		pci_addr=$(nic2pcislot $_hostif)
 	fi
 
-	run -debug virsh attach-interface --type hostdev --domain $vmname --source $pci_addr \
+	run -debug virsh attach-interface --type hostdev --domain $vmname --source ${pci_addr#pci_} \
 		--config --live
 }
 
