@@ -1109,8 +1109,11 @@ vmadd_disk() {
 		:
 	elif [[ ! -e "$diskf" && "$diskf" != */* ]]; then
 		diskf="$homedir/$diskf"
-		[[ -f "$diskf" ]] && { echo -e "{VM:WARN} '$diskf' already exist."; return; }
-		qemu-img create -f qcow2 "${diskf}" ${size:-80}G
+		if [[ -f "$diskf" ]]; then
+			{ echo -e "{VM:WARN} '$diskf' already exist."; : return; }
+		else
+			qemu-img create -f qcow2 "${diskf}" ${size:-80}G
+		fi
 		subdrv_opt=${subdrv_opt:---subdriver=qcow2}
 	fi
 
