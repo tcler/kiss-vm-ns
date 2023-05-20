@@ -54,7 +54,7 @@ DEFAULT_DISK_BUS=virtio
 DEFAULT_IF_MODEL=virtio
 defaultPasswd=redhat
 defaultWindowsPasswd=Sesame~0pen
-orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6)
+orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)
 { QEMU_USER=qemu; id ${QEMU_USER} &>/dev/null || QEMU_USER=libvirt-qemu; }
 
 quote() {
@@ -1447,7 +1447,7 @@ prepare_kiss_vm() {
 	test $(id -u) = 0 || { echo "{VM:Error} vm prepare need root permission, try: sudo $P prepare" >&2; exit 1; }
 
 	#disable ipv6
-	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1
+	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1 2>/dev/null
 
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
