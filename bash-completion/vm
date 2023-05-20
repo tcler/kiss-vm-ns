@@ -166,7 +166,7 @@ _vm()
                 COMPREPLY=( $( compgen -W "#<Enter> $ifaces" -- "${cur}" ) )
             fi
             ;;
-        add.if.passthr)
+        add.if.passthr*)
             if [[ $narg -le 3 ]]; then
                 vmlist=$(virsh list --all --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
