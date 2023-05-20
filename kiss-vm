@@ -1816,6 +1816,9 @@ Usage() {
 	  -C,-F <iso/image path>
 	                 #create VM by using ISO or image file
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
+	  --kernel-opts <kernel parameters>
+	                 #kernel options/parameters for kickstart 'bootloader --append'
+	                 #only for kickstart install and conflict with --ks option
 	  -n,--vmname <name>
 	                 #VM name, will auto generate according distro name if omitting
 	  -f,--force     #over write existing VM with same name
@@ -2154,6 +2157,7 @@ _at=`getopt -o hu:d:m:Ll:C:F:fn:gb:p:Ii:rvdx::Pqw:: \
 	--long enable-nested-vm \
 	--long debug \
 	--long ks: \
+	--long kernel-opts: \
 	--long rm \
 	--long osv: \
 	--long timeo: \
@@ -2277,6 +2281,7 @@ while true; do
 	-P|--pxe)  InstallType=pxe; shift 1;;
 	--diskless) DISKLESS=yes; shift 1;;
 	--ks)      KSPath=$2; shift 2;;
+	--kernel-opts)      KS_KOPTS="$2"; shift 2;;
 	--rm)      RM=yes; shift 1;;
 	--xzopt)          XZ="$2"; shift 2;;
 	-f|--force)       OVERWRITE="yes"; FORCE=yes; shift 1;;
@@ -3332,9 +3337,11 @@ if [[ "$InstallType" = location ]]; then
 			URL_OPT="-url $Location"
 		fi
 		if [[ "$NO_SSHKEY" = yes ]]; then
-			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript >$KSPath
+			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript \
+				--kopts="$KS_KOPTS" >$KSPath
 		else
-			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub >$KSPath
+			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript \
+				--kopts="$KS_KOPTS" --sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub >$KSPath
 		fi
 	}
 
