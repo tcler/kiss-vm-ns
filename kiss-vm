@@ -3221,7 +3221,7 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	chcon system_u:object_r:qemu_var_run_t:s0 $VMpath/$devfile #system_u:object_r:virt_cache_t:s0 also works
 	getfacl $VMpath/$devfile
 	ls -lZ $VMpath/$devfile
-	QEMU_OPTS+=("--qemu-commandline=-drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c")
+	QEMU_OPTS+=("--qemu-commandline=-drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c,addr=$(printf 0x%x $((0x10+$c)))")
 	let c++
 done
 virt-install -h | grep -q -- --qemu-commandline || QEMU_OPTS=()
