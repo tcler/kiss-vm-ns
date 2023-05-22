@@ -12,6 +12,7 @@ NetCommand=
 KeyCommand=
 AuthConfigure="auth --passalgo=sha512 --useshadow"
 PartConf=autopart
+IgnoreDisk=
 
 Usage() {
 	cat <<-EOF >&2
@@ -33,6 +34,7 @@ _at=`getopt -o hd: \
 	--long post: \
 	--long sshkeyf: \
 	--long kernel-opts: --long kopts: \
+	--long only-use: \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -44,6 +46,7 @@ while true; do
 	--post)    Post="$2"; shift 2;;
 	--sshkeyf) sshkeyf+=" $2"; shift 2;;
 	--kernel-opts|--kopts) KernelOpts="$2"; shift 2;;
+	--only-use) [[ -n "${2// /}" ]] && IgnoreDisk="ignoredisk --only-use=$2"; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -105,6 +108,7 @@ $Bootloader
 zerombr
 clearpart --all --initlabel
 $PartConf
+$IgnoreDisk
 $AuthConfigure
 selinux --enforcing
 firewall --enabled --http --ftp --smtp --ssh
