@@ -12,6 +12,7 @@ _downhostname="download.devel.fedorahat.com"
 baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
 downhostname=${_downhostname/fedora/red}
 bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
+KernelOpts=
 
 is_available_url() {
         local _url=$1
@@ -24,7 +25,7 @@ is_intranet() {
 
 Usage() {
 	cat <<-EOF >&2
-	Usage: $0 <iso file path> [--hostname name] [--repo name:url [--repo name:url]] [-b|--brewinstall "pkg list"] [-p|--pkginstall "pkg list"] [--kdump] [--fips]
+	Usage: $0 <iso file path> [--hostname name] [--repo name:url [--repo name:url]] [-b|--brewinstall "pkg list"] [-p|--pkginstall "pkg list"] [--kdump] [--fips] [--kopts=<args>]
 	EOF
 }
 
@@ -38,6 +39,7 @@ _at=`getopt -o hp:b:D \
 	--long sshkeyf: \
 	--long kdump \
 	--long fips \
+	--long kernel-opts: --long kopts: \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -51,6 +53,7 @@ while true; do
 	--sshkeyf) sshkeyf+=" $2"; shift 2;;
 	--kdump) kdump=yes; shift 1;;
 	--fips) fips=yes; shift 1;;
+	--kernel-opts|--kopts) KernelOpts="$2"; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -160,7 +163,12 @@ $(
 KDUMP
 )
 $(
-[[ "$kdump" = yes || "$fips" = yes || -n "$BPKGS" ]] && cat <<REBOOT
+[[ -n "$KernelOpts" ]] && cat <<KDUMP
+  - grubby --args="$KernelOpts" --update-kernel=DEFAULT
+KDUMP
+)
+$(
+[[ "$kdump" = yes || "$fips" = yes || -n "$BPKGS" || -n "$KernelOpts" ]] && cat <<REBOOT
   - reboot
 REBOOT
 )
