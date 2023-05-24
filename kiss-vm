@@ -1818,9 +1818,9 @@ Usage() {
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  --ks-only-use <sda[,sdb]>
 	                 #forward to kickstart 'ignoredisk --only-use='
-	  --kernel-opts <kernel parameters>
-	                 #kernel options/parameters for kickstart 'bootloader --append'
-	                 #only for kickstart install and conflict with --ks option
+	  --kernel-opts <kernel args>
+	                 #apped kernel options/args
+	                 #Note: conflict with '--ks + -L/-l <url>' option
 	  -n,--vmname <name>
 	                 #VM name, will auto generate according distro name if omitting
 	  -f,--force     #over write existing VM with same name
