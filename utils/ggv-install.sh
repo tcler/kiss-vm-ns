@@ -148,7 +148,7 @@ fastesturl() {
 	echo $fast
 }
 echo
-! command -v vncdo && {
+if ! command -v vncdo; then
 	pipOpts="--default-timeout=60 --retries=10"
 	pipDefaultUrl=https://files.pythonhosted.org
 	pipMirrorList="$pipDefaultUrl
@@ -176,4 +176,6 @@ echo
 	$PIP $pipOpts install $pipInstallOpts --upgrade pip
 	$PIP $pipOpts install $pipInstallOpts --upgrade setuptools
 	$PIP $pipOpts install $pipInstallOpts vncdotool service_identity
-}
+else
+	pip install --upgrade vncdotool service_identity
+fi
