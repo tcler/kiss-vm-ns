@@ -2838,6 +2838,9 @@ if grep -E --color=always "[~\!@#$^&()=,\":;{}|<>'\` ]" <<<"$Distro"; then
 	exit 1
 fi
 
+#set default disk bus to sata if distro is arch linux
+[[ "${Distro,,}" =~ arch* ]] && { DEFAULT_DISK_BUS=sata; }
+
 [[ "${*,,} ${Distro,,}" =~ windows ]] && {
 	WIN_AUTO=yes
 	DEFAULT_DISK_BUS=sata
