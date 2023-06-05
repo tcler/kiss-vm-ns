@@ -31,6 +31,8 @@ distroInfo[debian-9]="https://cloud.debian.org/images/openstack/current-9/debian
 distroInfo[debian-testing]="https://cloud.debian.org/images/openstack/testing/"
 
 #### OpenSUSE
+distroInfo[openSUSE-leap-15.5]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.5/images/openSUSE-Leap-15.5.$GuestARCH-NoCloud.qcow2"
+distroInfo[openSUSE-leap-15.4]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.4/images/openSUSE-Leap-15.4.$GuestARCH-NoCloud.qcow2"
 distroInfo[openSUSE-leap-15.3]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.3/images/openSUSE-Leap-15.3.$GuestARCH-NoCloud.qcow2"
 distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.$GuestARCH.qcow2"
 
