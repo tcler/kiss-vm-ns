@@ -24,7 +24,7 @@ distroInfo[fedora-31]="https://ord.mirror.rackspace.com/fedora/releases/31/Cloud
 # https://cloud.debian.org/images/openstack/testing/
 # https://cloud.debian.org/images/openstack/$latestVersion/
 # https://cloud.debian.org/images/openstack/archive/$olderVersion/
-distroInfo[debian-12]="http://cloud.debian.org/images/cloud/bookworm/daily/latest/"
+distroInfo[debian-12]="http://cloud.debian.org/images/cloud/bookworm/latest/"
 distroInfo[debian-11]="http://cloud.debian.org/images/cloud/bullseye/latest/"
 distroInfo[debian-10]="https://cloud.debian.org/images/openstack/current-10/debian-10-openstack-${GuestARCH/x86_64/amd64}.qcow2"
 distroInfo[debian-9]="https://cloud.debian.org/images/openstack/current-9/debian-9-openstack-${GuestARCH/x86_64/amd64}.qcow2"
