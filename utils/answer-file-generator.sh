@@ -184,6 +184,7 @@ ARGS=$(getopt -o hu:p: \
 	--long run: --long run-with-reboot: \
 	--long run-post: \
 	--long dfs-target: \
+	--long no-virt-tools \
 	-a -n "$PROG" -- "$@")
 eval set -- "$ARGS"
 while true; do
@@ -214,6 +215,7 @@ while true; do
 	--run|--run-with-reboot) RUN_CMDS+=("$2"); shift 2;;
 	--run-post) RUN_POST_CMDS+=("$2"); shift 2;;
 	--dfs-target) DFS_TARGET="$2"; DFS=yes; shift 2;;
+	--no-virt-tools) NO_VIRT_TOOLS=yes; shift 1;;
 	--) shift; break;;
 	*) Usage; exit 1;; 
 	esac
@@ -447,5 +449,13 @@ ANSF_AUTORUN_DIR=tools-drivers
 usbSize=1024M
 media_dir=$(mktemp -d)
 trap "rm -fr $media_dir" EXIT
-process_ansf $media_dir $TemplateDir/*
-virt-make-fs -s $usbSize -t vfat $media_dir $ANSF_IMG_PATH --partition
+if [[ -n "$NO_VIRT_TOOLS" ]]; then
+	create-vdisk.sh $ANSF_IMG_PATH ${usbSize} vfat
+	_media_dir=$(mount-vdisk.sh $ANSF_IMG_PATH $media_dir)
+	[[ -z "$_media_dir" ]] && _media_dir=$media_dir
+	process_ansf $_media_dir $TemplateDir/*
+	umount-vdisk.sh $_media_dir
+else
+	process_ansf $media_dir $TemplateDir/*
+	virt-make-fs -s $usbSize -t vfat $media_dir $ANSF_IMG_PATH --partition
+fi
