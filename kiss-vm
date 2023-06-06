@@ -2570,9 +2570,9 @@ else
 	case "$GuestARCH" in
 	(aarch64)
 		#set default qemu cpu type cortex-a72 for aarch64, it works on RHEL aarch64 build
+		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
 		if [[ -z "$QEMU_CPU" ]]; then
 			if $QEMU_KVM -cpu ? |& grep -q No.machine; then
-				MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"
 				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a57")
 			else
 				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
@@ -2892,7 +2892,7 @@ if [[ "$VTPM" = yes ]]; then
 fi
 
 [[ -n "$QEMU_KVM" ]] && {
-	DISPLAY= timeout 0.5 $QEMU_KVM -vga qxl |& grep -q 'QXL VGA not available' && {
+	DISPLAY= timeout 0.5 $QEMU_KVM -vga qxl $MACHINE_QEMUOPT |& grep -q 'QXL VGA not available' && {
 		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
 	}
 	$QEMU_KVM -machine help|grep -q q35 && Q35=support
