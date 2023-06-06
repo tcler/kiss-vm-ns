@@ -2559,6 +2559,7 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 	case "$HostARCH" in
 	(aarch64)
 		virtualizationOption=
+		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
 		if [[ -z "$QEMU_CPU" ]]; then
 			QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
 		fi
