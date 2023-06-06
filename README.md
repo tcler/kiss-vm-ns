@@ -114,6 +114,8 @@ vm create --arch ppc64   debian-11
 vm create --arch aarch64 FreeBSD-13.1
 ```
 
+Update\[2023-06-06] now also support creating x86_64 Guest on aarch64 host(Fedora Linux Asahi Remix/M2)
+
 **Q:** What other functions or usages does [kiss-vm](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-vm) support?  
 **A:** just run: 'vm help' to get more usage/examples info; and there are some useful scirpts under the [utils](https://github.com/tcler/kiss-vm-ns/tree/master/utils) dir.
 
