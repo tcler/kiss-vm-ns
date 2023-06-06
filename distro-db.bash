@@ -43,8 +43,8 @@ distroInfo[FreeBSD-13.1]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13
 distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/14.0-CURRENT/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 
 #### ArchLinux
-distroInfo[archlinux]="https://linuximages.de/openstack/arch/arch-openstack-LATEST-image-bootstrap.qcow2"
 distroInfo[archlinux]="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-${GuestARCH}-cloudimg.qcow2"
+distroInfo[archlinux]="https://linuximages.de/openstack/arch/arch-openstack-LATEST-image-bootstrap${GuestARCH/x86_64/}.qcow2"
 
 #### only available in intranet
 if [[ -n "$IntranetBaseUrl" ]]; then
