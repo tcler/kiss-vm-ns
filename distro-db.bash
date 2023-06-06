@@ -44,6 +44,7 @@ distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/1
 
 #### ArchLinux
 distroInfo[archlinux]="https://linuximages.de/openstack/arch/arch-openstack-LATEST-image-bootstrap.qcow2"
+distroInfo[archlinux]="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-${GuestARCH}-cloudimg.qcow2"
 
 #### only available in intranet
 if [[ -n "$IntranetBaseUrl" ]]; then
