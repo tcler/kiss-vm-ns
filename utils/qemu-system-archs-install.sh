@@ -36,7 +36,7 @@ esac
 for arch; do
 	[[ "$arch" = -f ]] && { FORCE=yes; continue; } || archlist+="$arch "
 done
-[[ -z "$archlist" ]] && archlist="aarch64 riscv ppc s390x"
+[[ -z "$archlist" ]] && archlist="x86_64 aarch64 riscv ppc s390x"
 pkglist=$(printf "qemu-system-%s " $archlist)
 case ${OS,,} in
 slackware*)
