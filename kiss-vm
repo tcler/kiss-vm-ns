@@ -2570,7 +2570,7 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 			QEMU_OPTS+=("--qemu-commandline=-cpu host")
 			if grep -q Asahi /etc/os-release; then
 				#verified on 'Fedora-38 Asahi Remix/M2 MacBook'
-				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
+				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a76")
 			fi
 		fi
 		;;
@@ -2586,7 +2586,7 @@ else
 			if $QEMU_KVM -cpu ? |& grep -q No.machine; then
 				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a57")
 			else
-				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
+				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a76")
 			fi
 		fi
 		;;
