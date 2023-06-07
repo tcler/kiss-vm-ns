@@ -2566,7 +2566,12 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 		virtualizationOption=
 		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
 		if [[ -z "$QEMU_CPU" ]]; then
-			QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
+			#verified on 'Fedora-38/Ampere(R) Altra(R) Max Processor M128-30 CPU @ 3.0GHz'
+			QEMU_OPTS+=("--qemu-commandline=-cpu host")
+			if grep -q Asahi /etc/os-release; then
+				#verified on 'Fedora-38 Asahi Remix/M2 MacBook'
+				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a72")
+			fi
 		fi
 		;;
 	esac
