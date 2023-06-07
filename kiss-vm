@@ -1452,7 +1452,7 @@ prepare_kiss_vm() {
 	#virt-filesystems, virt-make-fs always hang on 'Fedora Linux Asahi Remix'
 	#here enable udisksctl for non-root user to avoid using virt-* tools that
 	#required by create-vdisk.sh/mount-vdisk.sh
-	[[ "$HostARCH" = aarch64 ]] && enable-udisksctl-loop-setup-and-delete.sh
+	grep -q Asahi /etc/os-release && enable-udisksctl-loop-setup-and-delete.sh
 
 	#disable ipv6
 	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1 2>/dev/null
@@ -4010,7 +4010,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 		case "${BOOT_OPTS[*]}" in (*uefi*|*firmware=efi*) WIN_UEFI_OPT="--uefi";; esac
 
 		#virt-filesystems, virt-make-fs always hang on 'Fedora Linux Asahi Remix'
-		[[ "$HostARCH" = aarch64 ]] && NO_VIRT_TOOLS_OPT=--no-virt-tools
+		grep -q Asahi /etc/os-release && NO_VIRT_TOOLS_OPT=--no-virt-tools
 		case ${WIN_TEMPLATE} in
 		base)
 		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
