@@ -3679,7 +3679,7 @@ elif [[ "$InstallType" = import ]]; then
 			echo -e "{VM:INFO} waiting console info ..."
 			SHUTDOWN=$GenerateImage LANG=C expect -c '
 				set intc 0
-				set timeout 16
+				set timeout 32
 				spawn virsh console '"$vmname"'
 				trap {
 					send_user "You pressed Ctrl+C [incr intc]/8\n"
