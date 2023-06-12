@@ -14,9 +14,13 @@ curl_download() {
 	local rc=
 
 	[[ -z "$filename" || -z "$url" ]] && {
-		echo "Usage: curl_download <filename> <url> [curl options]" >&2
+		echo "Usage: curl_download <path/to[/filename]> <url> [curl options]" >&2
 		return 1
 	}
+
+	if [[ -d "$filename" ]]; then
+		filename=${filename%/}/${url##*/}
+	fi
 
 	header=$(curl -L -I -s $url|sed 's/\r//')
 	fsizer=$(echo "$header"|awk '/Content-Length:/ {print $2; exit}')
@@ -45,7 +49,7 @@ if [[ $sourced = yes ]]; then return 0; fi
 
 #__main__
 [[ "$#" < 2 ]] && {
-	echo "Usage: $0 <filename> <url> [timeo=<time>] [curl options]" >&2
+	echo "Usage: $0 <path/to[/filename]> <url> [timeo=<time>] [curl options]" >&2
 	exit 1
 }
 
