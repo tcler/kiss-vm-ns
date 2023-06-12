@@ -7,6 +7,10 @@ fastesturl() {
 	ping -h |& grep -q '^ *-4' && ipv4Opt=-4
 
 	for url; do
+		if curl -L -s --head --request GET ${url} | grep -q "404 Not Found"; then
+			echo "[ERROR] return 404 while access: ${url}" >&2
+			continue
+		fi
 		read p host path <<<"${url//\// }";
 		cavg=$(ping $ipv4Opt -w 4 -c 2 $host | awk -F / 'END {print $5}')
 		: ${minavg:=$cavg}
