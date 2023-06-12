@@ -1383,7 +1383,7 @@ install_requires() {
 			fi
 		done
 		;;
-	fedora*|red?hat*|centos*|rocky*)
+	fedora*|red?hat*|centos*|rocky*|anolis*)
 		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img udisks2 genisoimage iptables-nft"
 		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
 
@@ -1750,7 +1750,7 @@ if [[ $Intranet = yes ]]; then
 				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux8
 			)
 			;;
-		rhel-9*|rhel9*|anolis*)
+		rhel-9*|rhel9*)
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug\/tree}
 			read rtype distro <<< $(awk -F/+ '{
@@ -3290,11 +3290,11 @@ rhel-5*|rhel5*|centos5*|centos-5*)
 	EPEL=http://archive.fedoraproject.org/pub/archive/epel/epel-release-latest-5.noarch.rpm;;
 rhel-6*|rhel6*|centos6*|centos-6*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm;;
-rhel-7*|rhel7*|centos7*|centos-7*)
+rhel-7*|rhel7*|centos7*|centos-7*|anolis7*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;;
-rhel-8*|rhel8*|centos-8*|centos8*|rocky-8*|rocky8*)
+rhel-8*|rhel8*|centos-8*|centos8*|rocky-8*|rocky8*|anolis8*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm;;
-rhel-9*|rhel9*|rocky-9*|rocky9*)
+rhel-9*|rhel9*|rocky-9*|rocky9*|anolis9*|anolis*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm;;
 esac
 [[ -n "$EPEL" ]] && PKGS="$EPEL $PKGS"
@@ -4225,7 +4225,7 @@ fi
 
 #only for Fedora/RHEL/CentOS/RockyLinux
 case ${Distro,,} in
-fedora*|rhel*|centos*|rocky*)
+fedora*|rhel*|centos*|rocky*|anolis*)
 	for postrepo in "${POST_REPOS[@]}"; do
 		_name=
 		_url=
