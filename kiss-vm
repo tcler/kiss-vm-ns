@@ -1750,7 +1750,7 @@ if [[ $Intranet = yes ]]; then
 				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux8
 			)
 			;;
-		rhel-9*|rhel9*)
+		rhel-9*|rhel9*|anolis*)
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug\/tree}
 			read rtype distro <<< $(awk -F/+ '{

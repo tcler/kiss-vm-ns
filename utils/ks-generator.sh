@@ -78,7 +78,7 @@ rhel-8*|rhel8*|centos8*|centos-8*|rocky8*|rocky-8*)
 	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion"
 	AuthConfigure=
 	;;
-rhel-9*|rhel9*|centos9*|centos-9*|rocky9*|rocky-9*|fedora-*)
+rhel-9*|rhel9*|centos9*|centos-9*|rocky9*|rocky-9*|fedora-*|anolis*)
 	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion"
 	AuthConfigure=
 	;;
