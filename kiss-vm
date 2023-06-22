@@ -3780,6 +3780,11 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 							puts $expect_out(buffer)
 							exit 1
 						}
+						"dracut:/#" {
+							send "\r"
+							puts $expect_out(buffer)
+							exit 1
+						}
 						"* login:" { send "root\r" }
 					}
 					expect "Password:" {
