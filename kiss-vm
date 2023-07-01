@@ -155,7 +155,7 @@ create_vmhome() {
 		echo "{VM:ERROR} create_vmhost <vmhome>: argument vmhome is required"
 		return 1
 	fi
-	run -as=$VMUSER mkdir -p $vmhome
+	run -debug -as=$VMUSER mkdir -p $vmhome
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${vmhome%/*} ${vmhome} 2>/dev/null
 }
 
