@@ -3795,8 +3795,14 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 							":~#" {}
 							":~ #" {}
 							"Login incorrect" {
-								if {$env(INTERACT) == "no"} { exit 0 }
-								interact; exit 0
+								send_user "{warn} invalid user/password(root/'"$defaultPasswd"')\n"
+								send_user "{warn} maybe your image file is not a cloud image\n"
+								send_user "{warn} please get the right user/password\n"
+								if {$env(INTERACT) == "no"} {
+									exit 0
+								} else {
+									interact; exit 0
+								}
 							}
 						}
 						if {$env(SHUTDOWN) == "yes"} {
