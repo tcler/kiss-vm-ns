@@ -22,7 +22,7 @@ slackware*)
 		yes $'Q\nY\nP\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
 	}
 	;;
-red?hat|centos*|rocky*)
+red?hat|centos*|rocky*|anolis*)
 	OSV=$(rpm -E %rhel)
 	if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
@@ -46,7 +46,7 @@ fedora*)
 	yum $yumOpt install -y $pkglist
 	yum $yumOpt install -y qemu-device-display-virtio-gpu-ccw
 	;;
-red?hat*|centos*|rocky*)
+red?hat*|centos*|rocky*|anolis*)
 	OSV=$(rpm -E %rhel)
 	case "$OSV" in
 	8|9)
