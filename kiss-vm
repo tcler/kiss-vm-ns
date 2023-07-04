@@ -1812,7 +1812,7 @@ Usage() {
 	  vm <$other_subcmd> [vmname] [OPTIONs] ...
 
 	Options:
-	  -h,--help      #Display this help.
+	  -h, --help      #Display this help.
 
 	Options for sub-command create:
 	  -I[url/path[,bus=$bus[,...]]]
@@ -1821,7 +1821,7 @@ Usage() {
 	  -L[url/path[,bus=$bus[,...]]]
 	                 #create VM by using specified location url or local iso file path
 	                 #will auto search url according distro name, if url omitted
-	  -C,-F <iso/image path>
+	  -C, -F <iso/image path>
 	                 #create VM by using ISO or image file
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  --ks-only-use <sda[,sdb]>
@@ -1829,17 +1829,17 @@ Usage() {
 	  --kernel-opts <kernel args>
 	                 #apped kernel options/args
 	                 #Note: conflict with '--ks + -L[url]' option
-	  -n,--vmname <name>
+	  -n, --vmname <name>
 	                 #VM name, will auto generate according distro name if omitting
-	  -f,--force     #over write existing VM with same name
-	  -p,--pkginstall <pkgs>
+	  -f, --force     #over write existing VM with same name
+	  -p, --pkginstall <pkgs>
 	                 #pkgs in default system repo, install by yum/apt/zypper/pacman
-	  -b,--brewinstall <args>
+	  -b, --brewinstall <args>
 	                 #pkgs in brew system or specified by url, install by internal brewinstall.sh
 	                  `-> just could be used in Intranet
-	  -g,--genimage  #generate VM image, after install shutdown VM and generate new qcow2.xz file
+	  -g, --genimage  #generate VM image, after install shutdown VM and generate new qcow2.xz file
 	  --rm           #like --rm option of docker/podman, remove VM after quit from console
-	  --nocloud,--nocloud-init
+	  --nocloud, --nocloud-init
 	                 #don't create cloud-init iso for the image that is not cloud image
 	  --osv <variant>
 	                 #OS_VARIANT, optional. virt-install will attempt to auto detect this value
@@ -1854,7 +1854,7 @@ Usage() {
 	                 #save image in path if install with import mode
 	  --downloadonly #download image only if there is qcow* image
 	  --share        #give others read permission to the VM image file
-	  --cpus,--vcpus <N|sockets=1,cores=2,threads=2>
+	  --cpus, --vcpus <N|sockets=1,cores=2,threads=2>
 	                 #number of virtual cpus, default: sockets=1,cores=2,threads=2
 	                 #see also: virt-install --vcpus=?
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
@@ -1862,7 +1862,7 @@ Usage() {
 	  --qemucpu <arg>
 	                 #alias of --qemu-opts="-cpu <arg>", and will cover it if both are specified
 	                 #see also: `qemu-system-$arch -machine <$machine> -cpu help`
-	  --nvmeboot,--NB #configure the boot disk as nvme device
+	  --nvmeboot, --NB #configure the boot disk as nvme device
 	                 #ref1: https://blog.christophersmart.com/2019/12/18/kvm-guests-with-emulated-ssd-and-nvme-drives/#comment-1060169
 	                 #ref2: https://www.qemu.org/docs/master/system/bootindex.html
 	  --boot <arg>   #pass thru to virt-install's --boot options
@@ -1876,14 +1876,14 @@ Usage() {
 	  --sound <type> #sound MODEL, Possible values are ich6, ich9, ac97, es1370, sb16, pcspk, or default
 	                 #see also: `virt-install --sound=?`
 	                 #Note: vnc server doesn't support audio well, please enable RDP(Remote Desktop Protocol) in your Guest for sound
-	  --ms,--msize,-m <size> #memory size, default 2048
-	  --ds,--dsize    <size> #disk size, default 16
+	  --ms, --msize, -m <size> #memory size, default 2048
+	  --ds, --dsize    <size> #disk size, default 16
 	  --if-model <>  #change default model(virtio) of virtual NICs: e1000,rtl8139 
 	  --net <$name[,model=$model[,mac=...]]>
 	                 #attach tun dev(vnetN) and connect to net $name, optional $model: virtio,e1000,...
 	  --net-br <$brname[,model=$model[,mac=...]]>
 	                 #attach tun dev(vnetN) and connect to bridge $brname, optional $model: virtio,e1000,...
-	  --net-macvtap,--netmacvtap [$sourceNIC[,model=$model[,source_mode=...[,mac=...]]]]
+	  --net-macvtap, --netmacvtap [$sourceNIC[,model=$model[,source_mode=...[,mac=...]]]]
 	                 #attach macvtap interface over $sourceNIC, optional $model: virtio,e1000,...
 	  --macvtapmode <vepa|bridge>
 	                 #macvtap mode
@@ -1922,7 +1922,7 @@ Usage() {
 	  --restraint    #enable restraint and start restraintd by default. only for rh-intranet
 	  --nosshkey     #don't inject sshkey
 	  --debug        #debug mode
-	  --vncwait,--vncwait-after-install <pattern,send,timeout>
+	  --vncwait, --vncwait-after-install <pattern,send,timeout>
 	                 #wait string:$pattern, then send string:$send
 	  --vncput-after-install <msg>
 	                 #send string or key event ASAP after virt-intall
@@ -1932,10 +1932,10 @@ Usage() {
 	  --uefi         #an alias option equivalent to: --boot=uefi --machine=q35
 	  --uefi-tpm-sb  #an alias option equivalent to: --boot=firmware=efi,loader_secure=yes --machine=q35 --vtpm
 	                  and --vncwait="boot.manager,key:enter key:down key:down key:enter key:enter key:enter"
-	  --hostdev,--host-device <device from "virsh nodedev-list">
+	  --hostdev, --host-device <device from "virsh nodedev-list">
 	                 #passthrough host device to KVM Guest
 	                 #see also: virt-install --hostdev=?
-	  --hostif,--hostnic,--host-nic <NIC name from "ip -br -c a show">
+	  --hostif, --hostnic, --host-nic <NIC name from "ip -br -c a show">
 	                 #passthrough host (pci) NIC to KVM Guest
 	  --virt-install-opts #Pass-through virt-install options
 	  --qemu-opts    #Pass-through qemu options
@@ -1947,7 +1947,7 @@ Usage() {
 	                 #`e.g: vm fedora-32 -n f32 -net-macvtap -pxe --noauto -f
 	  --diskless     #diskless install
 	                 #`e.g: vm fedora-32 -n f32-diskless --net pxenet --pxe --diskless -f
-	  -v,--verbose   #verbose mode
+	  -v, --verbose   #verbose mode
 	  -q             #quiet mode, intend suppress the outputs of command yum, curl
 	  --reboot       #reboot after vm create/install. for kernel update or ...
 	                 #`e.g: vm create RHEL-8.4 -n nfs-client --repo=rname:url -p kernel-4.18.0-306.el8.bz9527 --reboot
@@ -1956,25 +1956,25 @@ Usage() {
 	                 #`e.g: vm create RHEL-8.4 -n nfs-client --repo=rname:url -p kernel-4.18.0-306.el8.bz9527 --default-kernel=bz9527
 
 	Options for sub-command reboot,viewer or non-linux distro install:
-	  -w,--wait[=port] #wait util the 22:sshd(or virt-viewer) port is available before connect
+	  -w, --wait[=port] #wait util the 22:sshd(or virt-viewer) port is available before connect
 
 	Options for sub-command exec:
-	  -v,--verbose   #verbose mode
+	  -v, --verbose   #verbose mode
 	  -x[arg]        #expected return code of sub-command exec, if doesn't match output test fail msg
 	                 #`e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 
 	Options for sub-command vncproc:
-	  --get,--vncget #get vnc screen and convert to text by gocr
-	  --getsc,--vncgetsc
+	  --get, --vncget #get vnc screen and convert to text by gocr
+	  --getsc, --vncgetsc
 	                 #get vnc screen
-	  --put,--vncput <msg>
+	  --put, --vncput <msg>
 	                 #send string or key event to vnc server, could be specified multi-times
 	                 #`e.g: --put root --put key:enter --put password --put key:enter
-	  --putln,--vncputln <msg>
+	  --putln, --vncputln <msg>
 	                 #alias of: --put msg --put key:enter
 
 	Options for sub-command prepare:
-	  -u,--user      #prepare configure libvirt for other user
+	  -u, --user      #prepare configure libvirt for other user
 	                 #`e.g: sudo vm prepare -u bar
 
 	Options for Windows Answer File Generator:
@@ -3098,7 +3098,7 @@ available_msize=$(free -m | awk '/^Mem:/{print $NF}')
 [[ "$_MSIZE" -gt "$available_msize" ]] && _MSIZE=$((available_msize-8))
 
 MSIZE=${MSIZE:-$_MSIZE}
-[[ "$MSIZE" = *[Gg] ]] && MSIZE=$((${MSIZE%[Gg]} * 1024))
+[[ "$MSIZE" = *[Gg] || ${#MSIZE} -lt 2 ]] && MSIZE=$((${MSIZE%[Gg]} * 1024))
 
 [[ "$MSIZE" -gt "$available_msize" ]] && {
 	echo "{VM:ERR} the available mem size is less than your required."
