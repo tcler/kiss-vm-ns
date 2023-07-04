@@ -969,16 +969,23 @@ vmlogin() {
 		return 1
 	}
 
-	local sshCommand=$(getReusableCommandLine "$@")
 	local U=root
 	vmhomedir $_vmname | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
-	[[ "${EXEC}" = yes ]] && {
+
+	local sshCommand=
+	if [[ "${EXEC}" = yes ]]; then
+		sshCommand=$(getReusableCommandLine "$@")
 		[[ $# = 0 ]] && set "exit 0";
 		[[ "$VERBOSE" = yes ]] &&
 			echo -e "\E[01;36m[$U@$_vmname]> $sshCommand\E[0m" >&2
-	}
+	else
+		[[ -n "$1" ]] && {
+			U=$1; shift;
+			[[ -n "$1" ]] && { defaultPasswd=$1; shift; }
+		}
+	fi
 
 	#sometimes there's bug in libnss. get more than one addr but some one
 	#of them does not exist. detect and ignore it/them
@@ -990,7 +997,7 @@ vmlogin() {
 	}
 
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
-	echo "$sshCommand" >$RuntimeTmp/sshcmd
+	echo -n "$sshCommand" >$RuntimeTmp/sshcmd
 	for addr in $addrs; do
 		[[ "$DEBUG" = yes ]] &&
 			echo -e "\E[01;36m[vmlogin:debug] detect port ${addr}:22 ...\E[0m" >&2
@@ -1017,11 +1024,12 @@ vmlogin() {
 			log_user 0
 			spawn ssh $sshOpts $U@$addr \$sshcmd
 			log_user 1
-			if {\$argc == 0} {
+			if {\$argc == 0 || \$sshcmd == ""} {
 				expect {
 				"\[Pp]assword:" { send "$defaultPasswd\r"; exp_continue }
 				"Password for" { send "$defaultPasswd\r"; exp_continue }
 				"*# " { send "\r"; interact }
+				"*$ " { send "\r"; interact }
 				}
 			} else {
 				expect {
