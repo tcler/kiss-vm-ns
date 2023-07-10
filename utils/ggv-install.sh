@@ -161,6 +161,7 @@ if ! command -v vncdo; then
 	slackware*)
 		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install python3;;
 	fedora*|red?hat*|centos*|rocky*|anolis*)
+		[[ $(rpm -E %rhel) = 8 ]] && yum install -y python39
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel python3-pip;;
 	debian*|ubuntu*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python-pip python3-pip;;
