@@ -15,7 +15,7 @@ tarf=src.3e.tar.gz
 dir=apue.3e
 
 pushd /usr/src
-	wget http://www.apuebook.com/$tarf -O $tarf
+	curl -Ls http://www.apuebook.com/$tarf -o $tarf
 	tar zxf $tarf
 	gmake -C $dir/lib &&
 		cp $dir/lib/libapue.a /usr/lib/. &&

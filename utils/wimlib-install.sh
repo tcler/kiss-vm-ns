@@ -65,7 +65,7 @@ command -v wiminfo || {
 		wimliburl=https://wimlib.net/downloads/wimlib-1.13.5.tar.gz
 		tgzf=${wimliburl##*/}
 		rm -rf ${tgzf} ${tgzf%.tar.gz}
-		wget -4 $wimliburl && tar zxf ${tgzf}
+		curl -Ls -4 $wimliburl -o ${tgzf} && tar zxf ${tgzf}
 		(cd ${tgzf%.tar.gz} &&
 			{ ./configure || ./configure --without-fuse; } &&
 			make && make install)

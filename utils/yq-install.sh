@@ -15,6 +15,6 @@ eval installpath=~/bin
 [[ $(id -u) = 0 ]] && installpath=/usr/bin
 
 YQ_URL=https://github.com/mikefarah/yq/releases/download/v4.30.5/yq_linux_$arch
-wget -q "$YQ_URL" -O $installpath/yq
+curl -Ls "$YQ_URL" -o $installpath/yq
 chmod +x $installpath/yq
 which yq

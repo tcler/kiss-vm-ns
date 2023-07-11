@@ -3328,7 +3328,7 @@ if [[ "$InstallType" = location ]]; then
 		END
 		[[ $Intranet = yes ]] && cat <<-END >>$postscript
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install $BPKGS ..."
-		wget -O /usr/bin/brewinstall.sh -N -q $bkrClientImprovedUrl/utils/brewinstall.sh --no-check-certificate
+		curl -o /usr/bin/brewinstall.sh -k -Ls $bkrClientImprovedUrl/utils/brewinstall.sh
 		chmod +x /usr/bin/brewinstall.sh
 		brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot
 
@@ -3341,14 +3341,14 @@ if [[ "$InstallType" = location ]]; then
 
 		[[ "$fips" = yes ]] && cat <<-END >>$postscript
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] enable fips ..."
-		wget -O /usr/bin/enable-fips.sh -N -q $baseUrl/utils/enable-fips.sh --no-check-certificate
+		curl -o /usr/bin/enable-fips.sh -k -Ls $baseUrl/utils/enable-fips.sh
 		chmod +x /usr/bin/enable-fips.sh
 		enable-fips.sh
 
 		END
 		[[ "$kdump" = yes ]] && cat <<-END >>$postscript
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] kdump-setup ..."
-		wget -O /usr/bin/kdump-setup.sh -N -q $baseUrl/utils/kdump-setup.sh --no-check-certificate
+		curl -o /usr/bin/kdump-setup.sh -k -Ls $baseUrl/utils/kdump-setup.sh
 		chmod +x /usr/bin/kdump-setup.sh
 		kdump-setup.sh
 		END

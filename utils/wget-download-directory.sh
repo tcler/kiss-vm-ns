@@ -16,8 +16,10 @@ wget_download_directory() {
 if [[ $sourced = yes ]]; then return 0; fi
 
 #__main__
+command -v wget >/dev/null || { exit 1; }
 [[ "$#" < 1 ]] && {
 	echo "Usage: $0 <url> [more wget options]" >&2
 	exit 1
 }
+
 wget_download_directory "$@"

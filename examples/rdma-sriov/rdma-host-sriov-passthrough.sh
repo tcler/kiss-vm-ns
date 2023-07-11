@@ -13,11 +13,13 @@ reboot
 COMM
 
 # download MLNX_OFED driver
-wget http://fs-qe.usersys.redhat.com/ftp/pub/jiyin/MLNX_OFED_LINUX-4.9-4.0.8.0-rhel8.4-x86_64.tgz
+driverUrl=http://fs-qe.usersys.redhat.com/ftp/pub/jiyin/MLNX_OFED_LINUX-4.9-4.0.8.0-rhel8.4-x86_64.tgz
+driverFile=${driverUrl##*/}
+curl -Ls -o ${driverFile} ${driverUrl}
 
 # install MLNX_OFED driver
-tar zxf MLNX_OFED_LINUX-4.9-4.0.8.0-rhel8.4-x86_64.tgz
-pushd MLNX_OFED_LINUX-4.9-4.0.8.0-rhel8.4-x86_64
+tar zxf ${driverFile}
+pushd ${driverFile%.tgz}
 	# install dependency
 	yum install -y tcsh tcl tk python36 gcc-gfortran lsof
 

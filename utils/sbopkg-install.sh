@@ -12,7 +12,7 @@ else
 	if ! command -v sbopkg; then
 		#install sbopkg
 		urlpath=$(curl -s -L -k https://github.com/sbopkg/sbopkg/releases | grep -o /sbopkg/.*/sbopkg-.*.tgz | head -n1)
-		wget https://github.com/$urlpath
+		curl -L https://github.com/$urlpath -o ${urlpath##*/}
 		sudo installpkg ${urlpath##*/}
 		rm -f ${urlpath##*/}
 
