@@ -959,6 +959,33 @@ vmconsole() {
 	return $?
 }
 
+vmqmp() {
+	local _vmname=$(vmname_extract -all "$1")
+	shift
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-console $resf && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+	local homedir=$(vm homedir $_vmname |& head -1)
+	local qmpsockf=$(< $homedir/vmtmp)/qmp.socket
+	nc -U $qmpsockf
+	return $?
+}
+vmmonitor() {
+	local _vmname=$(vmname_extract -all "$1")
+	shift
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-console $resf && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+	local homedir=$(vm homedir $_vmname |& head -1)
+	local monsockf=$(< $homedir/vmtmp)/monitor.socket
+	nc -U $monsockf
+	return $?
+}
+
 vmlogin() {
 	local _vmname=$(vmname_extract -all "$1")
 	shift
@@ -2749,6 +2776,8 @@ run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 	co|con|cons*) shift; [[ "$1" = -d ]] && shift; vmconsole "$@"; exit $?;;
 	port|port*) shift; [[ "$1" = -d ]] && shift; vmport_available "$@"; exit $?;;
 	l|lo|log*) shift; [[ "$1" = -d ]] && shift; vmlogin "$@"; exit $?;;
+	qmp) shift; [[ "$1" = -d ]] && shift; vmqmp "$@"; exit $?;;
+	mon|monitor) shift; [[ "$1" = -d ]] && shift; vmmonitor "$@"; exit $?;;
 	cpfrom|cpf*) shift; [[ "$1" = -d ]] && shift; vmcopyfrom "$@"; exit $?;;
 	cpto|cpt*) shift; [[ "$1" = -d ]] && shift; vmcopyto "$@"; exit $?;;
 	e|ex|ex*) shift; [[ "$1" = -d ]] && shift; vmexec "$@"; exit $?;;
@@ -3434,7 +3463,7 @@ if [[ "$InstallType" = location ]]; then
 	  $NOREBOOT \
 	  --noautoconsole \
 	  ${GRAPHICS_OPT} \
-	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait"
+	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait -monitor unix:$VMtmp/monitor.socket,server,nowait"
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -3647,7 +3676,7 @@ elif [[ "$InstallType" = import ]]; then
 	  ${SOUND_OPT} \
 	  --noautoconsole \
 	  ${GRAPHICS_OPT} \
-	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait"
+	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait -monitor unix:$VMtmp/monitor.socket,server,nowait"
 
 	[[ -z "$XML" ]] && while true; do test -f $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -3908,7 +3937,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
 	  ${GRAPHICS_OPT} \
-	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait"
+	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait -monitor unix:$VMtmp/monitor.socket,server,nowait"
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -4107,7 +4136,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
 	  ${GRAPHICS_OPT} \
-	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait"
+	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait -monitor unix:$VMtmp/monitor.socket,server,nowait"
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log

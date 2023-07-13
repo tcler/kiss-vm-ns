@@ -76,7 +76,7 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList=(prepare enable-nested-vm help h create ls list clone port-available login console delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthru)
+    subcommandList=(prepare enable-nested-vm help h create ls list clone port-available login console qmp monitor delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthru)
 
     for ((i=0; i<${#words[@]}; i++)); do w=${words[$i]}; if option_arg_complete $w; then let i++; continue; elif [[ "$w" != -* ]]; then let narg++; fi; done
     local opts=( $( _parse_help "$1" ) -h )
@@ -175,7 +175,7 @@ _vm()
                 COMPREPLY=( $( compgen -W "#<Enter> $hostifs" -- "${cur}" ) )
             fi
             ;;
-        vi|vie|view*|lo|log|log*|co|con|cons|cons*|if|ifaddr|port*)
+        vi|vie|view*|lo|log|log*|co|con|cons|cons*|qmp|mon|moni*|if|ifaddr|port*)
             if [[ $narg -le 3 ]]; then
                 vmlist=$(virsh list --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
