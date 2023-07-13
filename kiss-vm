@@ -608,8 +608,11 @@ vmreboot() {
 		vmdialogradiolist vm-reboot $resf all && _vmname=$(sed 's/"//g' $resf)
 		[[ -z "$_vmname" ]] && { return; }
 	}
+	local homedir=$(vm homedir $_vmname |& head -1)
+	local vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
 
 	virsh destroy "$_vmname" 2>/dev/null
+	[[ -d "$vmtmp" ]] && rm -f $vmtmp/*.socket
 	virsh start "$_vmname"
 	[[ "$WAIT" = yes ]] && {
 		echo -e "{VM:INFO} waiting restart finish ..."
@@ -620,6 +623,7 @@ vmreboot() {
 
 vmstop() {
 	local _vmname=$(vmname_extract "$1")
+	local homedir= vmtmp=
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogchecklist vm-shutdown $resf all && vmList=$(< $resf)
@@ -628,11 +632,19 @@ vmstop() {
 	}
 
 	set -- $(vmname_extract "$@")
-	for vm; do virsh destroy "$vm"; done
+	for vm; do
+		virsh destroy "$vm"
+
+		#remove qmp,monitor socket
+		homedir=$(vm homedir $vm |& head -1)
+		vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
+		[[ -d "$vmtmp" ]] && rm -f $vmtmp/*.socket
+	done
 }
 
 vmstart() {
 	local _vmname=$(vmname_extract -all "$1")
+	local homedir= vmtmp=
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogchecklist vm-start $resf all && vmList=$(< $resf)
@@ -641,7 +653,15 @@ vmstart() {
 	}
  
 	set -- $(vmname_extract -all "$@")
-	for vm; do virsh start "$vm"; done
+	for vm; do
+		if [[ $(virsh domstate "$vm") = shut* ]]; then
+			#remove qmp,monitor socket
+			homedir=$(vm homedir $vm |& head -1)
+			vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
+			[[ -d "$vmtmp" ]] && rm -f $vmtmp/*.socket
+		fi
+		virsh start "$vm"
+	done
 }
 
 vmstat() {
@@ -968,7 +988,13 @@ vmqmp() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 	local homedir=$(vm homedir $_vmname |& head -1)
-	local qmpsockf=$(< $homedir/vmtmp)/qmp.socket
+	local vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
+	local qmpsockf=$vmtmp/qmp.socket
+	if [[ ! -d "$vmtmp" || ! -S $qmpsockf ]]; then
+		echo -e "{VM:WARN} no qmp socket found on $_vmname" >&2
+		return 2
+	fi
+
 	if command -v qmp-shell &>/dev/null; then
 		qmp-shell -p -v $qmpsockf
 	else
@@ -985,7 +1011,13 @@ vmmonitor() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 	local homedir=$(vm homedir $_vmname |& head -1)
-	local monsockf=$(< $homedir/vmtmp)/monitor.socket
+	local vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
+	local monsockf=$vmtmp/monitor.socket
+	if [[ ! -d "$vmtmp" || ! -S $monsockf ]]; then
+		echo -e "{VM:WARN} no monitor socket found on $_vmname" >&2
+		return 2
+	fi
+
 	if command -v qmp-shell &>/dev/null; then
 		qmp-shell -p -v $monsockf
 	else
