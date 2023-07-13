@@ -119,6 +119,27 @@ echo
 	}
 }
 
+install_python_pip() {
+	if command -v pip3; then
+		return 0
+	fi
+
+	case ${OS,,} in
+	slackware*)
+		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install python3;;
+	fedora*|red?hat*|centos*|rocky*|anolis*)
+		python_pkgs="python3-pip"
+		[[ $(rpm -E %rhel) = 8 ]] && python_pkgs="python39-pip"
+		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel $python_pkgs;;
+	debian*|ubuntu*)
+		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python-pip python3-pip;;
+	opensuse*|sles*)
+		zypper in --no-recommends -y python-pip python3-pip;;
+	*)
+		:;; #fixme add more platform
+	esac
+}
+
 #install vncdotool
 fastesturl() {
 	local minavg=
@@ -147,6 +168,7 @@ fastesturl() {
 
 	echo $fast
 }
+
 echo
 if ! command -v vncdo; then
 	pipOpts="--default-timeout=60 --retries=10"
@@ -156,21 +178,9 @@ if ! command -v vncdo; then
 	https://mirrors.aliyun.com/pypi/simple"
 	fastUrl=$(fastesturl $pipMirrorList)
 	[[ -n "$fastUrl" && "$fastUrl" != "$pipDefaultUrl" ]] && pipInstallOpts="-i $fastUrl"
+
 	echo -e "\n{ggv-install} install vncdotool ..."
-	case ${OS,,} in
-	slackware*)
-		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install python3;;
-	fedora*|red?hat*|centos*|rocky*|anolis*)
-		python_pkgs="python3-pip"
-		[[ $(rpm -E %rhel) = 8 ]] && python_pkgs="python39-pip"
-		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel $python_pkgs;;
-	debian*|ubuntu*)
-		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python-pip python3-pip;;
-	opensuse*|sles*)
-		zypper in --no-recommends -y python-pip python3-pip;;
-	*)
-		:;; #fixme add more platform
-	esac
+	install_python_pip
 
 	echo -e "{ggv-install} pip Opts: $pipOpts $pipInstallOpts ..."
 	PIP=$(command -v pip3)
