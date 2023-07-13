@@ -969,7 +969,11 @@ vmqmp() {
 	}
 	local homedir=$(vm homedir $_vmname |& head -1)
 	local qmpsockf=$(< $homedir/vmtmp)/qmp.socket
-	nc -U $qmpsockf
+	if command -v qmp-shell &>/dev/null; then
+		qmp-shell -p -v $qmpsockf
+	else
+		nc -U $qmpsockf
+	fi
 	return $?
 }
 vmmonitor() {
@@ -982,7 +986,11 @@ vmmonitor() {
 	}
 	local homedir=$(vm homedir $_vmname |& head -1)
 	local monsockf=$(< $homedir/vmtmp)/monitor.socket
-	nc -U $monsockf
+	if command -v qmp-shell &>/dev/null; then
+		qmp-shell -p -v $monsockf
+	else
+		nc -U $monsockf
+	fi
 	return $?
 }
 
@@ -1423,7 +1431,7 @@ install_requires() {
 		;;
 	fedora*|red?hat*|centos*|rocky*|anolis*)
 		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img udisks2 genisoimage iptables-nft"
-		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
+		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win python3-qemu-qmp"
 
 		OSV=$(rpm -E %rhel)
 		if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
