@@ -156,6 +156,9 @@ create_vmhome() {
 		return 1
 	fi
 	run -debug -as=$VMUSER mkdir -p $vmhome
+	run -as=$VMUSER mktemp -d --suffix=.kiss-vm >$vmhome/vmtmp
+	VMtmp=$(< $vmhome/vmtmp)
+	run -as=$VMUSER chmod 777 $VMtmp
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${vmhome%/*} ${vmhome} 2>/dev/null
 }
 
@@ -3430,7 +3433,8 @@ if [[ "$InstallType" = location ]]; then
 	  ${SOUND_OPT} \
 	  $NOREBOOT \
 	  --noautoconsole \
-	  ${GRAPHICS_OPT}
+	  ${GRAPHICS_OPT} \
+	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait"
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -3642,7 +3646,8 @@ elif [[ "$InstallType" = import ]]; then
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
 	  --noautoconsole \
-	  ${GRAPHICS_OPT}
+	  ${GRAPHICS_OPT} \
+	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait"
 
 	[[ -z "$XML" ]] && while true; do test -f $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -3902,7 +3907,8 @@ elif [[ "$InstallType" = pxe ]]; then
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
-	  ${GRAPHICS_OPT}
+	  ${GRAPHICS_OPT} \
+	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait"
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -4100,7 +4106,8 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
-	  ${GRAPHICS_OPT}
+	  ${GRAPHICS_OPT} \
+	  --qemu-commandline="-qmp unix:$VMtmp/qmp.socket,server,nowait"
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
