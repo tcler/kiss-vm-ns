@@ -177,6 +177,7 @@ if ! command -v vncdo; then
 	command -v pip3 || PIP=$(command -v pip)
 	$PIP $pipOpts install $pipInstallOpts --upgrade pip
 	$PIP $pipOpts install $pipInstallOpts --upgrade setuptools
+	#dataclasses is needed on rhel-7
 	python3 --version |& grep -q '3\.6' &&
 		$PIP $pipOpts install $pipInstallOpts dataclasses
 	$PIP $pipOpts install $pipInstallOpts vncdotool service_identity

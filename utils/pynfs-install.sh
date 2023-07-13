@@ -8,7 +8,7 @@ sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${
 if [[ $OSVER < 9 ]]; then
 	case $OSVER in
 	8)
-		sudo yum install -y python39
+		sudo yum install -y python39 python39-pip
 		;;
 	7)
 		sudo yum install -y python36 python36-pip
