@@ -155,11 +155,12 @@ create_vmhome() {
 		echo "{VM:ERROR} create_vmhost <vmhome>: argument vmhome is required"
 		return 1
 	fi
-	run -debug -as=$VMUSER mkdir -p $vmhome
-	run -as=$VMUSER mktemp -d --suffix=.kiss-vm >$vmhome/vmtmp
-	VMtmp=$(< $vmhome/vmtmp)
-	run -as=$VMUSER "chmod 777 $VMtmp; chcon --reference=/tmp $VMtmp"
+	VMtmp=$vmhome/tmp
+	run -debug -as=$VMUSER mkdir -p $vmhome $VMtmp
+	run -as=$VMUSER "chmod 1777 $VMtmp; chcon --reference=/tmp $VMtmp 2>/dev/null"
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${vmhome%/*} ${vmhome} 2>/dev/null
+	#ensure files created in VMtmp can be accessed by others
+	setfacl -PRdm u::rwx,g::rwx,o::rx ${VMtmp}
 }
 
 at_exit() {
@@ -345,7 +346,7 @@ _vmdelete() {
 		rm -f $_vmdir/*.cfg $_vmdir/*.ks
 		rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
 		rm -f $_vmdir/nvdimm-*.dev
-		test -f $_vmdir/vmtmp && rm -rf $(< $_vmdir/vmtmp)
+		rm -fr $_vmdir/tmp
 		rm -f $_vmdir/*
 		rmdir $_vmdir 2>/dev/null
 		rmdir ${_vmdir%/*} 2>/dev/null
@@ -731,7 +732,7 @@ vmclone() {
 	if [[ "$VMSHARE" != yes ]]; then
 		setfacl -d -mg::--- -mo::--- $dstpath
 	fi
-	chcon --reference=${srcpath} $dstpath
+	chcon --reference=${srcpath} $dstpath 2>/dev/null
 	run -as=$VMUSER touch $dstpath/.kiss-vm
 
 	fileopts=$(_vmblklist $srcname|sed -rn '/( -|\.iso)$/!{ s|^.* | --file |;'"s|$srcpath|$dstpath|;s%/${srcname}([^/]+)\$%/${dstname}\1%;"' p}'|xargs)
@@ -755,7 +756,7 @@ vmclone() {
 		fi
 		run -debug cp -p --sparse=always --preserve=all "$f" "$df"
 		#if the cp --preserve=context does not work, use:
-		#run -debug chcon --reference="$f" "$df"
+		#run -debug chcon --reference="$f" "$df" 2>/dev/null
 	done
 
 	#virt-clone get wrong nvram path/filename, fix it.
@@ -973,7 +974,7 @@ vmqmp() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 	local homedir=$(vm homedir $_vmname |& head -1)
-	local vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
+	local vmtmp=$homedir/tmp
 	local qmpsockf=$vmtmp/qmp.socket
 	if [[ ! -d "$vmtmp" || ! -S $qmpsockf ]]; then
 		echo -e "{VM:WARN} no qmp socket found on $_vmname" >&2
@@ -996,7 +997,7 @@ vmmonitor() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 	local homedir=$(vm homedir $_vmname |& head -1)
-	local vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
+	local vmtmp=$homedir/tmp
 	local monsockf=$vmtmp/monitor.socket
 	if [[ ! -d "$vmtmp" || ! -S $monsockf ]]; then
 		echo -e "{VM:WARN} no monitor socket found on $_vmname" >&2
@@ -3286,7 +3287,7 @@ for _iso in "${EXTRA_CDROMS[@]}"; do
 	isopath=$VMpath/${_iso##*/}
 	cp -v $_iso $isopath
 	#fixme: ^^ performance improve?
-	chcon system_u:object_r:qemu_var_run_t:s0 $isopath #system_u:object_r:virt_cache_t:s0 also works
+	chcon system_u:object_r:qemu_var_run_t:s0 $isopath 2>/dev/null #system_u:object_r:virt_cache_t:s0 also works
 	ls -lhZ $isopath
 	DISK_OPTS+=" --disk $isopath,device=cdrom,${iso_bus_type:-bus=sata}"
 done
@@ -3304,7 +3305,7 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	devfile=nvme$c.$format
 	qemu-img create -f $format $VMpath/$devfile ${fsize}G
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $VMpath/$devfile
-	chcon system_u:object_r:qemu_var_run_t:s0 $VMpath/$devfile #system_u:object_r:virt_cache_t:s0 also works
+	chcon system_u:object_r:qemu_var_run_t:s0 $VMpath/$devfile 2>/dev/null #system_u:object_r:virt_cache_t:s0 also works
 	getfacl $VMpath/$devfile
 	ls -lZ $VMpath/$devfile
 	QEMU_OPTS+=("--qemu-commandline=-drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c,addr=$(printf 0x%x $((0x10+$c)))")
@@ -3468,7 +3469,7 @@ if [[ "$InstallType" = location ]]; then
 	else
 		BOOT_DISK_OPT="--disk none"
 		setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $imagefile
-		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile #system_u:object_r:virt_cache_t:s0 also works
+		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile 2>/dev/null #system_u:object_r:virt_cache_t:s0 also works
 		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=qcow2,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=-1,addr=0x10")
 	fi
 
@@ -3685,7 +3686,7 @@ elif [[ "$InstallType" = import ]]; then
 		BOOT_DISK_OPT="--disk path=${imagefile},${BOOT_DISK_ATTRS}"
 	else
 		setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $imagefile
-		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile #system_u:object_r:virt_cache_t:s0 also works
+		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile 2>/dev/null #system_u:object_r:virt_cache_t:s0 also works
 		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=$imgfmt,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0,addr=0x10")
 	fi
 
@@ -3948,7 +3949,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	else
 		[[ "$DISKLESS" != yes ]] && {
 			setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $imagefile
-			chcon system_u:object_r:qemu_var_run_t:s0 $imagefile #system_u:object_r:virt_cache_t:s0 also works
+			chcon system_u:object_r:qemu_var_run_t:s0 $imagefile 2>/dev/null #system_u:object_r:virt_cache_t:s0 also works
 			QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=qcow2,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0,addr=0x10")
 		}
 	fi
@@ -4143,7 +4144,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 		BOOT_DISK_OPT="--disk path=${imagefile},${BOOT_DISK_ATTRS}"
 	else
 		setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx $imagefile
-		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile #system_u:object_r:virt_cache_t:s0 also works
+		chcon system_u:object_r:qemu_var_run_t:s0 $imagefile 2>/dev/null #system_u:object_r:virt_cache_t:s0 also works
 		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=qcow2,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0,addr=0x10")
 	fi
 
