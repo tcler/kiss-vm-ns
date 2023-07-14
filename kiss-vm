@@ -2000,7 +2000,7 @@ Usage() {
 	  --qemu-opts    #Pass-through qemu options
 	  --qemu-env     #Pass-through qemu env[s]
 	  --qmp, --qemu-qmp     #add -qmp option to qemu
-	  --mon, --qemu-monitor #add -monitor option to qemu
+	  --monitor, --qemu-monitor #add -monitor option to qemu
 	  --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
 	                      #ref: https://www.linux-kvm.org/page/Nested_Guests
 	  --disable-guest-hypv #disable guest hypervisor
@@ -2294,7 +2294,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long qemu-opts: \
 	--long qemu-env: \
 	--long qmp:: --long qemu-qmp:: \
-	--long mon:: --long qemu-monitor:: \
+	--long monitor:: --long qemu-monitor:: \
 	--long enable-guest-hypv \
 	--long disable-guest-hypv \
 	--long pxe \
@@ -2437,9 +2437,9 @@ while true; do
 	--virt-install-opts)    VIRT_INSTALL_OPTS+=("$2"); shift 2;;
 	--qemu-opts)     QEMU_OPTS+=("--qemu-commandline=$2"); shift 2;;
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
-	--qmp|--qemu-qmp)      QEMU_QMP="${2:-yes}"; shift 2;;
-	--mon|--qemu-monitor)  QEMU_MONITOR="${2:-yes}"; shift 2;;
-	--enable-guest-hy*) ENABLE_L2VM=yes; shift 1;;
+	--qmp|--qemu-qmp)         QEMU_QMP="${2:-yes}"; shift 2;;
+	--monitor|--qemu-monitor) QEMU_MONITOR="${2:-yes}"; shift 2;;
+	--enable-guest-hy*)  ENABLE_L2VM=yes; shift 1;;
 	--disable-guest-hy*) ENABLE_L2VM=no; shift 1;;
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
 	-v|--verbose)    VERBOSE=yes; shift 1;;
