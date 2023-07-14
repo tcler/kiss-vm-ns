@@ -158,7 +158,7 @@ create_vmhome() {
 	run -debug -as=$VMUSER mkdir -p $vmhome
 	run -as=$VMUSER mktemp -d --suffix=.kiss-vm >$vmhome/vmtmp
 	VMtmp=$(< $vmhome/vmtmp)
-	run -as=$VMUSER chmod 777 $VMtmp
+	run -as=$VMUSER "chmod 777 $VMtmp; chcon --reference=/tmp $VMtmp"
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${vmhome%/*} ${vmhome} 2>/dev/null
 }
 
@@ -609,11 +609,8 @@ vmreboot() {
 		vmdialogradiolist vm-reboot $resf all && _vmname=$(sed 's/"//g' $resf)
 		[[ -z "$_vmname" ]] && { return; }
 	}
-	local homedir=$(vm homedir $_vmname |& head -1)
-	local vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
 
 	virsh destroy "$_vmname" 2>/dev/null
-	[[ -d "$vmtmp" ]] && rm -f $vmtmp/*.socket
 	virsh start "$_vmname"
 	[[ "$WAIT" = yes ]] && {
 		echo -e "{VM:INFO} waiting restart finish ..."
@@ -624,7 +621,6 @@ vmreboot() {
 
 vmstop() {
 	local _vmname=$(vmname_extract "$1")
-	local homedir= vmtmp=
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogchecklist vm-shutdown $resf all && vmList=$(< $resf)
@@ -635,17 +631,11 @@ vmstop() {
 	set -- $(vmname_extract "$@")
 	for vm; do
 		virsh destroy "$vm"
-
-		#remove qmp,monitor socket
-		homedir=$(vm homedir $vm |& head -1)
-		vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
-		[[ -d "$vmtmp" ]] && rm -f $vmtmp/*.socket
 	done
 }
 
 vmstart() {
 	local _vmname=$(vmname_extract -all "$1")
-	local homedir= vmtmp=
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogchecklist vm-start $resf all && vmList=$(< $resf)
@@ -655,12 +645,6 @@ vmstart() {
  
 	set -- $(vmname_extract -all "$@")
 	for vm; do
-		if [[ $(virsh domstate "$vm") = shut* ]]; then
-			#remove qmp,monitor socket
-			homedir=$(vm homedir $vm |& head -1)
-			vmtmp=$(cat $homedir/vmtmp 2>/dev/null)
-			[[ -d "$vmtmp" ]] && rm -f $vmtmp/*.socket
-		fi
 		virsh start "$vm"
 	done
 }
