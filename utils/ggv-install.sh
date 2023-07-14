@@ -170,8 +170,8 @@ fastesturl() {
 }
 
 echo
+pipOpts="--default-timeout=60 --retries=10"
 if ! command -v vncdo; then
-	pipOpts="--default-timeout=60 --retries=10"
 	pipDefaultUrl=https://files.pythonhosted.org
 	pipMirrorList="$pipDefaultUrl
 	https://pypi.tuna.tsinghua.edu.cn/simple
@@ -179,12 +179,16 @@ if ! command -v vncdo; then
 	fastUrl=$(fastesturl $pipMirrorList)
 	[[ -n "$fastUrl" && "$fastUrl" != "$pipDefaultUrl" ]] && pipInstallOpts="-i $fastUrl"
 
-	echo -e "\n{ggv-install} install vncdotool ..."
+	echo -e "\n{ggv-install} install python pip ..."
 	install_python_pip
+	PIP=$(command -v pip3) || PIP=$(command -v pip)
 
+	if $PIP install -h|grep .--break-system-packages; then
+		pipOpts+=" --break-system-packages"
+	fi
 	echo -e "{ggv-install} pip Opts: $pipOpts $pipInstallOpts ..."
-	PIP=$(command -v pip3)
-	command -v pip3 || PIP=$(command -v pip)
+
+	echo -e "\n{ggv-install} install vncdotool ..."
 	$PIP $pipOpts install $pipInstallOpts --upgrade pip
 	$PIP $pipOpts install $pipInstallOpts --upgrade setuptools
 	#dataclasses is needed on rhel-7
@@ -192,5 +196,6 @@ if ! command -v vncdo; then
 		$PIP $pipOpts install $pipInstallOpts dataclasses
 	$PIP $pipOpts install $pipInstallOpts vncdotool service_identity
 else
-	pip install --upgrade vncdotool service_identity
+	PIP=$(command -v pip3) || PIP=$(command -v pip)
+	$PIP $pipOpts install --upgrade vncdotool service_identity
 fi
