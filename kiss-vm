@@ -1018,11 +1018,7 @@ vmmonitor() {
 		return 2
 	fi
 
-	if command -v qmp-shell &>/dev/null; then
-		qmp-shell -p -v $monsockf
-	else
-		nc -U $monsockf
-	fi
+	nc -U $monsockf
 	return $?
 }
 
