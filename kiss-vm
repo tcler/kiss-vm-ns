@@ -345,6 +345,7 @@ _vmdelete() {
 		rm -f $_vmdir/*.cfg $_vmdir/*.ks
 		rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
 		rm -f $_vmdir/nvdimm-*.dev
+		test -f $_vmdir/vmtmp && rm -rf $(< $_vmdir/vmtmp)
 		rm -f $_vmdir/*
 		rmdir $_vmdir 2>/dev/null
 		rmdir ${_vmdir%/*} 2>/dev/null
