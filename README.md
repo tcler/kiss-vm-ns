@@ -3,6 +3,22 @@
 # Summary
 Here we provide three CLI tools **vm, ns, netns** that used to auto create KVM Guests, Containers and "net ns" on Linux hosts.
 
+# Requirements/Dependencies
+```
+kiss-vm: #'sudo vm prepare' will install all dependencies
+  bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm qemu-img
+  expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog udisks2 genisoimage
+  iptables-nft bind-utils netpbm gocr vncdotool(pip3)
+  swtpm-tools edk2-ovmf virtio-win python3-qemu-qmp
+  qemu-system-{aarch64,s390x,ppc,riscv}
+
+kiss-netns:
+  iproute2 tmux
+
+kiss-ns:
+  systemd-nspawn tmux
+```
+
 # Install
 ```
 curl -s https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/utils/kiss-update.sh|sudo bash && sudo vm prepare
