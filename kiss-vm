@@ -975,16 +975,25 @@ vmqmp() {
 	}
 	local homedir=$(vm homedir $_vmname |& head -1)
 	local vmtmp=$homedir/tmp
-	local qmpsockf=$vmtmp/qmp.socket
-	if [[ ! -d "$vmtmp" || ! -S $qmpsockf ]]; then
+	if [[ ! -d "$vmtmp" ]]; then
 		echo -e "{VM:WARN} no qmp socket found on $_vmname" >&2
+		return 2
+	fi
+	local qmpsockf=$vmtmp/qmp.socket
+	if [[ -f $vmtmp/qmp.tcp ]]; then
+		qmparg=$(sed -r 's/(tcp)://' $vmtmp/qmp.tcp)
+	elif [[ -S $qmpsockf ]]; then
+		qmparg=$qmpsockf
+	else
+		echo -e "{VM:WARN} No qmp socket found on $_vmname" >&2
 		return 2
 	fi
 
 	if command -v qmp-shell &>/dev/null; then
-		qmp-shell -p -v $qmpsockf
+		qmp-shell -p -v $qmparg
 	else
-		nc -U $qmpsockf
+		[[ -S "$qmparg" ]] && ncOpt=-U
+		nc $ncOpt $qmparg
 	fi
 	return $?
 }
@@ -998,13 +1007,22 @@ vmmonitor() {
 	}
 	local homedir=$(vm homedir $_vmname |& head -1)
 	local vmtmp=$homedir/tmp
-	local monsockf=$vmtmp/monitor.socket
-	if [[ ! -d "$vmtmp" || ! -S $monsockf ]]; then
+	if [[ ! -d "$vmtmp" ]]; then
 		echo -e "{VM:WARN} no monitor socket found on $_vmname" >&2
 		return 2
 	fi
+	local monsockf=$vmtmp/monitor.socket
+	if [[ -f $vmtmp/monitor.tcp ]]; then
+		monarg=$(sed -r 's/(tcp)://' $vmtmp/monitor.tcp)
+	elif [[ -S $monsockf ]]; then
+		monarg=$monsockf
+	else
+		echo -e "{VM:WARN} No monitor socket found on $_vmname" >&2
+		return 2
+	fi
 
-	nc -U $monsockf
+	[[ -S "$monarg" ]] && ncOpt=-U
+	nc $ncOpt $monsockf
 	return $?
 }
 
@@ -2000,8 +2018,10 @@ Usage() {
 	  --virt-install-opts #Pass-through virt-install options
 	  --qemu-opts    #Pass-through qemu options
 	  --qemu-env     #Pass-through qemu env[s]
-	  --qmp, --qemu-qmp     #add -qmp option to qemu
-	  --monitor, --qemu-monitor #add -monitor option to qemu
+	  --qmp, --qemu-qmp[=unix:/path/to/unixsocket,server,nowait|tcp:host:port,server,nowait]
+	                 #add -qmp option to qemu. [=arg] is optional
+	  --monitor, --qemu-monitor[=unix:/path/to/unixsocket|tcp:host:port]
+	                 #add -monitor option to qemu. [=arg] is optional
 	  --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
 	                      #ref: https://www.linux-kvm.org/page/Nested_Guests
 	  --disable-guest-hypv #disable guest hypervisor
@@ -2113,6 +2133,8 @@ Usage() {
 	  $P create CentOS-8-stream -b ftp://url/path/x.rpm
 	  $P create Rocky-8 -p "jimtcl vim git make gcc"
 	  $P create Rocky-8 -enable-guest-hypv -msize=8G -dsize=120  # enable hyper-v on guest
+	  $P create CentOS-9-stream -n qmptest --qmp --nointeract    # enable qmp server in guest
+	  $P qmp qmptest <<<"query-block"
 
 	Examples for create vm from local image or url:
 	  $P create freebsd-130 -I~/myimages/download/FreeBSD-13.0-RELEASE-amd64.qcow2.xz --nocloud-init
@@ -3354,10 +3376,16 @@ fi
 MEM_OPTS=${MEM_OPTS:---memory=${MSIZE}}
 
 ### qemu qmp,monitor option
-[[ "$QEMU_QMP" = yes ]] && QEMU_QMP="-qmp unix:$VMtmp/qmp.socket,server,nowait"
-[[ "$QEMU_MONITOR" = yes ]] && QEMU_MONITOR="-monitor unix:$VMtmp/monitor.socket,server,nowait"
-[[ -n "$QEMU_QMP" || -n "$QEMU_MONITOR" ]] &&
-	QEMU_QMP_MON_OPT=("--qemu-commandline=$QEMU_QMP $QEMU_MONITOR")
+[[ -n "$QEMU_QMP" ]] && {
+	[[ "$QEMU_QMP" = yes ]] && QEMU_QMP=unix:$VMtmp/qmp.socket,server,nowait || echo -n "${QEMU_QMP%%,*}" >$VMtmp/qmp.tcp
+	QEMU_QMP_OPT="-qmp ${QEMU_QMP}"
+}
+[[ -n "$QEMU_MONITOR" ]] && {
+	[[ "$QEMU_MONITOR" = yes ]] && QEMU_MONITOR=unix:$VMtmp/monitor.socket,server,nowait || echo -n "${QEMU_MONITOR%%,*}" >$VMtmp/monitor.tcp
+	QEMU_MONITOR_OPT="-monitor ${QEMU_MONITOR}"
+}
+[[ -n "$QEMU_QMP_OPT" || -n "$QEMU_MONITOR_OPT" ]] &&
+	QEMU_QMP_MON_OPT=("--qemu-commandline=$QEMU_QMP_OPT $QEMU_MONITOR_OPT")
 
 case ${Distro,,} in
 rhel-5*|rhel5*|centos5*|centos-5*)
