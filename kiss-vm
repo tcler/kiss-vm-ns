@@ -993,10 +993,10 @@ vmqmp() {
 	fi
 
 	if command -v qmp-shell &>/dev/null; then
-		qmp-shell -p -v $qmparg
+		run -debug qmp-shell -p -v $qmparg
 	else
 		[[ -S "$qmparg" ]] && ncOpt=-U
-		nc $ncOpt $qmparg
+		run -debug nc $ncOpt $qmparg
 	fi
 	return $?
 }
@@ -1027,7 +1027,7 @@ vmmonitor() {
 	fi
 
 	[[ -S "$monarg" ]] && ncOpt=-U
-	nc $ncOpt $monarg
+	run -debug nc $ncOpt $monarg
 	return $?
 }
 
