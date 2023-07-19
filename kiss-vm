@@ -2917,7 +2917,7 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 			dialog --title "If include nightly build" \
 				--backtitle "Do you want nightly build distros?" \
 				--yesno "Do you want nightly build distros?" 7 60
-			[[ $? = 1 ]] && dList=$(echo "$dList"|grep -v '\.n\.[0-9]"')
+			[[ $? = 1 ]] && dList=$(echo "$dList"|grep -E -v '\.[nd]\.[0-9]+"')
 		}
 		dialog --backtitle "$dialogTitle" --radiolist "please select distro:" 30 60 28 $dList 2>$dialogres || { distroSelectNull; exit 0; }
 		Distro=$(head -n1 $dialogres|sed 's/"//g')
