@@ -346,6 +346,7 @@ _vmdelete() {
 		rm -f $_vmdir/*.cfg $_vmdir/*.ks
 		rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
 		rm -f $_vmdir/nvdimm-*.dev
+		rm -f $(sed 's/^unix://' $_vmdir/tmp/monitor.unix 2>/dev/null)
 		rm -fr $_vmdir/tmp
 		rm -f $_vmdir/*
 		rmdir $_vmdir 2>/dev/null
@@ -981,7 +982,9 @@ vmqmp() {
 	fi
 	local qmpsockf=$vmtmp/qmp.socket
 	if [[ -f $vmtmp/qmp.tcp ]]; then
-		qmparg=$(sed -r 's/(tcp)://' $vmtmp/qmp.tcp)
+		qmparg=$(sed -r 's/^(tcp)://' $vmtmp/qmp.tcp)
+	elif [[ -f $vmtmp/qmp.unix ]]; then
+		qmparg=$(sed -r 's/^(unix)://' $vmtmp/qmp.unix)
 	elif [[ -S $qmpsockf ]]; then
 		qmparg=$qmpsockf
 	else
@@ -1013,7 +1016,9 @@ vmmonitor() {
 	fi
 	local monsockf=$vmtmp/monitor.socket
 	if [[ -f $vmtmp/monitor.tcp ]]; then
-		monarg=$(sed -r 's/(tcp)://' $vmtmp/monitor.tcp)
+		monarg=$(sed -r 's/^(tcp)://' $vmtmp/monitor.tcp)
+	elif [[ -f $vmtmp/monitor.unix ]]; then
+		monarg=$(sed -r 's/^(unix)://' $vmtmp/monitor.unix)
 	elif [[ -S $monsockf ]]; then
 		monarg=$monsockf
 	else
@@ -1022,7 +1027,7 @@ vmmonitor() {
 	fi
 
 	[[ -S "$monarg" ]] && ncOpt=-U
-	nc $ncOpt $monsockf
+	nc $ncOpt $monarg
 	return $?
 }
 
@@ -2018,9 +2023,9 @@ Usage() {
 	  --virt-install-opts #Pass-through virt-install options
 	  --qemu-opts    #Pass-through qemu options
 	  --qemu-env     #Pass-through qemu env[s]
-	  --qmp, --qemu-qmp[=unix:/path/to/unixsocket,server,nowait|tcp:host:port,server,nowait]
+	  --qmp, --qemu-qmp[=/path/to/unixsocket|host:port]
 	                 #add -qmp option to qemu. [=arg] is optional
-	  --monitor, --qemu-monitor[=unix:/path/to/unixsocket|tcp:host:port]
+	  --monitor, --qemu-monitor[=/path/to/unixsocket|host:port]
 	                 #add -monitor option to qemu. [=arg] is optional
 	  --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
 	                      #ref: https://www.linux-kvm.org/page/Nested_Guests
@@ -3376,12 +3381,37 @@ fi
 MEM_OPTS=${MEM_OPTS:---memory=${MSIZE}}
 
 ### qemu qmp,monitor option
+complete_qmp_mon_arg() {
+	read _addr _ <<<"${1/,/ }"
+	if ! grep -Er '^(unix|tcp):' <<<$_addr; then
+		if grep -Eq '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):[0-9]+$' <<<$_addr; then
+			_addr=tcp:$_addr
+		elif grep -Eq '^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9]):[0-9]+$' <<<$_addr; then
+			_addr=tcp:$_addr
+		elif grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$' <<<$_addr; then
+			_addr=tcp:0.0.0.0:${_addr#*:}
+		elif grep -Eq '^:?[0-9]+$' <<<$_addr; then
+			_addr=tcp:0.0.0.0:${_addr#:}
+		elif [[ -d "$(dirname $_addr)" ]]; then
+			_addr=unix:$(readlink -f $_addr)
+		else
+			_addr=unix:$VMtmp/qmp.socket
+		fi
+	fi
+	echo -n "$_addr,server,nowait"
+}
 [[ -n "$QEMU_QMP" ]] && {
-	[[ "$QEMU_QMP" = yes ]] && QEMU_QMP=unix:$VMtmp/qmp.socket,server,nowait || echo -n "${QEMU_QMP%%,*}" >$VMtmp/qmp.tcp
+	[[ "$QEMU_QMP" = yes ]] && QEMU_QMP=unix:$VMtmp/qmp.socket,server,nowait || {
+		QEMU_QMP=$(complete_qmp_mon_arg $QEMU_QMP)
+		echo -n "${QEMU_QMP%%,*}" >$VMtmp/qmp.${QEMU_QMP%%:*}
+	}
 	QEMU_QMP_OPT="-qmp ${QEMU_QMP}"
 }
 [[ -n "$QEMU_MONITOR" ]] && {
-	[[ "$QEMU_MONITOR" = yes ]] && QEMU_MONITOR=unix:$VMtmp/monitor.socket,server,nowait || echo -n "${QEMU_MONITOR%%,*}" >$VMtmp/monitor.tcp
+	[[ "$QEMU_MONITOR" = yes ]] && QEMU_MONITOR=unix:$VMtmp/monitor.socket,server,nowait || {
+		QEMU_MONITOR=$(complete_qmp_mon_arg $QEMU_MONITOR)
+		echo -n "${QEMU_MONITOR%%,*}" >$VMtmp/monitor.${QEMU_MONITOR%%:*}
+	}
 	QEMU_MONITOR_OPT="-monitor ${QEMU_MONITOR}"
 }
 [[ -n "$QEMU_QMP_OPT" || -n "$QEMU_MONITOR_OPT" ]] &&
