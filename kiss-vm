@@ -2997,8 +2997,17 @@ if [[ "$VTPM" = yes ]]; then
 	PKGS+=" tpm2-tools"
 fi
 
+QXL_available() {
+	local rc=0
+	local qemu_kvm=${QEMU_KVM:-/usr/libexec/qemu-kvm}
+	local quitOpt=-q; [[ -n "$DEBUG" ]] && quitOpt=
+	for ((i=0;i<4;i++)) do DISPLAY= timeout 0.5 $qemu_kvm -vga qxl $MACHINE_QEMUOPT 2>&1; done |
+		grep $quitOpt 'QXL VGA not available' && rc=1
+	return $rc
+}
+
 [[ -n "$QEMU_KVM" ]] && {
-	DISPLAY= timeout 0.5 $QEMU_KVM -vga qxl $MACHINE_QEMUOPT |& grep -q 'QXL VGA not available' && {
+	QXL_available || {
 		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
 	}
 	$QEMU_KVM -machine help|grep -q q35 && Q35=support
