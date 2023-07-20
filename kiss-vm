@@ -3000,9 +3000,9 @@ fi
 QXL_available() {
 	local rc=0
 	local qemu_kvm=${QEMU_KVM:-/usr/libexec/qemu-kvm}
-	local quitOpt=-q; [[ -n "$DEBUG" ]] && quitOpt=
+	local quitOpt=; [[ -z "$1" ]] && quitOpt=-q
 	for ((i=0;i<4;i++)) do DISPLAY= timeout 0.5 $qemu_kvm -vga qxl $MACHINE_QEMUOPT 2>&1; done |
-		grep $quitOpt 'QXL VGA not available' && rc=1
+		grep $quitOpt "${2:-QXL VGA not available}" && rc=1
 	return $rc
 }
 
