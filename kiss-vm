@@ -149,6 +149,20 @@ run() {
 	return $_rc
 }
 
+is_ssh() {
+	local p=${1:-$PPID}
+	read pid name x ppid y < <(cat /proc/$p/stat)
+	# or: read pid name ppid < <(ps -o pid= -o comm= -o ppid= -p $p) 
+	[[ "$name" =~ sshd ]] && { echo "Is SSH: $pid $name"; return 0; }
+	[ "$ppid" -le 1 ]     && { echo "Root is $pid $name"; return 1; }
+	is_ssh $ppid
+}
+
+try_disable_ipv6() {
+	[[ $(id -u) != 0 ]] && return 1
+	who am i|grep -v '([0-9a-f:]\+)$' && /sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1
+}
+
 create_vmhome() {
 	local vmhome=${1%/}
 	if [[ -z "$vmhome" ]]; then
@@ -165,7 +179,7 @@ create_vmhome() {
 
 at_exit() {
 	#echo -e "\n\n{VM:debug} Removing tmpdir: $RuntimeTmp"
-	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=$orig_disable_ipv6 &>/dev/null
+	[[ $(id -u) = 0 ]] && /sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=$orig_disable_ipv6 &>/dev/null
 	rm -rf $RuntimeTmp
 }
 kill_installer_tmux_session() {
@@ -1537,8 +1551,8 @@ prepare_kiss_vm() {
 	#required by create-vdisk.sh/mount-vdisk.sh
 	grep -q Asahi /etc/os-release && enable-udisksctl-loop-setup-and-delete.sh
 
-	#disable ipv6
-	/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1 2>/dev/null
+	#try disable ipv6
+	try_disable_ipv6
 
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
