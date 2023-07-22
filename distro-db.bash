@@ -54,9 +54,11 @@ if [[ -n "$IntranetBaseUrl" ]]; then
 		(riscv64|riscv) echo riscv-riscv64;;
 		esac
 	)
+	distroInfo[FreeBSD-14.0]="$IntranetBaseUrl/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-13.2]="$IntranetBaseUrl/vm-images/FreeBSD-13.2/FreeBSD-13.2-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-13.1]="$IntranetBaseUrl/vm-images/FreeBSD-13.1/FreeBSD-13.1-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-13.0]="$IntranetBaseUrl/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-12.3]="$IntranetBaseUrl/vm-images/FreeBSD-12.2/FreeBSD-12.2-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-12.4]="$IntranetBaseUrl/vm-images/FreeBSD-12.4/FreeBSD-12.4-RELEASE-${guestARCH}.qcow2.xz"
 
 	if [[ "$GuestARCH" = x86_64 ]]; then
 		for _d in RHEL-7.{1..2} RHEL-6.{0..10} RHEL5-Server-U{10..11}; do
