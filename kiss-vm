@@ -2164,8 +2164,8 @@ Usage() {
 	  $P create rhel-8.4.0 -L~/myimages/download/RHEL-8.4.0-any-x86_64-dvd1.iso -n rhel84-from-iso
 
 	Examples for create vm from local iso file manually:
-	  $P create Windows-11 -n win11-virtio -C win11_english_x64.iso --xcdrom virtio-win-0.1.208.iso \
-	      --machine q35 --boot=firmware=efi,loader_secure=yes --vtpm \
+	  $P create Windows-11 -n win11-virtio -C win11_english_x64.iso --xcdrom virtio-win-0.1.208.iso \\
+	      --machine q35 --boot=firmware=efi,loader_secure=yes --vtpm \\
 	      --msize 8G --dsize 80 --hostdev=00:1b.0
 	  $P create OpenIndiana -n opensolaris -C OI-hipster-text-20211031.iso -msize 8G -dsize 120
 
