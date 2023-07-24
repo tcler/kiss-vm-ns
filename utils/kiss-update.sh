@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+{
 switchroot() {
 	local P=$0 SH=; [[ $0 = /* ]] && P=${0##*/}; [[ -e $P && ! -x $P ]] && SH=$SHELL
 	[[ $(id -u) != 0 ]] && {
@@ -53,3 +53,5 @@ else
 	install_kiss_tools
 fi
 rm -f $tmpf
+exit
+}
