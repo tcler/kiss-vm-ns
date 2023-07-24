@@ -2449,7 +2449,7 @@ while true; do
 	--downloadonly)  SAVE_IMAGE="yes"; DOWNLOAD_ONLY="yes"; InstallType=import; shift 1;;
 	--share)         VMSHARE="yes"; shift 1;;
 	-r|--ready)      KISS_VM_READY=yes; shift 1;;
-	--diskbus|--bus) DEFAULT_DISK_BUS="$2"; shift 2;;
+	--diskbus|--bus) DISK_BUS="$2"; shift 2;;
 	--disk)          DISKS+=("$2"); shift 2;;
 	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
 	--xcdrom)        EXTRA_CDROMS+=("$2"); shift 2;;
@@ -2991,9 +2991,9 @@ case "${BOOT_OPTS[*]}" in
 esac
 
 if [[ -n "$BOOT_DISK_ATTRS" ]]; then
-	[[ "$BOOT_DISK_ATTRS" =~ bus= ]] || BOOT_DISK_ATTRS+=,bus=$DEFAULT_DISK_BUS
+	[[ "$BOOT_DISK_ATTRS" =~ bus= ]] || BOOT_DISK_ATTRS+=,bus=${DISK_BUS:-$DEFAULT_DISK_BUS}
 else
-	BOOT_DISK_ATTRS=bus=$DEFAULT_DISK_BUS
+	BOOT_DISK_ATTRS=bus=${DISK_BUS:-$DEFAULT_DISK_BUS}
 fi
 
 if [[ "$VTPM" = yes ]]; then
@@ -3307,7 +3307,7 @@ for disk in "${EXTRA_DISKS[@]}"; do
 			-s ${size}G -t $fstype $_rootdir $VMpath/${ximage}
 		rmdir $_rootdir
 	fi
-	[[ -z "$_args" ]] && _args=bus=${DEFAULT_DISK_BUS}
+	[[ -z "$_args" ]] && _args=bus=${DISK_BUS:-$DEFAULT_DISK_BUS}
 	DISK_OPTS+=" --disk path=$VMpath/${ximage},format=$_format,${_args}"  #bus=scsi
 done
 
@@ -3320,7 +3320,7 @@ for disk in "${DISKS[@]}"; do
 	fi
 	cp -f $img $VMpath/.
 
-	[[ -z "$_args" ]] && _args=bus=${DEFAULT_DISK_BUS}
+	[[ -z "$_args" ]] && _args=bus=${DISK_BUS:-$DEFAULT_DISK_BUS}
 	[[ "$_args" != *format=* ]] && {
 		_fmt=$(qemu-img info $img|awk '/file.format:/{print $NF}')
 		[[ -n "$_fmt" ]] && _fmt=",format=$_fmt"
