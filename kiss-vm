@@ -8,6 +8,20 @@
 LANG=C
 PATH=~/bin:$PATH 
 
+#>================ for recall self if something happen ================
+CPID=$$
+PROG=$0
+ARGS=("$@")
+trap_retry() {
+	local cpu=Icelake-Server
+	echo "[Error] got a special issue($SA_SIGINFO) while create VM, try again:";
+	echo '----------------------------------------------------------------'
+	PATH=/usr/libexec:$PATH qemu-kvm -cpu ?|grep -q $cpu || cpu=Skylake-Server
+	VM_RETRY=yes exec $PROG "${ARGS[@]}" -f --qemucpu=$cpu;
+}
+trap trap_retry SIGALRM SIGUSR2
+#<================ for recall self if something happen ================
+
 P=$0; [[ $0 = /* ]] && P=${0##*/}
 _repon=kiss-vm-ns
 _confdir=/etc/$_repon
@@ -4262,6 +4276,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
 			{ERROR } { exit }
+			{Restarting guest} {exit}
 			{*\r} { exp_continue }
 		}
 	"
@@ -4274,6 +4289,9 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 
 	vm vnc $vmname -put "key:shift"
 	vm vnc $vmname -get | tee $RuntimeTmp/std.log
+	if grep -Eq 'No bootable device' $RuntimeTmp/std.log; then
+		[[ "$VM_RETRY" != yes ]] && env kill -q 127 -s SIGALRM $CPID
+	fi
 
 	if [[ "$WIN_AUTO" = yes ]]; then
 		run -tmux=langselect_$vmname 'vmn='"$vmname"'
