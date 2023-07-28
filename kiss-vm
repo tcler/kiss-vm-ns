@@ -4431,6 +4431,15 @@ fi
 
 if [[ "$WAIT" = yes ]]; then
 	echo -e "\n{VM:INFO} wait port($WAIT_PORT) of $vmname available ..."
+	if [[ "$WIN_AUTO" = yes ]]; then
+		for ((i=0; i<60; i++)); do
+			sleep 5
+			vm vnc $vmname -get|grep -E 'Cii_.*L9.._i_.*\^.*L9.*ie3.*iv_..L3' && {
+				echo -e "\n{VM:ERR} your windows image is not Evaluation version, and no ProductKey was found from answerfile"
+				exit 1
+			}
+		done
+	fi
 	vm port-available $vmname $WAIT_PORT -w
 	[[ $? = 0 && "$WIN_AUTO" = yes ]] && {
 		kill_installer_tmux_session ${vmname}
