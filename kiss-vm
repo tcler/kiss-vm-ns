@@ -483,6 +483,19 @@ vncgetsc() {
 		mv $RuntimeTmp/_screen.png $fname
 	fi
 	ls -lh $fname
+	if [[ -n $DISPLAY ]]; then
+		RM=yes
+		if command -v eom &>/dev/null; then
+			run -debug eom $fname
+		elif command -v eog &>/dev/null; then
+			run -debug eog $fname
+		elif command -v qview &>/dev/null; then
+			run -debug qview $fname
+		else
+			RM=no
+		fi
+		[[ "$RM" = yes ]] && { sleep 0.1; rm -f $fname; }
+	fi
 }
 
 image_binarize() {
@@ -493,7 +506,7 @@ image_binarize() {
 	GMFirst=${GMFirst:-no}
 	if [[ "$GMFirst" != yes ]] && command -v anytopnm >/dev/null; then
 		if [[ -n "$invert" ]]; then
-			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnminvert > $dstf
+			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnminvert | pnmtopng > $dstf
 		else
 			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnmtopng > $dstf
 		fi
