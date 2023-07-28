@@ -477,19 +477,29 @@ vncgetsc() {
 	}
 	local fname=$_vmname-screen-$(date +%F_%T_%N).png
 	vncdo -s $vncport capture $RuntimeTmp/_screen.png
-	mv $RuntimeTmp/_screen.png ./$fname
+	if [[ -n "$INVERT" ]]; then
+		image_binarize $RuntimeTmp/_screen.png $fname $INVERT
+	else
+		mv $RuntimeTmp/_screen.png $fname
+	fi
 	ls -lh $fname
 }
 
 image_binarize() {
 	local srcf=${1}
 	local dstf=${2:-new-${srcf}}
+	local invert=${3}
 
 	GMFirst=${GMFirst:-no}
 	if [[ "$GMFirst" != yes ]] && command -v anytopnm >/dev/null; then
-		anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnmtopng > $dstf
+		if [[ -n "$invert" ]]; then
+			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnminvert > $dstf
+		else
+			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnmtopng > $dstf
+		fi
 	else
 		local ConvertCmd="gm convert"
+		[[ -n "$invert" ]] && negateOpt=-negate
 		! command -v gm >/dev/null && {
 			if ! command -v convert >/dev/null; then
 				echo "{VM:WARN} command gm or convert are needed by 'vncget' function!" >&2
@@ -498,7 +508,7 @@ image_binarize() {
 				ConvertCmd=convert
 			fi
 		}
-		$ConvertCmd $srcf -threshold 30% $dstf
+		$ConvertCmd $srcf -threshold 30% $negateOpt $dstf
 	fi
 
 	return 0
@@ -519,7 +529,7 @@ vncget() {
 	[[ ! -s $RuntimeTmp/_screen.png ]] && {
 		echo "{VM:WARN} vncdo capture fail, it might because that conflict with unshared 'virt-viewer'" >&2
 	}
-	image_binarize $RuntimeTmp/_screen.png $RuntimeTmp/_screen2.png
+	image_binarize $RuntimeTmp/_screen.png $RuntimeTmp/_screen2.png $INVERT
 	gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=30;47' grep --color .
 }
 
@@ -2081,7 +2091,8 @@ Usage() {
 	Options for sub-command vncproc:
 	  --get, --vncget #get vnc screen and convert to text by gocr
 	  --getsc, --vncgetsc
-	                 #get vnc screen
+	                 #get vnc screen image
+	  --invert       #get vnc screen image and invert
 	  --put, --vncput <msg>
 	                 #send string or key event to vnc server, could be specified multi-times
 	                 #`e.g: --put root --put key:enter --put password --put key:enter
@@ -2335,6 +2346,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long restraint \
 	--long nosshkey \
 	--long getsc --long vncgetsc \
+	--long invert \
 	--long get --long vncget \
 	--long put: --long vncput: \
 	--long putln: --long vncputln: \
@@ -2478,6 +2490,7 @@ while true; do
 	--restraint)     export RESTRAINT=yes; INTERACT="no"; shift 1;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
+	--invert)        INVERT=yes; shift 1;;
 	--get|--vncget)  VNCGET=yes; shift 1;;
 	--getsc|--vncgetsc) VNCGETSC=yes; shift 1;;
 	--put|--vncput)  VNCPUTS+=("$2"); shift 2;;
