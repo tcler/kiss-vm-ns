@@ -2725,16 +2725,14 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 else
 	virtualizationOption=--virt-type=qemu
 	VirtInstallTimeOut=1200
+	_QEMU_KVM=qemu-system-${GuestARCH}
 	case "$GuestARCH" in
 	(aarch64)
 		#set default qemu cpu type cortex-a72 for aarch64, it works on RHEL aarch64 build
 		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
 		if [[ -z "$QEMU_CPU" ]]; then
-			if $QEMU_KVM -cpu ? |& grep -q No.machine; then
-				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a57")
-			else
-				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a76")
-			fi
+			_cpu=$($_QEMU_KVM -cpu ? |& grep cortex-a | sort -Vru | head -1)
+			QEMU_OPTS+=("--qemu-commandline=-cpu $_cpu")
 		fi
 		;;
 	(s390x|ppc*)
