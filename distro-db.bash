@@ -1,13 +1,14 @@
 declare -A distroInfo
 
 #### CentOS stream and CentOS
-distroInfo[Rocky-9]="https://mirrors.sdu.edu.cn/rocky/9/images/$GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/9/BaseOS/$GuestARCH/os"
-distroInfo[Rocky-8]="https://mirrors.sdu.edu.cn/rocky/8/images/$GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/8/BaseOS/$GuestARCH/os"
-distroInfo[CentOS-9-stream]="https://cloud.centos.org/centos/9-stream/$GuestARCH/images/ http://mirror.stream.centos.org/9-stream/BaseOS/$GuestARCH/os/"
-distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/$GuestARCH/images/ http://mirror.centos.org/centos/8-stream/BaseOS/$GuestARCH/os/"
-distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/$GuestARCH/images/ http://mirror.centos.org/centos/8/BaseOS/$GuestARCH/os/"
-distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/%%GenericCloud-.{4}.qcow2c http://mirror.centos.org/centos/7/os/$GuestARCH/"
-distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/%%GenericCloud.qcow2c http://mirror.centos.org/centos/6/os/$GuestARCH/"
+_GuestARCH=$GuestARCH; [[ "$GuestARCH" = ppc64 ]] && _GuestARCH=ppc64le;
+distroInfo[Rocky-9]="https://mirrors.sdu.edu.cn/rocky/9/images/$_GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/9/BaseOS/$_GuestARCH/os"
+distroInfo[Rocky-8]="https://mirrors.sdu.edu.cn/rocky/8/images/$_GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/8/BaseOS/$_GuestARCH/os"
+distroInfo[CentOS-9-stream]="https://cloud.centos.org/centos/9-stream/$_GuestARCH/images/ http://mirror.stream.centos.org/9-stream/BaseOS/$_GuestARCH/os/"
+distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/$_GuestARCH/images/ http://mirror.centos.org/centos/8-stream/BaseOS/$_GuestARCH/os/"
+distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/$_GuestARCH/images/ http://mirror.centos.org/centos/8/BaseOS/$_GuestARCH/os/"
+distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/%%GenericCloud-.{4}.qcow2c http://mirror.centos.org/centos/7/os/$_GuestARCH/"
+distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/%%GenericCloud.qcow2c http://mirror.centos.org/centos/6/os/$_GuestARCH/"
 
 #### Fedora
 # https://ord.mirror.rackspace.com/fedora/releases/$version/Cloud/

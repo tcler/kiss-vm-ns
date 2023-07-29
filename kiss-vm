@@ -1751,6 +1751,7 @@ if [[ $Intranet = yes ]]; then
 		local arch=$GuestARCH
 		[[ $arch = aarch64 || $arch = arm64 ]] && arch="(aarch64|arm64)"
 		[[ $arch = x86_64 || $arch = amd64 ]] && arch="(x86_64|amd64)"
+		[[ $arch = ppc64 || $arch = ppc64le ]] && arch="(ppc64|ppc64le)"
 		imgs=$(grep -E "$arch" <<< "$imagenames")
 		if [[ -n "$imgs" ]]; then imagenames="$imgs"; else return 1; fi
 
