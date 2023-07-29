@@ -2451,7 +2451,7 @@ while true; do
 	--ds|--dsize)    dsizeflag=1; DSIZE="${2%[Gg]}"; shift 2;;
 	--ms|--msize|-m) MSIZE="$2"; shift 2;;
 	--cpus|--vcpus)  SPECIFIED_VCPUS=yes; VCPUS="$2"; shift 2;;
-	--arch)	         GuestARCH="$2"; ARCH_OPT=--arch=$GuestARCH; shift 2;;
+	--arch)	         GuestARCH="${2/ppc64le/ppc64}"; ARCH_OPT=--arch=$GuestARCH; shift 2;;
 	--qemucpu)       QEMU_CPU=$2; QEMU_CPU_OPT="--qemu-commandline=-cpu $2"; shift 2;;
 	--nvmeboot|--NB) NVME_BOOT=yes; shift 1;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
