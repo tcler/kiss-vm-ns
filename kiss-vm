@@ -2572,24 +2572,24 @@ DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 	exit 1
 }
 
-QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm)
-if [[ $1 != prepare ]] && [[ "$GuestARCH" != "$HostARCH" || -z "$QEMU_KVM" ]]; then
-	QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-system-$GuestARCH)
-	if [[ -z "$QEMU_KVM" ]]; then
+QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm 2>/dev/null)
+if [[ "$GuestARCH" != "$HostARCH" || -z "$QEMU_KVM" ]]; then
+	QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-system-$GuestARCH 2>/dev/null)
+	if [[ -z "$QEMU_KVM" && "$1" != prepare ]]; then
 		echo -e "{VM:ERROR} command 'qemu-kvm or qemu-system-$GuestARCH' not found"
 		exit 2
 	fi
 fi
-qemu_kvm_nvr() { echo -n qemu-kvm-$($QEMU_KVM --version 2>/dev/null | awk '{print $4; exit}'); }
+qemu_kvm_nvr() { echo -n ${QEMU_KVM} $(${QEMU_KVM} --version 2>/dev/null | awk '{print $4; exit}'); }
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
-	if ! grep -q nvdimm < <($QEMU_KVM -device help); then
+	if ! grep -q nvdimm < <($QEMU_KVM -device help 2>/dev/null); then
 		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvdimm driver."
 		exit 1
 	fi
 fi
 if [[ "${#NVME_DEVS[@]}" -gt 0 || -n "$NVME_BOOT" ]]; then
-	if ! grep -q nvme < <($QEMU_KVM -device help); then
+	if ! grep -q nvme < <($QEMU_KVM -device help 2>/dev/null); then
 		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvme driver."
 		exit 1
 	fi
