@@ -29,13 +29,13 @@ for arg; do
 		;;
 	-h|--h*)
 		Usage; exit;;
-	-*)   echo "{WARN} unkown option '${arg}'";;
-	*)    argv+=($arg);;
+	#-*)   echo "{WARN} unkown option '${arg}'";;
+	*)    argv+=("$arg");;
 	esac
 done
 set -- "${argv[@]}"
 
-distro=${1:-CentOS-8-stream}
+distro=${1:-CentOS-8-stream}; shift
 echo -e "\n================ [DEBUG] ===============\n= distro/family: $distro"
 
 #---------------------------------------------------------------
@@ -72,7 +72,7 @@ vm netls
 nfsroot=/nfsroot
 vmname=pxe-nfs-server
 echo -e "\n================ [INFO] ================\n= create nfs server of sysroot for diskless guest"
-vm $distro -n $vmname --msize=4G --dsize=80 -p "nfs-utils deltarpm" --net pxenet --nointeract --force
+vm create $distro -n $vmname --msize=4G --dsize=80 -p "nfs-utils deltarpm" --net pxenet --nointeract --force "$@"
 vm exec $vmname ls || exit $?
 
 [[ -n "$SELINUX" ]] && {
@@ -92,6 +92,8 @@ if ! grep -q '^Base$' <<<"\$groupList"; then
 	BaseGroup="@Server @core @Standard"
 fi
 yum install --setopt=strict=0 -y \$BaseGroup kernel dracut-network rootfiles passwd openssh openssh-server nfs-utils ${extrapkgs[@]} --installroot=$nfsroot --releasever=/
+cp --remove-destination /*.rpm ${nfsroot}/tmp/.
+chroot $nfsroot bash -c 'rpm -Uvh /tmp/*.rpm --force --nodeps'
 cp --remove-destination /etc/resolv.conf ${nfsroot}/etc/resolv.conf
 echo "none            /tmp            tmpfs    defaults        0 0" >>${nfsroot}/etc/fstab
 echo "devtmpfs        /dev            devtmpfs defaults        0 0" >>${nfsroot}/etc/fstab
@@ -123,7 +125,7 @@ chcon --reference=/etc/passwd $nfsroot/etc/passwd*
 #https://stackallflow.com/unix-linux/recursive-umount-after-rbind-mount/
 mount -t proc /proc $nfsroot/proc; mount --rbind /sys $nfsroot/sys; mount --make-rslave $nfsroot/sys; mount --rbind /dev $nfsroot/dev; mount --make-rslave $nfsroot/dev
   echo 'add_dracutmodules+=" nfs "' >>$nfsroot/etc/dracut.conf
-  VR=\$(chroot /nfsroot/ bash -c 'ls /boot/config-*|sed s/.*config-//')
+  VR=\$(chroot /nfsroot/ bash -c 'ls /boot/config-* -t1 -u|head -1|sed s/.*config-//')
   extraDracutModules="dracut-systemd"
   chroot $nfsroot dracut --no-hostonly --nolvmconf \\
 	-m "nfs network base qemu $dracutSelinux \$extraDracutModules" --xz /boot/initramfs.pxe-\$VR \$VR \\
@@ -164,8 +166,8 @@ vm exec $vmname -- systemctl stop firewalld
 # prepare vmlinuz and initrd.img
 echo -e "\n================ [INFO] ================\n= prepare vmlinuz and initrd.img for pxelinux boot"
 vm exec $vmname -- ls -l $nfsroot/boot
-bootfiles=$(vm exec $vmname -- ls $nfsroot/boot)
-vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-|sort -V|tail -1)
+bootfiles=$(vm exec $vmname -- ls $nfsroot/boot -t1 -u)
+vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-|head -1)
 initramfs=$(echo "$bootfiles"|grep ^initramfs.pxe-)
 tmpdir=$(mktemp -d)
 vm cpfrom $vmname $nfsroot/boot/$vmlinuz $tmpdir/.
@@ -211,4 +213,4 @@ echo "$password" | sudo -S systemctl start tftp
 dlvmname=linux-diskless
 echo -e "\n================ [INFO] ================\n= create diskless guest over nfs ..."
 vm create ${distro}-pxe -n ${dlvmname}-nfsv4 --net pxenet --net default --pxe --diskless --force --vncwait="less.nfsv3,key:enter" --vncwait="less.nfsv3,key:enter"
-vm create ${distro}-pxe -n ${dlvmname}-nfsv3 --net pxenet --net default --pxe --diskless --force --vncwait="less.nfsv3,key:down key:enter" --vncwait="less.nfsv3,key:down key:enter"
+#vm create ${distro}-pxe -n ${dlvmname}-nfsv3 --net pxenet --net default --pxe --diskless --force --vncwait="less.nfsv3,key:down key:enter" --vncwait="less.nfsv3,key:down key:enter"
