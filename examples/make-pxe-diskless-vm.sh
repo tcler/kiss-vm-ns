@@ -74,6 +74,8 @@ vmname=pxe-nfs-server
 echo -e "\n================ [INFO] ================\n= create nfs server of sysroot for diskless guest"
 vm create $distro -n $vmname --msize=4G --dsize=80 -p "nfs-utils deltarpm" --net pxenet --nointeract --force "$@"
 vm exec $vmname ls || exit $?
+vm exec $vmname ls --help| grep -q time:.birth &&
+	lsOpt='--time=birth'
 
 [[ -n "$SELINUX" ]] && {
 	echo -e "\n================ [INFO] ================\n= prepare tftp-server /var/lib/tftpboot/pxelinux:"
@@ -125,7 +127,7 @@ chcon --reference=/etc/passwd $nfsroot/etc/passwd*
 #https://stackallflow.com/unix-linux/recursive-umount-after-rbind-mount/
 mount -t proc /proc $nfsroot/proc; mount --rbind /sys $nfsroot/sys; mount --make-rslave $nfsroot/sys; mount --rbind /dev $nfsroot/dev; mount --make-rslave $nfsroot/dev
   echo 'add_dracutmodules+=" nfs "' >>$nfsroot/etc/dracut.conf
-  VR=\$(chroot /nfsroot/ bash -c 'ls /boot/config-* -t1 -u|head -1|sed s/.*config-//')
+  VR=\$(chroot /nfsroot/ bash -c 'ls /boot/config-* -t1 ${lsOpt:--u}|head -1|sed s/.*config-//')
   extraDracutModules="dracut-systemd"
   chroot $nfsroot dracut --no-hostonly --nolvmconf \\
 	-m "nfs network base qemu $dracutSelinux \$extraDracutModules" --xz /boot/initramfs.pxe-\$VR \$VR \\
@@ -166,7 +168,7 @@ vm exec $vmname -- systemctl stop firewalld
 # prepare vmlinuz and initrd.img
 echo -e "\n================ [INFO] ================\n= prepare vmlinuz and initrd.img for pxelinux boot"
 vm exec $vmname -- ls -l $nfsroot/boot
-bootfiles=$(vm exec $vmname -- ls $nfsroot/boot -t1 -u)
+bootfiles=$(vm exec $vmname -- ls $nfsroot/boot -t1 ${lsOpt:--u})
 vmlinuz=$(echo "$bootfiles"|grep ^vmlinuz-|head -1)
 initramfs=$(echo "$bootfiles"|grep ^initramfs.pxe-)
 tmpdir=$(mktemp -d)
