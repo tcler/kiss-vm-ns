@@ -14,7 +14,6 @@ curl -k -Ls "$_url" -o ${targetdir}/$_tarf
 pushd $targetdir &>/dev/null
 	echo "{info} extract $_tarf to $targetdir/$_xdir  "
 	tar -C $_xdir -zxf $_tarf --strip-components=1
-	sed -ri -e 's/(cmd.*)(-w %s host %s)(.*, )self.tracefile, hosts/\1-w - host %s|cat >%s\3hosts, self.tracefile/' nfstest/nfstest/host.py
 popd &>/dev/null
 
 #export env
