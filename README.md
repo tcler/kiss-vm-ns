@@ -34,7 +34,7 @@ for ((i=0;i<8;i++)); do git clone https://github.com/tcler/kiss-vm-ns && break; 
 **Q:** how to create a CentOS/RockyLinux/Fedora KVM Guest from location(see also: virt-install --location option)?  
 **A:** vm create $distro \[-n $vmname] \[-L\[=$localtion_url]]  #if there's url in default distro.db, just use -L
 ```
-vm create CentOS-9-stream -n centos9s -l http://mirror.stream.centos.org/9-stream/BaseOS/$(uname -m)/os/
+vm create CentOS-9-stream -n centos9s -L=http://mirror.stream.centos.org/9-stream/BaseOS/$(uname -m)/os/
 ```
 
 **Q:** how to create a Linux KVM Guest from qcow image(see also: virt-install --import option)?  
