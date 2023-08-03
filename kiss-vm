@@ -2101,7 +2101,7 @@ Usage() {
 	  -w, --wait[=port] #wait util the 22:sshd(or virt-viewer) port is available before connect
 
 	Options for sub-command exec:
-	  -v, --verbose   #verbose mode
+	  -v, --verbose  #verbose mode
 	  -x[arg]        #expected return code of sub-command exec, if doesn't match output test fail msg
 	                 #`e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 
@@ -2117,8 +2117,9 @@ Usage() {
 	                 #alias of: --put msg --put key:enter
 
 	Options for sub-command prepare:
-	  -u, --user      #prepare configure libvirt for other user
-	                 #`e.g: sudo vm prepare -u bar
+	  -u, --user     #specific user for prepare or login sub-command
+	                 #`e.g: sudo vm prepare -u user_b #prepare configure libvirt for other user
+	                 #`e.g: vm login vmname -u foo    #login vm with foo instead default root
 
 	Options for Windows Answer File Generator:
 	  --win-auto[=<base|cifs-nfs|addsdomain|addsforest>]
