@@ -50,6 +50,11 @@ option_arg_complete() {
         archlist=$(ls /usr/bin/qemu-system-* |& awk -F- 'NF==3{a=$3; if(a=="ppc64")a="ppc64le"; print a}')
         COMPREPLY=( $( compgen -W "$archlist" -- "$cur" ) )
         ;;
+    -n|--vmname)
+        [[ -n "$hasarg" ]] && return 0
+        COMPREPLY=( $( compgen -W "#vmname arch-fixme rhel-fixme centos-fixme rocky-fixme debian-fixme 
+                        win-fixme freebsd-fixme tmpvm nfs-serv opensuse-fixme slack-fixme " -- "$cur" ) )
+        ;;
     *)
         [[ -n "$hasarg" ]] && return 1
         COMPREPLY=( $( compgen -W "${opts[*]}" -- "$cur" ) )
@@ -78,9 +83,18 @@ _vm()
 
     subcommandList=(prepare enable-nested-vm help h create ls list clone port-available login console qmp monitor delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthru)
 
-    for ((i=0; i<${#words[@]}; i++)); do w=${words[$i]}; if option_arg_complete $w; then let i++; continue; elif [[ "$w" != -* ]]; then let narg++; fi; done
-    local opts=( $( _parse_help "$1" ) -h )
+    for ((i=0; i<${#words[@]}; i++)); do
+        w=${words[$i]}
+        if option_arg_complete $w; then
+            let i++
+            continue
+        elif [[ "$w" != -* ]]; then
+            let narg++
+        fi
+    done
+    local opts=( $( _parse_help "$1" ) -h -n )
 
+    [[ $cur = -* ]] && { let narg++; }
     if [[ $narg -le 2 ]]; then
         if [[ "$cur" != -* ]]; then
             if option_arg_complete $prev; then
@@ -94,6 +108,7 @@ _vm()
             COMPREPLY=( $( compgen -W "${opts[*]}" -- "$cur" ) )
         fi
     else
+        [[ $cur = -* ]] && { let narg--; }
         case "${words[1]}" in
         create)
             if [[ $narg -le 3 ]]; then
@@ -229,17 +244,31 @@ _vm()
                 COMPREPLY=( $( compgen -W "$vmlist -u --user" -- "$cur" ) )
                 if [[ "$prev" == -u || "$prev" == --user ]]; then
                     COMPREPLY=( $( compgen -W "foo bar" -- "$cur" ) )
+                elif [[ $narg = 4 ]]; then
+                    COMPREPLY=( $( compgen -W "-u --user #<Enter>" -- "$cur" ) )
+                    if [[ ${words[$((cword-2))]} = *-u* ]]; then
+                        COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+                    fi
                 fi
             else
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             fi
             ;;
         e|ex|exe|exec)
-            if [[ $narg -le 3 ]]; then
+            if [[ $narg -le 4 ]]; then
                 vmlist=$(virsh list --name --state-running 2>/dev/null)
-                COMPREPLY=( $( compgen -W "-v -x $vmlist" -- "$cur" ) )
-            elif [[ $narg -le 4 ]]; then
+                COMPREPLY=( $( compgen -W "$vmlist -v -x -u --user" -- "$cur" ) )
+                if [[ "$prev" == -u || "$prev" == --user ]]; then
+                    COMPREPLY=( $( compgen -W "foo bar" -- "$cur" ) )
+                elif [[ $narg = 4 ]]; then
+                    COMPREPLY=( $( compgen -W "-x -v -u --user #<Enter>" -- "$cur" ) )
+                    if [[ "${words[*]}" =~ (-u|--user)[\ =][A-Za-z0-9]+ ]]; then
+                        COMPREPLY=( $( compgen -W "$vmlist -x -v" -- "$cur" ) )
+                    fi
+                fi
+            elif [[ $narg -le 5 ]]; then
                 COMPREPLY=( $( compgen -W "--" -- "$cur" ) )
+                [[ "$prev" == -- ]] && COMPREPLY=( $( compgen -W "cmd" -- "$cur" ) )
             else
                 COMPREPLY=( $( compgen -W "" -- "$cur" ) )
             fi
@@ -260,7 +289,7 @@ _vm()
         prepare)
             COMPREPLY=( $( compgen -W "#<Enter> --user" -- "$cur" ) )
             if [[ "$prev" == -u || "$prev" == --user ]]; then
-                users=$(awk -F: '$NF ~ /.*bash/ {print $1}' /etc/passwd)
+                users=$(awk -v u=$LOGNAME -F: '$NF ~ /.*bash/ {if ($1!="root"&&$1!=u) print $1}' /etc/passwd)
                 COMPREPLY=( $( compgen -W "$users" -- "$cur" ) )
             fi
             ;;
