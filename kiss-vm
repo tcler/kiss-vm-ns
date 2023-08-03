@@ -1083,8 +1083,10 @@ vmmonitor() {
 }
 
 vmlogin() {
-	local _vmname=$(vmname_extract -all "$1")
+	local U=root _vmname= _pat="$1"
 	shift
+	[[ "$_pat" = *@* ]] && read U _pat <<<"${_pat/@/ }"
+	_vmname=$(vmname_extract -all "$_pat")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-login $resf && _vmname=$(sed 's/"//g' $resf)
@@ -1095,10 +1097,11 @@ vmlogin() {
 		return 1
 	}
 
-	local U=root
 	vmhomedir $_vmname | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
+
+	[[ -n "$CM_USER" ]] && U="$CM_USER"
 
 	local sshCommand=
 	if [[ "${EXEC}" = yes ]]; then
@@ -2421,12 +2424,7 @@ while true; do
 	case "$1" in
 	-h|--help) Usage; shift 1; exit 0;;
 	--prepare) ONLY_PREPARE=yes; shift 1;;
-	-u|--user) VMUSER=$2; shift 2;
-		eval VMSHOME=~$VMUSER/VMs
-		eval ImagePath=~$VMUSER/myimages
-		eval perConfDir=~$VMUSER/.config/${_repon}
-		eval oldperConfDir=~$VMUSER/.config/kiss-vm
-		;;
+	-u|--user) CM_USER=$2; shift 2;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
 	-C|-F)     InstallType=cdrom_image; Isourl=$2; shift 2;;
@@ -2649,6 +2647,13 @@ is_slackware && export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
 [[ "$1" = prepare ]] && {
 	KISS_VM_READY=; ONLY_PREPARE=yes
 	FORCE_PREPARE=$FORCE
+	[[ -n "$CM_USER" ]] && {
+		VMUSER=$CM_USER
+		eval VMSHOME=~$VMUSER/VMs
+		eval ImagePath=~$VMUSER/myimages
+		eval perConfDir=~$VMUSER/.config/${_repon}
+		eval oldperConfDir=~$VMUSER/.config/kiss-vm
+	}
 }
 [[ "$KISS_VM_READY" != yes ]] && {
 	if [[ -t 1 ]]; then
@@ -2872,52 +2877,50 @@ VCPUN=$(vcpuN "$VCPUS")
 
 run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 
-# sub-command
-[[ $P = vmc || $P = vm ]] || true && {
-	subcmd=$1
-	case "$subcmd" in
-	h|\?|help) Usage|less; exit;;
-	prepare) shift; [[ "$1" = -d ]] && shift; prepare_kiss_vm force; exit $?;;
-	enable-nested-vm) shift; [[ "$1" = -d ]] && shift; enable_nested_kvm; exit $?;;
-	create|creat) shift;;
-	r|rm|d|de|del*) shift; [[ "$1" = -d ]] && shift; vmdelete "$@"; exit $?;;
-	co|con|cons*) shift; [[ "$1" = -d ]] && shift; vmconsole "$@"; exit $?;;
-	port|port*) shift; [[ "$1" = -d ]] && shift; vmport_available "$@"; exit $?;;
-	l|lo|log*) shift; [[ "$1" = -d ]] && shift; vmlogin "$@"; exit $?;;
-	qmp) shift; [[ "$1" = -d ]] && shift; vmqmp "$@"; exit $?;;
-	mon|monitor) shift; [[ "$1" = -d ]] && shift; vmmonitor "$@"; exit $?;;
-	cpfrom|cpf*) shift; [[ "$1" = -d ]] && shift; vmcopyfrom "$@"; exit $?;;
-	cpto|cpt*) shift; [[ "$1" = -d ]] && shift; vmcopyto "$@"; exit $?;;
-	e|ex|ex*) shift; [[ "$1" = -d ]] && shift; vmexec "$@"; exit $?;;
-	ls|li|lis|list) shift; [[ "$1" = -d ]] && shift; vmlist "$@"; exit $?;;
-	i|if|if*) shift; [[ "$1" = -d ]] && shift; vmifaddr "$@"; exit $?;;
-	vi|vie|view*) shift; [[ "$1" = -d ]] && shift; vmviewer "$@"; exit $?;;
-	vn|vnc|vncp*) shift; [[ "$1" = -d ]] && shift; vmvncproc "$@"; exit $?;;
-	x|xm*) shift; [[ "$1" = -d ]] && shift; vmxml "$@"; exit $?;;
-	ed|ed*) shift; [[ "$1" = -d ]] && shift; vmedit "$@"; exit $?;;
-	reboot|reb|re*) shift; [[ "$1" = -d ]] && shift; vmreboot "$@"; exit $?;;
-	stop|sto*) shift; [[ "$1" = -d ]] && shift; vmstop "$@"; exit $?;;
-	start|star*) shift; [[ "$1" = -d ]] && shift; vmstart "$@"; exit $?;;
-	stat) shift; [[ "$1" = -d ]] && shift; vmstat "$@"; exit $?;;
-	blk*|srcfiles) shift; [[ "$1" = -d ]] && shift; _vmblklist "$@"; exit $?;;
-	rootdir) shift; [[ "$1" = -d ]] && shift; vmrootdir "$@"; exit $?;;
-	homedir) shift; [[ "$1" = -d ]] && shift; vmhomedir "$@"; exit $?;;
-	clone) shift; [[ "$1" = -d ]] && shift; vmclone "$@"; exit $?;;
-	add.iso) shift; [[ "$1" = -d ]] && shift; vmadd_iso "$@"; exit $?;;
-	add.disk) shift; [[ "$1" = -d ]] && shift; vmadd_disk "$@"; exit $?;;
-	add.if) shift; [[ "$1" = -d ]] && shift; vmadd_if "$@"; exit $?;;
-	add.if.direct) shift; [[ "$1" = -d ]] && shift; vmadd_if_direct "$@"; exit $?;;
-	add.if.bridge) shift; [[ "$1" = -d ]] && shift; vmadd_if_bridge "$@"; exit $?;;
-	add.if.hostif) shift; [[ "$1" = -d ]] && shift; vmadd_if_hostif "$@"; exit $?;;
-	add.if.passthr*) shift; [[ "$1" = -d ]] && shift; vmadd_if_passthr "$@"; exit $?;;
-	passthr*) shift; [[ "$1" = -d ]] && shift; vmpassthr "$@"; exit $?;;
-	netls) shift; [[ "$1" = -d ]] && shift; netls "$@"; exit $?;;
-	net|netcreat*) shift; [[ "$1" = -d ]] && shift; netcreate "$@"; exit $?;;
-	netinfo) shift; [[ "$1" = -d ]] && shift; netinfo "$@"; exit $?;;
-	netstart) shift; [[ "$1" = -d ]] && shift; netstart "$@"; exit $?;;
-	netdel|netdelete) shift; [[ "$1" = -d ]] && shift; netdelete "$@"; exit $?;;
-	esac
-}
+subcmd="$1"; shift;
+case "$subcmd" in
+	h|\?|help)		Usage|less; exit;;
+	prepare)		prepare_kiss_vm force; exit $?;;
+	enable-nested-vm)	enable_nested_kvm; exit $?;;
+	create|creat)		Distro=$1;;
+	r|rm|d|de|del*)		vmdelete "$@"; exit $?;;
+	co|con|cons*)		vmconsole "$@"; exit $?;;
+	port|port*)		vmport_available "$@"; exit $?;;
+	l|lo|log*)		vmlogin "$@"; exit $?;;
+	qmp)			vmqmp "$@"; exit $?;;
+	mon|monitor)		vmmonitor "$@"; exit $?;;
+	cpfrom|cpf*)		vmcopyfrom "$@"; exit $?;;
+	cpto|cpt*)		vmcopyto "$@"; exit $?;;
+	e|ex|ex*)		vmexec "$@"; exit $?;;
+	ls|li|lis|list)		vmlist "$@"; exit $?;;
+	i|if|if*)		vmifaddr "$@"; exit $?;;
+	vi|vie|view*)		vmviewer "$@"; exit $?;;
+	vn|vnc|vncp*)		vmvncproc "$@"; exit $?;;
+	x|xm*)			vmxml "$@"; exit $?;;
+	ed|ed*)			vmedit "$@"; exit $?;;
+	reboot|reb|re*)		vmreboot "$@"; exit $?;;
+	stop|sto*)		vmstop "$@"; exit $?;;
+	start|star*)		vmstart "$@"; exit $?;;
+	stat)			vmstat "$@"; exit $?;;
+	blk*|srcfiles)		_vmblklist "$@"; exit $?;;
+	rootdir)		vmrootdir "$@"; exit $?;;
+	homedir)		vmhomedir "$@"; exit $?;;
+	clone)			vmclone "$@"; exit $?;;
+	add.iso)		vmadd_iso "$@"; exit $?;;
+	add.disk)		vmadd_disk "$@"; exit $?;;
+	add.if)			vmadd_if "$@"; exit $?;;
+	add.if.direct)		vmadd_if_direct "$@"; exit $?;;
+	add.if.bridge)		vmadd_if_bridge "$@"; exit $?;;
+	add.if.hostif)		vmadd_if_hostif "$@"; exit $?;;
+	add.if.passthr*)	vmadd_if_passthr "$@"; exit $?;;
+	passthr*)		vmpassthr "$@"; exit $?;;
+	netls)			netls "$@"; exit $?;;
+	net|netcreat*)		netcreate "$@"; exit $?;;
+	netinfo)		netinfo "$@"; exit $?;;
+	netstart)		netstart "$@"; exit $?;;
+	netdel|netdelete)	netdelete "$@"; exit $?;;
+esac
+
 [[ -n "$VNCPUTS" || -n "$VNCGET" || -n "$VNCGETSC" ]] && { vmvncproc "$@"; exit $?; }
 
 declare -A distroInfo
