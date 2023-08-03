@@ -175,7 +175,7 @@ _vm()
                 COMPREPLY=( $( compgen -W "#<Enter> $hostifs" -- "${cur}" ) )
             fi
             ;;
-        vi|vie|view*|lo|log|log*|co|con|cons|cons*|qmp|mon|moni*|if|ifaddr|port*)
+        vi|vie|view*|co|con|cons|cons*|qmp|mon|moni*|if|ifaddr|port*)
             if [[ $narg -le 3 ]]; then
                 vmlist=$(virsh list --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
@@ -221,6 +221,17 @@ _vm()
             else
                 #COMPREPLY=( $( compgen -A file -- "$cur" ) )
                 _filedir
+            fi
+            ;;
+        lo|log|log*)
+            if [[ $narg -le 4 ]]; then
+                vmlist=$(virsh list --name 2>/dev/null)
+                COMPREPLY=( $( compgen -W "$vmlist -u --user" -- "$cur" ) )
+                if [[ "$prev" == -u || "$prev" == --user ]]; then
+                    COMPREPLY=( $( compgen -W "foo bar" -- "$cur" ) )
+                fi
+            else
+                COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             fi
             ;;
         e|ex|exe|exec)
