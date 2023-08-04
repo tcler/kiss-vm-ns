@@ -33,4 +33,8 @@ else
 	[[ -z "$otopdir" ]] && { echo "{error} extract $compressedFile fail" >&2; exit 3; }
 	tar -C $targetdir -${xtype}xf ${compressedFile} #--strip-components=1
 fi
+[[ -d "$targetdir/${otopdir}" ]] || {
+	echo "{Error} extract to '$targetdir' fail, please theck permission" >&2
+	exit 1
+}
 [[ -n "$topdir" && "${topdir}" != "$otopdir" ]] && mv $targetdir/${otopdir} $targetdir/$topdir
