@@ -2,6 +2,10 @@
 
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
+#-------------------------------------------------------------------------------
+ontap_img_dir=/usr/share/Netapp-simulator
+sudo bash -c "mkdir -p $ontap_img_dir && chmod o+rw $ontap_img_dir"
+
 verx=$(rpm -E %rhel)
 sver=${ONTAP_VER:-9.11.1}
 [[ "$verx" = 7 ]] && sver=9.8
@@ -17,19 +21,18 @@ ramsize=$(free -m|awk '/Mem:/{print $2}')
 }
 
 #download ONTAP simulator image files
-dldir=/usr/share/Netapp-simulator
 if is_rh_intranet; then
 	rh_intranet=yes
 	ImageUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$ovaImage
 	LicenseFileUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$licenseFile
-	curl -k -Ls "$ImageUrl" -o $dldir/$ovaImage
-	curl -k -Ls "$LicenseFileUrl" -o $dldir/$licenseFile
+	curl -k -Ls "$ImageUrl" -o $ontap_img_dir/$ovaImage
+	curl -k -Ls "$LicenseFileUrl" -o $ontap_img_dir/$licenseFile
 fi
-[[ -f "$dldir/$ovaImage" && -f "$dldir/$licenseFile" ]] || {
+[[ -f "$ontap_img_dir/$ovaImage" && -f "$ontap_img_dir/$licenseFile" ]] || {
 	if [[ -n "$rh_intranet" ]]; then
 		echo "{Error} download '$ImageUrl' and/or '$LicenseFileUrl' fail" >&2
 	else
-		echo "{Error} ONTAP simulator image '$ImageUrl' and/or '$LicenseFileUrl' not found in '$dldir'" >&2
+		echo "{Error} ONTAP simulator image '$ImageUrl' and/or '$LicenseFileUrl' not found in '$ontap_img_dir'" >&2
 	fi
 	exit 1
 }
@@ -47,5 +50,5 @@ extract.sh $tarf . $dirname
 	exit 1
 }
 
-bash $dirname/$script --image $dldir/$ovaImage --license-file $dldir/$licenseFile "$@" &> >(tee $logf)
+bash $dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "$@" &> >(tee $logf)
 tac $logf | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee ontap-if-info.txt

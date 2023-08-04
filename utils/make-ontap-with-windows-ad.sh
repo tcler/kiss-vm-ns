@@ -18,6 +18,12 @@ getDefaultIp4() {
 export LANG=C
 
 #-------------------------------------------------------------------------------
+win_img_dir=/usr/share/windows-images
+ontap_img_dir=/usr/share/Netapp-simulator
+_dirs="$win_img_dir $ontap_img_dir"
+sudo bash -c "mkdir -p $_dirs && chmod o+rw $_dirs"
+
+#-------------------------------------------------------------------------------
 #kiss-vm should have been installed and initialized
 vm prepare >/dev/null
 
@@ -42,27 +48,26 @@ openssh_file=OpenSSH-Win64.zip
 echo -e "{INFO} check if Windows image files exist ..."
 address="download.dev el.red hat.com"
 BaseUrl=http://${address// /}/qa/rhts/lookaside
-localdir=/usr/share/windows-images
 if is_rh_intranet; then
 	rh_intranet=yes
 	win_img_url="$BaseUrl/windows-images/$win_img_name"
 	openssh_url="$BaseUrl/windows-images/$openssh_file"
-	curl -k -Ls "$win_img_url" -o $localdir/$win_img_name
-	curl -k -Ls "$openssh_url" -o $localdir/OpenSSH-Win64.zip
+	curl -k -Ls "$win_img_url" -o $win_img_dir/$win_img_name
+	curl -k -Ls "$openssh_url" -o $win_img_dir/OpenSSH-Win64.zip
 fi
-[[ -f "$localdir/$win_img_name" && -f "$localdir/$openssh_file" ]] || {
+[[ -f "$win_img_dir/$win_img_name" && -f "$win_img_dir/$openssh_file" ]] || {
 	if [[ -n "$rh_intranet" ]]; then
 		echo "{Error} download '$win_img_name' and/or '$openssh_file' fail" >&2
 	else
-		echo "{Error} Windows image file '$win_img_name' and/or '$openssh_file' not found in '$localdir'" >&2
+		echo "{Error} Windows image file '$win_img_name' and/or '$openssh_file' not found in '$win_img_dir'" >&2
 	fi
 	exit 1
 fi
 
 ADDomain=fsqe${HostIPSuffix}.redhat.com
 ADPasswd=Sesame~0pen
-vm create Windows-server -n ${winServer} -C $localdir/$win_img_name --osv=$os_variant --dsize 50 \
-	--win-auto=cifs-nfs --win-enable-kdc --win-openssh=$localdir/$openssh_file \
+vm create Windows-server -n ${winServer} -C $win_img_dir/$win_img_name --osv=$os_variant --dsize 50 \
+	--win-auto=cifs-nfs --win-enable-kdc --win-openssh=$win_img_dir/$openssh_file \
 	--win-domain=${ADDomain} --win-passwd=${ADPasswd} --wait --force
 eval $(< /tmp/${winServer}.env)
 [[ -z "$VM_INT_IP" || -z "$VM_EXT_IP" ]] && {
@@ -87,19 +92,18 @@ ramsize=$(free -m|awk '/Mem:/{print $2}')
 }
 
 echo -e "{INFO} check if Netapp ONTAP simulator image exist ..."
-dldir=/usr/share/Netapp-simulator
 if is_rh_intranet; then
 	rh_intranet=yes
 	ImageUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$ovaImage
 	LicenseFileUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$licenseFile
-	curl -k -Ls "$ImageUrl" -o $dldir/$ovaImage
-	curl -k -Ls "$LicenseFileUrl" -o $dldir/$licenseFile
+	curl -k -Ls "$ImageUrl" -o $ontap_img_dir/$ovaImage
+	curl -k -Ls "$LicenseFileUrl" -o $ontap_img_dir/$licenseFile
 fi
-[[ -f "$dldir/$ovaImage" && -f "$dldir/$licenseFile" ]] || {
+[[ -f "$ontap_img_dir/$ovaImage" && -f "$ontap_img_dir/$licenseFile" ]] || {
 	if [[ -n "$rh_intranet" ]]; then
 		echo "{Error} download '$ImageUrl' and/or '$LicenseFileUrl' fail" >&2
 	else
-		echo "{Error} ONTAP simulator image '$ImageUrl' and/or '$LicenseFileUrl' not found in '$dldir'" >&2
+		echo "{Error} ONTAP simulator image '$ImageUrl' and/or '$LicenseFileUrl' not found in '$ontap_img_dir'" >&2
 	fi
 	exit 1
 }
@@ -133,7 +137,7 @@ optx=(--ntp-server=$NTP_SERVER --dnsdomains=$DNS_DOMAIN --dnsaddrs=$DNS_ADDR \
 	--ad-admin=$AD_ADMIN --ad-passwd=$AD_PASS --ad-ip-hostonly "${VM_INT_IP}")
 ONTAP_INSTALL_LOG=/tmp/ontap2-install.log
 ONTAP_IF_INFO=/tmp/ontap2-if-info.txt
-bash $dirname/$script --image $dldir/$ovaImage --license-file $dldir/$licenseFile "${optx[@]}" &> >(tee $ONTAP_INSTALL_LOG)
+bash $dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "${optx[@]}" &> >(tee $ONTAP_INSTALL_LOG)
 
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee $ONTAP_IF_INFO
 
