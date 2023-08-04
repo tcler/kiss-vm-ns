@@ -291,14 +291,12 @@ curl_download() {
 }
 curl_download_x() { until curl_download "$@"; do sleep 1; done; }
 
+getDefaultNic() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
 getDefaultIp4() {
-	local nic=$1
-	[[ -z "$nic" ]] &&
-		nics=$(ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]}')
+	local nic=$1 nics=
+	[[ -z "$nic" ]] && nics=$(getDefaultNic)
 	for nic in $nics; do
-		[[ -z "$(ip -d link show  dev $nic|sed -n 3p)" ]] && {
-			break
-		}
+		[[ -z "$(ip -d link show  dev $nic|sed -n 3p)" ]] && { break; }
 	done
 	local ipaddr=$(ip addr show $nic)
 	local ret=$(echo "$ipaddr" |

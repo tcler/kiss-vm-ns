@@ -46,12 +46,17 @@ run() {
 	return $ret
 }
 
-getDefaultNic() {
-	ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'
-}
+getDefaultNic() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
 getDefaultIp4() {
-	local nic=$(getDefaultNic)
-	ip addr show $nic | awk '/inet .* global dynamic/{match($0,"inet ([0-9.]+)",M); print M[1]}'
+	local nic=$1 nics=
+	[[ -z "$nic" ]] && nics=$(getDefaultNic)
+	for nic in $nics; do
+		[[ -z "$(ip -d link show  dev $nic|sed -n 3p)" ]] && { break; }
+	done
+	local ipaddr=$(ip addr show $nic)
+	local ret=$(echo "$ipaddr" |
+		awk '/inet .* (global|host lo)/{match($0,"inet ([0-9.]+)",M); print M[1]}')
+	echo "$ret"
 }
 
 [ $# -eq 0 ] && {
