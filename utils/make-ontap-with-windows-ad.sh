@@ -16,19 +16,30 @@ getDefaultIp4() {
 }
 
 export LANG=C
+[[ $(id -u) != 0 ]] && {
+	sudo -K
+	while true; do
+		read -s -p "sudo Password: " password
+		echo
+		echo "$password" | sudo -S ls / >/dev/null && break
+	done
+}
 
 #-------------------------------------------------------------------------------
 win_img_dir=/usr/share/windows-images
 ontap_img_dir=/usr/share/Netapp-simulator
-_dirs="$win_img_dir $ontap_img_dir"
-sudo bash -c "mkdir -p $_dirs && chmod o+rw $_dirs"
+[[ $(id -u) != 0 ]] && {
+	win_img_dir=${win_img_dir//?usr?share/$HOME/Downloads}
+	ontap_img_dir=${ontap_img_dir//?usr?share/$HOME/Downloads}
+}
+mkdir -p $win_img_dir $ontap_img_dir
 
 #-------------------------------------------------------------------------------
 #kiss-vm should have been installed and initialized
 vm prepare >/dev/null
 
 echo -e "{INFO} creating macvlan if mv-host-pub ..."
-netns host,mv-host-pub,dhcp
+echo "$password" | sudo -S netns host,mv-host-pub,dhcp
 ip a s dev mv-host-pub
 
 #-------------------------------------------------------------------------------
@@ -193,9 +204,12 @@ echo -e "\nhostname $netbiosname  #required by nfs krb5 mount ..."
 hostname $netbiosname  #required by nfs krb5 mount
 
 echo -e "\nnfs mount test ..."
+echo $password | sudo -S bash -c "
+. /usr/lib/bash/libtest
 run mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
 run mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5,clientaddr=$clientip
 run mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i,clientaddr=$clientip
 run mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5p -osec=krb5p,clientaddr=$clientip
 run mount -t nfs4
 run umount -a -t nfs4,nfs
+"
