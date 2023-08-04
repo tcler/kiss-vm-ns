@@ -18,7 +18,7 @@ is_available_url() {
         local _url=$1
         curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null
 }
-is_intranet() {
+is_rh_intranet() {
 	local iurl=http://$downhostname
 	is_available_url $iurl
 }
@@ -68,7 +68,7 @@ else
 	isof=$(readlink -f $isof)
 fi
 
-is_intranet && {
+is_rh_intranet && {
 	Intranet=yes
 	baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
 	bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved

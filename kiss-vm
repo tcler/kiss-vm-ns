@@ -1699,7 +1699,7 @@ is_available_url() {
 	local _url=$1
 	curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null
 }
-is_intranet() {
+is_rh_intranet() {
 	local iurl=http://$downhostname
 	is_available_url $iurl 
 }
@@ -2927,7 +2927,7 @@ esac
 declare -A distroInfo
 dbfile=${_confdir}/distro-db.bash
 owndbfile=$perConfDir/distro-db.bash
-if is_intranet; then
+if is_rh_intranet; then
 	#timeout 2 hostname -A|grep -q '\.pek2\.' && downhostname=${downhostname/devel/eng.pek2}
 	IntranetBaseUrl=http://$downhostname/qa/rhts/lookaside
 else
