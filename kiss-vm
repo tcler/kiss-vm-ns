@@ -2951,8 +2951,20 @@ done
 #thanks: https://stackoverflow.com/questions/49733211/bash-jump-to-bottom-of-terminal
 # { echo -ne "\E[${LINES};0H"; }  works the same as { tput cup $(tput lines) 0; }
 distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn't select any distro/family, it is necessary!"; }
+decodeDistro() {
+	if [[ "$Intranet" = yes ]]; then
+		case $1 in
+		(7) Distro="RHEL-7.9-updates-????????.[0-9]+";; (8) Distro="rhel-8.?.?-????????.[0-9]+";; (9) Distro="rhel-9.?.?-????????.[0-9]+";;
+		esac
+	else
+		case $1 in
+		(7) Distro="CentOS-7";; (8) Distro="CentOS-8-stream";; (9) Distro="CentOS-9-stream";;
+		esac
+	fi
+}
 # Phase-0 get distro name
 [[ -z "$Distro" ]] && Distro=$1
+[[ $Distro =~ ^[0-9]+$ ]] && { decodeDistro $Distro; }
 [[ -z "$Distro" ]] && {
 	if [[ -z "$Location" && -z "$Imageurl" && -z "$Isourl" ]]; then
 		distropatternInter=$RuntimeTmp/distroPatternInternet
