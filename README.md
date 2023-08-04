@@ -23,9 +23,11 @@ kiss-ns:
 ```
 curl -s https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/utils/kiss-update.sh|sudo bash && sudo vm prepare
 #or
-git clone https://github.com/tcler/kiss-vm-ns && sudo make -C kiss-vm-ns && sudo vm prepare
-#or (for poor network quality)
-for ((i=0;i<8;i++)); do git clone https://github.com/tcler/kiss-vm-ns && break; done && sudo make -C kiss-vm-ns && sudo vm prepare
+git clone https://github.com/tcler/kiss-vm-ns &&
+    sudo make -C kiss-vm-ns && sudo vm prepare
+#or (git clone fail)
+curl -Ls https://github.com/tcler/kiss-vm-ns/archive/refs/heads/master.tar.gz | tar zxf - &&
+    sudo make -C kiss-vm-ns-master && sudo vm prepare
 ```
 
 # FAQ & Examples

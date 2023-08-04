@@ -9,7 +9,7 @@ trap Cleanup EXIT #SIGINT SIGQUIT SIGTERM
 distro=$1
 imagef=$2
 
-distro=${distro:-CentOS-8-stream}
+distro=${distro:-9}
 if [[ ! -f "$imagef" ]]; then
 	stdlogf=/tmp/std-$$.log
 	echo -e "\n{INFO} downloading qcow2 image of $distro ..."

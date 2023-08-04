@@ -6,9 +6,8 @@
 
 command -v vm >/dev/null || {
 	echo -e "[WARN] you have not installed kiss-vm, please install kiss-vm first by run:"
-	echo -e " git clone https://github.com/tcler/kiss-vm-ns"
-	echo -e " sudo make -C kiss-vm-ns"
-	echo -e " vm prepare"
+	echo -e " curl -Ls https://github.com/tcler/kiss-vm-ns/archive/refs/heads/master.tar.gz | tar zxf - &&
+			sudo make -C kiss-vm-ns-master && sudo vm prepare"
 	exit 1
 }
 
@@ -35,7 +34,7 @@ for arg; do
 done
 set -- "${argv[@]}"
 
-distro=${1:-CentOS-8-stream}; shift
+distro=${1:-8}; shift
 echo -e "\n================ [DEBUG] ===============\n= distro/family: $distro"
 
 #---------------------------------------------------------------

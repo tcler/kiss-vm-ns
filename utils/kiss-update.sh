@@ -36,13 +36,11 @@ esac
 
 _repon=kiss-vm-ns
 _confdir=/etc/$_repon
-
 install_kiss_tools() {
-	local url=https://github.com/tcler/$_repon
-	local clonedir=$(mktemp -d)
-	for ((i=0;i<8;i++)); do git clone --depth=1 $url $clonedir && break || sleep 2; done
-	gmake -C $clonedir i
-	rm -rf $clonedir
+	local url=https://github.com/tcler/${_repon}/archive/refs/heads/master.tar.gz
+	local tmpdir=$(mktemp -d)
+	curl -k -Ls $url | tar zxf - -C $tmpdir && gmake -C $tmpdir/${_repon}-master
+	rm -rf $tmpdir
 }
 
 tmpf=$(mktemp)

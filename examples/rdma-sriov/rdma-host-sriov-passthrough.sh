@@ -71,16 +71,13 @@ ip -br -c a s
 # install kiss-vm tool
 install-kiss-vm-ns() {
 	local _name=$1
-	local KissUrl=https://github.com/tcler/kiss-vm-ns
+	local _repon=kiss-vm-ns
+	local url=https://github.com/tcler/${_repon}/archive/refs/heads/master.tar.gz
 	which vm &>/dev/null || {
-		echo -e "{info} installing kiss-vm-ns ..."
-		which git &>/dev/null || yum install -y git
-		while true; do
-			git clone --depth=1 "$KissUrl" && make -C kiss-vm-ns
-			which vm && break
-			sleep 5
-			echo -e "{warn} installing kiss-vm-ns  fail, try again ..."
-		done
+		echo -e "{info} installing ${_repon} ..."
+		local tmpdir=$(mktemp -d)
+		curl -k -Ls $url | tar zxf - -C $tmpdir && make -C $tmpdir/${_repon}-master
+		rm -rf $tmpdir
 	}
 	[[ "$_name"x = "vm"x ]] && vm prepare
 }
