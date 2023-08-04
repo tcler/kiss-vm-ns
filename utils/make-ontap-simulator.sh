@@ -4,7 +4,8 @@
 
 #-------------------------------------------------------------------------------
 ontap_img_dir=/usr/share/Netapp-simulator
-sudo bash -c "mkdir -p $ontap_img_dir && chmod o+rw $ontap_img_dir"
+[[ $(id -u) != 0 ]] && { ontap_img_dir=${ontap_img_dir//?usr?share/$HOME/Downloads}; }
+mkdir -p $ontap_img_dir
 
 verx=$(rpm -E %rhel)
 sver=${ONTAP_VER:-9.11.1}
