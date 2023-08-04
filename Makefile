@@ -33,6 +33,8 @@ i in ins inst install: _install_macos_kvm_utils
 	@$(SUDO) curl -Ls http://api.github.com/repos/tcler/$(_repon)/commits/master -o $(_confdir)/version
 
 p pu pull u up update:
+	@curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail "http://download.devel.redhat.com" &>/dev/null && \
+		export https_proxy=squid.redhat.com:8080
 	git pull --rebase || :
 	@echo
 
