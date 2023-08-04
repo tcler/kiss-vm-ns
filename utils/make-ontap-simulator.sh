@@ -25,7 +25,7 @@ if is_rh_intranet; then
 	curl -k -Ls "$ImageUrl" -o $dldir/$ovaImage
 	curl -k -Ls "$LicenseFileUrl" -o $dldir/$licenseFile
 fi
-[[ -f "$ImageUrl" && -f "$LicenseFileUrl" ]] || {
+[[ -f "$dldir/$ovaImage" && -f "$dldir/$licenseFile" ]] || {
 	if [[ -n "$rh_intranet" ]]; then
 		echo "{Error} download '$ImageUrl' and/or '$LicenseFileUrl' fail" >&2
 	else
@@ -47,5 +47,5 @@ extract.sh $tarf . $dirname
 	exit 1
 }
 
-bash $dirname/$script --image $ovaImage --license-file $licenseFile "$@" &> >(tee $logf)
+bash $dirname/$script --image $dldir/$ovaImage --license-file $dldir/$licenseFile "$@" &> >(tee $logf)
 tac $logf | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee ontap-if-info.txt
