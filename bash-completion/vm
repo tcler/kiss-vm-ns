@@ -74,7 +74,7 @@ distro_list_complete() {
 
 _vm()
 {
-    local w= cur= prev= words= cword=
+    local w= cur= prev= words= cword= ocur= pprev= p3rev=
     local narg=0
     local subcommandList=()
     local vmlist=
@@ -92,7 +92,8 @@ _vm()
             let narg++
         fi
     done
-    local opts=( $( _parse_help "$1" ) -h -n )
+    local opts=( $( _parse_help "$1" ) -h -n -L= -I=)
+    ocur=$cur
 
     [[ $cur = -* ]] && { let narg++; }
     if [[ $narg -le 2 ]]; then
@@ -108,6 +109,8 @@ _vm()
             COMPREPLY=( $( compgen -W "${opts[*]}" -- "$cur" ) )
         fi
     else
+        pprev=${words[-2]}
+        p3rev=${words[-3]}
         [[ $cur = -* ]] && { let narg--; }
         case "${words[1]}" in
         create)
@@ -120,7 +123,13 @@ _vm()
                     distro_list_complete
                 fi
             else
-                option_arg_complete
+                #weird but works
+                if [[ "${prev}" == -[IL]* && -n "$cur" ]] || [[ "$p3rev" = -[IL] && "$prev" = = ]]; then
+                    cur=${cur#*=}
+                    _filedir
+                else
+                    option_arg_complete
+                fi
             fi
             ;;
         del|delete|stop|start|stat|blk*|srcfiles|homedir)

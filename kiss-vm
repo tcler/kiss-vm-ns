@@ -1953,10 +1953,10 @@ Usage() {
 	  -h, --help      #Display this help.
 
 	Options for sub-command create:
-	  -I[url/path[,bus=$bus[,...]]]
+	  -I[=url/path[,bus=$bus[,...]]]
 	                 #create VM by import existing disk image, value can be url or local path
 	                 #will auto search url according distro name, if url omitted
-	  -L[url/path[,bus=$bus[,...]]]
+	  -L[=url/path[,bus=$bus[,...]]]
 	                 #create VM by using specified location url or local iso file path
 	                 #will auto search url according distro name, if url omitted
 	  -C, -F <iso/image path>
@@ -2203,8 +2203,8 @@ Usage() {
 	  $P create debian-10 -I/mnt/vm-images/debian-10-openstack-amd64.qcow2
 	  $P create openSUSE-15.2 -I~/myimages/openSUSE-Leap-15.2-OpenStack.x86_64.qcow2
 	  $P create debian-test -Ihttps://cdimage.debian.org/cdimage/openstack/testing/debian-testing-openstack-amd64.qcow2
-	  $P create centos-8 -Lhttps://cloud.centos.org/centos/8/x86_64/images/
-	  $P create rhel-8.4.0 -L~/myimages/download/RHEL-8.4.0-any-x86_64-dvd1.iso -n rhel84-from-iso
+	  $P create centos-8 -L=https://cloud.centos.org/centos/8/x86_64/images/
+	  $P create rhel-8.4.0 -L=~/myimages/download/RHEL-8.4.0-any-x86_64-dvd1.iso -n rhel84-from-iso
 
 	Examples for create vm from local iso file manually:
 	  $P create Windows-11 -n win11-virtio -C win11_english_x64.iso --xcdrom virtio-win-0.1.208.iso \\
