@@ -269,16 +269,28 @@ _vm()
                 if [[ "$prev" == -u || "$prev" == --user ]]; then
                     COMPREPLY=( $( compgen -W "foo bar" -- "$cur" ) )
                 elif [[ $narg = 4 ]]; then
-                    COMPREPLY=( $( compgen -W "-x -v -u --user #<Enter>" -- "$cur" ) )
-                    if [[ "${words[*]}" =~ (-u|--user)[\ =][A-Za-z0-9]+ ]]; then
-                        COMPREPLY=( $( compgen -W "$vmlist -x -v" -- "$cur" ) )
+                    COMPREPLY=( $( compgen -W "-x -v -u --user -- #<cmd>" -- "$cur" ) )
+                    if [[ ""${words[*]}"" == *\ --\ * ]]; then
+                        for ((i = 1; i <= COMP_CWORD; i++)); do
+                            if [[ ${COMP_WORDS[i-1]} = -- ]]; then
+                                _command_offset $i
+                                return
+                            fi
+                        done
+                    elif [[ "${words[*]}" =~ (-u|--user)[\ =][A-Za-z0-9]+ ]]; then
+                        COMPREPLY=( $( compgen -W "$vmlist -x -v --" -- "$cur" ) )
                     fi
                 fi
-            elif [[ $narg -le 5 ]]; then
-                COMPREPLY=( $( compgen -W "--" -- "$cur" ) )
-                [[ "$prev" == -- ]] && COMPREPLY=( $( compgen -W "cmd" -- "$cur" ) )
             else
-                COMPREPLY=( $( compgen -W "" -- "$cur" ) )
+                COMPREPLY=( $( compgen -W "-x -v --" -- "$cur" ) )
+                if [[ ""${words[*]}"" == *\ --\ * ]]; then
+                    for ((i = 1; i <= COMP_CWORD; i++)); do
+                        if [[ ${COMP_WORDS[i-1]} = -- ]]; then
+                            _command_offset $i
+                            return
+                        fi
+                    done
+                fi
             fi
             ;;
         netc*)
