@@ -3,7 +3,7 @@
 ## argparse
 P=${0##*/}
 Usage() {
-	echo "Usage: $P <compressed-file> [targetdir] [topdirname] [--path]"
+	echo "Usage: $P <compressed-file> [targetdir] [topdirname] [--path=dir1 [-p dir2 ...]]"
 	echo "  e.g: $P /path/to/kernel-src.tar.gz /usr/src kernel-devel"
 	echo "  e.g: $P /path/to/kernel-src.tar.gz /usr/src kernel-doc --path=Documentation/*"
 }
@@ -13,11 +13,11 @@ _at=`getopt -o hp: \
     -a -n '$P' -- "$@"`
 eval set -- "$_at"
 
-folders=
+folders=()
 while true; do
 	case "$1" in
 	-h|--help)      Usage; shift 1; exit 0;;
-	-p|--path)      folders="$2"; shift 2;;
+	-p|--path)      folders+=("$2"); shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -39,17 +39,24 @@ targetdir=${2:-.}
 	exit 2
 }
 topdir=$3
+[[ "$topdir" = */* || "$topdir" = .. ]] && {
+	echo "{Error} invalide topdirname: '$topdir'" >&2
+	exit 3
+}
 
 filetype=$(file -b ${compressedFile})
 _targetdir=$targetdir
 if [[ "$filetype" = Zip* ]]; then
-	otopdir=($(unzip -Z1 $filepath | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
+	otopdir=($(unzip -Z1 "$compressedFile" | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
 	[[ -z "$otopdir" ]] && { echo "{error} extract $compressedFile fail" >&2; exit 3; }
-	[[ "${#otopdir[@]}" -gt 1 ]] && {
+	if [[ "${#otopdir[@]}" -gt 1 ]]; then
 		otopdir=; [[ -n "$topdir" ]] && _targetdir+=/$topdir; topdir=
 		[[ "$_targetdir" != $targetdir ]] && { mkdir -p $_targetdir; }
-	}
-	unzip "$compressedFile" $folders -d $_targetdir &>/dev/null
+	else
+		for ((i=0; i<${#folders[@]}; i++)); do folders[$i]=$otopdir/${folders[$i]}; done
+	fi
+	echo "{run} unzip '$compressedFile' ${folders[@]} -d '$_targetdir'" >&2
+	unzip "$compressedFile" "${folders[@]}" -d "$_targetdir" &>/dev/null
 else
 	case "$filetype" in
 		(gzip*) xtype=z;;
@@ -59,13 +66,14 @@ else
 	esac
 	otopdir=($(tar taf ${compressedFile} | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
 	[[ -z "$otopdir" ]] && { echo "{error} extract $compressedFile fail" >&2; exit 3; }
-	[[ "${#otopdir[@]}" -gt 1 ]] && {
+	if [[ "${#otopdir[@]}" -gt 1 ]]; then
 		otopdir=; [[ -n "$topdir" ]] && _targetdir+=/$topdir; topdir=
 		[[ "$_targetdir" != $targetdir ]] && { mkdir -p $_targetdir; }
-	}
-	_cmd="tar -C $_targetdir -${xtype}xf ${compressedFile} $folders"   #--strip-components=1
-	echo "{run} $_cmd" >&2
-	eval $_cmd
+	else
+		for ((i=0; i<${#folders[@]}; i++)); do folders[$i]=$otopdir/${folders[$i]}; done
+	fi
+	echo "{run} tar -C '$_targetdir' -${xtype}xf '${compressedFile}' ${folders[@]}" >&2
+	tar -C "$_targetdir" -${xtype}xf "${compressedFile}" "${folders[@]}"   #--strip-components=1
 fi
 [[ -d "$_targetdir/${otopdir}" ]] || {
 	echo "{Error} extract to '$_targetdir' fail, please theck permission" >&2
