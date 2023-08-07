@@ -2,6 +2,21 @@
 #Author: Jianhong Yin <yin-jianhong@163.com>
 #for: install nfstest from source code
 
+#install python3 for rhel/centos/fedora
+command -v python3 || {
+	OSVER=$(rpm -E %rhel)
+	if [[ $OSVER != %rhel && $OSVER < 9 ]]; then
+		case $OSVER in
+		8) sudo yum install -y python39;;
+		7) sudo yum install -y python36;;
+		6) sudo yum install -y python34;;
+		*) echo "[WARN] does not support rhel-5 and before.";;
+		esac
+	else
+		sudo yum install -y python3
+	fi
+}
+
 _url='http://git.linux-nfs.org/?p=mora/nfstest.git;a=snapshot;h=HEAD;sf=tgz'
 _tarf=nfstest.tgz
 _xdir=nfstest
