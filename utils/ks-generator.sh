@@ -178,7 +178,7 @@ ver=$(LANG=C rpm -q --qf %{version} centos-release)
 [[ "$ver" = 5* ]] && sed -i -e 's;mirror.centos.org/centos;vault.centos.org;' -e 's/^mirror/#&/' -e 's/^#base/base/' /etc/yum.repos.d/*
 [[ "$ver" = 5 ]] && sed -i -e 's;\$releasever;5.11;' /etc/yum.repos.d/*
 
-grep ^PermitRootLogin.yes /etc/ssh/sshd_config || echo -e "\nPermitRootLogin yes" >>/etc/ssh/sshd_config
+sed -ri -e '/^#?(PasswordAuthentication|AllowAgentForwarding|PermitRootLogin) (.*)$/{s//\1 yes/}' /etc/ssh/sshd_config $(ls /etc/ssh/sshd_config.d/*)
 KSF
 
 [[ -n "$sshkeyf" ]] && {

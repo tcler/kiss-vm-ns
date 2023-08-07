@@ -135,7 +135,7 @@ done
 
 runcmd:
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; }
-  - sed -ri -e '/^#?PasswordAuthentication /{s/no/yes/;s/^#//}' -e 's/^#?(PermitRootLogin) .*$/\1 yes/' /etc/ssh/sshd_config && service sshd restart || systemctl restart sshd
+  - sed -ri -e '/^#?(PasswordAuthentication|AllowAgentForwarding|PermitRootLogin) (.*)$/{s//\1 yes/}' -e '/^Inc/s@/\*.conf@/*redhat.conf@' /etc/ssh/sshd_config $(ls /etc/ssh/sshd_config.d/*) && service sshd restart || systemctl restart sshd
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
   - command -v yum && yum install -y bash-completion curl wget $PKGS
   -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget $PKGS; }
