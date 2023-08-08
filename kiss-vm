@@ -1097,7 +1097,7 @@ vmlogin() {
 		return 1
 	}
 
-	vmhomedir $_vmname | grep -q -i windows && {
+	vmhomedir $_vmname 2>/dev/null | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
 
