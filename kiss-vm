@@ -2240,7 +2240,7 @@ Usage() {
 	  $P vnc [-get|-put|-putln] [VM]           #read screen text or send string thru vnc
 	  $P xml [VM]          #dump vm xml file   //you can use x,xm instead xml
 	  $P edit [VM]         #edit vm xml file   //you can use ed,ed* instead edit
-	  $P exec [-v] [-x] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
+	  $P exec [-v] [-x] [-u user[:password]] "\$VM" -- "cmd"  #login VM and exec cmd  //you can use e,ex,ex* instead exec
 	  $P reboot [-w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
 	  $P stop [VM]         #stop/shutdonw VM   //nil
 	  $P start [VM]        #start VM           //nil

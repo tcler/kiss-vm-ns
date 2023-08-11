@@ -251,7 +251,7 @@ _vm()
                 vmlist=$(virsh list --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist -u --user" -- "$cur" ) )
                 if [[ "$prev" == -u || "$prev" == --user ]]; then
-                    COMPREPLY=( $( compgen -W "foo bar" -- "$cur" ) )
+                    COMPREPLY=( $( compgen -W "foo bar #username[:password]" -- "$cur" ) )
                 elif [[ $narg = 4 ]]; then
                     COMPREPLY=( $( compgen -W "-u --user #<Enter>" -- "$cur" ) )
                     if [[ ${words[$((cword-2))]} = *-u* ]]; then
@@ -267,7 +267,7 @@ _vm()
                 vmlist=$(virsh list --name --state-running 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist -v -x -u --user" -- "$cur" ) )
                 if [[ "$prev" == -u || "$prev" == --user ]]; then
-                    COMPREPLY=( $( compgen -W "foo bar" -- "$cur" ) )
+                    COMPREPLY=( $( compgen -W "foo bar #username[:password]" -- "$cur" ) )
                 elif [[ $narg = 4 ]]; then
                     COMPREPLY=( $( compgen -W "-x -v -u --user -- #<cmd>" -- "$cur" ) )
                     if [[ ""${words[*]}"" == *\ --\ * ]]; then
