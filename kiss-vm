@@ -1086,6 +1086,7 @@ vmlogin() {
 	local U=root _vmname= _pat="$1"
 	shift
 	[[ "$_pat" = *@* ]] && read U _pat <<<"${_pat/@/ }"
+	[[ "$U" = *[:,]* ]] && read U defaultPasswd <<<"${U/[:,]/ }"
 	_vmname=$(vmname_extract -all "$_pat")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
@@ -1101,7 +1102,10 @@ vmlogin() {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
 
-	[[ -n "$CM_USER" ]] && U="$CM_USER"
+	[[ -n "$CM_USER" ]] && {
+		U="$CM_USER"
+		[[ "$U" = *[:,]* ]] && read U defaultPasswd <<<"${U/[:,]/ }"
+	}
 
 	local sshCommand=
 	if [[ "${EXEC}" = yes ]]; then
@@ -2117,9 +2121,10 @@ Usage() {
 	                 #alias of: --put msg --put key:enter
 
 	Options for sub-command prepare:
-	  -u, --user     #specific user for prepare or login sub-command
-	                 #`e.g: sudo vm prepare -u user_b #prepare configure libvirt for other user
-	                 #`e.g: vm login vmname -u foo    #login vm with foo instead default root
+	  -u, --user     #specific user[:passwd] for prepare or login sub-command
+	                 #`e.g: sudo vm prepare -u user_b  #prepare configure libvirt for other user
+	                 #`e.g: vm login vmname -u foo     #login vm with user:foo instead default root
+	                 #`e.g: vm login vmname -u bar:bar #login vm with user:bar and password:bar instead default root:redhat
 
 	Options for Windows Answer File Generator:
 	  --win-auto[=<base|cifs-nfs|addsdomain|addsforest>]
@@ -2226,7 +2231,7 @@ Usage() {
 	  $P enable-nested-vm  #enable nested on host
 
 	  $P list              #list all VMs       //you can use ls,li,lis* instead list
-	  $P login [VM]        #login VM via ssh   //you can use l,lo,log* instead login
+	  $P login [VM [U [P]]]#login VM via ssh   //you can use l,lo,log* instead login
 	  $P console [VM]      #log VM via console //you can use co,con,cons* instead console
 	  $P delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
 	  $P ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
