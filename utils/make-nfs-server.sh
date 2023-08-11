@@ -60,24 +60,24 @@ rpm -q nfs-utils || yum install -y nfs-utils &>/dev/null
 
 
 ## create nfs export directorys
-mkdir -p $PREFIX/{ro,rw,async,labelled-nfs,krb5-nfs1,krb5-nfs2}
+mkdir -p $PREFIX/{ro,rw,async,labelled-nfs,qe,devel}
 chgrp nobody -R $PREFIX
 chmod g+ws -R $PREFIX
-touch $PREFIX/{ro,rw,async,labelled-nfs,krb5-nfs1,krb5-nfs2}/testfile
+touch $PREFIX/{ro,rw,async,labelled-nfs,qe,devel}/testfile
 semanage fcontext -a -t nfs_t "$PREFIX(/.*)?"
 restorecon -Rv $PREFIX
-chmod 775 -R $PREFIX/{rw,async,labelled-nfs,krb5-nfs1,krb5-nfs2}
+chmod 775 -R $PREFIX/{rw,async,labelled-nfs,qe,devel}
 
 
 ## generate exports config file
 defaultOpts=${defaultOpts:-insecure}
 cat <<EOF >/etc/exports
 $PREFIX/ro *(${defaultOpts},ro)
-$PREFIX/rw *(${defaultOpts},rw,root_squash)
-$PREFIX/async *(${defaultOpts},rw,root_squash,async)
-$PREFIX/labelled-nfs *(${defaultOpts},rw,root_squash,security_label)
-$PREFIX/krb5-nfs1 *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
-$PREFIX/krb5-nfs2 *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+$PREFIX/rw *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+$PREFIX/async *(${defaultOpts},rw,root_squash,async,sec=sys:krb5:krb5i:krb5p)
+$PREFIX/labelled-nfs *(${defaultOpts},rw,root_squash,security_label,sec=sys:krb5:krb5i:krb5p)
+$PREFIX/qe *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+$PREFIX/devel *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
 EOF
 srun "cat /etc/exports"
 
