@@ -1523,7 +1523,7 @@ install_requires() {
 		done
 		;;
 	fedora*|red?hat*|centos*|rocky*|anolis*)
-		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img udisks2 genisoimage iptables-nft"
+		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img udisks2 genisoimage iptables-nft ipcalc"
 		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win python3-qemu-qmp"
 
 		OSV=$(rpm -E %rhel)
@@ -1545,7 +1545,7 @@ install_requires() {
 		[[ "$OSV" = 7 && $HostARCH = x86_64 ]] && { yum remove -y tmux && yum install -y ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/assmannst/CentOS_7/x86_64/tmux-2.6-3.1.x86_64.rpm; }
 		;;
 	debian*|ubuntu*)
-		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl"
+		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc"
 		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
 
 		read -d . verx 2>/dev/null </etc/debian_version
@@ -1557,7 +1557,7 @@ install_requires() {
 		sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y $recommend_pkglist
 		;;
 	opensuse*|sles*)
-		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools udisks2 mkisofs iptables-nft"
+		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools udisks2 mkisofs iptables-nft ipcalc"
 		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
 
 		sudo zypper in --no-recommends -y $pkglist
@@ -3529,7 +3529,7 @@ if [[ "$InstallType" = location ]]; then
 		test -f /etc/hostname && echo ${vmhostname}.$VM_DOMAIN >/etc/hostname || echo HOSTNAME=${vmhostname}.$VM_DOMAIN >>/etc/sysconfig/network
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install pkgs ${PKGS} ..."
-		yum install -y wget ${PKGS} 2>/dev/null
+		yum install -y wget ${PKGS} ipcalc 2>/dev/null
 
 		END
 		[[ $Intranet = yes ]] && cat <<-END >>$postscript

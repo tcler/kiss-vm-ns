@@ -137,11 +137,11 @@ runcmd:
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; }
   - sed -ri -e '/^#?(PasswordAuthentication|AllowAgentForwarding|PermitRootLogin) (.*)$/{s//\1 yes/}' -e '/^Inc/s@/\*.conf@/*redhat.conf@' /etc/ssh/sshd_config $(ls /etc/ssh/sshd_config.d/*) && service sshd restart || systemctl restart sshd
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
-  - command -v yum && yum install -y bash-completion curl wget $PKGS
-  -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget $PKGS; }
-  -   command -v zypper && zypper in --no-recommends -y bash-completion curl wget $PKGS
+  - command -v yum && yum install -y bash-completion curl wget vim ipcalc $PKGS
+  -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget vim ipcalc $PKGS; }
+  -   command -v zypper && zypper in --no-recommends -y bash-completion curl wget vim ipcalc $PKGS
   -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; }
-  -   command -v pacman && pacman -S --needed --noconfirm bash-completion curl wget $PKGS
+  -   command -v pacman && pacman -S --needed --noconfirm bash-completion curl wget vim ipcalc $PKGS
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
   - command -v yum && curl -L -k -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
