@@ -1085,8 +1085,6 @@ vmmonitor() {
 vmlogin() {
 	local U=root _vmname= _pat="$1"
 	shift
-	[[ "$_pat" = *@* ]] && read U _pat <<<"${_pat/@/ }"
-	[[ "$U" = *[:,]* ]] && read U defaultPasswd <<<"${U/[:,]/ }"
 	_vmname=$(vmname_extract -all "$_pat")
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
@@ -1097,15 +1095,15 @@ vmlogin() {
 		echo -e "{VM:WARN} $_vmname has not been running"
 		return 1
 	}
-
 	vmhomedir $_vmname 2>/dev/null | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
 
-	[[ -n "$CM_USER" ]] && {
-		U="$CM_USER"
-		[[ "$U" = *[:,]* ]] && read U defaultPasswd <<<"${U/[:,]/ }"
-	}
+	[[ "$_pat" = *@* ]] && read U _pat <<<"${_pat/@/ }"
+	[[ "$U" = *[:,]* ]] && read U defaultPasswd <<<"${U/[:,]/ }"
+
+	[[ -n "$CM_USER" ]] && { U="$CM_USER"; }
+	[[ -n "$CM_PASSWD" ]] && { defaultPasswd="$CM_PASSWD"; }
 
 	local sshCommand=
 	if [[ "${EXEC}" = yes ]]; then
@@ -2430,7 +2428,7 @@ while true; do
 	case "$1" in
 	-h|--help) Usage; shift 1; exit 0;;
 	--prepare) ONLY_PREPARE=yes; shift 1;;
-	-u|--user) CM_USER=$2; shift 2;;
+	-u|--user) CM_USER=$2; [[ "$2" = *[:,]* ]] && read CM_USER CM_PASSWD <<<"${2/[:,]/ }"; shift 2;;
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
 	-C|-F)     InstallType=cdrom_image; Isourl=$2; shift 2;;
