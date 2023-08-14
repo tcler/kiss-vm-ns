@@ -6,7 +6,7 @@ _confdir=/etc/$(_repon)
 _oldconfdir=/etc/kiss-vm
 _libdir=/usr/lib/bash
 completion_path=/usr/share/bash-completion/completions
-required_pkgs=iproute2 tmux expect bind-utils bash-completion
+required_pkgs=iproute tmux expect bind-utils bash-completion
 ifeq ("$(wildcard $(completion_path))", "")
 	completion_path=/usr/local/share/bash-completion/completions
 endif

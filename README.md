@@ -13,7 +13,7 @@ kiss-vm: #'sudo vm prepare' will install all dependencies
   qemu-system-{aarch64,s390x,ppc,riscv}
 
 kiss-netns:
-  iproute2 tmux
+  iproute tmux
 
 kiss-ns:
   systemd-nspawn tmux
