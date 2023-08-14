@@ -25,7 +25,7 @@ test -f ~/.ssh/id_ecdsa || {
 }
 expect -c "
 	spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $@ $user@$host
-	expect -re {.*assword:|[Pp]assword.for.*:} {send \"$password\\r\"}
+	expect -re {.*assword:|[Pp]assword.for.*:} {send \"$password\\n\"}
 	close \$spawn_id
 	#expect eof
 "
