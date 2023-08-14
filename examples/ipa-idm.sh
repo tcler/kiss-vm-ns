@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
@@ -7,6 +7,7 @@ dnsdomain=lab.kissvm.net
 domain=${dnsdomain}
 realm=${domain^^}
 ipaserv=ipa-server
+nfsserv=nfs-server
 ipaclnt=ipa-client
 nfsserv=nfs-server
 password=redhat123
@@ -17,7 +18,7 @@ vm create -n $ipaclnt $distro --msize 4096 -p "bind-utils vim nfs-utils" --noint
 vm create -n $nfsserv $distro --msize 4096 -p "bind-utils vim nfs-utils" --nointeract --saveimage -f
 
 #-------------------------------------------------------------------------------
-#create new VM ipa-server
+#configure ipa-server
 vm cpto $ipaserv /usr/bin/ipa-server-install.sh /usr/bin/kinit.sh /usr/bin/.
 vm exec -v $ipaserv -- systemctl start firewalld
 vm exec -v $ipaserv -- systemctl enable firewalld
@@ -67,7 +68,7 @@ vm exec -v $ipaserv -- sssctl domain-list
 vm exec -v $ipaserv -- sssctl user-show admin
 
 #-------------------------------------------------------------------------------
-#create new VM nfsserver to join the realm
+#configure nfsserver to join the realm
 vm cpto $nfsserv /usr/bin/ipa-client-install.sh /usr/bin/kinit.sh /usr/bin/make-nfs-server.sh /usr/bin/.
 vm exec -v $nfsserv -- ipa-client-install.sh
 
@@ -87,7 +88,7 @@ vm exec -v $ipaserv -- "journalctl -u named-pkcs11.service | grep ${nfsserv}.*up
 vm exec -v $nfsserv -- 'ipa host-show $(hostname)'
 
 #-------------------------------------------------------------------------------
-#create new VM ipa-client to join the realm
+#configure ipa-client to join the realm
 vm cpto $ipaclnt /usr/bin/ipa-client-install.sh /usr/bin/kinit.sh /usr/bin/.
 vm exec -v $ipaclnt -- ipa-client-install.sh
 
@@ -110,7 +111,7 @@ vm exec -v $ipaclnt -- authselect show sssd
 vm exec -v $ipaclnt -- authselect test -a sssd with-mkhomedir with-sudo
 
 #-------------------------------------------------------------------------------
-#nfs-server configure krb5 nfs server
+#nfs-server: configure krb5 nfs server
 vm exec -v $nfsserv -- sed -i -e "/^#Domain/s/^#//;/Domain = /s/=.*/= ${domain}/" -e '/^LDAP/s//#&/' /etc/idmapd.conf
 vm exec -v $nfsserv -- bash -c 'echo -e "[General]\n Verbosity = 2\n Domain = '"${domain}"'\n Local-Realms = '"${realm}"'" > /etc/idmapd.conf'
 vm exec -v $nfsserv -- make-nfs-server.sh
@@ -124,7 +125,7 @@ vm exec -v $ipaserv -- kadmin.local list_principals
 vm exec -v $nfsserv -- klist
 
 #-------------------------------------------------------------------------------
-#ipa-client configure krb5 nfs client
+#ipa-client: configure krb5 nfs client
 vm exec -v $ipaclnt -- mkdir /mnt/nfsmp
 vm exec -v $ipaclnt -- sed -i -e "/^#Domain/s/^#//;/Domain = /s/=.*/= ${domain}/" -e '/^LDAP/s//#&/' /etc/idmapd.conf
 vm exec -v $ipaclnt -- bash -c 'echo -e "[General]\n Verbosity = 2\n Domain = '"${domain}"'\n Local-Realms = '"${realm}"'" > /etc/idmapd.conf'
