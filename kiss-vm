@@ -2439,9 +2439,9 @@ while true; do
 	-I|-i)     InstallType=import; _url=${2#=}; read Imageurl BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
 	-P|--pxe)  InstallType=pxe; shift 1;;
 	--diskless) DISKLESS=yes; shift 1;;
-	--ks)      KSPath=$2; shift 2;;
-	--ks-pkgs)        KS_PKGS="$2"; shift 2;;
-	--ks-only-use)    KS_OnlyUse="$2"; shift 2;;
+	--ks)      KSPath=$2; InstallType=location; shift 2;;
+	--ks-pkgs)        KS_PKGS="$2"; InstallType=location; shift 2;;
+	--ks-only-use)    KS_OnlyUse="$2"; InstallType=location; shift 2;;
 	--kernel-opts)    KOPTS="$2"; shift 2;;
 	--rm)      RM=yes; shift 1;;
 	--xzopt)          XZ="$2"; shift 2;;
