@@ -36,6 +36,7 @@ _at=`getopt -o hd: \
 	--long kernel-opts: --long kopts: \
 	--long only-use: \
 	--long pkgs: \
+	--long append: \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -49,6 +50,7 @@ while true; do
 	--kernel-opts|--kopts) KernelOpts="$2"; shift 2;;
 	--only-use) [[ -n "${2// /}" ]] && IgnoreDisk="ignoredisk --only-use=$2"; shift 2;;
 	--pkgs)    PKGS=" $2"; shift 2;;
+	--append)  APPEND="$2"; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -145,8 +147,9 @@ for ((i=0; i < ${#Repos[@]}; i++)); do
 done
 COMM
 
-echo -e "\n%post"
+echo "$APPEND"
 
+echo -e "\n%post"
 for repo in "${Repos[@]}"; do
 	if [[ "$repo" =~ ^[^:]+:(https|http|ftp|file):// ]]; then
 		read name url _ <<<"${repo/:/ }"
