@@ -17,7 +17,7 @@ IgnoreDisk=
 Usage() {
 	cat <<-EOF >&2
 	Usage:
-	 $0 <-d distroname> <-url url> [-repo name1:url1 [-repo name2:url2 ...]] [-post <script>] [-sshkeyf <file>] [-kernel-opts=<params>]
+	 $0 <-d distroname> <-url url> [-repo name1:url1 [-repo name2:url2 ...]] [-post <script>] [-sshkeyf <file>] [-kernel-opts=<params>] [-pkgs=<pkg1[ pkg2 ..]>]
 
 	Example:
 	 $0 -d centos-5 -url http://vault.centos.org/5.11/os/x86_64/
@@ -35,6 +35,7 @@ _at=`getopt -o hd: \
 	--long sshkeyf: \
 	--long kernel-opts: --long kopts: \
 	--long only-use: \
+	--long pkgs: \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -47,6 +48,7 @@ while true; do
 	--sshkeyf) sshkeyf+=" $2"; shift 2;;
 	--kernel-opts|--kopts) KernelOpts="$2"; shift 2;;
 	--only-use) [[ -n "${2// /}" ]] && IgnoreDisk="ignoredisk --only-use=$2"; shift 2;;
+	--pkgs)    PKGS=" $2"; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -86,6 +88,7 @@ esac
 shopt -u nocasematch
 
 # output final ks cfg
+Packages+=${PKGS}
 Packages=${Packages// /$'\n'}
 
 cat <<KSF
