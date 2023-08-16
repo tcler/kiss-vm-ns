@@ -901,6 +901,9 @@ vmcopyto() {
 
 	sshOpts=$(sshtest $U@$_addr "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
+	[[ "$VERBOSE" = yes && $sshstat != unavailable ]] && {
+		echo -e "\E[01;36m[HOST]> scp $sshOpts -r ${srcarray[@]} $U@${_addr}:$dstdir/.\E[0m" >&2
+	}
 	if [[ $sshstat = yes ]]; then
 		scp $sshOpts -r "${srcarray[@]}" $U@${_addr}:$dstdir/.
 		rc=$?
@@ -960,6 +963,9 @@ vmcopyfrom() {
 
 	sshOpts=$(sshtest $U@$_addr "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
+	[[ "$VERBOSE" = yes && $sshstat != unavailable ]] && {
+		echo -e "\E[01;36m[HOST]> scp $sshOpts -r $U@${_addr}:$src $dstf\E[0m" >&2
+	}
 	if [[ $sshstat = yes ]]; then
 		scp $sshOpts -r $U@${_addr}:$src $dstf
 		rc=$?
