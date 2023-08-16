@@ -876,8 +876,9 @@ vmcopyto() {
 		echo "Usage: vm cpto vmname <src files/dirs ...> <dst dir in vm>"
 		return 1
 	}
-	local _vmname=$(vmname_extract "$1"|head -1)
-	shift 1
+	local U=root _vmname= _pat="$1"
+	shift
+	_vmname=$(vmname_extract -all "${_pat#*@}"|head -1)
 	local _addr=
 	local dstdir=${@: -1}
 	local srcarray=("${@:1: $#-1}")
@@ -890,10 +891,14 @@ vmcopyto() {
 
 	local sshstat=unavailable
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR"
-	local U=root
 	vmhomedir $_vmname | grep -E -q -i -e windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
+	[[ "$_pat" = *@* ]] && read U _pat <<<"${_pat/@/ }"
+	[[ "$U" = *[:,]* ]] && read U defaultPasswd <<<"${U/[:,]/ }"
+	[[ -n "$CM_USER" ]] && { U="$CM_USER"; }
+	[[ -n "$CM_PASSWD" ]] && { defaultPasswd="$CM_PASSWD"; }
+
 	sshOpts=$(sshtest $U@$_addr "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 	if [[ $sshstat = yes ]]; then
@@ -930,8 +935,9 @@ vmcopyfrom() {
 		echo "Usage: vm cpfrom vmname <file/dir> <dst dir>"
 		return 1
 	}
-	local _vmname=$(vmname_extract "$1"|head -1)
-	shift 1
+	local U=root _vmname= _pat="$1"
+	shift
+	_vmname=$(vmname_extract -all "${_pat#*@}"|head -1)
 	local src=${1%/}
 	local dstf=${2}
 	[[ -d "$dstf" ]] && dstf=$(readlink -f $dstf)/.
@@ -944,10 +950,14 @@ vmcopyfrom() {
 
 	local sshstat=unavailable
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR"
-	local U=root
 	vmhomedir $_vmname | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
+	[[ "$_pat" = *@* ]] && read U _pat <<<"${_pat/@/ }"
+	[[ "$U" = *[:,]* ]] && read U defaultPasswd <<<"${U/[:,]/ }"
+	[[ -n "$CM_USER" ]] && { U="$CM_USER"; }
+	[[ -n "$CM_PASSWD" ]] && { defaultPasswd="$CM_PASSWD"; }
+
 	sshOpts=$(sshtest $U@$_addr "$sshOpts")
 	case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 	if [[ $sshstat = yes ]]; then
@@ -1085,7 +1095,7 @@ vmmonitor() {
 vmlogin() {
 	local U=root _vmname= _pat="$1"
 	shift
-	_vmname=$(vmname_extract -all "$_pat")
+	_vmname=$(vmname_extract -all "${_pat#*@}"|head -1)
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-login $resf && _vmname=$(sed 's/"//g' $resf)
@@ -2249,8 +2259,8 @@ Usage() {
 	  $P start [VM]        #start VM           //nil
 	  $P stat [VM]         #get VM state       //see also: virsh domstate <domain>
 	  $P clone <VM> [new-vmname]  #clone VM    //see also: virt-clone + virt-sysprep
-	  $P cpfrom <VM> <file/dir_in_vm> <dst_dir/file_in_host>
-	  $P cpto   <VM> <files/dirs_in_host ...> <dst_dir_in_vm>
+	  $P cpfrom [-u user[:password]] <VM> <file/dir_in_vm> <dst_dir/file_in_host>
+	  $P cpto [-u user[:password]] <VM> <files/dirs_in_host ...> <dst_dir_in_vm>
 	  $P add.iso <VM> <iso-file>               //alias of virsh attach-disk \$vm \$iso \$target --targetbus=sata --type cdrom --mode readonly
 	  $P add.disk <VM> <disk-file[size=,drv=,bus=]> //alias of virsh attach-disk \$vm \$diskf \$target [--subdriver=qcow2,raw, --targetbus=scsi,sata,virtio,]
 	  $P add.if <VM> <network>                 //alias of virsh attach-interface --type network --domain \$vm --source \$network
