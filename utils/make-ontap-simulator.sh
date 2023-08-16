@@ -3,7 +3,8 @@
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
 #-------------------------------------------------------------------------------
-ontap_img_dir=/usr/share/Netapp-simulator
+g_ontap_img_dir=/usr/share/Netapp-simulator
+ontap_img_dir=$g_ontap_img_dir
 [[ $(id -u) != 0 ]] && { ontap_img_dir=${ontap_img_dir//?usr?share/$HOME/Downloads}; }
 mkdir -p $ontap_img_dir
 
@@ -39,17 +40,18 @@ fi
 }
 
 #download ontap-simulator-in-kvm project
+targetdir=$HOME/Downloads
 pjname=ontap-simulator-in-kvm
 dirname=${pjname}
-tarf=${pjname}.tar.gz
-logf=${pjname}.log
+tarfpath=$targetdir/${pjname}.tar.gz
+logf=/tmp/${pjname}.log
 _url=https://github.com/tcler/ontap-simulator-in-kvm/archive/refs/heads/master.tar.gz
-curl -k -Ls "$_url" -o $tarf
-extract.sh $tarf . $dirname
-[[ -d "$dirname" ]] || {
-	echo "{Error} download or extract '$tarf' fail" >&2
+curl -k -L "$_url" -o $tarfpath
+extract.sh $tarfpath $HOME/Downloads $dirname
+[[ -d "$targetdir/$dirname" ]] || {
+	echo "{Error} download or extract '$tarfpath' fail" >&2
 	exit 1
 }
 
-bash $dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "$@" &> >(tee $logf)
-tac $logf | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee ontap-if-info.txt
+bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "$@" &> >(tee $logf)
+tac $logf | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee /tmp/ontap-if-info.txt
