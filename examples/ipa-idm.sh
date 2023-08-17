@@ -37,7 +37,7 @@ vm exec -v $ipaserv -- firewall-cmd --add-service=dns --permanent
 _hostname=$(vm exec $ipaserv -- hostname)
 _ipa_serv_addr=$(vm ifaddr $ipaserv)
 vm exec -v $ipaserv -- "echo '$_ipa_serv_addr    $_hostname' >>/etc/hosts"
-vm exec -v $ipaserv -- dig +short $hostname A
+vm exec -v $ipaserv -- dig +short $_hostname A
 vm exec -v $ipaserv -- dig +short -x $_ipa_serv_addr
 
 vm exec -v $ipaserv -- ipa-server-install.sh
