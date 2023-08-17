@@ -20,13 +20,13 @@ if [[ $OSV != %rhel && $OSV -lt 6 ]]; then
 fi
 
 switchroot "$@"
-realm=${1:-IDM.JHTS.ORG}
 
+echo "{INFO} installing ipa-server ..."
 case $OSV in
 6|7)
 	#https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html-single/linux_domain_identity_authentication_and_policy_guide/index#required-packages
 	#yum install -y ipa-server                   #IdM server without an integrated DNS
-	yum install -y ipa-server ipa-server-dns     #IdM server with an integrated DNS
+	yum install -y -q ipa-server ipa-server-dns     #IdM server with an integrated DNS
 	;;
 8)
 	#https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/installing_identity_management/index#installing-packages-required-for-an-idm-server_preparing-the-system-for-ipa-server-installation
@@ -36,7 +36,7 @@ case $OSV in
 	#yum module install -y idm:DL1/server        #IdM server without an integrated DNS
 	#yum module install -y idm:DL1/adtrust       #IdM server that has a trust agreement with Active Directory
 	#yum module install -y idm:DL1/{dns,adtrust}
-	yum module install -y idm:DL1/dns            #IdM server with an integrated DNS
+	yum module install -y -q idm:DL1/dns            #IdM server with an integrated DNS
 	umask 0027
 	;;
 9|*)
@@ -44,7 +44,7 @@ case $OSV in
 	umask 0022
 	#yum install -y ipa-server ipa-server-trust-ad samba-client   #IdM server that has a trust agreement with Active Directory
 	#yum install -y ipa-server                   #IdM server without an integrated DNS
-	yum install -y ipa-server ipa-server-dns     #IdM server with an integrated DNS
+	yum install -y -q ipa-server ipa-server-dns     #IdM server with an integrated DNS
 	umask 0027
 	;;
 esac
