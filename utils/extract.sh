@@ -80,6 +80,7 @@ fi
 	exit 1
 }
 [[ -n "$topdir" && "${topdir}" != "$otopdir" ]] && {
+	test -d "$_targetdir/$topdir" && { rm -rf "$_targetdir/$topdir"; }
 	_cmd="mv $_targetdir/${otopdir} $_targetdir/$topdir"
 	echo "{run} $_cmd" >&2
 	eval $_cmd
