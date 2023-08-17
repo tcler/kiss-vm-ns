@@ -2,6 +2,7 @@
 
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
+export LANG=C
 getDefaultNic() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
 getDefaultIp4() {
 	local nic=$1 nics=
@@ -15,32 +16,24 @@ getDefaultIp4() {
 	echo "$ret"
 }
 
-export LANG=C
-[[ $(id -u) != 0 ]] && {
-	sudo -K
-	while true; do
-		read -s -p "sudo Password: " password
-		echo
-		echo "$password" | sudo -S ls / >/dev/null && break
-	done
-}
-
 #-------------------------------------------------------------------------------
-win_img_dir=/usr/share/windows-images
-ontap_img_dir=/usr/share/Netapp-simulator
+g_win_img_dir=/usr/share/windows-images
+g_ontap_img_dir=/usr/share/Netapp-simulator
+win_img_dir=$g_win_img_dir
+ontap_img_dir=$g_ontap_img_dir
 [[ $(id -u) != 0 ]] && {
 	win_img_dir=${win_img_dir//?usr?share/$HOME/Downloads}
 	ontap_img_dir=${ontap_img_dir//?usr?share/$HOME/Downloads}
 }
-mkdir -p $win_img_dir $ontap_img_dir
+run -debug mkdir -p $win_img_dir $ontap_img_dir
 
 #-------------------------------------------------------------------------------
 #kiss-vm should have been installed and initialized
 vm prepare >/dev/null
 
-echo -e "{INFO} creating macvlan if mv-host-pub ..."
-echo "$password" | sudo -S netns host,mv-host-pub,dhcp
-ip a s dev mv-host-pub
+distro=${distro:-9}
+rhelclnt=rhel-client
+tmux new -d "vm create -n $rhelclnt $distro -p 'vim bind-utils nfs-utils expect' --nointeract --saveimage -f"
 
 #-------------------------------------------------------------------------------
 read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')
@@ -63,10 +56,10 @@ if is_rh_intranet; then
 	rh_intranet=yes
 	win_img_url="$BaseUrl/windows-images/$win_img_name"
 	openssh_url="$BaseUrl/windows-images/$openssh_file"
-	curl -k -Ls "$win_img_url" -o $win_img_dir/$win_img_name
-	curl -k -Ls "$openssh_url" -o $win_img_dir/OpenSSH-Win64.zip
+	curl-download.sh $win_img_dir/$win_img_name "$win_img_url"
+	curl-download.sh $win_img_dir/OpenSSH-Win64.zip "$openssh_url"
 fi
-[[ -f "$win_img_dir/$win_img_name" && -f "$win_img_dir/$openssh_file" ]] || {
+if [[ ! -f "$win_img_dir/$win_img_name" || ! -f "$win_img_dir/$openssh_file" ]]; then
 	if [[ -n "$rh_intranet" ]]; then
 		echo "{Error} download '$win_img_name' and/or '$openssh_file' fail" >&2
 	else
@@ -75,7 +68,7 @@ fi
 	exit 1
 fi
 
-ADDomain=fsqe${HostIPSuffix}.redhat.com
+ADDomain=test${HostIPSuffix}.kissvm.net
 ADPasswd=Sesame~0pen
 vm create Windows-server -n ${winServer} -C $win_img_dir/$win_img_name --osv=$os_variant --dsize 50 \
 	--win-auto=cifs-nfs --win-enable-kdc --win-openssh=$win_img_dir/$openssh_file \
@@ -107,8 +100,8 @@ if is_rh_intranet; then
 	rh_intranet=yes
 	ImageUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$ovaImage
 	LicenseFileUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$licenseFile
-	curl -k -Ls "$ImageUrl" -o $ontap_img_dir/$ovaImage
-	curl -k -Ls "$LicenseFileUrl" -o $ontap_img_dir/$licenseFile
+	curl-download.sh $ontap_img_dir/$ovaImage "$ImageUrl"
+	curl-download.sh $ontap_img_dir/$licenseFile "$LicenseFileUrl"
 fi
 [[ -f "$ontap_img_dir/$ovaImage" && -f "$ontap_img_dir/$licenseFile" ]] || {
 	if [[ -n "$rh_intranet" ]]; then
@@ -122,21 +115,22 @@ fi
 #-------------------------------------------------------------------------------
 #download ontap-simulator-in-kvm project
 echo -e "{INFO} installing ontap-simulator-in-kvm tool ..."
+targetdir=$HOME/Downloads
 pjname=ontap-simulator-in-kvm
 dirname=${pjname}
-tarf=${pjname}.tar.gz
-logf=${pjname}.log
+tarfpath=$targetdir/${pjname}.tar.gz
+logf=/tmp/${pjname}.log
 _url=https://github.com/tcler/ontap-simulator-in-kvm/archive/refs/heads/master.tar.gz
-curl -k -Ls "$_url" -o $tarf
-extract.sh $tarf . $dirname
-[[ -d "$dirname" ]] || {
-	echo "{Error} download or extract '$tarf' fail" >&2
+curl-download.sh $tarfpath "$_url"
+extract.sh $tarfpath $HOME/Downloads $dirname
+[[ -d "$targetdir/$dirname" ]] || {
+	echo "{Error} download or extract '$tarfpath' fail" >&2
 	exit 1
 }
 
 script=ontap-simulator-two-node.sh
 eval $(< /tmp/${winServer}.env)
-NTP_SERVER=10.5.26.10
+NTP_SERVER=10.5.26.10  #fixme
 DNS_DOMAIN=${AD_DOMAIN}
 DNS_ADDR=${VM_EXT_IP}
 AD_HOSTNAME=${AD_FQDN}
@@ -145,10 +139,10 @@ AD_ADMIN=${ADMINUSER}
 AD_PASS=${ADMINPASSWORD}
 optx=(--ntp-server=$NTP_SERVER --dnsdomains=$DNS_DOMAIN --dnsaddrs=$DNS_ADDR \
 	--ad-hostname=$AD_HOSTNAME --ad-ip=$AD_IP \
-	--ad-admin=$AD_ADMIN --ad-passwd=$AD_PASS --ad-ip-hostonly "${VM_INT_IP}")
+	--ad-admin=$AD_ADMIN --ad-passwd=$AD_PASS --ad-vm "${winServer}")
 ONTAP_INSTALL_LOG=/tmp/ontap2-install.log
 ONTAP_IF_INFO=/tmp/ontap2-if-info.txt
-bash $dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "${optx[@]}" &> >(tee $ONTAP_INSTALL_LOG)
+bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "${optx[@]}" &> >(tee $ONTAP_INSTALL_LOG)
 
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee $ONTAP_IF_INFO
 
@@ -156,60 +150,34 @@ tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loo
 echo -e "Assert 1: ping windows ad server: $VM_EXT_IP ..." >/dev/tty
 ping -c 4 $VM_EXT_IP || {
 	[[ -n "$VM_INT_IP" ]] && {
-		sshOpt="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-		expect -c "set timeout 120
-		spawn ssh $sshOpt $AD_ADMIN@${VM_INT_IP} ipconfig
-		expect {password:} { send \"${AD_PASSWD}\\r\" }
-		"
+		vm exec $winServer -- ipconfig
 	}
 	echo -e "Alert 1: ping windows ad server($VM_EXT_IP) fail"
 	exit 1
 }
 ################################# Assert ################################
 
-#join host to ad domain(krb5 realm)
-echo -e "join host to $AD_DOMAIN($AD_HOSTNAME) ..."
+#join rhel-client to ad domain(krb5 realm)
+echo -e "join $rhelclnt to $AD_DOMAIN($AD_HOSTNAME) ..."
 netbiosname=host-${HostIPSuffix}
- echo "$netbiosname $HOSTNAME" >/etc/host.aliases
- echo "export HOSTALIASES=/etc/host.aliases" >>/etc/profile
- source /etc/profile
-config-ad-client.sh --addc_ip $VM_INT_IP --addc_ip_ext $VM_EXT_IP -p $AD_PASS --config_krb --enctypes AES --host-netbios $netbiosname
+vm cpto -v $rhelclnt /usr/bin/config-ad-client.sh /usr/bin
+vm exec -v $rhelclnt -- "echo '$netbiosname \$HOSTNAME' >/etc/host.aliases"
+vm exec -v $rhelclnt -- "echo 'export HOSTALIASES=/etc/host.aliases' >>/etc/profile"
+vm exec -v $rhelclnt -- "source /etc/profile;
+	config-ad-client.sh --addc_ip $VM_INT_IP --addc_ip_ext $VM_EXT_IP -p $AD_PASS --config_krb --enctypes AES --host-netbios $netbiosname"
+vm exec -vx $rhelclnt -- hostname -A
+vm exec -vx $rhelclnt -- "hostname -A | grep -w $netbiosname"
 
+#simple nfs krb5 mount test
 ONTAP_ENV_FILE=/tmp/ontap2info.env
 nfsmp_krb5=/mnt/nfsmp-ontap-krb5
 nfsmp_krb5i=/mnt/nfsmp-ontap-krb5i
 nfsmp_krb5p=/mnt/nfsmp-ontap-krb5p
-eval $(< $ONTAP_ENV_FILE)
-clientip=$(getDefaultIp4 mv-host-pub)
-
-################################# Assert ################################
-echo -e "Assert 2: ping windows ad server: $VM_EXT_IP ..." >/dev/tty
-ping -c 4 $VM_EXT_IP || {
-	[[ -n "$VM_INT_IP" ]] && {
-		sshOpt="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-		expect -c "set timeout 120
-		spawn ssh $sshOpt $AD_ADMIN@${VM_INT_IP} ipconfig
-		expect {password:} { send \"${AD_PASSWD}\\r\" }
-		"
-	}
-	echo -e "Alert 2: ping windows ad server($VM_EXT_IP) fail"
-	exit 1
-}
-################################# Assert ################################
-
-echo -e "\nhostname -A ..."
-hostname -A
-
-echo -e "\nhostname $netbiosname  #required by nfs krb5 mount ..."
-hostname $netbiosname  #required by nfs krb5 mount
-
-echo -e "\nnfs mount test ..."
-echo $password | sudo -S bash -c "
-. /usr/lib/bash/libtest
-run mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
-run mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5,clientaddr=$clientip
-run mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i,clientaddr=$clientip
-run mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5p -osec=krb5p,clientaddr=$clientip
-run mount -t nfs4
-run umount -a -t nfs4,nfs
-"
+source "$ONTAP_ENV_FILE"
+vm exec -vx $rhelclnt -- mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
+vm exec -vx $rhelclnt -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5
+vm exec -vx $rhelclnt -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i
+vm exec -vx $rhelclnt -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5p -osec=krb5p
+vm exec -vx $rhelclnt -- mount -t nfs4
+vm exec -vx $rhelclnt -- umount -a -t nfs4,nfs
+vm exec -vx $rhelclnt -- "hostname -A | grep -w $netbiosname"
