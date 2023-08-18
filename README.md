@@ -1,7 +1,8 @@
 ![kiss-vm](https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/Images/kiss-vm.gif)
 
 # Summary
-Here we provide three CLI tools **vm, ns, netns** that used to auto create KVM Guests, Containers and "net ns" on Linux hosts.
+Here we provide three CLI tools **vm, ns, netns** that used to auto create KVM Guests, Containers and "net ns" on Linux hosts. 
+//The prefix **kiss** is taken from the [KISS principle](https://en.wikipedia.org/wiki/KISS_principle)
 
 # Requirements/Dependencies
 ```
