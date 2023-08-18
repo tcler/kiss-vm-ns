@@ -31,9 +31,9 @@ run -debug mkdir -p $win_img_dir $ontap_img_dir
 #kiss-vm should have been installed and initialized
 vm prepare >/dev/null
 
-distro=${distro:-9}
-rhelclnt=rhel-client
-tmux new -d "vm create -n $rhelclnt $distro -p 'vim bind-utils nfs-utils expect' --nointeract --saveimage -f"
+distro=${1:-9}
+clientvm=${2:-rhel-client}
+tmux new -d "vm create -n $clientvm $distro -p 'vim bind-utils nfs-utils expect' --nointeract --saveimage -f"
 
 #-------------------------------------------------------------------------------
 read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')
@@ -157,16 +157,16 @@ ping -c 4 $VM_EXT_IP || {
 }
 ################################# Assert ################################
 
-#join rhel-client to ad domain(krb5 realm)
-echo -e "join $rhelclnt to $AD_DOMAIN($AD_HOSTNAME) ..."
+#join $clientvm to ad domain(krb5 realm)
+echo -e "join $clientvm to $AD_DOMAIN($AD_HOSTNAME) ..."
 netbiosname=host-${HostIPSuffix}
-vm cpto -v $rhelclnt /usr/bin/config-ad-client.sh /usr/bin
-vm exec -v $rhelclnt -- "echo '$netbiosname \$HOSTNAME' >/etc/host.aliases"
-vm exec -v $rhelclnt -- "echo 'export HOSTALIASES=/etc/host.aliases' >>/etc/profile"
-vm exec -v $rhelclnt -- "source /etc/profile;
+vm cpto -v $clientvm /usr/bin/config-ad-client.sh /usr/bin
+vm exec -v $clientvm -- "echo '$netbiosname \$HOSTNAME' >/etc/host.aliases"
+vm exec -v $clientvm -- "echo 'export HOSTALIASES=/etc/host.aliases' >>/etc/profile"
+vm exec -v $clientvm -- "source /etc/profile;
 	config-ad-client.sh --addc_ip $VM_INT_IP --addc_ip_ext $VM_EXT_IP -p $AD_PASS --config_krb --enctypes AES --host-netbios $netbiosname"
-vm exec -vx $rhelclnt -- hostname -A
-vm exec -vx $rhelclnt -- "hostname -A | grep -w $netbiosname"
+vm exec -vx $clientvm -- hostname -A
+vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
 
 #simple nfs krb5 mount test
 ONTAP_ENV_FILE=/tmp/ontap2info.env
@@ -174,10 +174,10 @@ nfsmp_krb5=/mnt/nfsmp-ontap-krb5
 nfsmp_krb5i=/mnt/nfsmp-ontap-krb5i
 nfsmp_krb5p=/mnt/nfsmp-ontap-krb5p
 source "$ONTAP_ENV_FILE"
-vm exec -vx $rhelclnt -- mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
-vm exec -vx $rhelclnt -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5
-vm exec -vx $rhelclnt -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i
-vm exec -vx $rhelclnt -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5p -osec=krb5p
-vm exec -vx $rhelclnt -- mount -t nfs4
-vm exec -vx $rhelclnt -- umount -a -t nfs4,nfs
-vm exec -vx $rhelclnt -- "hostname -A | grep -w $netbiosname"
+vm exec -vx $clientvm -- mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
+vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5
+vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i
+vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5p -osec=krb5p
+vm exec -vx $clientvm -- mount -t nfs4
+vm exec -vx $clientvm -- umount -a -t nfs4,nfs
+vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
