@@ -3782,6 +3782,7 @@ elif [[ "$InstallType" = import ]]; then
 	[[ -f $Imageurl ]] && Imageurl=file://$(readlink -f ${Imageurl})
 	imagefilename=${Imageurl##*/}
 	imagefile=$VMpath/$imagefilename
+	[[ "$DOWNLOAD_ONLY" = yes ]] && imagefile=${DownloadImagePath%/}/${imagefilename}
 
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
 	if [[ $Imageurl != file:///* ]]; then
@@ -4198,6 +4199,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	[[ -f $Isourl ]] && Isourl=file://$(readlink -f ${Isourl})
 	isofilename=${Isourl##*/}
 	isofilepath=$VMpath/$isofilename
+	[[ "$DOWNLOAD_ONLY" = yes ]] && isofilepath=${DownloadImagePath%/}/${isofilename}
 
 	echo "{VM:INFO} downloading iso file of $Distro to $isofilepath ..."
 	if [[ $Isourl != file:///* ]]; then
