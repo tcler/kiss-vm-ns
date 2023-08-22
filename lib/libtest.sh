@@ -96,7 +96,6 @@ getReusableCommandLine() {
 	echo
 }
 
-TEST_LOGPATH=${TEST_LOGPATH:-.}
 _RC=
 run() {
 	#ref: https://superuser.com/questions/927544/run-command-in-detached-tmux-session-and-log-console-output-to-file
