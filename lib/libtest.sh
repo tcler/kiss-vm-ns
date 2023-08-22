@@ -113,7 +113,7 @@ run() {
 		-bash*) _runtype=bash; shift;;
 		-tmux*) _runtype=tmux;
 			[[ $1 = *=* ]] && _tmuxSession=${1#*=}
-			_tmuxSession=${_tmuxSession:-$$-${USER}-$((_TMUX_SID++))}
+			_tmuxSession=${_tmuxSession:-$$-${USER}-s$((_TMUX_SID++))}
 			_tmuxlogf=${TEST_LOGPATH:-/tmp}/run-tmux-${_tmuxSession}.log
 			shift;;
 		-nohu*) _nohup=yes
