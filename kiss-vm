@@ -3130,7 +3130,7 @@ QXL_available() {
 	exit $?
 }
 
-[[ -z "$OnlyGetUrl" ]] && {
+[[ -z "${OnlyGetUrl}" && "${DOWNLOAD_ONLY}" != yes ]] && {
 	# check if VM exist
 	vmname=$(vmname_gen $Distro $VMName)
 	virsh desc $vmname &>/dev/null && {
