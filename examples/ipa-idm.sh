@@ -2,7 +2,8 @@
 #
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
-distro=${1:-9}
+[[ $1 != -* ]] && { distro="$1"; shift; }
+distro=${distro:-9}
 dnsdomain=lab.kissvm.net
 domain=${dnsdomain}
 realm=${domain^^}
@@ -15,7 +16,7 @@ password=redhat123
 stdlog=$(trun vm create $distro --downloadonly |& tee /dev/tty)
 imgf=$(sed -n '${s/^.* //;p}' <<<"$stdlog")
 
-trun -tmux=$$-ipaserv vm create -n $ipaserv $distro --msize 4096 -p firewalld,bind-utils,expect,vim --nointeract -I=$imgf -f
+trun -tmux=$$-ipaserv vm create -n $ipaserv $distro --msize 4096 -p firewalld,bind-utils,expect,vim,tomcat --nointeract -I=$imgf -f
 trun -tmux=$$-ipaclnt vm create -n $ipaclnt $distro --msize 4096 -p bind-utils,vim,nfs-utils --nointeract -I=$imgf -f
 trun                  vm create -n $nfsserv $distro --msize 4096 -p bind-utils,vim,nfs-utils --nointeract -I=$imgf -f
 echo "{INFO} waiting all vm create process finished ..."
