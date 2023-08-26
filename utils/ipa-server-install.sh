@@ -30,6 +30,7 @@ if [[ "$OSV" =~ %rhel ]]; then
 else
 	case $OSV in
 	6|7)
+		yOpt="-q"
 		#https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html-single/linux_domain_identity_authentication_and_policy_guide/index#required-packages
 		#yum install -y $yOpt ipa-server                #IdM server without an integrated DNS
 		yum install -y $yOpt ipa-server ipa-server-dns  #IdM server with an integrated DNS
