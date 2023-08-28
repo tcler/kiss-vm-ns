@@ -30,7 +30,7 @@ vm cpto -v $nfsserv /usr/bin/ipa-client-install.sh /usr/bin/{kinit.sh,make-nfs-s
 vm cpto -v $ipaclnt /usr/bin/ipa-client-install.sh /usr/bin/kinit.sh /usr/bin/.
 trun -tmux=$$-tmp1 vm exec -v $nfsserv -- "systemctl enable NetworkManager; systemctl start NetworkManager; ipa-client-install.sh"
 trun -tmux=$$-tmp2 vm exec -v $ipaclnt -- "systemctl enable NetworkManager; systemctl start NetworkManager; ipa-client-install.sh"
-vm exec -v $ipaserv -- "systemctl enable NetworkManager; systemctl start NetworkManager; ipa-server-install.sh"
+trun               vm exec -v $ipaserv -- "systemctl enable NetworkManager; systemctl start NetworkManager; ipa-server-install.sh"
 echo "{INFO} waiting all vm exec process finished ..."
 while ps axf|grep tmux.new.*-d.vm.exe[c].*.ipa-.*-install.sh; do sleep 10; done
 
