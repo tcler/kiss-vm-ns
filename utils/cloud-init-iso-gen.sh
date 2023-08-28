@@ -137,7 +137,7 @@ runcmd:
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; }
   - sed -ri -e '/^#?(PasswordAuthentication|AllowAgentForwarding|PermitRootLogin) (.*)$/{s//\1 yes/}' -e '/^Inc/s@/\*.conf@/*redhat.conf@' /etc/ssh/sshd_config \$(ls /etc/ssh/sshd_config.d/*) && service sshd restart || systemctl restart sshd
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
-  - command -v yum && yum install -y bash-completion curl wget vim ipcalc $PKGS
+  - command -v yum && yum --setopt=strict=0 install -y bash-completion curl wget vim ipcalc $PKGS
   -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget vim ipcalc $PKGS; }
   -   command -v zypper && zypper in --no-recommends -y bash-completion curl wget vim ipcalc $PKGS
   -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; }
@@ -148,7 +148,7 @@ $(
     chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot
 IntranetCMD
 [[ $Intranet = yes && "$RESTRAINT" = yes ]] && cat <<Restraint
-  - command -v yum && yum install -y restraint-rhts  beakerlib && systemctl start restraintd
+  - command -v yum && yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd
 Restraint
 )
 $(
