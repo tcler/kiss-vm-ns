@@ -47,6 +47,7 @@ topdir=$3
 filetype=$(file -b ${compressedFile})
 _targetdir=$targetdir
 if [[ "$filetype" = Zip* ]]; then
+	dirlist=$(unzip -Z1 "$compressedFile"|grep /$)
 	otopdir=($(unzip -Z1 "$compressedFile" | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
 	[[ -z "$otopdir" ]] && { echo "{error} extract $compressedFile fail" >&2; exit 3; }
 	if [[ "${#otopdir[@]}" -gt 1 ]]; then
@@ -55,6 +56,10 @@ if [[ "$filetype" = Zip* ]]; then
 	else
 		for ((i=0; i<${#folders[@]}; i++)); do folders[$i]=$otopdir/${folders[$i]}; done
 	fi
+	for ((i=0; i<${#folders[@]}; i++)); do
+		[[ "${folders[$i]}" != *\* ]] && grep -Eq "${folders[$i]}/?$" <<<"$dirlist" &&
+			folders[$i]=${folders[$i]%/}/*
+	done
 	echo "{run} unzip '$compressedFile' ${folders[@]} -d '$_targetdir'" >&2
 	unzip "$compressedFile" "${folders[@]}" -d "$_targetdir" &>/dev/null
 else
@@ -80,8 +85,11 @@ fi
 	exit 1
 }
 [[ -n "$topdir" && "${topdir}" != "$otopdir" ]] && {
-	test -d "$_targetdir/$topdir" && { rm -rf "$_targetdir/$topdir"; }
-	_cmd="mv $_targetdir/${otopdir} $_targetdir/$topdir"
+	if test -d "$_targetdir/$topdir"; then
+		_cmd="(cd '$_targetdir/$otopdir' && tar c .) | (cd '$_targetdir/$topdir' && tar xf -); rm -rf '$_targetdir/$otopdir'"
+	else
+		_cmd="mv -T $_targetdir/${otopdir} $_targetdir/$topdir"
+	fi
 	echo "{run} $_cmd" >&2
 	eval $_cmd
 }
