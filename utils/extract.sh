@@ -3,13 +3,16 @@
 ## argparse
 P=${0##*/}
 Usage() {
-	echo "Usage: $P <compressed-file> [targetdir] [topdirname] [--path=dir1 [-p dir2 ...]]"
+	echo "Usage: $P <compressed-file> [targetdir] [topdirname] [-l|--list] [--path=dir1 [-p dir2 ...]]"
 	echo "  e.g: $P /path/to/kernel-src.tar.gz /usr/src kernel-devel"
-	echo "  e.g: $P /path/to/kernel-src.tar.gz /usr/src kernel-doc --path=Documentation/*"
+	echo "  e.g: $P /path/to/kernel-src.tar.gz /usr/src kernel-doc --path=Documentation"
+	echo "  e.g: $P /path/to/linux-2.6.5.tar.bz2 -l"
+	echo "  e.g: $P /path/to/linux-6.5.tar.xz -l -p '*loongarch/boot'"
 }
-_at=`getopt -o hp: \
+_at=`getopt -o hp:l \
 	--long help \
 	--long path: \
+	--long list \
     -a -n '$P' -- "$@"`
 eval set -- "$_at"
 
@@ -18,6 +21,7 @@ while true; do
 	case "$1" in
 	-h|--help)      Usage; shift 1; exit 0;;
 	-p|--path)      folders+=("$2"); shift 2;;
+	-l|--list)      list=yes; shift 1;;
 	--) shift; break;;
 	esac
 done
@@ -60,6 +64,7 @@ if [[ "$filetype" = Zip* ]]; then
 		[[ "${folders[$i]}" != *\* ]] && grep -Eq "${folders[$i]}/?$" <<<"$dirlist" &&
 			folders[$i]=${folders[$i]%/}/*
 	done
+	[[ "$list" = yes ]] && { unzip -Z1 "$compressedFile" "${folders[@]}"; exit; }
 	echo "{run} unzip '$compressedFile' ${folders[@]} -d '$_targetdir'" >&2
 	unzip "$compressedFile" "${folders[@]}" -d "$_targetdir" &>/dev/null
 else
@@ -69,6 +74,7 @@ else
 		(XY*) xtype=J;;
 		(*) xtype=a;;
 	esac
+	#dirlist=$(tar taf ${compressedFile}|grep /$)
 	otopdir=($(tar taf ${compressedFile} | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
 	[[ -z "$otopdir" ]] && { echo "{error} extract $compressedFile fail" >&2; exit 3; }
 	if [[ "${#otopdir[@]}" -gt 1 ]]; then
@@ -77,6 +83,7 @@ else
 	else
 		for ((i=0; i<${#folders[@]}; i++)); do folders[$i]=$otopdir/${folders[$i]}; done
 	fi
+	[[ "$list" = yes ]] && { tar taf ${compressedFile} "${folders[@]}"; exit; }
 	echo "{run} tar -C '$_targetdir' -${xtype}xf '${compressedFile}' ${folders[@]}" >&2
 	tar -C "$_targetdir" -${xtype}xf "${compressedFile}" "${folders[@]}"   #--strip-components=1
 fi
