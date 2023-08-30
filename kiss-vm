@@ -3827,11 +3827,11 @@ elif [[ "$InstallType" = import ]]; then
 		}
 		[[ "$DEBUG" = yes ]] && DEBUG_OPT=--debug
 		if [[ "$NO_SSHKEY" = yes ]]; then
-			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" -p "$PKGS" \
-				$DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS"
+			cloud-init-iso-gen.sh -d $Distro $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" \
+				-p "$PKGS" $DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS"
 		else
-			cloud-init-iso-gen.sh $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" -p "$PKGS" \
-				$DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS" \
+			cloud-init-iso-gen.sh -d $Distro $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" \
+				-p "$PKGS" $DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS" \
 				--sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub
 		fi
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom$iso_bus_type"

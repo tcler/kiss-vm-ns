@@ -29,7 +29,7 @@ Usage() {
 	EOF
 }
 
-_at=`getopt -o hp:b:D \
+_at=`getopt -o hp:b:Dd: \
 	--long help \
 	--long debug \
 	--long hostname: \
@@ -45,6 +45,7 @@ eval set -- "$_at"
 while true; do
 	case "$1" in
 	-h|--help) Usage; shift 1; exit 0;;
+	-d)         DISTRO="$2"; shift 2;;
 	-D|--debug) DEBUG=yes; shift 1;;
 	--hostname) HostName="$2"; shift 2;;
 	--repo) Repos+=($2); shift 2;;
@@ -142,6 +143,7 @@ runcmd:
   -   command -v zypper && zypper in --no-recommends -y bash-completion curl wget vim ipcalc $PKGS
   -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; }
   -   command -v pacman && pacman -S --needed --noconfirm bash-completion curl wget vim ipcalc $PKGS
+  - echo "export DISTRO=$Distro DISTRO_BUILD=$Distro RSTRNT_OSDISTRO=$Distro" >>/etc/bashrc
 $(
 [[ $Intranet = yes ]] && cat <<IntranetCMD
   - command -v yum && curl -L -k -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&

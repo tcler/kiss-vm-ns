@@ -201,6 +201,8 @@ KSF
 [[ -n "$Post" && -f "$Post" ]] && {
 	cat $Post
 }
+
+echo "export DISTRO=$Distro DISTRO_BUILD=$Distro RSTRNT_OSDISTRO=$Distro" >>/etc/bashrc
 echo -e "%end\n"
 
 case $Distro in
