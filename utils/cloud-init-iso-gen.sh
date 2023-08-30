@@ -149,6 +149,8 @@ $(
 IntranetCMD
 [[ $Intranet = yes && "$RESTRAINT" = yes ]] && cat <<Restraint
   - command -v yum && yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd
+  - curl -L -k -m 30 -o /usr/bin/taskfetch.sh "$bkrClientImprovedUrl/utils/taskfetch.sh" && chmod +x /usr/bin/taskfetch.sh
+  - taskfetch.sh --install-deps
 Restraint
 )
 $(
