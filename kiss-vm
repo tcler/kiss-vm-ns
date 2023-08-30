@@ -2083,6 +2083,8 @@ Usage() {
 	  --restraint    #enable restraint and start restraintd by default. only for rh-intranet
 	  --fetch-task </task1/path[,/task2/path]>
 			 #fetch task(test case) in guest, only for CentOS/RHEL/Fedora
+	  --run-task </task1/path>
+			 #fetch and run task(test case) in guest
 	  --nosshkey     #don't inject sshkey
 	  --debug        #debug mode
 	  --vncwait, --vncwait-after-install <pattern,send,timeout>
@@ -2391,6 +2393,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long repo: \
 	--long restraint \
 	--long fetch-task: \
+	--long run-task: \
 	--long nosshkey \
 	--long getsc --long vncgetsc \
 	--long invert \
@@ -2535,6 +2538,7 @@ while true; do
 	--repo)          _REPO_OPTS+=" --repo $2"; shift 2;;
 	--restraint)     export RESTRAINT=yes; INTERACT="no"; shift 1;;
 	--fetch-task)    export RESTRAINT=yes; INTERACT="no"; TASK+=(${2//,/ }); shift 2;;
+	--run-task)      export RESTRAINT=yes; INTERACT="no"; TASK+=(${2//,/ }); RUN_TASK=yes; shift 2;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
 	--invert)        INVERT=yes; shift 1;;
@@ -4528,7 +4532,7 @@ fedora*|rhel*|centos*|rocky*|anolis*)
 	done
 
 	[[ ${#TASK[@]} -gt 0 ]] && {
-		vm exec -v $vmname -- taskfetch.sh "${TASK[@]}"
+		vm exec -v $vmname -- taskfetch.sh "${TASK[@]}" ${RUN_TASK:+--run}
 	}
 esac
 
