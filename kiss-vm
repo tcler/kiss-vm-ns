@@ -4104,11 +4104,6 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 			echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
 			[[ "$(vmstat $vmname)" = running* ]] || { vm start $vmname; }
 
-			[[ "$RESTRAINT" = yes ]] && {
-				_pkglist="restraint-rhts  beakerlib"
-				vm exec -v $vmname -- bash -c "rpm -q $_pkglist || { yum --setopt=strict=0 install -y $_pkglist && systemctl start restraintd; }; systemctl status restraintd"
-			}
-
 			[[ -f "$cloudinitiso" && "$iso_bus_type" != *=usb ]] && {
 				echo -e "\n{VM:INFO} eject iso ${cloudinitiso##*/} from $vmname"
 				virsh change-media $vmname $cloudinitiso --eject 2>/dev/null
