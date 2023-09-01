@@ -130,7 +130,8 @@ extract.sh $tarfpath $HOME/Downloads $dirname
 
 script=ontap-simulator-two-node.sh
 eval $(< /tmp/${winServer}.env)
-NTP_SERVER=10.5.26.10  #fixme
+clockServer=clock.corp.redhat.com  #fixme
+NTP_SERVER=$(host $clockServer|sort -R|sed -n '1{s/.* //;p;q}')
 DNS_DOMAIN=${AD_DOMAIN}
 DNS_ADDR=${VM_EXT_IP}
 AD_HOSTNAME=${AD_FQDN}
