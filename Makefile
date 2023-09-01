@@ -34,10 +34,14 @@ i in ins inst install: _install_macos_kvm_utils
 	@command -v zypper >/dev/null && $(SUDO) zypper in --no-recommends -y $(required_pkgs) 2>/dev/null || :
 	$(SUDO) cp -r AnswerFileTemplates /usr/share/.
 	$(SUDO) cp bash-completion/* $(completion_path)/.
+	test -f /usr/bin/egrep && sed -ri '/^cmd=|^echo/d' /usr/bin/egrep || { echo 'exec grep -E "$$@"' >/usr/bin/egrep; chmod +x /usr/bin/egrep; }
 	@$(SUDO) curl -Ls http://api.github.com/repos/tcler/$(_repon)/commits/master -o $(_confdir)/version
 
-p pu pull u up update:
+u up update:
 	https_proxy=$(HTTP_PROXY) git pull --rebase || :
+	@echo
+p pu push:
+	https_proxy=$(HTTP_PROXY) git push origin master || :
 	@echo
 
 _install_macos_kvm_utils:
