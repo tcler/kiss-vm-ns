@@ -1722,8 +1722,9 @@ is_rh_intranet() {
 	is_available_url $iurl 
 }
 
-# functions that work in Intranet
+# env and functions that work in Intranet
 if [[ $Intranet = yes ]]; then
+	export RESTRAINT=yes
 	install_distro_compose() {
 		local _file=distro-compose
 		command -v $_file >/dev/null || {
@@ -2080,7 +2081,7 @@ Usage() {
 	                 #`e.g: --postrepo=beaker-tasks:http://beaker.engineering.fedora.com/rpms
 	  --repo <name:url>
 	                 #add dnf/yum <repo> before install, only for CentOS/RHEL/Fedora
-	  --restraint    #enable restraint and start restraintd by default. only for rh-intranet
+	  --taskfetch    #install taskfetch tools by default
 	  --fetch-task </task1/path[,/task2/path]>
 	                 #fetch task(test case) in guest, only for CentOS/RHEL/Fedora
 	  --run-task </task1/path>
@@ -2391,7 +2392,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long fips \
 	--long postrepo: \
 	--long repo: \
-	--long restraint \
+	--long taskfetch \
 	--long fetch-task: \
 	--long run-task: \
 	--long nosshkey \
@@ -2468,8 +2469,8 @@ while true; do
 	--ks)      KSPath=$2; InstallType=location; shift 2;;
 	--ks-pkgs)        KS_PKGS="$2"; InstallType=location; shift 2;;
 	--ks-append)      KS_APPEND+=$'\n'"$2"; InstallType=location; shift 2;;
-	--ks-post)        KS_APPEND+=$'\n%post\n'"$2"$'\n%end'; InstallType=location; shift 2;;
-	--ks-pre)         KS_APPEND+=$'\n%pre\n'"$2"$'\n%end'; InstallType=location; shift 2;;
+	--ks-post)        KS_APPEND+=$'\n%post --interpreter=/usr/bin/bash\n'"$2"$'\n%end'; InstallType=location; shift 2;;
+	--ks-pre)         KS_APPEND+=$'\n%pre --interpreter=/usr/bin/bash\n'"$2"$'\n%end'; InstallType=location; shift 2;;
 	--ks-only-use)    KS_OnlyUse="$2"; InstallType=location; shift 2;;
 	--kernel-opts)    KOPTS="$2"; shift 2;;
 	--rm)      RM=yes; shift 1;;
@@ -2536,9 +2537,9 @@ while true; do
 	--fips)          fips=yes; shift 1;;
 	--postrepo)      POST_REPOS+=("$2"); shift 2;;
 	--repo)          _REPO_OPTS+=" --repo $2"; shift 2;;
-	--restraint)     export RESTRAINT=yes; INTERACT="no"; shift 1;;
-	--fetch-task)    export RESTRAINT=yes; INTERACT="no"; TASK+=(${2//,/ }); shift 2;;
-	--run-task)      export RESTRAINT=yes; INTERACT="no"; TASK+=(${2//,/ }); RUN_TASK=yes; shift 2;;
+	--taskfetch)     export TASK_FETCH=yes; INTERACT="no"; shift 1;;
+	--fetch-task)    export TASK_FETCH=yes; INTERACT="no"; TASK+=(${2//,/ }); shift 2;;
+	--run-task)      export TASK_FETCH=yes; INTERACT="no"; TASK+=(${2//,/ }); RUN_TASK=yes; shift 2;;
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
 	--invert)        INVERT=yes; shift 1;;
@@ -3564,22 +3565,32 @@ if [[ "$InstallType" = location ]]; then
 		test -f /etc/hostname && echo ${vmhostname}.$VM_DOMAIN >/etc/hostname || echo HOSTNAME=${vmhostname}.$VM_DOMAIN >>/etc/sysconfig/network
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install pkgs ${PKGS} ..."
-		yum --setopt=strict=0 install -y wget ${PKGS} ipcalc 2>/dev/null
+		yum --setopt=strict=0 install -y wget tmux ${PKGS} ipcalc 2>/dev/null
 
 		END
-		[[ $Intranet = yes ]] && cat <<-END >>$postscript
-		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] brew install $BPKGS ..."
-		curl -o /usr/bin/brewinstall.sh -k -Ls $bkrClientImprovedUrl/utils/brewinstall.sh && chmod +x /usr/bin/brewinstall.sh
-		brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot
+		if [[ $Intranet = yes ]]; then
+		cat <<-END >>$postscript
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] update ca trust ..."
+		(cd /etc/pki/ca-trust/source/anchors && curl -Ls --remote-name-all https://password.corp.redhat.com/{RH-IT-Root-CA.crt,legacy.crt} && update-ca-trust)
 
-		END
-		[[ $Intranet = yes && "$RESTRAINT" = yes ]] && cat <<-END >>$postscript
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] getting taskfetch tools and brew-install $BPKGS ..."
+		(cd /usr/bin && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/utils/{brewinstall.sh,taskfetch.sh} && chmod +x brewinstall.sh taskfetch.sh)
+		taskfetch.sh --install-deps; brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot
+
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] systemctl start restraintd ..."
 		yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd
-		curl -o /usr/bin/taskfetch.sh -k -Ls $bkrClientImprovedUrl/utils/taskfetch.sh && chmod +x /usr/bin/taskfetch.sh
+		_rpath=share/restraint/plugins/task_run.d
+		(cd /usr/$_rpath && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/$_rpath/{25_environment,27_task_require} && chmod a+x *)
+
+		END
+		elif [[ "$TASK_FETCH" = yes ]]; then
+		cat <<-END >>$postscript
+		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] getting taskfetch tools ..."
+		(cd /usr/bin && curl -k -Ls -O $bkrClientImprovedUrl/utils/taskfetch.sh && chmod +x taskfetch.sh)
 		taskfetch.sh --install-deps
 
 		END
+		fi
 
 		[[ "$fips" = yes ]] && cat <<-END >>$postscript
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] enable fips ..."

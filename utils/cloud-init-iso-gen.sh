@@ -145,15 +145,22 @@ runcmd:
   -   command -v pacman && pacman -S --needed --noconfirm bash-completion curl wget vim ipcalc $PKGS
   - echo "export DISTRO=$Distro DISTRO_BUILD=$Distro RSTRNT_OSDISTRO=$Distro" >>/etc/bashrc
 $(
-[[ $Intranet = yes ]] && cat <<IntranetCMD
-  - command -v yum && curl -L -k -m 30 -o /usr/bin/brewinstall.sh "$bkrClientImprovedUrl/utils/brewinstall.sh" &&
-    chmod +x /usr/bin/brewinstall.sh && brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot
+if [[ $Intranet = yes ]]; then
+cat <<IntranetCMD
+  - (cd /etc/pki/ca-trust/source/anchors && curl -Ls --remote-name-all https://password.corp.redhat.com/{RH-IT-Root-CA.crt,legacy.crt} && update-ca-trust)
+  - command -v yum && (cd /usr/bin && curl -L -k -m 30 --remote-name-all $bkrClientImprovedUrl/utils/{brewinstall.sh,taskfetch.sh} && chmod +x brewinstall.sh taskfetch.sh) &&
+    { taskfetch.sh --install-deps; brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot; }
+
+  - _rpath=share/restraint/plugins/task_run.d
+  - command -v yum && { yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd;
+    (cd /usr/$_rpath && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/$_rpath/{25_environment,27_task_require} && chmod a+x *); }
 IntranetCMD
-[[ $Intranet = yes && "$RESTRAINT" = yes ]] && cat <<Restraint
-  - command -v yum && yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd
-  - curl -L -k -m 30 -o /usr/bin/taskfetch.sh "$bkrClientImprovedUrl/utils/taskfetch.sh" && chmod +x /usr/bin/taskfetch.sh
-  - taskfetch.sh --install-deps
-Restraint
+elif [[ "$TASK_FETCH" = yes ]]; then
+cat <<TaskFetch
+  - command -v yum && (cd /usr/bin && curl -L -k -m 30 -O "$bkrClientImprovedUrl/utils/taskfetch.sh" && chmod +x taskfetch.sh) &&
+    { taskfetch.sh --install-deps; }
+TaskFetch
+fi
 )
 $(
 [[ "$fips" = yes ]] && cat <<FIPS

@@ -149,7 +149,7 @@ COMM
 
 echo "$APPEND"
 
-echo -e "\n%post"
+echo -e "\n%post --interpreter=/usr/bin/bash"
 for repo in "${Repos[@]}"; do
 	if [[ "$repo" =~ ^[^:]+:(https|http|ftp|file):// ]]; then
 		read name url _ <<<"${repo/:/ }"
@@ -173,7 +173,7 @@ done
 echo -e "%end\n"
 
 # post script
-echo -e "%post --log=/root/extra-ks-post.log"
+echo -e "%post --interpreter=/usr/bin/bash --log=/root/extra-ks-post.log"
 cat <<'KSF'
 USER=$(id -un)
 echo "[$USER@${HOSTNAME} ${HOME} $(pwd)] join wheel user to sudoers ..."
