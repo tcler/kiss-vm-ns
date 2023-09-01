@@ -84,8 +84,9 @@ else
 		for ((i=0; i<${#folders[@]}; i++)); do folders[$i]=$otopdir/${folders[$i]}; done
 	fi
 	[[ "$list" = yes ]] && { tar taf ${compressedFile} "${folders[@]}"; exit; }
-	echo "{run} tar -C '$_targetdir' -${xtype}xf '${compressedFile}' ${folders[@]}" >&2
-	tar -C "$_targetdir" -${xtype}xf "${compressedFile}" "${folders[@]}"   #--strip-components=1
+	man tar|grep -q '^ *timestamp' && warnOpt=--warning=no-timestamp
+	echo "{run} tar -C '$_targetdir' -${xtype}xf '${compressedFile}' ${folders[@]} $warnOpt" >&2
+	tar -C "$_targetdir" -${xtype}xf "${compressedFile}" "${folders[@]}" $warnOpt   #--strip-components=1
 fi
 [[ -d "$_targetdir/${otopdir}" ]] || {
 	echo "{Error} extract to '$_targetdir' fail, please theck permission" >&2
