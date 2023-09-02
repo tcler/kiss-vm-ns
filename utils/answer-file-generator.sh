@@ -36,6 +36,8 @@ Options for windows anwserfile:
 		#e.g: --path /path/to/ansf-usb.image
   --wim-index <wim image index>
   --product-key #Prodcut key for windows activation.
+  --time-server <clock/ntp server hostname/address>
+		#Specify the clock/ntp server
 
   --ad-forest-level <Default|Win2008|Win2008R2|Win2012|Win2012R2|WinThreshold>
 		#Specify active directory forest level.
@@ -166,6 +168,7 @@ ARGS=$(getopt -o hu:p: \
 	--long password: \
 	--long wim-index: \
 	--long product-key: \
+	--long time-server: \
 	--long hostname: \
 	--long locale: \
 	--long domain: \
@@ -197,6 +200,7 @@ while true; do
 	-p|password) ADMINPASSWORD="$2"; shift 2;;
 	--wim-index) WIM_IMAGE_INDEX="$2"; shift 2;;
 	--product-key) PRODUCT_KEY="$2"; shift 2;;
+	--time-server) TIME_SERVER="$2"; shift 2;;
 	--hostname) GUEST_HOSTNAME="$2"; shift 2;;
 	--locale) LOCALE="$2"; shift 2;;
 	--domain) DOMAIN="$2"; shift 2;;
@@ -369,6 +373,7 @@ process_ansf() {
 		-e "s/@DOMAIN_NETBIOS_NAME@/$DOMAIN_NETBIOS_NAME/g" \
 		-e "s/@FQDN@/$FQDN/g" \
 		-e "s/@PRODUCT_KEY@/$PRODUCT_KEY/g" \
+		-e "s/@TIME_SERVER@/${TIME_SERVER:-time.windows.com}/g" \
 		-e "s/@WIM_IMAGE_INDEX@/$WIM_IMAGE_INDEX/g" \
 		-e "s/@ANSF_DRIVE_LETTER@/$ANSF_DRIVE_LETTER/g" \
 		-e "s/@INSTALL_COMPLETE_FILE@/$INSTALL_COMPLETE_FILE/g" \

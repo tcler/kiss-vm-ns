@@ -12,6 +12,21 @@ Function Out-Host {
 	echo "$str"
 }
 
+Function Sync-Time {
+	$clockServer = $args[0]
+	w32tm /config /manualpeerlist:$clockServer /syncfromflags:manual /reliable:yes /update
+	net stop w32time
+	net start w32time
+	for ($loop=1; $loop -le 32; $loop++) {
+		$tmresync = w32tm /resync
+		if ($tmresync | Select-String -pattern "successfully." ) {
+			Out-Host "$tmresync"; break
+		} else {
+			Start-Sleep 1
+		}
+	}
+}
+
 Function init-extra-disks {
 	if ([Environment]::OSVersion.Version -lt (new-object 'Version' 6,2)) {
 		$dlist = @("list disk"|diskpart|Select-String -Pattern "Disk (\d+) .*GB *$")
@@ -285,17 +300,7 @@ switch($Stage) {
 	"afterRootCASetup" {
 		# Time synchronization
 		Out-Host "`n==> sync time"
-		w32tm /config /manualpeerlist:clock.redhat.com /syncfromflags:manual /reliable:yes /update
-		net stop w32time
-		net start w32time
-		while ($true) {
-			$tmresync = w32tm /resync
-			if ($tmresync | Select-String -pattern "successfully." ) {
-				Out-Host "$tmresync"; break
-			} else {
-				Start-Sleep 1
-			}
-		}
+		Sync-Time @TIME_SERVER@
 
 		# Add KDC
 		Out-Host "`n==> Add KDC"

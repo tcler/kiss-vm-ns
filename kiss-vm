@@ -1721,6 +1721,7 @@ is_rh_intranet() {
 	local iurl=http://$downhostname
 	is_available_url $iurl 
 }
+is_rh_intranet || Intranet=no
 
 # env and functions that work in Intranet
 if [[ $Intranet = yes ]]; then
@@ -1999,6 +2000,9 @@ Usage() {
 	  -b, --brewinstall <args>
 	                 #pkgs in brew system or specified by url, install by internal brewinstall.sh
 	                  `-> just could be used in Intranet
+	  --time-server, --clock-server <clock/time/ntp server>
+	                 #see also: https://gist.github.com/mutin-sa/eea1c396b1e610a2da1e5550d94b0453
+	                  `-> now only for Windows Guest
 	  -g, --genimage  #generate VM image, after install shutdown VM and generate new qcow2.xz file
 	  --rm           #like --rm option of docker/podman, remove VM after quit from console
 	  --nocloud, --nocloud-init
@@ -2356,6 +2360,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long xzopt: \
 	--long brewinstall: \
 	--long pkginstall: \
+	--long time-server: --long clock-server: \
 	--long geturl \
 	--long getvmname \
 	--long nocloud-init --long nocloud \
@@ -2482,6 +2487,7 @@ while true; do
 	--getvmname)      OnlyGetVMName=yes; shift 1;;
 	-b|--brewinstall) BPKGS+=" ${2}"; shift 2;;
 	-p|--pkginstall)  PKGS+=" ${2//,/ }"; shift 2;;
+	--time-server|--clock-server) TIME_SERVER="${2}"; shift 2;;
 	--osv|--os-variant) VM_OS_VARIANT="$2"; shift 2;;
 	--timeo)         VirtInstallTimeOut="$2"; shift 2;;
 	--nocloud*)      NO_CLOUD_INIT="yes"; shift 1;;
@@ -2966,12 +2972,20 @@ esac
 declare -A distroInfo
 dbfile=${_confdir}/distro-db.bash
 owndbfile=$perConfDir/distro-db.bash
-if is_rh_intranet; then
+if [[ $Intranet = yes ]]; then
 	#timeout 2 hostname -A|grep -q '\.pek2\.' && downhostname=${downhostname/devel/eng.pek2}
 	IntranetBaseUrl=http://$downhostname/qa/rhts/lookaside
+
+	export TIME_SERVER=${TIME_SERVER:-clock.redhat.com}
 else
-	Intranet=no
 	baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
+
+	#https://gist.github.com/mutin-sa/eea1c396b1e610a2da1e5550d94b0453
+	export TIME_SERVER=${TIME_SERVER:-3.fedora.pool.ntp.org}
+	#export TIME_SERVER=${TIME_SERVER:-time.windows.com}
+	#export TIME_SERVER=${TIME_SERVER:-0.fedora.pool.ntp.org}
+	#export TIME_SERVER=${TIME_SERVER:-1.fedora.pool.ntp.org}
+	#export TIME_SERVER=${TIME_SERVER:-2.fedora.pool.ntp.org}
 fi
 
 [[ -f $dbfile ]] && {
@@ -4295,6 +4309,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 			-u $WIN_USER -p "$WIN_PASS" "${WIN_OpenSSH_OPT[@]}" "${WIN_VirtioDrv_OPT[@]}" \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
 			"${WIN_STATIC_IP_OPTS[@]}" "${WIN_MAC_OPTS[@]}" \
+			--time-server=${TIME_SERVER} \
 			--temp=${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image $NO_VIRT_TOOLS_OPT;;
 		cifs-nfs)
 		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
@@ -4303,6 +4318,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 			${WIN_KDC_OPT} ${WIN_DFS_TARGET_OPT} \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
 			"${WIN_STATIC_IP_OPTS[@]}" "${WIN_MAC_OPTS[@]}" \
+			--time-server=${TIME_SERVER} \
 			--temp=${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image $NO_VIRT_TOOLS_OPT;;
 		addsdomain|addsforest)
 		    run -debug answer-file-generator.sh $WIN_HOSTNAME_OPT $WIN_DOMAIN_OPT $WIN_KEY_OPT \
@@ -4312,6 +4328,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 			${WIN_AD_DOMAIN_LEVEL_OPT} ${WIN_AD_FOREST_LEVEL_OPT} \
 			"${WIN_DL_URL_OPTS[@]}" "${WIN_RUN_CMD_OPTS[@]}" "${WIN_RUN_POST_CMD_OPTS[@]}" \
 			"${WIN_STATIC_IP_OPTS[@]}" "${WIN_MAC_OPTS[@]}" \
+			--time-server=${TIME_SERVER} \
 			--temp=${WIN_TEMPLATE} --path=$VMpath/ansf-usb.image $NO_VIRT_TOOLS_OPT;;
 		*)
 		    echo "{ERROR} unsupported answerfile template (${WIN_TEMPLATE})" >&2

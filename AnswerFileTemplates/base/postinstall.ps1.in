@@ -16,6 +16,21 @@ Function Out-Host {
 	echo "$str"
 }
 
+Function Sync-Time {
+	$clockServer = $args[0]
+	w32tm /config /manualpeerlist:$clockServer /syncfromflags:manual /reliable:yes /update
+	net stop w32time
+	net start w32time
+	for ($loop=1; $loop -le 32; $loop++) {
+		$tmresync = w32tm /resync
+		if ($tmresync | Select-String -pattern "successfully." ) {
+			Out-Host "$tmresync"; break
+		} else {
+			Start-Sleep 1
+		}
+	}
+}
+
 Function virtio-win-install() {
 	param([string]$AnsfDrvLetter)
 	$msifile, $exefile, $drvDir = "", "", ""
@@ -340,6 +355,9 @@ foreach ($dir in ("$ansfDriveLetter")) {
 		Copy-Item -Path $LogPath -Recurse -Destination $dir\
 	}
 }
+
+Out-Host "`n==> sync time"
+Sync-Time @TIME_SERVER@
 
 taskkill /F /IM explorer.exe
 explorer
