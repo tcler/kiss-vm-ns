@@ -197,7 +197,7 @@ switch($Stage) {
 		}
 
 		# change address of EXT NIC from DHCP to STATIC
-		#while ($true) {
+		$loop=1
 		while (Get-Command Get-NetIPAddress -errorAction SilentlyContinue) {
 			$oldExtAddrs = @(Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NicExt.InterfaceIndex)
 			if ($null -ne $oldExtAddrs -and $null -ne $oldExtAddrs[0].IPAddress `
@@ -208,6 +208,11 @@ switch($Stage) {
 				Out-Host "`n---> renew IP on ext NIC: $($NicExt.ifAlias)"
 				ipconfig /release $NicExt.ifAlias
 				ipconfig /renew $NicExt.ifAlias
+			}
+			$loop++
+			if ($loop -le 32) {
+				Out-Host "`n---> ERROR: can not get ip, please check the ext NIC configuration!"
+				break
 			}
 		}
 		$extStaticIp = $oldExtAddrs[0].IPAddress.Trim()
