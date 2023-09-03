@@ -15,6 +15,9 @@ getDefaultIp4() {
 		awk '/inet .* (global|host lo)/{match($0,"inet ([0-9.]+)",M); print M[1]}')
 	echo "$ret"
 }
+timeServer=clock.corp.redhat.com
+host $timeServer|grep -q not.found: && timeServer=2.fedora.pool.ntp.org
+TIME_SERVER=$timeServer
 
 #-------------------------------------------------------------------------------
 g_win_img_dir=/usr/share/windows-images
@@ -33,7 +36,7 @@ vm prepare >/dev/null
 
 distro=${1:-9}
 clientvm=${2:-rhel-client}
-tmux new -d "vm create -n $clientvm $distro -p 'vim bind-utils nfs-utils expect' --nointeract --saveimage -f"
+trun -tmux=- vm create -n $clientvm $distro -p 'vim bind-utils nfs-utils expect' --nointeract --saveimage -f
 
 #-------------------------------------------------------------------------------
 read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')
@@ -72,7 +75,7 @@ ADDomain=test${HostIPSuffix}.kissvm.net
 ADPasswd=Sesame~0pen
 vm create Windows-server -n ${winServer} -C $win_img_dir/$win_img_name --osv=$os_variant --dsize 50 \
 	--win-auto=cifs-nfs --win-enable-kdc --win-openssh=$win_img_dir/$openssh_file \
-	--win-domain=${ADDomain} --win-passwd=${ADPasswd} --wait --force
+	--win-domain=${ADDomain} --win-passwd=${ADPasswd} --time-server=$TIME_SERVER --wait --force
 eval $(< /tmp/${winServer}.env)
 [[ -z "$VM_INT_IP" || -z "$VM_EXT_IP" ]] && {
 	echo "{ERROR} VM_INT_IP($VM_INT_IP) or VM_EXT_IP($VM_EXT_IP) of Windows VM is nil"
@@ -130,15 +133,13 @@ extract.sh $tarfpath $HOME/Downloads $dirname
 
 script=ontap-simulator-two-node.sh
 eval $(< /tmp/${winServer}.env)
-clockServer=clock.corp.redhat.com  #fixme
-NTP_SERVER=$(host $clockServer|sort -R|sed -n '1{s/.* //;p;q}')
 DNS_DOMAIN=${AD_DOMAIN}
 DNS_ADDR=${VM_EXT_IP}
 AD_HOSTNAME=${AD_FQDN}
 AD_IP=${VM_EXT_IP}
 AD_ADMIN=${ADMINUSER}
 AD_PASS=${ADMINPASSWORD}
-optx=(--ntp-server=$NTP_SERVER --dnsdomains=$DNS_DOMAIN --dnsaddrs=$DNS_ADDR \
+optx=(--time-server=$TIME_SERVER --dnsdomains=$DNS_DOMAIN --dnsaddrs=$DNS_ADDR \
 	--ad-hostname=$AD_HOSTNAME --ad-ip=$AD_IP \
 	--ad-admin=$AD_ADMIN --ad-passwd=$AD_PASS --ad-vm "${winServer}")
 ONTAP_INSTALL_LOG=/tmp/ontap2-install.log
@@ -149,11 +150,11 @@ tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loo
 
 ################################# Assert ################################
 echo -e "Assert 1: ping windows ad server: $VM_EXT_IP ..." >/dev/tty
-ping -c 4 $VM_EXT_IP || {
+vm exec -v $clientvm -- ping -c 4 $VM_EXT_IP || {
 	[[ -n "$VM_INT_IP" ]] && {
 		vm exec $winServer -- ipconfig
 	}
-	echo -e "Alert 1: ping windows ad server($VM_EXT_IP) fail"
+	echo -e "Alert 1: ping windows ad server($VM_EXT_IP) from client fail"
 	exit 1
 }
 ################################# Assert ################################
@@ -175,6 +176,7 @@ nfsmp_krb5=/mnt/nfsmp-ontap-krb5
 nfsmp_krb5i=/mnt/nfsmp-ontap-krb5i
 nfsmp_krb5p=/mnt/nfsmp-ontap-krb5p
 source "$ONTAP_ENV_FILE"
+vm exec -vx $clientvm -- ping -c 4 $NETAPP_NAS_HOSTNAME
 vm exec -vx $clientvm -- mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
 vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5
 vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i
