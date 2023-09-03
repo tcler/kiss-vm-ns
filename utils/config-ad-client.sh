@@ -369,8 +369,8 @@ fi
 
 infoecho "SUCCESS - AD Integration to Domain ${AD_DS_NAME} successfully."
 
-infoecho "start rpc-gssd service ..."
-systemctl start rpc-gssd
+infoecho "start nfs client services ..."
+systemctl restart nfs-client.target gssproxy.service rpc-statd.service rpc-gssd.service
 
 #nfs krb5 mount requires hostname == netbios_name
 infoecho "hostname $HOST_NETBIOS ..."
@@ -474,5 +474,4 @@ if [ "$config_krb" == "yes" ]; then
 
 	infoecho "Configure Secure NFS Client complete."
 fi
-
 
