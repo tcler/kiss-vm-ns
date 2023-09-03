@@ -77,10 +77,16 @@ vm create Windows-server -n ${winServer} -C $win_img_dir/$win_img_name --osv=$os
 	--win-auto=cifs-nfs --win-enable-kdc --win-openssh=$win_img_dir/$openssh_file \
 	--win-domain=${ADDomain} --win-passwd=${ADPasswd} --time-server=$TIME_SERVER --wait --force
 eval $(< /tmp/${winServer}.env)
-[[ -z "$VM_INT_IP" || -z "$VM_EXT_IP" ]] && {
-	echo "{ERROR} VM_INT_IP($VM_INT_IP) or VM_EXT_IP($VM_EXT_IP) of Windows VM is nil"
+if [[ -z "$VM_INT_IP" && -z "$VM_EXT_IP" ]]; then
+	echo "{ERROR} both VM_INT_IP($VM_INT_IP) and VM_EXT_IP($VM_EXT_IP) of Windows VM is nil"
 	exit 1
-}
+elif [[ -z "$VM_INT_IP" ]]; then
+	echo "{ERROR} VM_INT_IP($VM_INT_IP) of Windows VM is nil, something is wrong.."
+	exit 1
+else
+	echo "{WARN} VM_EXT_IP($VM_EXT_IP) of Windows VM is nil"
+fi
+
 fi
 
 #-------------------------------------------------------------------------------
@@ -134,9 +140,9 @@ extract.sh $tarfpath $HOME/Downloads $dirname
 script=ontap-simulator-two-node.sh
 eval $(< /tmp/${winServer}.env)
 DNS_DOMAIN=${AD_DOMAIN}
-DNS_ADDR=${VM_EXT_IP}
+DNS_ADDR=${VM_EXT_IP:-$VM_INT_IP}
 AD_HOSTNAME=${AD_FQDN}
-AD_IP=${VM_EXT_IP}
+AD_IP=${VM_EXT_IP:-$VM_INT_IP}
 AD_ADMIN=${ADMINUSER}
 AD_PASS=${ADMINPASSWORD}
 optx=(--time-server=$TIME_SERVER --dnsdomains=$DNS_DOMAIN --dnsaddrs=$DNS_ADDR \
@@ -149,14 +155,16 @@ bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee $ONTAP_IF_INFO
 
 ################################# Assert ################################
-echo -e "Assert 1: ping windows ad server: $VM_EXT_IP ..." >/dev/tty
-vm exec -v $clientvm -- ping -c 4 $VM_EXT_IP || {
-	[[ -n "$VM_INT_IP" ]] && {
-		vm exec $winServer -- ipconfig
+if [[ -n "$VM_EXT_IP" ]]; then
+	echo -e "Assert 1: ping windows ad server: $VM_EXT_IP ..." >/dev/tty
+	vm exec -v $clientvm -- ping -c 4 $VM_EXT_IP || {
+		[[ -n "$VM_INT_IP" ]] && {
+			vm exec $winServer -- ipconfig
+		}
+		echo -e "Alert 1: ping windows ad server($VM_EXT_IP) from client fail"
+		exit 1
 	}
-	echo -e "Alert 1: ping windows ad server($VM_EXT_IP) from client fail"
-	exit 1
-}
+fi
 ################################# Assert ################################
 
 #join $clientvm to ad domain(krb5 realm)
@@ -166,7 +174,7 @@ vm cpto -v $clientvm /usr/bin/config-ad-client.sh /usr/bin
 vm exec -v $clientvm -- "echo '$netbiosname \$HOSTNAME' >/etc/host.aliases"
 vm exec -v $clientvm -- "echo 'export HOSTALIASES=/etc/host.aliases' >>/etc/profile"
 vm exec -v $clientvm -- "source /etc/profile;
-	config-ad-client.sh --addc_ip $VM_INT_IP --addc_ip_ext $VM_EXT_IP -p $AD_PASS --config_krb --enctypes AES --host-netbios $netbiosname"
+	config-ad-client.sh --addc_ip=$VM_INT_IP --addc_ip_ext=$VM_EXT_IP -p $AD_PASS --config_krb --enctypes AES --host-netbios=$netbiosname"
 vm exec -vx $clientvm -- hostname -A
 vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
 
