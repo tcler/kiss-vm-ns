@@ -31,6 +31,16 @@ Function Sync-Time {
 	}
 }
 
+Function Install-NuGet {
+	param([string]$curl = "https://dist.nuget.org/win-x86-commandline/v3.3.0/nuget.exe")
+	$progPath='C:\Program Files'
+	$target = "$progPath\nuget.exe"
+
+	echo "[info] download $curl to $target ..."
+	Invoke-WebRequest $curl -OutFile $target
+	Set-Alias nuget $target -Scope Global -Verbose
+}
+
 Function virtio-win-install() {
 	param([string]$AnsfDrvLetter)
 	$msifile, $exefile, $drvDir = "", "", ""
