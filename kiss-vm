@@ -1357,7 +1357,7 @@ netcreate() {
 	[[ $# = 0 ]] && { virsh net-list; Usage >&2; return; }
 	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile|domain)=.* ]] || continue; eval "$opt"; done
 	[[ -z "$netname" || -z "$brname" ]] && { Usage >&2; return 1; }
-	domainname="${netname}.kissvm.net"
+	domainname="${domain:-${netname}.kissvm.net}"
 
 	#https://libvirt.org/formatnetwork.html
 	[[ -n "$forward" && "$forward" != no ]] && {
@@ -1709,6 +1709,8 @@ COMM
 	}
 
 	su $vmuser -s /bin/bash -c "mkdir -p $perConfDir; touch $perConfDir/kiss-vm"
+	vm netls | grep -qw kissaltnet ||
+		vm netcreate netname=kissaltnet brname=virbr-kissalt subnet=10.172.192.0 domain=alt.kissvm.net
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && tput cup $(tput lines) 0
 }
@@ -3372,7 +3374,7 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 else
 	srcif=$(get_default_if)
 	defaultSecondNetOpt="--network=type=direct,source=$srcif,source_mode=$MacvtapMode"
-	[[ -d /sys/class/net/$srcif/wireless ]] && defaultSecondNetOpt="--network=network=kissnet"
+	[[ -d /sys/class/net/$srcif/wireless ]] && defaultSecondNetOpt="--network=network=kissaltnet"
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS=("--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}")
 	elif [[ "$WIN_AUTO" = yes ]]; then
