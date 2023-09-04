@@ -140,9 +140,13 @@ extract.sh $tarfpath $HOME/Downloads $dirname
 script=ontap-simulator-two-node.sh
 eval $(< /tmp/${winServer}.env)
 DNS_DOMAIN=${AD_DOMAIN}
-DNS_ADDR=${VM_EXT_IP:-$VM_INT_IP}
 AD_HOSTNAME=${AD_FQDN}
+DNS_ADDR=${VM_EXT_IP:-$VM_INT_IP}
 AD_IP=${VM_EXT_IP:-$VM_INT_IP}
+[[ "$VM_EXT_IP" = 169.254.* ]] && {
+	DNS_ADDR=${VM_INT_IP}
+	AD_IP=${VM_INT_IP}
+}
 AD_ADMIN=${ADMINUSER}
 AD_PASS=${ADMINPASSWORD}
 optx=(--time-server=$TIME_SERVER --dnsdomains=$DNS_DOMAIN --dnsaddrs=$DNS_ADDR \
@@ -155,7 +159,7 @@ bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee $ONTAP_IF_INFO
 
 ################################# Assert ################################
-if [[ -n "$VM_EXT_IP" ]]; then
+if [[ -n "$VM_EXT_IP" && "$VM_EXT_IP" != 169.254.* ]]; then
 	echo -e "Assert 1: ping windows ad server: $VM_EXT_IP ..." >/dev/tty
 	vm exec -v $clientvm -- ping -c 4 $VM_EXT_IP || {
 		[[ -n "$VM_INT_IP" ]] && {

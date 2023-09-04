@@ -39,7 +39,6 @@ chmod a+rw $WIN_DATA/*
 VM_INT_IP=$(awk '/^ *IPv4 Address/ {if ($NF ~ /^192\.168\.12[234]/) print $NF}' $WIN_DATA/ipconfig.log)
 VM_EXT_IP=$(awk '/^ *IPv4 Address/ {if ($NF !~ /^192\.168\.12[234]/) print $NF}' $WIN_DATA/ipconfig.log)
 VM_EXT_IP6=$(awk '/^ *IPv6 Address/ {printf("%s,", $NF)}'  $WIN_DATA/ipconfig.log)
-[[ -z "$VM_EXT_IP" ]] && VM_EXT_IP=${VM_EXT_IP6%%,*}
 
 rm -f $WIN_ENV_FILE
 cat $WIN_DATA/win.env - <<-EOF | grep -v '^#' | tee $WIN_ENV_FILE
