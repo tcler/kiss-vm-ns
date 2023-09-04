@@ -4,28 +4,10 @@
 LANG=C
 P=${0##*/}
 
-Usage() {
-cat <<END
-Usage: config-ad-client.sh -i <AD_DC_IP> -p <Password> --host-netbios <netbois_name> [-e <AES|DES>] [--config_idmap|--config_krb]
-
-        -h|--help                  # Print this help
-
-        [Basic Function: Config current client as an AD DS Domain Member / Leave current Domain]
-        -i|--addc_ip <IP address>  # Specify IP of a Windows AD DC for target AD DS Domain
-        --addc_ip_ext <IP address> # another optional ip of Windows AD DC, used in /etc/hosts and /etc/resolv.conf
-        -c|--cleanup               # Leave AD Domain and delete entry in AD database
-
-        [Arguments for "AD Integration"]
-        -e|--enctypes <DES|AES>    # Choose enctypes for Kerberos TGT and TGS instead of default
-        -p|--passwd <password>     # Specify password of Administrator@Domain instead of default
-
-        [Extra Functions: Config extra roles (IDMAP Client..) after integration]
-        --config_idmap             # Config current client as an NFSv4 IDMAP client
-        --config_krb               # Config current client as a Secure NFS client
-	--rootdc                   # root DC ip
-	--host-netbios             # netbios name of the host. #used for join to Windows AD
-END
-}
+# Current Supported Extra Functions:
+config_krb="no"    # Config secure NFS client
+config_idmap="no"  # Config NFSv4 idmap client
+cleanup="no"       # Quit current AD Domain, clear entries in AD DS database
 
 infoecho() { echo -e "\n<${P}>""\E[1;34m" "$@" "\E[0m"; }
 errecho()  { echo -e "\n<${P}>""\E[31m" "$@" "\E[0m"; }
@@ -59,43 +41,79 @@ getDefaultIp4() {
 	echo "$ret"
 }
 
-[ $# -eq 0 ] && {
-       Usage;
-       exit 1;
+Usage() {
+cat <<END
+Usage: config-ad-client.sh -i <AD_DC_IP> -p <Password> --host-netbios <netbois_name> [-e <AES|DES>] [--config_idmap|--config_krb]
+
+        -h|--help                  # Print this help
+
+        [Basic Function: Config current client as an AD DS Domain Member / Leave current Domain]
+        -i|--addc-ip <IP address>  # Specify IP of a Windows AD DC for target AD DS Domain
+        --addc-ip-ext <IP address> # another optional ip of Windows AD DC, used in /etc/hosts and /etc/resolv.conf
+        -c|--cleanup               # Leave AD Domain and delete entry in AD database
+
+        [Arguments for "AD Integration"]
+        -p|--passwd <password>     # Specify password of Administrator@Domain instead of default
+        -e|--enctypes <DES|AES>    # Choose enctypes for Kerberos TGT and TGS instead of default
+
+        [Extra Functions: Config extra roles (IDMAP Client..) after integration]
+	--host-netbios             # netbios name of the host. #used for join to Windows AD
+        --config-idmap             # Config current client as an NFSv4 IDMAP client
+        --config-krb               # Config current client as a Secure NFS client
+	--rootdc                   # root DC ip
+END
 }
-
-# Current Supported Extra Functions:
-config_krb="no"    # Config secure NFS client
-config_idmap="no"  # Config NFSv4 idmap client
-
-cleanup="no"       # Quit current AD Domain, clear entries in AD DS database
-
-while [ -n "$1" ]; do
+_at=`getopt -o hcp:i:e: \
+	--long help \
+	--long cleanup \
+	--long passwd: \
+	--long host-netbios: \
+	--long addc-ip: --long addc_ip: \
+	--long addc-ip-ext: --long addc_ip_ext: \
+	--long enctypes: \
+	--long rootdc: \
+	--long config_krb --long config-krb \
+	--long config_idmap --long config-idmap \
+    -n '$P' -- "$@"`
+eval set -- "$_at"
+while true; do
 	case "$1" in
-	--config_idmap) config_idmap="yes";shift 1;;
-	--config_krb) config_krb="yes";shift 1;;
-	-c|--cleanup) cleanup="yes";shift 1;;
-	-e|--enctypes) krbEnc="$2";shift 2;;
-	-i|--addc_ip) AD_DC_IP="$2";shift 2;;
-	--addc_ip_ext) AD_DC_IP_EXT="$2";shift 2;;
-	--rootdc) ROOT_DC="$2";shift 2;;
-	-p|--passwd)  AD_DS_SUPERPW="$2";shift 2;;
-	-h|--help)    Usage;exit 0;;
+	-h|--help)      Usage; shift; exit 0;;
+	-c|--cleanup)   cleanup="yes"; shift 1;;
+	-p|--passwd)    AD_DS_SUPERPW="$2"; shift 2;;
 	--host-netbios) HOST_NETBIOS=$2; shift 2;;
-	*) break;;
+	-e|--enctypes)  krbEnc="$2"; shift 2;;
+	--rootdc)       ROOT_DC="$2"; shift 2;;
+	-i|--addc-ip|--addc_ip)        AD_DC_IP="$2"; shift 2;;
+	--addc-ip-ext|--addc_ip_ext)   AD_DC_IP_EXT="$2"; shift 2;;
+	--config-krb|--config_krb)     config_krb="yes"; shift 1;;
+	--config-idmap|--config_idmap) config_idmap="yes"; shift 1;;
+	--) shift; break;;
 	esac
 done
 
-#
-# PART: [Dependency] Specify all dependencies during integration related jobs
-#
+[ -z "$AD_DC_IP" ] && {
+	errecho "{WARN} Please specify IP of target AD Domain's Domain Controller/DC: --addc-ip="
+	Usage;
+	exit 1;
+}
+
+[ -z "$AD_DS_SUPERPW" ] && {
+	errecho "{WARN} Please specify admin password of target AD Domain's Domain Controller/DC: --passwd="
+	Usage;
+	exit 1;
+}
 
 # length of NetBIOS name should be less than or equal to 15
 HOST_NETBIOS=${HOST_NETBIOS:-$HOSTNAME}
 [[ ${#HOST_NETBIOS} -gt 15 ]] && {
-	errecho "[ERROR] the length of hostname($HOST_NETBIOS) should be less than 15, try following commands"
+	errecho "[ERROR] the length of hostname($HOST_NETBIOS) should be less than 15, see: --host-netbios="
 	exit 1
 }
+
+#
+# PART: [Dependency] Specify all dependencies during integration related jobs
+#
 
 # Specify NetBIOS name of current client in target AD Domain
 MY_FQDN=${HOST_NETBIOS^^}
@@ -191,18 +209,6 @@ if [ "$cleanup" == "yes" ]; then
 		exit 1;
 	fi
 fi
-
-[ -z "$AD_DC_IP" ] && {
-	errecho "{WARN} Please specify IP of target AD Domain's Domain Controller/DC"
-	Usage;
-	exit 1;
-}
-
-[ -z "$AD_DS_SUPERPW" ] && {
-	errecho "{WARN} Please specify admin password of target AD Domain's Domain Controller/DC"
-	Usage;
-	exit 1;
-}
 
 infoecho "Check connections with AD DC by IP..."
 run "ping -c 2 $AD_DC_IP"
