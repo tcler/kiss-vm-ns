@@ -36,8 +36,8 @@ dos2unixf $WIN_DATA/*
 chmod a+rw $WIN_DATA/*
 
 # Save relative variables into a log file
-VM_INT_IP=$(awk '/^ *IPv4 Address/ {if ($NF ~ /^192/) print $NF}' $WIN_DATA/ipconfig.log)
-VM_EXT_IP=$(awk '/^ *IPv4 Address/ {if ($NF !~ /^(192|169.254)/) print $NF}' $WIN_DATA/ipconfig.log)
+VM_INT_IP=$(awk '/^ *IPv4 Address/ {if ($NF ~ /^192\.168\.12[234]/) print $NF}' $WIN_DATA/ipconfig.log)
+VM_EXT_IP=$(awk '/^ *IPv4 Address/ {if ($NF !~ /^192\.168\.12[234]/) print $NF}' $WIN_DATA/ipconfig.log)
 VM_EXT_IP6=$(awk '/^ *IPv6 Address/ {printf("%s,", $NF)}'  $WIN_DATA/ipconfig.log)
 [[ -z "$VM_EXT_IP" ]] && VM_EXT_IP=${VM_EXT_IP6%%,*}
 
