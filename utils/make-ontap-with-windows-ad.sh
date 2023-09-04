@@ -152,8 +152,8 @@ AD_PASS=${ADMINPASSWORD}
 optx=(--time-server=$TIME_SERVER --dnsdomains=$DNS_DOMAIN --dnsaddrs=$DNS_ADDR \
 	--ad-hostname=$AD_HOSTNAME --ad-ip=$AD_IP \
 	--ad-admin=$AD_ADMIN --ad-passwd=$AD_PASS --ad-vm "${winServer}")
-ONTAP_INSTALL_LOG=/tmp/ontap2-install.log
-ONTAP_IF_INFO=/tmp/ontap2-if-info.txt
+ONTAP_INSTALL_LOG=/tmp/ontap2w-install.log
+ONTAP_IF_INFO=/tmp/ontap2w-if-info.txt
 bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "${optx[@]}" &> >(tee $ONTAP_INSTALL_LOG)
 
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee $ONTAP_IF_INFO
