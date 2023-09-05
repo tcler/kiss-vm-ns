@@ -77,6 +77,6 @@ tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loo
 
 ONTAP_ENV_FILE=/tmp/ontap2info.env
 source "$ONTAP_ENV_FILE"
-trun -x0 host $NETAPP_NAS_HOSTNAME
+trun     host $NETAPP_NAS_HOSTNAME
 trun -x0 showmount -e "$NETAPP_NAS_IP_LOC"
 vm exec -vx $clientvm -- showmount -e $NETAPP_NAS_IP
