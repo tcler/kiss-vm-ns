@@ -3005,14 +3005,17 @@ done
 # { echo -ne "\E[${LINES};0H"; }  works the same as { tput cup $(tput lines) 0; }
 distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn't select any distro/family, it is necessary!"; }
 decodeDistro() {
+	local d="$1"
 	if [[ "$Intranet" = yes ]]; then
-		case $1 in
-		(7) Distro="RHEL-7.9-updates-????????.[0-9]+";; (8) Distro="rhel-8.[0-9]+.[0-9]+-????????.[0-9]+";;
-		(9) Distro="rhel-9.[0-9]+.[0-9]+-????????.[0-9]+";;
+		case $d in
+		(5) Distro=RHEL5-Server-U11;; (6) Distro=RHEL-6.10;;
+		(7) Distro="RHEL-7.9-updates-????????.[0-9]+";;
+		(8|9|1[0-9]) Distro="rhel-${d}.[0-9]+.[0-9]+-????????.[0-9]+";;
 		esac
 	else
-		case $1 in
-		(7) Distro="CentOS-7";; (8) Distro="CentOS-8-stream";; (9) Distro="CentOS-9-stream";;
+		case $d in
+		(6|7) Distro="CentOS-${d}";;
+		(8|9|1[0-9]) Distro="CentOS-${d}-stream";;
 		esac
 	fi
 }
