@@ -178,7 +178,7 @@ vm cpto -v $clientvm /usr/bin/config-ad-client.sh /usr/bin
 vm exec -v $clientvm -- "echo '$netbiosname \$HOSTNAME' >/etc/host.aliases"
 vm exec -v $clientvm -- "echo 'export HOSTALIASES=/etc/host.aliases' >>/etc/profile"
 vm exec -v $clientvm -- "source /etc/profile;
-	config-ad-client.sh --addc_ip=$VM_INT_IP --addc_ip_ext=$VM_EXT_IP -p $AD_PASS --config_krb --enctypes AES --host-netbios=$netbiosname"
+	config-ad-client.sh --addc-ip=$VM_INT_IP --addc-ip-ext=$VM_EXT_IP -p $AD_PASS --config-krb --enctypes AES --host-netbios=$netbiosname"
 vm exec -vx $clientvm -- hostname -A
 vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
 

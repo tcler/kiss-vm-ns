@@ -42,7 +42,7 @@ getDefaultIp4() {
 
 Usage() {
 cat <<END
-Usage: config-ad-client.sh -i <AD_DC_IP> -p <Password> --host-netbios <netbois_name> [-e <AES|DES>] [--config_krb]
+Usage: config-ad-client.sh -i <AD_DC_IP> -p <Password> --host-netbios <netbois_name> [-e <AES|DES>] [--config-krb]
 
         -h|--help                  # Print this help
 
@@ -83,7 +83,7 @@ while true; do
 	--rootdc)       ROOT_DC="$2"; shift 2;;
 	-i|--addc-ip|--addc_ip)        AD_DC_IP="$2"; shift 2;;
 	--addc-ip-ext|--addc_ip_ext)   [[ "$2" != 169.254.* ]] && AD_DC_IP_EXT="$2"; shift 2;;
-	--config-krb|--config_krb)     config_krb="yes"; shift 1;;
+	--config-krb*|--config_krb*)     config_krb="yes"; shift 1;;
 	--) shift; break;;
 	esac
 done
