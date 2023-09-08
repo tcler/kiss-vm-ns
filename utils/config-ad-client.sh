@@ -231,6 +231,7 @@ if grep -q 127.0.0.53 $RESOLV_CONF; then
 	else
 		echo "DNS=$ROOT_DC ${AD_DC_IP_EXT:-$AD_DC_IP}" >>$resolvedConf
 	fi
+	systemctl restart systemd-resolved
 else
 	mv $RESOLV_CONF ${RESOLV_CONF}.orig
 	{
