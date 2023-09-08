@@ -224,18 +224,26 @@ infoecho "{INFO} Change DNS Server to AD Domain DNS..."
 run 'echo -e "[main]\ndns=none" >/etc/NetworkManager/NetworkManager.conf'
 run 'systemctl restart NetworkManager'
 run 'echo -e "make_resolv_conf(){\n    :\n}" >/etc/dhclient-enter-hooks'
-mv $RESOLV_CONF ${RESOLV_CONF}.orig
-{
-	grep -E -i "^search.* ${AD_DS_NAME,,}( |$)" ${RESOLV_CONF}.orig ||
-		sed -n -e "/^search/{s//& ${AD_DS_NAME,,}/; p}" ${RESOLV_CONF}.orig
-	for nsaddr in $ROOT_DC ${AD_DC_IP_EXT:-$AD_DC_IP}; do
-		grep -E -q "^nameserver $nsaddr" ${RESOLV_CONF}.orig ||
-			echo "nameserver $nsaddr   #windows-ad"
-	done
-	grep -E ^nameserver ${RESOLV_CONF}.orig | grep -v '#windows-ad'
-} >$RESOLV_CONF
-
-run "cat $RESOLV_CONF"
+if grep -q 127.0.0.53 $RESOLV_CONF; then
+	resolvedConf=/etc/systemd/resolved.conf
+	if grep -q ^DNS= $resolvedConf; then
+		sed -i "/^DNS=/s/$/$ROOT_DC ${AD_DC_IP_EXT:-$AD_DC_IP}/" $resolvedConf
+	else
+		echo "DNS=$ROOT_DC ${AD_DC_IP_EXT:-$AD_DC_IP}" >>$resolvedConf
+	fi
+else
+	mv $RESOLV_CONF ${RESOLV_CONF}.orig
+	{
+		grep -E -i "^search.* ${AD_DS_NAME,,}( |$)" ${RESOLV_CONF}.orig ||
+			sed -n -e "/^search/{s//& ${AD_DS_NAME,,}/; p}" ${RESOLV_CONF}.orig
+		for nsaddr in $ROOT_DC ${AD_DC_IP_EXT:-$AD_DC_IP}; do
+			grep -E -q "^nameserver $nsaddr" ${RESOLV_CONF}.orig ||
+				echo "nameserver $nsaddr   #windows-ad"
+		done
+		grep -E ^nameserver ${RESOLV_CONF}.orig | grep -v '#windows-ad'
+	} >$RESOLV_CONF
+	run "cat $RESOLV_CONF"
+fi
 
 infoecho "{INFO} Close the firewall..."
 [ -f /etc/init.d/iptables ] && service iptables stop
