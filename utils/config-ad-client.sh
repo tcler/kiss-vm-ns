@@ -6,7 +6,6 @@ P=${0##*/}
 
 # Current Supported Extra Functions:
 config_krb="no"    # Config secure NFS client
-config_idmap="no"  # Config NFSv4 idmap client
 cleanup="no"       # Quit current AD Domain, clear entries in AD DS database
 
 infoecho() { echo -e "\n<${P}>""\E[1;34m" "$@" "\E[0m"; }
@@ -43,7 +42,7 @@ getDefaultIp4() {
 
 Usage() {
 cat <<END
-Usage: config-ad-client.sh -i <AD_DC_IP> -p <Password> --host-netbios <netbois_name> [-e <AES|DES>] [--config_idmap|--config_krb]
+Usage: config-ad-client.sh -i <AD_DC_IP> -p <Password> --host-netbios <netbois_name> [-e <AES|DES>] [--config_krb]
 
         -h|--help                  # Print this help
 
@@ -58,7 +57,6 @@ Usage: config-ad-client.sh -i <AD_DC_IP> -p <Password> --host-netbios <netbois_n
 
         [Extra Functions: Config extra roles (IDMAP Client..) after integration]
 	--host-netbios             # netbios name of the host. #used for join to Windows AD
-        --config-idmap             # Config current client as an NFSv4 IDMAP client
         --config-krb               # Config current client as a Secure NFS client
 	--rootdc                   # root DC ip
 END
@@ -73,7 +71,6 @@ _at=`getopt -o hcp:i:e: \
 	--long enctypes: \
 	--long rootdc: \
 	--long config_krb --long config-krb \
-	--long config_idmap --long config-idmap \
     -n '$P' -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -87,7 +84,6 @@ while true; do
 	-i|--addc-ip|--addc_ip)        AD_DC_IP="$2"; shift 2;;
 	--addc-ip-ext|--addc_ip_ext)   [[ "$2" != 169.254.* ]] && AD_DC_IP_EXT="$2"; shift 2;;
 	--config-krb|--config_krb)     config_krb="yes"; shift 1;;
-	--config-idmap|--config_idmap) config_idmap="yes"; shift 1;;
 	--) shift; break;;
 	esac
 done
@@ -125,10 +121,6 @@ pkgs="adcli krb5-workstation sssd pam_krb5
     samba-winbind samba-winbind-clients
     samba-winbind-krb5-locator"
 
-# Specify extra packages for "NFSv4 IDMAP"
-idmap_pkgs="nfs-utils libnfsidmap nfs-utils-lib
-    authconfig oddjob-mkhomedir"
-
 # Specify target AD Domain and its Domain Controller/DC information
 AD_DS_NAME=""
 AD_DS_NETBIOS=""
@@ -144,7 +136,6 @@ KRB_CONF=/etc/krb5.conf
 SMB_CONF=/etc/samba/smb.conf
 HOSTS_CONF=/etc/hosts
 RESOLV_CONF=/etc/resolv.conf
-SSSD_CONF=/etc/sssd/sssd.conf
 IDMAP_CONF=/etc/idmapd.conf
 
 # Specify Standard KRB5 Configuration File
@@ -170,29 +161,6 @@ krbConfTemp="[logging]
 [domain_realm]
   .example.com = .EXAMPLE.COM
   example.com = EXAMPLE.COM"
-
-# Specify Standard SSSD ad_provider Configuration File
-sssd_ad_providerConfTemp="[nss]
-  fallback_homedir = /home/%u
-  shell_fallback = /bin/sh
-  allowed_shells = /bin/sh,/bin/rbash,/bin/bash
-  vetoed_shells = /bin/ksh
-
-[sssd]
-  config_file_version = 2
-  domains = example.com
-  services = nss, pam, pac
-
-[domain/example.com]
-  id_provider = ad
-  auth_provider = ad
-  chpass_provider = ad
-  access_provider = ad
-  cache_credentials = true
-  override_homedir = /home/%d/%u
-  default_shell = /bin/bash
-  use_fully_qualified_names = True"
-
 
 #
 # PART: [Preparing] Prepare AD DS/DC Information
@@ -246,10 +214,6 @@ fi
 
 infoecho "{INFO} Make sure necessary packages are installed..."
 rpm -q $pkgs &>/dev/null || yum --setopt=strict=0 -y install $pkgs &>/dev/null
-
-if [ "$config_idmap" == "yes" ]; then
-	rpm -q $idmap_pkgs &>/dev/null || yum -y install $idmap_pkgs &>/dev/null
-fi
 
 infoecho "{INFO} Clean old principals..."
 kdestroy -A
@@ -381,55 +345,6 @@ systemctl restart nfs-client.target gssproxy.service rpc-statd.service rpc-gssd.
 #nfs krb5 mount requires hostname == netbios_name
 infoecho "hostname $HOST_NETBIOS ..."
 hostname $HOST_NETBIOS
-
-#
-# PART: [Extra Functions] Config current client as an NFSv4 IDMAP client
-#
-
-if [ "$config_idmap" == "yes" ]; then
-	infoecho "IDMAP 1. Enable sssd ad_provider to work as a Name Service..."
-	authconfig --update --enablesssd --enablesssdauth --enablemkhomedir
-	echo "$sssd_ad_providerConfTemp" >$SSSD_CONF
-	sed -r -i -e "/example.com/{s//$AD_DS_NAME/g}"    $SSSD_CONF
-	chmod 600 $SSSD_CONF
-	restorecon $SSSD_CONF
-	run "cat $SSSD_CONF"
-
-	if ! service sssd restart; then
-		echo "SSSD service cannot load, please check $SSSD_CONF"
-		exit 1;
-	fi
-
-	infoecho "IDMAP 2. Start NFSv4 idmapping and configure rpc.idmapd..."
-	modprobe nfsd; modprobe nfs
-	echo "N"> /sys/module/nfs/parameters/nfs4_disable_idmapping
-	echo "N"> /sys/module/nfsd/parameters/nfs4_disable_idmapping
-	which systemctl &>/dev/null && systemctl restart nfs-idmapd || service rpcidmapd restart
-
-	infoecho "IDMAP 3. Check sssd status by getent of common users..."
-	run "getent passwd Administrator@${AD_DS_NAME}"
-	if [ $? -ne 0 ]; then
-		errecho "Configure NFSv4 IDMAP Client Failed, query user information failed for Administrator@${AD_DS_NAME}"
-		exit 1;
-	fi
-	run "getent passwd krbtgt@${AD_DS_NAME}"
-	if [ $? -ne 0 ]; then
-		errecho "Configure NFSv4 IDMAP Client Failed, query user information failed for krbtgt@${AD_DS_NAME}"
-		exit 1;
-	fi
-	run "getent group "Domain Admins"@${AD_DS_NAME}"
-	if [ $? -ne 0 ]; then
-		errecho "Configure NFSv4 IDMAP Client Failed, query group information failed for Domain Admins@${AD_DS_NAME}"
-		exit 1;
-	fi
-	run "getent group "Domain Users"@${AD_DS_NAME}"
-	if [ $? -ne 0 ]; then
-		errecho "Configure NFSv4 IDMAP Client Failed, query group information failed for Domain Users@${AD_DS_NAME}"
-		exit 1;
-	fi
-
-	infoecho "SSSD based NFSv4 IDMAP client configuration complete."
-fi
 
 #
 # PART: [Extra Functions] Config current client as a Secure NFS client
