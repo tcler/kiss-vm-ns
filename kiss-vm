@@ -3007,21 +3007,22 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 decodeDistro() {
 	local d="$1"
 	if [[ "$Intranet" = yes ]]; then
-		case $d in
+		case ${d%[rn]} in
 		(5) Distro=RHEL5-Server-U11;; (6) Distro=RHEL-6.10;;
 		(7) Distro="RHEL-7.9-updates-????????.[0-9]+";;
-		(8|9|1[0-9]) Distro="rhel-${d}.[0-9]+.[0-9]+-????????.[0-9]+";;
+		(8|9|1[0-9]) Distro="rhel-${d%[rn]}.[0-9]+.[0-9]+-????????.[0-9]+";;
 		esac
+		[[ ${d} = *r ]] && case ${d%r} in (8|9|1[0-9]) Distro="rhel-${d%r}.[0-9]+.[0-9]+";; esac
 	else
-		case $d in
-		(6|7) Distro="CentOS-${d}";;
-		(8|9|1[0-9]) Distro="CentOS-${d}-stream";;
+		case ${d%[rn]} in
+		(6|7) Distro="CentOS-${d%[rn]}";;
+		(8|9|1[0-9]) Distro="CentOS-${d%[rn]}-stream";;
 		esac
 	fi
 }
 # Phase-0 get distro name
 [[ -z "$Distro" ]] && Distro=$1
-[[ $Distro =~ ^[0-9]+$ ]] && { decodeDistro $Distro; }
+[[ $Distro =~ ^[0-9]+[rn]?$ ]] && { decodeDistro $Distro; }
 [[ -z "$Distro" ]] && {
 	if [[ -z "$Location" && -z "$Imageurl" && -z "$Isourl" ]]; then
 		distropatternInter=$RuntimeTmp/distroPatternInternet
@@ -3143,7 +3144,7 @@ QXL_available() {
 	exit 1
 }
 
-[[ "$Distro" = *[%*?]* ]] && {
+[[ "$Distro" = *[][%*?+]* ]] && {
 	dpattern=${Distro//./\\.}
 	dpattern=${dpattern//\?/.}
 	dpattern=${dpattern//[%*]/.*}
