@@ -3609,7 +3609,7 @@ if [[ "$InstallType" = location ]]; then
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] systemctl start restraintd ..."
 		yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd
 		_rpath=share/restraint/plugins/task_run.d
-		(cd /usr/$_rpath && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/$_rpath/{25_environment,27_task_require} && chmod a+x *)
+		(cd /usr/\$_rpath && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/\$_rpath/{25_environment,27_task_require} && chmod a+x *)
 
 		END
 		elif [[ "$TASK_FETCH" = yes ]]; then

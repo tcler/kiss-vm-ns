@@ -153,7 +153,8 @@ cat <<IntranetCMD
 
   - _rpath=share/restraint/plugins/task_run.d
   - command -v yum && { yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd;
-    (cd /usr/$_rpath && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/$_rpath/{25_environment,27_task_require} && chmod a+x *); }
+    (cd /usr/\$_rpath && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/\$_rpath/{25_environment,27_task_require} && chmod a+x *); }
+
 IntranetCMD
 elif [[ "$TASK_FETCH" = yes ]]; then
 cat <<TaskFetch
