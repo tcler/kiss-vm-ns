@@ -185,6 +185,7 @@ ver=$(LANG=C rpm -q --qf %{version} centos-release)
 [[ "$ver" = 5 ]] && sed -i -e 's;\$releasever;5.11;' /etc/yum.repos.d/*
 
 sed -ri -e '/^#?(PasswordAuthentication|AllowAgentForwarding|PermitRootLogin) (.*)$/{s//\1 yes/}' /etc/ssh/sshd_config $(ls /etc/ssh/sshd_config.d/*)
+grep -q '^StrictHostKeyChecking no' /etc/ssh/ssh_config || echo "StrictHostKeyChecking no" >>/etc/ssh/ssh_config
 KSF
 
 [[ -n "$sshkeyf" ]] && {

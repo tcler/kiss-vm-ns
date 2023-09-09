@@ -137,6 +137,7 @@ done
 runcmd:
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; }
   - sed -ri -e '/^#?(PasswordAuthentication|AllowAgentForwarding|PermitRootLogin) (.*)$/{s//\1 yes/}' -e '/^Inc/s@/\*.conf@/*redhat.conf@' /etc/ssh/sshd_config \$(ls /etc/ssh/sshd_config.d/*) && service sshd restart || systemctl restart sshd
+  - grep -q '^StrictHostKeyChecking no' /etc/ssh/ssh_config || echo "StrictHostKeyChecking no" >>/etc/ssh/ssh_config
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
   - command -v yum && yum --setopt=strict=0 install -y bash-completion curl wget vim ipcalc $PKGS
   -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget vim ipcalc $PKGS; }
