@@ -663,12 +663,18 @@ vmreboot() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 
-	virsh destroy "$_vmname" 2>/dev/null
-	virsh start "$_vmname"
+	set -- $(vmname_extract "$@")
+	for vm; do
+		virsh destroy "$vm" 2>/dev/null
+		virsh start "$vm"
+	done
+
 	[[ "$WAIT" = yes ]] && {
-		echo -e "{VM:INFO} waiting restart finish ..."
-		read _addr < <(vmifaddr "$_vmname")
-		until port_available ${_addr} 22; do sleep 1; done
+		for vm; do
+			echo -e "{VM:INFO} waiting [$vm] restart finish ..."
+			read _addr < <(vmifaddr "$vm")
+			until port_available ${_addr} 22; do sleep 1; done
+		done
 	}
 }
 
@@ -3610,6 +3616,7 @@ if [[ "$InstallType" = location ]]; then
 		yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd
 		_rpath=share/restraint/plugins/task_run.d
 		(cd /usr/\$_rpath && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/\$_rpath/{25_environment,27_task_require} && chmod a+x *)
+		(cd /usr/\${_rpath%/*}/completed.d && curl -k -Ls -O $bkrClientImprovedUrl/\${_rpath%/*}/completed.d/85_sync_multihost_tasks && chmod a+x *)
 
 		END
 		elif [[ "$TASK_FETCH" = yes ]]; then
