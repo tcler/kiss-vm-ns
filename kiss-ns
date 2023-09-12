@@ -516,6 +516,7 @@ else
 	chroot_install $NSdir $INIT_PKG $PKGS
 	\cp -rf /etc/yum.repos.d $NSdir/etc/.
 	\cp /etc/{passwd,group,shadow,resolv.conf} $NSdir/etc/.
+	test -d $NSdir/etc/systemd && \cp /etc/systemd/resolved.conf $NSdir/etc/systemd/.
 fi
 MachineOpt="-D $NSdir"
 

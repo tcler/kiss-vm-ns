@@ -337,9 +337,13 @@ addif2netns() {
 	[[ -n "$addr" ]] && {
 		if [[ "$addr" = dhcp* ]]; then
 			nshome=/opt/NETNS/$ns
-			run cp /etc/resolv.conf /etc/resolv.conf.netns.orig
-			run netnsexec $ns dhclient -pf $nshome/dhclient-$if.pid $if
-			run cp /etc/resolv.conf.netns.orig /etc/resolv.conf
+			if grep -q 127.0.0.53 /etc/resolv.conf; then
+				run netnsexec $ns networkctl renew $if
+			else
+				run cp /etc/resolv.conf /etc/resolv.conf.netns.orig
+				run netnsexec $ns dhclient -pf $nshome/dhclient-$if.pid $if
+				run cp /etc/resolv.conf.netns.orig /etc/resolv.conf
+			fi
 		else
 			run ip netns exec $ns ip addr add $(xaddr $addr) dev $if
 			run ip netns exec $ns ip route add default via ${addr%/*} dev $if
@@ -467,9 +471,13 @@ addressup() {
 	run ip link set dev $if up
 	[[ -n "$addr" ]] && {
 		if [[ "$addr" = dhcp* ]]; then
-			run cp /etc/resolv.conf /etc/resolv.conf.netns.orig
-			run dhclient -pf /var/run/dhclient-$if.pid $if
-			run cp /etc/resolv.conf.netns.orig /etc/resolv.conf
+			if grep -q 127.0.0.53 /etc/resolv.conf; then
+				run netnsexec $ns networkctl renew $if
+			else
+				run cp /etc/resolv.conf /etc/resolv.conf.netns.orig
+				run dhclient -pf /var/run/dhclient-$if.pid $if
+				run cp /etc/resolv.conf.netns.orig /etc/resolv.conf
+			fi
 		else
 			run ip addr add $(xaddr $addr) dev $if
 		fi
