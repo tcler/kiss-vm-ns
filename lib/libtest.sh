@@ -46,7 +46,7 @@ chkrc() {
 	else
 		comment="$*"
 	fi
-	if rc_isexpected "$xrange" $RC; then
+	if rc_isexpected "$RC" "$xrange"; then
 		echo -e "\E[1;34m{TEST PASS} $comment\E[0m"
 	else
 		echo -e "\E[1;31m{TEST FAIL} $comment\E[0m"
