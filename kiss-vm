@@ -1721,14 +1721,9 @@ COMM
 	[[ -z "$force" ]] && tput cup $(tput lines) 0
 }
 
-is_available_url() {
-	local _url=$1
-	curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null
-}
-is_rh_intranet() {
-	local iurl=http://$downhostname
-	is_available_url $iurl 
-}
+is_available_url() { local _url=$1; curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null; }
+is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
+is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
 is_rh_intranet || Intranet=no
 
 # env and functions that work in Intranet

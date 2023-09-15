@@ -210,7 +210,8 @@ trun() { run -d "$@"; }
 xrc() { chkrc "$@"; }
 
 is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail "$1" &>/dev/null; }
-is_rh_intranet() { local iurl=http://download.devel.redhat.com; is_available_url "$iurl"; }
+is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
+is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
 
 #return if I'm being sourced
 (return 0 2>/dev/null) && sourced=yes || sourced=no

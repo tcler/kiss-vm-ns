@@ -25,7 +25,8 @@ ausyscall() {
 lsyscall() {
 	local tableurl=https://raw.githubusercontent.com/hrw/syscalls-table/master/tables
 	is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null --silent --head --fail $1 &>/dev/null; }
-	is_rh_intranet() { is_available_url http://download.devel.redhat.com; }
+	is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
+	is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
 	is_rh_intranet && tableurl=http://download.devel.redhat.com/qa/rhts/lookaside/syscalls-table/tables
 
 	local tablefurl=$tableurl/syscalls-${Arch}

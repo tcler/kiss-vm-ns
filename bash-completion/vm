@@ -11,10 +11,8 @@ is_available_url() {
 	local _url=$1
 	curl --connect-timeout 4 -m 4 --output /dev/null -k --silent --head --fail $_url &>/dev/null
 }
-is_rh_intranet() {
-    local downhost=${_downhost:-download.devel.fedorahat.com}
-	is_available_url "http://${downhost/fedora/red}"
-}
+is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
+is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
 
 option_arg_complete() {
     local hasarg=$1

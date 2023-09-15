@@ -14,14 +14,9 @@ downhostname=${_downhostname/fedora/red}
 bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
 KernelOpts=
 
-is_available_url() {
-        local _url=$1
-        curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null
-}
-is_rh_intranet() {
-	local iurl=http://$downhostname
-	is_available_url $iurl
-}
+is_available_url() { local _url=$1; curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null; }
+is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
+is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
 
 Usage() {
 	cat <<-EOF >&2

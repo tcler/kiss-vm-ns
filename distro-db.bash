@@ -1,7 +1,8 @@
 declare -A distroInfo
 
 #### CentOS stream and CentOS
-_GuestARCH=$GuestARCH; [[ "$GuestARCH" = ppc64 ]] && _GuestARCH=ppc64le;
+GuestARCH=${GuestARCH:-$(uname -m)}
+_GuestARCH=${GuestARCH}; [[ "$GuestARCH" = ppc64 ]] && _GuestARCH=ppc64le;
 distroInfo[Rocky-9]="https://mirrors.sdu.edu.cn/rocky/9/images/$_GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/9/BaseOS/$_GuestARCH/os"
 distroInfo[Rocky-8]="https://mirrors.sdu.edu.cn/rocky/8/images/$_GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/8/BaseOS/$_GuestARCH/os"
 distroInfo[CentOS-9-stream]="https://cloud.centos.org/centos/9-stream/$_GuestARCH/images/ http://mirror.stream.centos.org/9-stream/BaseOS/$_GuestARCH/os/"
