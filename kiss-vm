@@ -3547,6 +3547,7 @@ complete_qmp_mon_arg() {
 	fi
 	echo -n "$_addr,server,nowait"
 }
+QEMU_QMP=${QEMU_QMP:-yes}
 [[ -n "$QEMU_QMP" ]] && {
 	[[ "$QEMU_QMP" = yes ]] && QEMU_QMP=unix:$VMtmp/qmp.socket,server,nowait || {
 		QEMU_QMP=$(complete_qmp_mon_arg $QEMU_QMP)
