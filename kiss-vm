@@ -3005,13 +3005,16 @@ done
 #thanks: https://stackoverflow.com/questions/49733211/bash-jump-to-bottom-of-terminal
 # { echo -ne "\E[${LINES};0H"; }  works the same as { tput cup $(tput lines) 0; }
 distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn't select any distro/family, it is necessary!"; }
+shopt -s extglob
 decodeDistro() {
 	local d="$1"
 	if [[ "$Intranet" = yes ]]; then
 		case ${d%[rn]} in
 		(5) Distro=RHEL5-Server-U11;; (6) Distro=RHEL-6.10;;
 		(7) Distro="RHEL-7.9-updates-????????.[0-9]+";;
+		(7.+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
 		(8|9|1[0-9]) Distro="rhel-${d%[rn]}.[0-9]+.[0-9]+-????????.[0-9]+";;
+		(@(8|9|1[0-9]).+([0-9])) Distro="RHEL-${d}.[0-9]-updates-????????.[0-9]+";;
 		esac
 		[[ ${d} = *r ]] && case ${d%r} in (8|9|1[0-9]) Distro="rhel-${d%r}.[0-9]+.[0-9]+";; esac
 	else
@@ -3023,7 +3026,8 @@ decodeDistro() {
 }
 # Phase-0 get distro name
 [[ -z "$Distro" ]] && Distro=$1
-[[ $Distro =~ ^[0-9]+[rn]?$ ]] && { decodeDistro $Distro; }
+[[ $Distro =~ ^[0-9]+(\.[0-9]+)?[rn]?$ ]] && { decodeDistro $Distro; }
+shopt -u extglob
 [[ -z "$Distro" ]] && {
 	if [[ -z "$Location" && -z "$Imageurl" && -z "$Isourl" ]]; then
 		distropatternInter=$RuntimeTmp/distroPatternInternet
