@@ -225,7 +225,11 @@ while true; do
 	esac
 done
 
-OpenSSHUrl=${OpenSSHUrl:-https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip}
+is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
+if [[ -z "$OpenSSHUrl" ]]; then
+	OpenSSHUrl=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip
+	is_rh_intranet && OpenSSHUrl=http://download.devel.redhat.com/qa/rhts/lookaside/windows-images/OpenSSH-Win64.zip
+fi
 : <<EOF
 if [[ -z "$VirtioDriverISOUrl" ]]; then
 	VirtioDriverISOUrl=/usr/share/virtio-win/virtio-win.iso
