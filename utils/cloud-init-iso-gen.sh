@@ -145,7 +145,7 @@ if [[ $Intranet = yes ]]; then
 cat <<IntranetCMD
   - (cd /etc/pki/ca-trust/source/anchors && curl -Ls --remote-name-all https://certs.corp.redhat.com/{2022-IT-Root-CA.pem,2015-IT-Root-CA.pem,ipa.crt} && update-ca-trust)
   - command -v yum && (cd /usr/bin && curl -L -k -m 30 --remote-name-all $bkrClientImprovedUrl/utils/{brewinstall.sh,taskfetch.sh} && chmod +x brewinstall.sh taskfetch.sh) &&
-    { taskfetch.sh --install-deps & brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot; }
+    { nohup taskfetch.sh --install-deps &>/dev/null & brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot; }
 
   - _rpath=share/restraint/plugins/task_run.d
   - command -v yum && { yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd;
