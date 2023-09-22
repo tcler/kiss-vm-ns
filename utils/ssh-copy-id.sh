@@ -23,9 +23,10 @@ ipcalc -cs $host || {
 test -f ~/.ssh/id_ecdsa || {
 	ssh-keygen -q -t ecdsa -f ~/.ssh/id_ecdsa -N ''
 }
-expect -c "
+expect -c "log_user 1; set timeout 15
 	spawn ssh-copy-id -o StrictHostKeyChecking=no -f $@ $user@$host
+	log_user 0
 	expect -re {.*assword:|[Pp]assword.for.*:} {send \"$password\\n\"}
-	expect eof
-	#close \$spawn_id
+	lassign [wait] pid spawnid osrc rc
+	exit $rc
 "
