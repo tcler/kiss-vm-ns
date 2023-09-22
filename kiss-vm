@@ -295,6 +295,11 @@ vmhomedir() {
 	local _vmname=$(vmname_extract -all "$1")
 	local _vmdir= _image=
 
+	if test -z "$_vmname"; then
+		echo "{VM:WARN} a vmname is needed" >&2
+		return 1
+	fi
+
 	read _type _dev _target _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
 	if test -n "$_image"; then
 		_vmdir=$(dirname $_image)
