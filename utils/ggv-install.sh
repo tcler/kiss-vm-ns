@@ -175,23 +175,21 @@ fastesturl() {
 
 echo
 pipOpts="--default-timeout=60 --retries=10"
+pipDefaultUrl=https://files.pythonhosted.org
+pipMirrorList="$pipDefaultUrl
+https://pypi.tuna.tsinghua.edu.cn/simple
+https://mirrors.aliyun.com/pypi/simple"
+fastUrl=$(fastesturl $pipMirrorList)
+[[ -n "$fastUrl" && "$fastUrl" != "$pipDefaultUrl" ]] && pipInstallOpts="-i $fastUrl"
+echo -e "\n{ggv-install} install python pip ..."
+install_python_pip
+PIP=$(command -v pip3) || PIP=$(command -v pip)
+if $PIP install -h|grep .--break-system-packages; then
+	pipInstallOpts+=" --break-system-packages"
+fi
+
 if ! command -v vncdo; then
-	pipDefaultUrl=https://files.pythonhosted.org
-	pipMirrorList="$pipDefaultUrl
-	https://pypi.tuna.tsinghua.edu.cn/simple
-	https://mirrors.aliyun.com/pypi/simple"
-	fastUrl=$(fastesturl $pipMirrorList)
-	[[ -n "$fastUrl" && "$fastUrl" != "$pipDefaultUrl" ]] && pipInstallOpts="-i $fastUrl"
-
-	echo -e "\n{ggv-install} install python pip ..."
-	install_python_pip
-	PIP=$(command -v pip3) || PIP=$(command -v pip)
-
-	if $PIP install -h|grep .--break-system-packages; then
-		pipOpts+=" --break-system-packages"
-	fi
 	echo -e "{ggv-install} pip Opts: $pipOpts $pipInstallOpts ..."
-
 	echo -e "\n{ggv-install} install vncdotool ..."
 	$PIP $pipOpts install $pipInstallOpts --upgrade pip
 	$PIP $pipOpts install $pipInstallOpts --upgrade setuptools
@@ -200,6 +198,5 @@ if ! command -v vncdo; then
 		$PIP $pipOpts install $pipInstallOpts dataclasses
 	$PIP $pipOpts install $pipInstallOpts vncdotool service_identity
 else
-	PIP=$(command -v pip3) || PIP=$(command -v pip)
-	$PIP $pipOpts install --upgrade vncdotool service_identity
+	$PIP $pipOpts install $pipInstallOpts --upgrade vncdotool service_identity
 fi
