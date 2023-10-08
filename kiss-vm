@@ -292,35 +292,41 @@ vmrootdir() {
 }
 
 vmhomedir() {
-	local _vmname=$(vmname_extract -all "$1")
-	local _vmdir= _image=
+	local _vmname= _vmdir= _image=
+	_vmname=$(vmname_extract -all "$@")
 
 	if test -z "$_vmname"; then
 		echo "{VM:WARN} a vmname is needed" >&2
 		return 1
 	fi
 
-	read _type _dev _target _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
-	if test -n "$_image"; then
-		_vmdir=$(dirname $_image)
-	elif test -d $VMSHOME/PXE/$_vmname; then
-		_vmdir=$VMSHOME/PXE/$_vmname
-	else
-		echo "{VM:WARN} VM dir is empty, something is wrong!" >&2
-		return 1
-	fi
+	for vmn in $_vmname; do
+		virsh desc $vmn &>/dev/null || {
+			echo -e "{VM:WARN} VM $vmn not exist!" >&2; continue
+		}
+		read _type _dev _target _image < <(_vmblklist $vmn '\.(qcow2|qcow|raw)')
+		if test -n "$_image"; then
+			_vmdir=$(dirname $_image)
+		elif test -d $VMSHOME/PXE/$vmn; then
+			_vmdir=$VMSHOME/PXE/$vmn
+		else
+			echo "{VM:WARN} VM dir is empty, something is wrong!" >&2
+			return 1
+		fi
 
-	if pushd $_vmdir &>/dev/null; then
-		pwd
-		ls -lAhZ
-		popd >/dev/null
-		test -f $_vmdir/.kiss-vm ||
-			echo "{VM:NOTE} seems this VM is not created by kiss-vm($(command -v vm))" >&2
-	else
-		echo "$_vmdir"
-		ls -lAhZ "$_vmdir" ||
-			echo "{VM:WARN} current user($(whoami)) can not access the ^^ VM homedir ^^" >&2
-	fi
+		if pushd $_vmdir &>/dev/null; then
+			pwd
+			ls -lAhZ
+			popd >/dev/null
+			test -f $_vmdir/.kiss-vm ||
+				echo "{VM:NOTE} seems this VM is not created by kiss-vm($(command -v vm))" >&2
+		else
+			echo "$_vmdir"
+			ls -lAhZ "$_vmdir" ||
+				echo "{VM:WARN} current user($(whoami)) can not access the ^^ VM homedir ^^" >&2
+		fi
+		echo
+	done
 }
 
 _vmdelete() {
