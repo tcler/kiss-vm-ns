@@ -713,6 +713,21 @@ vmstart() {
 	done
 }
 
+vmautostart() {
+	local _vmname=$(vmname_extract -all "$1")
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogchecklist vm-start $resf all && vmList=$(< $resf)
+		[[ -z "$vmList" ]] && { return; }
+		eval set $vmList
+	}
+ 
+	set -- $(vmname_extract -all "$@")
+	for vm; do
+		virsh autostart "$vm"
+	done
+}
+
 vmstat() {
 	local _vmname=$(vmname_extract -all "$1")
 	[[ -z "$_vmname" ]] && {
@@ -2280,6 +2295,7 @@ Usage() {
 	  $P reboot [-w] [VM]  #reboot VM          //option /w indicate wait until reboot complete(port 22 is available)
 	  $P stop [VM]         #stop/shutdonw VM   //nil
 	  $P start [VM]        #start VM           //nil
+	  $P autostart [VM]    #autostart VM       //nil
 	  $P stat [VM]         #get VM state       //see also: virsh domstate <domain>
 	  $P clone <VM> [new-vmname]  #clone VM    //see also: virt-clone + virt-sysprep
 	  $P cpfrom [-u user[:password]] <VM> <file/dir_in_vm> <dst_dir/file_in_host>
@@ -2950,9 +2966,10 @@ case "$subcmd" in
 	vn|vnc|vncp*)		vmvncproc "$@"; exit $?;;
 	x|xm*)			vmxml "$@"; exit $?;;
 	ed|ed*)			vmedit "$@"; exit $?;;
-	reboot|reb|re*)		vmreboot "$@"; exit $?;;
+	restart|reboot|reb|re*)	vmreboot "$@"; exit $?;;
 	stop|sto*)		vmstop "$@"; exit $?;;
 	start|star*)		vmstart "$@"; exit $?;;
+	autostart|autostar*)	vmautostart "$@"; exit $?;;
 	stat)			vmstat "$@"; exit $?;;
 	blk*|srcfiles)		_vmblklist "$@"; exit $?;;
 	rootdir)		vmrootdir "$@"; exit $?;;

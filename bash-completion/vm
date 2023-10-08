@@ -79,7 +79,7 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList=(prepare enable-nested-vm help h create ls list clone port-available login console qmp monitor delete ifaddr viewer vncproc xml edit exec reboot stop start stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthru)
+    subcommandList=(prepare enable-nested-vm help h create ls list clone port-available login console qmp monitor delete ifaddr viewer vncproc xml edit exec restart reboot stop start autostart stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthru)
 
     for ((i=0; i<${#words[@]}; i++)); do
         w=${words[$i]}
@@ -130,11 +130,11 @@ _vm()
                 fi
             fi
             ;;
-        del|delete|stop|start|stat|blk*|srcfiles|homedir)
+        del|delete|stop|autos*|start|stat|blk*|srcfiles|homedir)
             vmlist=$(virsh list --all --name 2>/dev/null)
             COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             ;;
-        reboot)
+        reboot|restart)
             vmlist=$(virsh list --all --name 2>/dev/null)
             COMPREPLY=( $( compgen -W "-w $vmlist" -- "$cur" ) )
             ;;
