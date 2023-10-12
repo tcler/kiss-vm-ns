@@ -38,3 +38,4 @@ export PYTHONPATH=$targetdir/$_xdir
 export PATH=$targetdir/$_xdir/test:$PATH
 EOF
 echo "{info} please source '$_envf', and run your tests"
+cat $_envf >>~/.bashrc
