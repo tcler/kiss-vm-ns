@@ -17,7 +17,7 @@ else
 fi
 
 #install dependency
-yum install -y gcc krb5-devel swig
+sudo yum install -y gcc krb5-devel swig
 
 #install module ply
 if pip3 install -h|grep .--break-system-packages; then
@@ -27,7 +27,21 @@ yes | sudo pip3 install $pipOpt ply
 yes | sudo pip3 install $pipOpt gssapi
 
 #git clone pynfs
-sudo yum install -y git
-PynfsUrl=git://git.linux-nfs.org/projects/bfields/pynfs.git
-git clone $PynfsUrl
-(cd pynfs; python3 ./setup.py install)
+_xdir=pynfs
+targetdir=/usr/src; [[ $(id -u) != 0 ]] && { targetdir=${HOME}/src; }
+mkdir -p ${targetdir}; rm -rf ${targetdir}/$_xdir
+which git 2>/dev/null || sudo yum install -y git
+pushd $targetdir
+	PynfsUrl=git://git.linux-nfs.org/projects/bfields/pynfs.git
+	git clone $PynfsUrl $_xdir
+	(cd $_xdir; python3 ./setup.py install)
+popd
+
+#export env
+_envf=/tmp/pynfs.env
+cat <<-EOF >$_envf
+export PYTHONPATH=$targetdir/$_xdir/nfs4.1
+export PATH=$targetdir/$_xdir/nfs4.1:$PATH
+EOF
+echo "{info} please source '$_envf', and run your tests"
+cat $_envf >>~/.bashrc
