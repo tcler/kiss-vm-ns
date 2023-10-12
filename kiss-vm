@@ -1845,7 +1845,7 @@ if [[ $Intranet = yes ]]; then
 		case ${distro,,} in
 		fedora*)
 			Repos+=(
-				beaker-harness:https://download.devel.redhat.com/beakerrepos/harness/Fedora\$releasever/
+				beaker-harness:http://download.devel.redhat.com/beakerrepos/harness/Fedora\$releasever/
 			)
 			;;
 		rhel-5*|rhel5*)
@@ -1897,7 +1897,7 @@ if [[ $Intranet = yes ]]; then
 				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
 				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$GuestARCH/extras/os
 				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$GuestARCH/os
-				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux7
+				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux7
 			)
 			;;
 		rhel-8*|rhel8*)
@@ -1934,7 +1934,7 @@ if [[ $Intranet = yes ]]; then
 				SAP-debuginfo:${debug_url/BaseOS/SAP}
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
 				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
-				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux8
+				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux8
 			)
 			;;
 		rhel-9*|rhel9*)
@@ -1971,7 +1971,7 @@ if [[ $Intranet = yes ]]; then
 				SAP-debuginfo:${debug_url/BaseOS/SAP}
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
 				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
-				beaker-harness:https://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux9
+				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux9
 			)
 			;;
 		esac
