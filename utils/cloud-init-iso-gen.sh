@@ -124,6 +124,7 @@ cat <<REPO
     enabled: true
     gpgcheck: false
     skip_if_unavailable: true
+    sslverify: 0
 
 REPO
 done

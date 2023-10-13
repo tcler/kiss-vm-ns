@@ -166,6 +166,7 @@ for repo in "${Repos[@]}"; do
 	enabled=1
 	gpgcheck=0
 	skip_if_unavailable=1
+	sslverify=0
 	REPO
 
 	EOF
