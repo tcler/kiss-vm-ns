@@ -145,7 +145,7 @@ runcmd:
 $(
 if [[ $Intranet = yes ]]; then
 cat <<IntranetCMD
-  - (cd /etc/pki/ca-trust/source/anchors && curl -Ls --remote-name-all https://certs.corp.redhat.com/{2022-IT-Root-CA.pem,2015-IT-Root-CA.pem,ipa.crt,mtls-ca-validators.crt} && update-ca-trust)
+  - (cd /etc/pki/ca-trust/source/anchors && curl -Ls --remote-name-all https://certs.corp.redhat.com/{2022-IT-Root-CA.pem,2015-IT-Root-CA.pem,ipa.crt,mtls-ca-validators.crt,RH-IT-Root-CA.crt} && update-ca-trust)
   - command -v yum && (cd /usr/bin && curl -L -k -m 30 --remote-name-all $bkrClientImprovedUrl/utils/{brewinstall.sh,taskfetch.sh} && chmod +x brewinstall.sh taskfetch.sh) &&
     { nohup taskfetch.sh --install-deps &>/dev/null & brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot; }
 
