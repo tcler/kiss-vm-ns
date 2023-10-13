@@ -125,6 +125,7 @@ cat <<REPO
     gpgcheck: false
     skip_if_unavailable: true
     sslverify: 0
+    metadata_expire: 7d
 
 REPO
 done
