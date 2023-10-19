@@ -205,8 +205,10 @@ KSF
 	cat $Post
 }
 
+cat <<EOF
 echo "export DISTRO=$Distro DISTRO_BUILD=$Distro RSTRNT_OSDISTRO=$Distro" >>/etc/bashrc
-echo -e "%end\n"
+%end
+EOF
 
 case $Distro in
 RHEL-5*|RHEL5*|centos5*|centos-5*)
