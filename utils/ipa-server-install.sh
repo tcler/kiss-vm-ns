@@ -20,7 +20,8 @@ if [[ $OSV != %rhel && $OSV -lt 6 ]]; then
 fi
 
 switchroot "$@"
-yOpt="--nobest --allowerasing -q"
+yOpt="-q --nobest"
+[[ $OSV -gt 7 ]] && yOpt+=" --allowerasing"
 
 echo "{INFO} installing ipa-server ..."
 #fedora
