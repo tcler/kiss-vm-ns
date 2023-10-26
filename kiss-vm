@@ -2653,7 +2653,8 @@ QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm 2>/dev/null)
 if [[ "$GuestARCH" != "$HostARCH" || -z "$QEMU_KVM" ]]; then
 	QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-system-$GuestARCH 2>/dev/null)
 	if [[ -z "$QEMU_KVM" && "$1" != prepare ]]; then
-		echo -e "{VM:ERROR} command 'qemu-kvm or qemu-system-$GuestARCH' not found"
+		echo -e "{VM:WARN} command 'qemu-kvm or qemu-system-$GuestARCH' not found" >&2
+		echo -e "{VM:WARN} please run   \033[32msudo vm prepare\033[0m   first" >&2
 		exit 2
 	fi
 fi
