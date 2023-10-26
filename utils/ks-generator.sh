@@ -176,6 +176,11 @@ echo -e "%end\n"
 
 # post script
 echo -e "%post --interpreter=/usr/bin/bash --log=/root/extra-ks-post.log"
+cat <<'DNFCONF'
+_dnfconf=$(test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf)
+grep -q ^metadata_expire= $_dnfconf 2>/dev/null || echo metadata_expire=7d >>$_dnfconf
+DNFCONF
+
 cat <<'KSF'
 USER=$(id -un)
 echo "[$USER@${HOSTNAME} ${HOME} $(pwd)] join wheel user to sudoers ..."

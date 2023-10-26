@@ -5,6 +5,7 @@ _repon=kiss-vm-ns
 _confdir=/etc/$(_repon)
 _oldconfdir=/etc/kiss-vm
 _libdir=/usr/lib/bash
+_dnfconf=$(shell test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf)
 completion_path=/usr/share/bash-completion/completions
 required_pkgs=iproute tmux expect bind-utils bash-completion nmap
 ifeq ("$(wildcard $(completion_path))", "")
@@ -15,10 +16,10 @@ ifeq (, $(shell which sudo))
 	SUDO=
 endif
 
-HTTP_PROXY := $(shell curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail \
-			"http://download.devel.redhat.com" &>/dev/null && echo "squid.redhat.com:8080")
+HTTP_PROXY := $(shell grep -q redhat.com /etc/resolv.conf && echo "squid.redhat.com:8080")
 
 i in ins inst install: _install_macos_kvm_utils
+	@grep -q ^metadata_expire= $(_dnfconf) 2>/dev/null || echo metadata_expire=7d >>$(_dnfconf)
 	$(SUDO) cp -af utils/* $(_bin)/.
 	@$(SUDO) rm -f $(_bin)/install-sbopkg.sh /usr/local/bin/port-available.sh
 	$(SUDO) cp -af kiss-vm $(_bin)/vm
