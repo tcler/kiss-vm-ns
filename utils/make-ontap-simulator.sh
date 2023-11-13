@@ -29,6 +29,11 @@ verx=$(rpm -E %rhel)
 ovaImage=vsim-netapp-DOT${sver}-cm_nodar.ova
 licenseFile=CMode_licenses_${sver}.txt
 script=ontap-simulator-two-node.sh
+ONTAP_ENV_FILE=/tmp/ontap2info.env
+test -n "$1" && {
+	script=ontap-simulator-single-node.sh
+	ONTAP_ENV_FILE=/tmp/ontapinfo.env
+}
 minram=$((15*1000))
 ramsize=$(free -m|awk '/Mem:/{print $2}')
 [[ "$ramsize" -le "$minram" ]] && {
@@ -75,7 +80,6 @@ ONTAP_IF_INFO=/tmp/ontap2-if-info.txt
 bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "${optx[@]}" &> >(tee $ONTAP_INSTALL_LOG)
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee  $ONTAP_IF_INFO
 
-ONTAP_ENV_FILE=/tmp/ontap2info.env
 source "$ONTAP_ENV_FILE"
 trun     host $NETAPP_NAS_HOSTNAME
 trun -x0 showmount -e "$NETAPP_NAS_IP_LOC"
