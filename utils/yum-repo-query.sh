@@ -2,12 +2,13 @@
 
 repoUrl=$1
 reponame=repo$RANDOM
+[[ -n "$2" ]] && basearch="$2"
 if ! { command -v yum &>/dev/null || command -v dnf &>/dev/null; }; then
 	echo "{WARN} OS is not supported."
 	exit 1
 fi
 if [[ -z "$repoUrl" ]]; then
-	echo "Usage: $0 <repo_url>"
+	echo "Usage: $0 <repo_url> [\$basearch]"
 	exit 1
 fi
 
