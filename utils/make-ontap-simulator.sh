@@ -10,6 +10,7 @@ TIME_SERVER=$timeServer
 #kiss-vm should have been installed and initialized
 vm prepare >/dev/null
 
+[[ "$1" = -s ]] && { shift; Single=yes; }
 distro=${1:-9}
 clientvm=${2:-rhel-client}
 trun -tmux=- vm create -n $clientvm $distro -p 'vim bind-utils nfs-utils expect' --nointeract --saveimage -f
@@ -30,7 +31,7 @@ ovaImage=vsim-netapp-DOT${sver}-cm_nodar.ova
 licenseFile=CMode_licenses_${sver}.txt
 script=ontap-simulator-two-node.sh
 ONTAP_ENV_FILE=/tmp/ontap2info.env
-test -n "$1" && {
+test -n "$Single" && {
 	script=ontap-simulator-single-node.sh
 	ONTAP_ENV_FILE=/tmp/ontapinfo.env
 }
