@@ -2,7 +2,10 @@
 
 repoUrl=$1
 reponame=repo$RANDOM
-[[ -n "$2" ]] && basearch="$2"
+[[ -n "$2" ]] && {
+	basearch="$2"
+	repoUrl=${repoUrl//\$basearch/$basearch}
+}
 if ! { command -v yum &>/dev/null || command -v dnf &>/dev/null; }; then
 	echo "{WARN} OS is not supported."
 	exit 1
