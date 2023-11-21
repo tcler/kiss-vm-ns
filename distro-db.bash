@@ -3,8 +3,12 @@ declare -A distroInfo
 #### CentOS stream and CentOS
 GuestARCH=${GuestARCH:-$(uname -m)}
 _GuestARCH=${GuestARCH}; [[ "$GuestARCH" = ppc64 ]] && _GuestARCH=ppc64le;
+distroInfo[Alma-9]="https://repo.almalinux.org/almalinux/9/cloud/$_GuestARCH/images/AlmaLinux-9-GenericCloud-latest.$_GuestARCH.qcow2 https://repo.almalinux.org/almalinux/9/BaseOS/$_GuestARCH/os/"
+distroInfo[Alma-8]="https://repo.almalinux.org/almalinux/8/cloud/$_GuestARCH/images/AlmaLinux-8-GenericCloud-latest.$_GuestARCH.qcow2 https://repo.almalinux.org/almalinux/8/BaseOS/$_GuestARCH/os/"
+
 distroInfo[Rocky-9]="https://mirrors.sdu.edu.cn/rocky/9/images/$_GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/9/BaseOS/$_GuestARCH/os"
 distroInfo[Rocky-8]="https://mirrors.sdu.edu.cn/rocky/8/images/$_GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/8/BaseOS/$_GuestARCH/os"
+
 distroInfo[CentOS-9-stream]="https://cloud.centos.org/centos/9-stream/$_GuestARCH/images/ http://mirror.stream.centos.org/9-stream/BaseOS/$_GuestARCH/os/"
 distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/$_GuestARCH/images/ http://mirror.centos.org/centos/8-stream/BaseOS/$_GuestARCH/os/"
 distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/$_GuestARCH/images/ http://mirror.centos.org/centos/8/BaseOS/$_GuestARCH/os/"
@@ -38,7 +42,8 @@ distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud
 distroInfo[FreeBSD-12.4]="https://download.freebsd.org/ftp/releases/VM-IMAGES/12.4-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-13.2]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.2-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-13.1]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
-distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/14.0-CURRENT/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
+distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
+distroInfo[FreeBSD-15.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/15.0-CURRENT/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 
 #### ArchLinux
 distroInfo[archlinux]="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-${GuestARCH}-cloudimg.qcow2"

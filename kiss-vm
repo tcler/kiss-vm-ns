@@ -3069,7 +3069,7 @@ shopt -u extglob
 		dialogres=$RuntimeTmp/dialogRes
 		touch $distropatternInter $distropatternIntra
 
-		echo -e "Rocky\nCentOS\nfedora\ndebian\nopenSUSE\narchlinux\nFreeBSD\nWindows" >>$distropatternInter
+		echo -e "Alma\nRocky\nCentOS\nfedora\ndebian\nopenSUSE\narchlinux\nFreeBSD\nWindows" >>$distropatternInter
 		for dname in "${!distroInfo[@]}"; do echo "$dname"; done | sort -rV >>$distrolist
 
 		dialogTitle="vm-create"
