@@ -18,7 +18,7 @@ option_arg_complete() {
     local hasarg=$1
     local opt=${hasarg:-$prev}
     case $opt in
-    -i|-l|-C|--xcdrom|--disk|--win-openssh|--win-download-url|--win-virtio-drv|--ks)
+    -i|-l|-C|--xcdrom|--disk|--win-openssh|--win-download-url|--win-virtio-drv|--ks|--to-disk)
         [[ -n "$hasarg" ]] && return 0
         #COMPREPLY=( $( compgen -A file -- "$cur" ) )
         _filedir
