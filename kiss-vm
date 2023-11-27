@@ -292,7 +292,7 @@ vmrootdir() {
 }
 
 vmhomedir() {
-	local _vmname= _vmdir= _image=
+	local _vmname= _vmdir=
 	_vmname=$(vmname_extract -all "$@")
 
 	if test -z "$_vmname"; then
@@ -304,12 +304,8 @@ vmhomedir() {
 		virsh desc $vmn &>/dev/null || {
 			echo -e "{VM:WARN} VM $vmn not exist!" >&2; continue
 		}
-		read _type _dev _target _image < <(_vmblklist $vmn '\.(qcow2|qcow|raw)')
-		if test -n "$_image"; then
-			_vmdir=$(dirname $_image)
-		elif test -d $VMSHOME/PXE/$vmn; then
-			_vmdir=$VMSHOME/PXE/$vmn
-		else
+		_vmdir=$(ls -d $VMSHOME/*/$vmn 2>/dev/null)
+		if test -z "$_vmdir"; then
 			echo "{VM:WARN} VM dir is empty, something is wrong!" >&2
 			return 1
 		fi
