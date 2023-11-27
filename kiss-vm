@@ -1284,6 +1284,7 @@ vmadd_disk() {
 	local diskprefix=sd
 
 	read diskf _attrs <<< "${diskf//,/ }"
+	[[ "${size: -1}" = [0-9] ]] && size+=G
 	eval "$_attrs"  #drv=qcow2,raw,... bus=virtio,scsi,sata,...
 	[[ -n "$drv" ]] && subdrv_opt=--subdriver=$drv
 	[[ -n "$bus" ]] && tgtbus_opt=--targetbus=$bus
@@ -1299,7 +1300,7 @@ vmadd_disk() {
 		if [[ -f "$diskf" ]]; then
 			{ echo -e "{VM:WARN} '$diskf' already exist."; : return; }
 		else
-			qemu-img create -f qcow2 "${diskf}" ${size:-80}G
+			qemu-img create -f qcow2 "${diskf}" ${size:-80G}
 		fi
 		subdrv_opt=${subdrv_opt:---subdriver=qcow2}
 	fi
