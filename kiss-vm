@@ -5,7 +5,6 @@
 # inspired by https://www.brianlinkletter.com/2019/02/build-a-network-emulator-using-libvirt/
 # `and inspired by Red Hat traning Virtual Lab
 
-LANG=C
 PATH=~/bin:$PATH 
 
 #>================ for recall self if something happen ================
@@ -3003,6 +3002,7 @@ esac
 
 [[ -n "$VNCPUTS" || -n "$VNCGET" || -n "$VNCGETSC" ]] && { vmvncproc "$@"; exit $?; }
 
+LANG=C
 declare -A distroInfo
 dbfile=${_confdir}/distro-db.bash
 owndbfile=$perConfDir/distro-db.bash
