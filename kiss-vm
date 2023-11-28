@@ -15,7 +15,7 @@ trap_retry() {
 	local cpu=Icelake-Server
 	echo "[Error] got a special issue($SA_SIGINFO) while create VM, try again:";
 	echo '----------------------------------------------------------------'
-	PATH=/usr/libexec:$PATH qemu-kvm -cpu ?|grep -q $cpu || cpu=Skylake-Server
+	PATH=/usr/libexec:$PATH LANG=C qemu-kvm -cpu ?|grep -q $cpu || cpu=Skylake-Server
 	VM_RETRY=yes exec $PROG "${ARGS[@]}" -f --qemucpu=$cpu;
 }
 trap trap_retry SIGALRM SIGUSR2
@@ -162,6 +162,8 @@ run() {
 	return $_rc
 }
 
+cvirsh() { LANG=C virsh "$@"; }
+
 is_ssh() {
 	local p=${1:-$PPID}
 	read pid name x ppid y < <(cat /proc/$p/stat)
@@ -274,7 +276,7 @@ _vmblklist() {
 		return 1
 	}
 
-	local blklist=$(virsh domblklist "$_vmname" --details | awk 'NR>2{print}' | sed -r '/^$/d')
+	local blklist=$(cvirsh domblklist "$_vmname" --details | awk 'NR>2{print}' | sed -r '/^$/d')
 	if [[ -z "$(grep -E -v 'cdrom|ansf-usb.image' <<<"$blklist")" ]]; then
 		blklist+=$'\n'$(virsh dumpxml "$_vmname" |
 			sed -rn '/qemu:commandline/,/\/qemu:commandline/{/.*file=([^,]+),.*,id=NVME.*/I{s//file disk nvme \1/;p}}')
@@ -740,7 +742,7 @@ vmstat() {
 
 	set -- $(vmname_extract -all "$@")
 	for vm; do
-		virsh domstate "$vm"
+		cvirsh domstate "$vm"
 	done
 }
 
@@ -871,7 +873,7 @@ sshtest() {
 	[[ -z "${RuntimeTmp}" ]] && tmpf=$(mktemp)
 	local _cmd=  #work-around for avoiding hang while test against windows openssh-server
 	[[ "${target,,}" = administrator@* ]] && _cmd=exit
-	ssh -v -n -o Batchmode=yes $sshOpts $target $_cmd &>$tmpf; sshrc=$?
+	LANG=C ssh -v -n -o Batchmode=yes $sshOpts $target $_cmd &>$tmpf; sshrc=$?
 	[[ "$DEBUG" = yes ]] && {
 		echo "[sshtest:debug] sshrc=$sshrc" >&2
 		echo -e "\033[32m$(tail -n 20 $tmpf)\033[0m" >&2
@@ -1287,7 +1289,7 @@ vmadd_disk() {
 	if [[ -f "$diskf" ]]; then
 		cp "$diskf" $homedir/.
 		diskf=$homedir/${diskf##*/}
-		file "$diskf"|grep -iq "QEMU QCOW Image" && subdrv_opt=--subdriver=qcow2
+		LANG=C file "$diskf"|grep -iq "QEMU QCOW Image" && subdrv_opt=--subdriver=qcow2
 	elif [[ -b "$diskf" ]]; then
 		:
 	elif [[ ! -e "$diskf" && "$diskf" != */* ]]; then
@@ -1711,14 +1713,14 @@ COMM
 	}
 
 	#delete virbr0 if net-start default fail
-	grep -q 'virbr0: File exists' < <(virsh net-start default 2>&1 >/dev/null) && {
+	grep -q 'virbr0: File exists' < <(cvirsh net-start default 2>&1 >/dev/null) && {
 		echo -e "{*INFO*} remove virbr0 ..."
 		ip link delete virbr0
 		virsh net-start default
 	}
 
 	#re-define default network, if 192.168.122.0 has been used by other ifs
-	grep -q 'Network is already in use' < <(virsh net-start default 2>&1 >/dev/null) && {
+	grep -q 'Network is already in use' < <(cvirsh net-start default 2>&1 >/dev/null) && {
 		echo -e "{*INFO*} re-create Network default ..."
 		default_xml=$(virsh net-dumpxml default|sed 's/\.122/.123/g')
 		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
@@ -2340,7 +2342,7 @@ expandrc() {
 is_bridge() {
 	local ifname=$1
 	[[ -z "$ifname" ]] && return 1
-	ip -d a s $ifname | grep -qw bridge
+	LANG=C ip -d a s $ifname | grep -qw bridge
 }
 
 get_default_if() {
@@ -2660,13 +2662,13 @@ fi
 qemu_kvm_nvr() { echo -n ${QEMU_KVM} $(${QEMU_KVM} --version 2>/dev/null | awk '{print $4; exit}'); }
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
-	if ! grep -q nvdimm < <($QEMU_KVM -device help 2>/dev/null); then
+	if ! grep -q nvdimm < <(LANG=C $QEMU_KVM -device help 2>/dev/null); then
 		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvdimm driver."
 		exit 1
 	fi
 fi
 if [[ "${#NVME_DEVS[@]}" -gt 0 || -n "$NVME_BOOT" ]]; then
-	if ! grep -q nvme < <($QEMU_KVM -device help 2>/dev/null); then
+	if ! grep -q nvme < <(LANG=C $QEMU_KVM -device help 2>/dev/null); then
 		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvme driver."
 		exit 1
 	fi
@@ -2815,7 +2817,7 @@ else
 		#set default qemu cpu type cortex-a72 for aarch64, it works on RHEL aarch64 build
 		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
 		if [[ -z "$QEMU_CPU" ]]; then
-			_cpu=$($_QEMU_KVM -cpu ? |& grep cortex-a | sort -Vru | head -1)
+			_cpu=$(LANG=C $_QEMU_KVM -cpu ? |& grep cortex-a | sort -Vru | head -1)
 			QEMU_OPTS+=("--qemu-commandline=-cpu $_cpu")
 		fi
 		;;
@@ -2897,7 +2899,7 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 			exit 2
 		fi
 
-		if $QEMU_KVM -cpu help|grep -q "$modelname .*alias of"; then
+		if LANG=C $QEMU_KVM -cpu help|grep -q "$modelname .*alias of"; then
 			modelname=$($QEMU_KVM -cpu help|sed -rn "/$modelname/"'{s/.*alias of (.+)\).*/\1/;p}')
 		fi
 		_cpulist=$($QEMU_KVM -cpu help|sed -n "/$modelname/{s/)$//; p}")
@@ -3150,7 +3152,7 @@ fi
 if [[ "$VTPM" = yes ]]; then
 	_dependpkgs=swtpm-tools
 	_dependcmd=swtpm_setup
-	if ! grep -q tpm-crb < <($QEMU_KVM -device help); then
+	if ! grep -q tpm-crb < <(LANG=C $QEMU_KVM -device help); then
 		echo -e "{VM:WARN} $(qemu_kvm_nvr) don't support tpm-crb driver that's required by --vtpm option"
 		exit 1
 	fi
@@ -3166,7 +3168,7 @@ QXL_available() {
 	local rc=0
 	local qemu_kvm=${QEMU_KVM:-/usr/libexec/qemu-kvm}
 	local quitOpt=; [[ -z "$1" ]] && quitOpt=-q
-	for ((i=0;i<4;i++)) do DISPLAY= timeout 0.5 $qemu_kvm -vga qxl $MACHINE_QEMUOPT 2>&1; done |
+	for ((i=0;i<4;i++)) do DISPLAY= LANG=C timeout 0.5 $qemu_kvm -vga qxl $MACHINE_QEMUOPT 2>&1; done |
 		grep $quitOpt "${2:-QXL VGA not available}" && rc=1
 	return $rc
 }
@@ -3175,7 +3177,7 @@ QXL_available() {
 	QXL_available || {
 		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
 	}
-	$QEMU_KVM -machine help|grep -q q35 && Q35=support
+	LANG=C $QEMU_KVM -machine help|grep -q q35 && Q35=support
 }
 [[ "$GuestARCH" = x86_64 && "$MACHINE_OPT" = *q35* && "$Q35" != support ]] && {
 	echo -e "{VM:ERROR} Guest require machine type 'q35', but the qemu in your platform doesn't support 'q35'" >&2
@@ -3389,7 +3391,7 @@ if [[ -z "$VM_OS_VARIANT" ]]; then
 		fi
 	}
 	[[ -z "$OS_VARIANT_OPT" ]] && {
-		man virt-install|grep -q detect=on && OS_VARIANT_OPT=--os-variant=detect=on,require=off
+		LANG=C man virt-install|grep -q detect=on && OS_VARIANT_OPT=--os-variant=detect=on,require=off
 	}
 else
 	OS_VARIANT_OPT=--os-variant=$VM_OS_VARIANT
@@ -3522,7 +3524,7 @@ for devinfo in "${NVME_DEVS[@]}"; do
 	QEMU_OPTS+=("--qemu-commandline=-drive file=$VMpath/$devfile,format=$format,if=none,id=NVME$c -device nvme,drive=NVME$c,serial=nvme-$c,addr=$(printf 0x%x $((0x10+$c)))")
 	let c++
 done
-virt-install -h | grep -q -- --qemu-commandline || QEMU_OPTS=()
+LANG=C virt-install -h | grep -q -- --qemu-commandline || QEMU_OPTS=()
 
 ### nvdimm option
 CONTROLLER_OPTS=
@@ -4421,7 +4423,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	fi
 
 	bootOption="--cdrom $isofilepath"
-	file -b --mime-type $isofilepath | grep -q iso || bootOption="--import --disk path=$isofilepath,$BOOT_DISK_ATTRS"
+	LANG=C file -b --mime-type $isofilepath | grep -q iso || bootOption="--import --disk path=$isofilepath,$BOOT_DISK_ATTRS"
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  $OS_VARIANT_OPT \
