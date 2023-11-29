@@ -4,6 +4,7 @@ _bin=/usr/bin
 _repon=kiss-vm-ns
 _confdir=/etc/$(_repon)
 _oldconfdir=/etc/kiss-vm
+_varlibdir=/var/lib/kiss-vm
 _libdir=/usr/lib/bash
 _dnfconf=$(shell test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf)
 completion_path=/usr/share/bash-completion/completions
@@ -26,7 +27,7 @@ i in ins inst install: _install_macos_kvm_utils
 	$(SUDO) cp -af kiss-ns $(_bin)/ns
 	$(SUDO) cp -af kiss-netns $(_bin)/netns
 	@test -d $(_oldconfdir) && $(SUDO) mv $(_oldconfdir) $(_confdir) || true
-	$(SUDO) mkdir -p $(_confdir) $(_libdir)
+	$(SUDO) mkdir -p $(_confdir) $(_libdir) $(_varlibdir)
 	@$(SUDO) ln -s $(_confdir) $(_oldconfdir)
 	$(SUDO) cp -af distro-db.bash $(_confdir)/.
 	$(SUDO) cp -af lib/* $(_libdir)/.

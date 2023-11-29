@@ -24,6 +24,7 @@ trap trap_retry SIGALRM SIGUSR2
 P=$0; [[ $0 = /* ]] && P=${0##*/}
 _repon=kiss-vm-ns
 _confdir=/etc/$_repon
+varlib_dir=/var/lib/kiss-vm
 Distro=
 Location=
 Imageurl=
@@ -180,12 +181,14 @@ try_disable_ipv6() {
 
 create_vmhome() {
 	local vmhome=${1%/}
+	local vmn=${vmhome##*/}
 	if [[ -z "$vmhome" ]]; then
 		echo "{VM:ERROR} create_vmhost <vmhome>: argument vmhome is required"
 		return 1
 	fi
 	VMtmp=$vmhome/tmp
-	run -debug -as=$VMUSER mkdir -p $vmhome $VMtmp
+	run -debug -as=$VMUSER mkdir -p $vmhome $VMtmp $varlib_dir/${vmn}
+	run -debug -as=$VMUSER bash -c "echo $vmhome >$varlib_dir/${vmn}/homedir"
 	run -as=$VMUSER "chmod 1777 $VMtmp; chcon --reference=/tmp $VMtmp 2>/dev/null"
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${vmhome%/*} ${vmhome} 2>/dev/null
 	#ensure files created in VMtmp can be accessed by others
@@ -307,8 +310,11 @@ vmhomedir() {
 		}
 		_vmdir=$(ls -d $VMSHOME/*/$vmn 2>/dev/null)
 		if test -z "$_vmdir"; then
-			echo "{VM:WARN} VM dir is empty, something is wrong!" >&2
-			return 1
+			_vmdir=$(cat $varlib_dir/$vmn/homedir 2>/dev/null)
+			if test -z "$_vmdir"; then
+				echo "{VM:ERR} [$vmn] get home dir fail, something is wrong" >&2
+				continue
+			fi
 		fi
 
 		if pushd $_vmdir &>/dev/null; then
@@ -387,6 +393,7 @@ _vmdelete() {
 		rm -f $_vmdir/*
 		rmdir $_vmdir 2>/dev/null
 		rmdir ${_vmdir%/*} 2>/dev/null
+		rm -rf $varlib_dir/$_vmname
 	fi
 	return 0
 }
@@ -1645,6 +1652,8 @@ prepare_kiss_vm() {
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
 	{ QEMU_USER=qemu; id ${QEMU_USER} &>/dev/null || QEMU_USER=libvirt-qemu; }
+	chown root:libvirt -R $varlib_dir
+	chmod g+ws $varlib_dir
 
 	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
 	echo -e "{VM:INFO} install gm gocr and vncdo ..."
