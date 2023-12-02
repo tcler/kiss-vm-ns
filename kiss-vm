@@ -3259,6 +3259,12 @@ for ((i=0; i<${#BOOT_OPTS[@]}; i++)); do
 		cp $nvramfpath $VMpath/.
 		BOOT_OPTS[$i]=$(echo "$bootopt"|sed "s|=$nvramfpath|=$VMpath/$nvramfname|")
 	fi
+	if [[ "${bootopt}" = *loader=* ]]; then
+		biosfpath=$(echo "${bootopt}"|sed -r 's/.*loader=([^,]+).*/\1/')
+		biosfname=${biosfpath##*/}
+		cp $biosfpath $VMpath/.
+		BOOT_OPTS[$i]=$(echo "$bootopt"|sed "s|=$biosfpath|=$VMpath/$biosfname|")
+	fi
 done
 
 # Phase-1: get distro's Location or Image url
