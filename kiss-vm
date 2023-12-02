@@ -3406,7 +3406,7 @@ if [[ -z "$VM_OS_VARIANT" ]]; then
 		fi
 	}
 	[[ -z "$OS_VARIANT_OPT" ]] && {
-		LANG=C man virt-install|grep -q detect=on && OS_VARIANT_OPT=--os-variant=detect=on,require=off
+		LANG=C man virt-install 2>/dev/null|grep -q detect=on && OS_VARIANT_OPT=--os-variant=detect=on,require=off
 	}
 else
 	OS_VARIANT_OPT=--os-variant=$VM_OS_VARIANT
