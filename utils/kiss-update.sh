@@ -42,6 +42,8 @@ install_kiss_tools() {
 	local tmpdir=$(mktemp -d)
 	curl -k -Ls $url | tar zxf - -C $tmpdir && gmake -C $tmpdir/${_repon}-master
 	rm -rf $tmpdir
+	vm netls | grep -qw kissaltnet ||
+		vm netcreate netname=kissaltnet brname=virbr-kissalt subnet=10.172.192.0 domain=alt.kissvm.net
 }
 
 tmpf=$(mktemp)
