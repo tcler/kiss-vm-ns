@@ -3258,12 +3258,17 @@ for ((i=0; i<${#BOOT_OPTS[@]}; i++)); do
 		nvramfname=${nvramfpath##*/}
 		cp $nvramfpath $VMpath/.
 		BOOT_OPTS[$i]=$(echo "$bootopt"|sed "s|=$nvramfpath|=$VMpath/$nvramfname|")
+		chcon system_u:object_r:qemu_var_run_t:s0 $VMpath/$nvramfname 2>/dev/null #system_u:object_r:virt_cache_t:s0 also works
+		chmod a+r $VMpath/$nvramfname
 	fi
+	bootopt=${BOOT_OPTS[$i]}
 	if [[ "${bootopt}" = *loader=* ]]; then
 		biosfpath=$(echo "${bootopt}"|sed -r 's/.*loader=([^,]+).*/\1/')
 		biosfname=${biosfpath##*/}
 		cp $biosfpath $VMpath/.
 		BOOT_OPTS[$i]=$(echo "$bootopt"|sed "s|=$biosfpath|=$VMpath/$biosfname|")
+		chcon system_u:object_r:qemu_var_run_t:s0 $VMpath/$biosfname 2>/dev/null #system_u:object_r:virt_cache_t:s0 also works
+		chmod a+r $VMpath/$biosfname
 	fi
 done
 
