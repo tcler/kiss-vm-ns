@@ -3756,17 +3756,16 @@ if [[ "$InstallType" = location ]]; then
 
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
-	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
-	  "${VIRT_INSTALL_OPTS[@]}" \
-	  $OS_VARIANT_OPT \
+	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
 	  --name $vmname \
+	  $OS_VARIANT_OPT \
+	  ${ARCH_OPT} \
+	  $MACHINE_OPT \
+	  --vcpus ${VCPUS} \
+	  $MEM_OPTS \
 	  --location $Location \
 	  $BOOT_DISK_OPT \
-	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
-	  --vcpus ${VCPUS} \
-	  ${ARCH_OPT} \
-	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  "${NETWORK_OPTS[@]}" \
 	  $CONTROLLER_OPTS \
@@ -3779,7 +3778,8 @@ if [[ "$InstallType" = location ]]; then
 	  $NOREBOOT \
 	  --noautoconsole \
 	  ${GRAPHICS_OPT} \
-	  "${QEMU_QMP_MON_OPT[@]}"
+	  "${VIRT_INSTALL_OPTS[@]}" \
+	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -3977,17 +3977,16 @@ elif [[ "$InstallType" = import ]]; then
 		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=$imgfmt,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0,addr=0x10")
 	fi
 
-	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
-	  "${VIRT_INSTALL_OPTS[@]}" \
-	  $OS_VARIANT_OPT \
+	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
 	  --name $vmname \
+	  $OS_VARIANT_OPT \
+	  ${ARCH_OPT} \
+	  $MACHINE_OPT \
+	  --vcpus ${VCPUS} \
+	  $MEM_OPTS \
 	  --import \
 	  $BOOT_DISK_OPT \
-	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
-	  --vcpus ${VCPUS} \
-	  ${ARCH_OPT} \
-	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  $CLOUD_INIT_OPT \
 	  "${NETWORK_OPTS[@]}" \
@@ -3998,7 +3997,8 @@ elif [[ "$InstallType" = import ]]; then
 	  ${SOUND_OPT} \
 	  --noautoconsole \
 	  ${GRAPHICS_OPT} \
-	  "${QEMU_QMP_MON_OPT[@]}"
+	  "${VIRT_INSTALL_OPTS[@]}" \
+	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
 	[[ -z "$XML" ]] && while true; do test -f $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -4240,17 +4240,16 @@ elif [[ "$InstallType" = pxe ]]; then
 		}
 	fi
 
-	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
-	  "${VIRT_INSTALL_OPTS[@]}" \
-	  $OS_VARIANT_OPT \
+	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
 	  --name $vmname \
+	  $OS_VARIANT_OPT \
+	  ${ARCH_OPT} \
+	  $MACHINE_OPT \
+	  --vcpus ${VCPUS} \
+	  $MEM_OPTS \
 	  --pxe \
 	  $BOOT_DISK_OPT \
-	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
-	  --vcpus ${VCPUS} \
-	  ${ARCH_OPT} \
-	  $MEM_OPTS \
 	  "${NETWORK_OPTS[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  $VTPM_OPT \
@@ -4258,7 +4257,8 @@ elif [[ "$InstallType" = pxe ]]; then
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
 	  ${GRAPHICS_OPT} \
-	  "${QEMU_QMP_MON_OPT[@]}"
+	  "${VIRT_INSTALL_OPTS[@]}" \
+	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
@@ -4444,18 +4444,17 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 
 	bootOption="--cdrom $isofilepath"
 	LANG=C file -b --mime-type $isofilepath | grep -q iso || bootOption="--import --disk path=$isofilepath,$BOOT_DISK_ATTRS"
-	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" \
-	  "${VIRT_INSTALL_OPTS[@]}" \
-	  $OS_VARIANT_OPT \
+	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
 	  --name $vmname \
+	  $OS_VARIANT_OPT \
+	  ${ARCH_OPT} \
+	  $MACHINE_OPT \
+	  --vcpus ${VCPUS} \
+	  $MEM_OPTS \
 	  $bootOption \
 	  $BOOT_DISK_OPT \
 	  $ANSF_DISK_OPT \
-	  $MACHINE_OPT \
 	  "${BOOT_OPTS[@]}" \
-	  --vcpus ${VCPUS} \
-	  ${ARCH_OPT} \
-	  $MEM_OPTS \
 	  $DISK_OPTS \
 	  "${NETWORK_OPTS[@]}" \
 	  $CONTROLLER_OPTS \
@@ -4465,7 +4464,8 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
 	  ${GRAPHICS_OPT} \
-	  "${QEMU_QMP_MON_OPT[@]}"
+	  "${VIRT_INSTALL_OPTS[@]}" \
+	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
 	[[ -z "$XML" ]] && while true; do test -s $VMpath/nohup.log && break; done
 	expect -c "spawn tail -f $VMpath/nohup.log
