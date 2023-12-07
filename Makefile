@@ -28,7 +28,8 @@ i in ins inst install: _install_macos_kvm_utils
 	$(SUDO) cp -af kiss-netns $(_bin)/netns
 	@test -d $(_oldconfdir) && $(SUDO) mv $(_oldconfdir) $(_confdir) || true
 	$(SUDO) mkdir -p $(_confdir) $(_libdir) $(_varlibdir)
-	$(SUDO) chown root:libvirt -R $(_varlibdir) && $(SUDO) chmod g+ws $(_varlibdir)
+	@-if getent group libvirt &>/dev/null; then \
+	  $(SUDO) chown root:libvirt -R $(_varlibdir) && $(SUDO) chmod g+ws $(_varlibdir); fi
 	@$(SUDO) ln -s $(_confdir) $(_oldconfdir)
 	$(SUDO) cp -af distro-db.bash $(_confdir)/.
 	$(SUDO) cp -af lib/* $(_libdir)/.
