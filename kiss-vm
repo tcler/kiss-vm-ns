@@ -2019,7 +2019,7 @@ Usage() {
 	  -L[=url/path[,bus=$bus[,...]]]
 	                 #create VM by using specified location url or local iso file path
 	                 #will auto search url according distro name, if url omitted
-	  -C, -F <iso/image path>
+	  -C, -F, --usb-cd <iso/image path>
 	                 #create VM by using ISO or image file
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  --ks-append <kickstart file fragment>
@@ -2427,6 +2427,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long downloadonly \
 	--long share \
 	--long ready \
+	--long usb-cd: \
 	--long diskbus: --long bus: \
 	--long disk: \
 	--long xdisk: \
@@ -2510,6 +2511,7 @@ while true; do
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
 	-C|-F)     InstallType=cdrom_image; Isourl=$2; shift 2;;
+	--usb-cd)  InstallType=cdrom_image; Isourl=$2; USB_CDROM=yes; shift 2;;
 	-L|-l)     InstallType=location; _url=${2#=}; read Location BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
 	-I|-i)     InstallType=import; _url=${2#=}; read Imageurl BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
 	-P|--pxe)  InstallType=pxe; shift 1;;
@@ -2852,7 +2854,14 @@ if [[ -n "$QEMU_CPU_OPT" ]]; then
 fi
 
 case "$GuestARCH" in
-(s390*) _MSIZE=2048;;
+(s390*)
+	_MSIZE=2048;;
+(loongarch*)
+	edk2path=/usr/share/qemu
+	BOOT_OPTS+=(--boot=loader=$edk2path/edk2-loongarch64-code.fd,nvram=$edk2path/edk2-loongarch64-vars.fd)
+	QEMU_OPTS+=('--qemu-commandline=-device nec-usb-xhci,id=xhci,addr=0x1b -device usb-tablet,id=tablet,bus=xhci.0,port=1 -device usb-kbd,id=keyboard,bus=xhci.0,port=2')
+	VIRT_INSTALL_OPTS+=("--features=acpi=on")
+	USB_CDROM=yes;;
 esac
 
 fuzzy_match_cpu_model_name() {
@@ -4443,7 +4452,11 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	fi
 
 	bootOption="--cdrom $isofilepath"
-	LANG=C file -b --mime-type $isofilepath | grep -q iso || bootOption="--import --disk path=$isofilepath,$BOOT_DISK_ATTRS"
+	if LANG=C file -b --mime-type $isofilepath | grep -q iso; then
+		[[ -n "$USB_CDROM" ]] && bootOption="--import --disk path=$isofilepath,device=cdrom,bus=usb"
+	else
+		bootOption="--import --disk path=$isofilepath,$BOOT_DISK_ATTRS"
+	fi
 	run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
 	  --name $vmname \
 	  $OS_VARIANT_OPT \
