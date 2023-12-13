@@ -344,19 +344,8 @@ _vmdelete() {
 	}
 
 	local userhome=$(getent passwd "$VMUSER" | cut -d: -f6)
-	blk=$(_vmblklist "$_vmname")
-	if test -n "$blk"; then
-		! grep -q "$userhome/VM[sS]/" <<<"$blk" && {
-			echo -e "{VM:DEBUG} blklist in '$_vmname':\n$blk"
-			echo -e "{VM:WARN} VM '$_vmname' was not created by current user($VMUSER); try:"
-			cat <<-EOF
-			  virsh destroy $_vmname
-			  virsh undefine $_vmname #--remove-all-storage --nvram
-			EOF
-			return 1
-		}
-	#pxe vms
-	elif [[ ! -d $userhome/VMs/PXE/$_vmname ]]; then
+	local _vmdir=$(vmhomedir $_vmname 2>/dev/null|head -n1)
+	if [[ -z "$_vmdir" || "$_vmdir" != $userhome/VM[sS]/* ]]; then
 		echo -e "{VM:WARN} VM '$_vmname' was not created by current user($VMUSER); try:"
 		cat <<-EOF
 		  virsh destroy $_vmname
@@ -365,36 +354,24 @@ _vmdelete() {
 		return 1
 	fi
 
-	local _vmdir= _image=
-	read _type _dev _target _image < <(_vmblklist $_vmname '\.(qcow2|qcow|raw)')
-	if test -n "$_image"; then
-		_vmdir=$(dirname $_image)
-	elif test -d $VMSHOME/PXE/$_vmname; then
-		_vmdir=$VMSHOME/PXE/$_vmname
-	else
-		echo "{VM:WARN} VM dir is empty, something is wrong!" >&2
-	fi
-
 	echo -e "\n{VM:INFO} => dist removing VM $_vmname .."
 	{ virsh destroy $_vmname 2>/dev/null; sleep 0.5
 	  virsh undefine $_vmname 2>/dev/null || virsh undefine $_vmname --nvram; } | sed '/^$/d'
 
-	if [[ "$_vmdir" = $VMSHOME/?*/$_vmname ]]; then
-		echo -e "{VM:INFO} kill tmux session ..."
-		kill_installer_tmux_session ${_vmname}
+	echo -e "{VM:INFO} kill tmux session of $_vmname ..."
+	kill_installer_tmux_session ${_vmname}
 
-		echo -e "{VM:INFO} removing VM folder $_vmdir ..."
-		rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
-		rm -f $_vmdir/*.cfg $_vmdir/*.ks
-		rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
-		rm -f $_vmdir/nvdimm-*.dev
-		rm -f $(sed 's/^unix://' $_vmdir/tmp/monitor.unix 2>/dev/null)
-		rm -fr $_vmdir/tmp
-		rm -f $_vmdir/*
-		rmdir $_vmdir 2>/dev/null
-		rmdir ${_vmdir%/*} 2>/dev/null
-		rm -rf $varlib_dir/$_vmname
-	fi
+	echo -e "{VM:INFO} removing VM folder $_vmdir ..."
+	rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
+	rm -f $_vmdir/*.cfg $_vmdir/*.ks
+	rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
+	rm -f $_vmdir/nvdimm-*.dev
+	rm -f $(sed 's/^unix://' $_vmdir/tmp/monitor.unix 2>/dev/null)
+	rm -fr $_vmdir/tmp
+	rm -f $_vmdir/*
+	rmdir $_vmdir 2>/dev/null
+	rmdir ${_vmdir%/*} 2>/dev/null
+	rm -rf $varlib_dir/$_vmname
 	return 0
 }
 
@@ -3303,7 +3280,7 @@ _Imagepattern='(qcow2c|qcow2|qcow2.xz|raw|raw.xz|img)'
 
 if [[ "$InstallType" = import ]]; then
 	if [[ -n "$Imageurl" ]]; then
-		if [[ ! -f $Imageurl ]]; then
+		if [[ ! -f "$Imageurl" && ! -b "$Imageurl" ]]; then
 			if ! is_available_url $Imageurl; then
 				echo "{VM:WARN} '$Imageurl' is neither an image file nor an available url, exit .." >&2
 				exit 2
@@ -3346,7 +3323,7 @@ if [[ "$InstallType" = import ]]; then
 
 	# if not swithed to Location mode
 	if [[ "$InstallType" = import ]]; then
-		if [[ ! -f "$Imageurl" ]]; then
+		if [[ ! -f "$Imageurl" && ! -b "$Imageurl" ]]; then
 			if ! grep -E -q '\.(qcow2c|qcow2|qcow2.xz|raw|raw.xz|img)$' <<<"$Imageurl"; then
 				ImageurlOrig=$Imageurl
 				read Imageurl _ < <(getimageurls ${Imageurl} "${_Imagepattern}"|sort -Vr)
@@ -3909,7 +3886,9 @@ elif [[ "$InstallType" = import ]]; then
 	[[ "$DOWNLOAD_ONLY" = yes ]] && imagefile=${DownloadImagePath%/}/${imagefilename}
 
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
-	if [[ $Imageurl != file:///* ]]; then
+	if [[ -b "$Imageurl" ]]; then
+		imagefile=$Imageurl
+	elif [[ $Imageurl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
 			curl_download_x ${DownloadImagePath}/${imagefilename} $Imageurl
 			[[ "$DOWNLOAD_ONLY" = yes ]] && {
@@ -3923,9 +3902,9 @@ elif [[ "$InstallType" = import ]]; then
 	else
 		cp -f ${Imageurl#file://} $imagefile
 	fi
-	[[ -f ${imagefile} ]] || exit 1
+	[[ -f "${imagefile}" || -b "$imagefile" ]] || exit 1
 
-	[[ $imagefile = *.xz ]] && {
+	[[ -f "${imagefile}" && $imagefile = *.xz ]] && {
 		echo "{VM:INFO} decompress $imagefile ..."
 		xz -d $imagefile
 		rm -f $imagefile
@@ -3960,19 +3939,26 @@ elif [[ "$InstallType" = import ]]; then
 	run -as=$VMUSER bash -c "touch $VMpath/.kiss-vm"
 	run -as=$VMUSER bash -c "echo $Imageurl >$VMpath/url"
 
-	imginfo=$(qemu-img info ${imagefile})
-	imgfmt=$(echo "${imginfo}"|awk -F': ' '/file format/{print $2}')
-	[[ "$dsizeflag" = 1 || "$NOAUTO" != yes ]] && {
-		_size=$(echo "${imginfo}"|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
-		[[ "$_size" -lt $((DSIZE*1024*1024*1024)) ]] && {
-			echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
-			qemu-img resize -f $imgfmt ${imagefile} ${DSIZE}G
+	if [[ -f "${imagefile}" ]]; then
+		imginfo=$(qemu-img info ${imagefile})
+		imgfmt=$(echo "${imginfo}"|awk -F': ' '/file format/{print $2}')
+		[[ "$dsizeflag" = 1 || "$NOAUTO" != yes ]] && {
+			_size=$(echo "${imginfo}"|sed -rn '/^virtual size:.*\(([0-9]+).*$/{s//\1/;p}')
+			[[ "$_size" -lt $((DSIZE*1024*1024*1024)) ]] && {
+				echo -e "{VM:INFO} resize $imagefile to ${DSIZE}G"
+				qemu-img resize -f $imgfmt ${imagefile} ${DSIZE}G
+			}
 		}
-	}
-
-	if [[ -n "$TO_DISK" ]]; then
-		qemu-img convert -f qcow2 -O raw $imagefile "$TO_DISK"
-		imagefile="$TO_DISK"
+		if [[ -n "$TO_DISK" ]]; then
+			_fmt=$(qemu-img info $imagefile|awk '/file.format:/{print $NF}')
+			qemu-img convert -f $_fmt -O raw $imagefile "$TO_DISK"
+			imagefile="$TO_DISK"
+		fi
+	elif [[ -b "${imagefile}" ]]; then
+		if [[ -n "$TO_DISK" ]]; then
+			qemu-img convert -f raw -O raw $imagefile "$TO_DISK"
+			imagefile="$TO_DISK"
+		fi
 	fi
 
 	ls -l ${imagefile}
