@@ -187,8 +187,9 @@ create_vmhome() {
 		return 1
 	fi
 	VMtmp=$vmhome/tmp
+	homedirf=$varlib_dir/${vmn}/homedir
 	run -debug -as=$VMUSER mkdir -p $vmhome $VMtmp $varlib_dir/${vmn}
-	run -debug -as=$VMUSER bash -c "echo $vmhome >$varlib_dir/${vmn}/homedir"
+	run -debug -as=$VMUSER bash -c "echo $vmhome >$homedirf; chmod g+w $homedirf"
 	run -as=$VMUSER "chmod 1777 $VMtmp; chcon --reference=/tmp $VMtmp 2>/dev/null"
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${vmhome%/*} ${vmhome} 2>/dev/null
 	#ensure files created in VMtmp can be accessed by others
