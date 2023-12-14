@@ -41,7 +41,7 @@ curl_download() {
 
 	return $rc
 }
-curl_download_x() { until curl_download "$@"; do sleep 1; done; }
+curl_download_x() { echo "{INFO} url=$2"; until curl_download "$@"; do sleep 1; done; }
 
 #return if I'm being sourced
 (return 0 2>/dev/null) && sourced=yes || sourced=no
