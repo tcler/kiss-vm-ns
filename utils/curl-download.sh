@@ -41,7 +41,14 @@ curl_download() {
 
 	return $rc
 }
-curl_download_x() { echo "{INFO} url=$2"; until curl_download "$@"; do sleep 1; done; }
+curl_download_x() {
+	echo "{INFO} url=$2";
+	local loop=1;
+	until curl_download "$@"; do
+		sleep 1; let loop++;
+		test -n "$RETRY" && ((loop > $RETRY)) && break
+	done
+}
 
 #return if I'm being sourced
 (return 0 2>/dev/null) && sourced=yes || sourced=no
@@ -49,14 +56,17 @@ if [[ $sourced = yes ]]; then return 0; fi
 
 #__main__
 [[ "$#" < 2 ]] && {
-	echo "Usage: $0 <path/to[/filename]> <url> [timeo=<time>] [curl options]" >&2
+	echo "Usage: $0 [-otimeo=\$time,retry=\$N] <path/to[/filename]> <url> [curl options]" >&2
 	exit 1
 }
 
-[[ "$3" = timeo=* ]] && timeout=${3#timeo=}
-if [[ -n "$timeout" ]]; then
-	file=$1; url=$2; shift 3
-	exec timeout $timeout $0 "$file" "$url" "$@"
+if [[ "$1" = -o* ]]; then
+	opts=${1#-o}; shift 1
+	for opt in ${opts//,/ }; do case $opt in (retry=*|timeo=*) eval ${opt^^};; esac; done
+fi
+
+if [[ -n "$timeo" ]]; then
+	exec timeout $TIMEO $0 -oretry=$RETRY "$@"
 else
 	curl_download_x "$@"
 fi
