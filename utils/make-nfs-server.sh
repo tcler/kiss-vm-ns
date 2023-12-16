@@ -56,14 +56,15 @@ done
 
 ## install related packages
 rpm -q nfs-utils || yum install -y nfs-utils &>/dev/null
+rpm -q ktls-utils || yum install -y ktls-utils &>/dev/null
 #yum install -y krb5-workstation &>/dev/null
 
 
 ## create nfs export directorys
-mkdir -p $PREFIX/{ro,rw,async,labelled-nfs,qe,devel}
+mkdir -p $PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}
 chgrp nobody -R $PREFIX
 chmod g+ws -R $PREFIX
-touch $PREFIX/{ro,rw,async,labelled-nfs,qe,devel}/testfile
+touch $PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}/testfile
 semanage fcontext -a -t nfs_t "$PREFIX(/.*)?"
 restorecon -Rv $PREFIX
 chmod 775 -R $PREFIX/{rw,async,labelled-nfs,qe,devel}
@@ -87,6 +88,58 @@ srun "systemctl restart nfs-server"
 
 ## test/verify
 srun "showmount -e localhost"
+
+## config nfs tls support
+if rpm -q ktls-utils --quiet; then
+	cat <<-EOF >>/etc/exports
+	$PREFIX/tls *(${defaultOpts},xprtsec=tls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+	$PREFIX/mtls *(${defaultOpts},xprtsec=mtls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+	EOF
+
+	# Create a private key and obtain a certificate containing the Server's DNS name...
+	crtf=/tmp/nfsd.crt
+	keyf=/tmp/nfsd.key
+	srun "openssl req -x509 -subj /CN=$HOSTNAME 
+	    -addext subjectAltName=DNS:$HOSTNAME 
+	    -addext keyUsage=digitalSignature 
+	    -addext extendedKeyUsage=serverAuth 
+	    -newkey rsa:2048 -noenc -sha256 -out $crtf -keyout $keyf"
+	srun "openssl x509 -in $crtf -noout -checkhost $HOSTNAME" 0 "Check the certificate"
+	srun "trust anchor $crtf" 0 "Add (server's) TLS certificate to the trust store"
+	#srun "update-ca-trust"
+	# Edit the /etc/tlshd.conf to use those created key and certificate..."
+	cat >/etc/tlshd.conf <<-EOF
+		[debug]
+		loglevel=1
+		tls=1
+		nl=1
+
+		[authenticate]
+		#keyrings= <keyring>;<keyring>;<keyring>
+
+		[authenticate.client]
+		#x509.truststore=<pathname>
+		x509.certificate=$crtf
+		x509.private_key=$keyf
+
+		[authenticate.server]
+		#x509.truststore=<pathname>
+		x509.certificate=$crtf
+		x509.private_key=$keyf
+	EOF
+	srun "cat /etc/tlshd.conf" -
+	srun "systemctl restart tlshd.service"
+	srun "systemctl restart nfs-server.service"
+
+	nfsmp=/mnt/nfsmp-$$
+	srun "mkdir -p $nfsmp"
+	srun "mount $HOSTNAME:$PREFIX/tls $nfsmp -o xprtsec=tls"
+	srun "umount $nfsmp"
+	srun "mount $HOSTNAME:$PREFIX/tls $nfsmp -o xprtsec=mtls"
+	srun "umount $nfsmp"
+fi
+
+srun "showmount -e $HOSTNAME"
 
 [[ "$eTEST" != yes ]] && exit
 
