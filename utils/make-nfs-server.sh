@@ -67,7 +67,7 @@ chmod g+ws -R $PREFIX
 touch $PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}/testfile
 semanage fcontext -a -t nfs_t "$PREFIX(/.*)?"
 restorecon -Rv $PREFIX
-chmod 775 -R $PREFIX/{rw,async,labelled-nfs,qe,devel}
+chmod 775 -R $PREFIX/{rw,async,labelled-nfs,qe,devel,tls,mtls}
 
 
 ## generate exports config file
@@ -90,7 +90,7 @@ srun "systemctl restart nfs-server"
 srun "showmount -e localhost"
 
 ## config nfs tls support
-if rpm -q ktls-utils --quiet; then
+if rpm -q ktls-utils --quiet && man exports | grep -wq mtls; then
 	cat <<-EOF >>/etc/exports
 	$PREFIX/tls *(${defaultOpts},xprtsec=tls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
 	$PREFIX/mtls *(${defaultOpts},xprtsec=mtls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
