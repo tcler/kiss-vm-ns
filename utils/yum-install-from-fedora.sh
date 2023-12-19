@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+P=$0
 switchroot() {
 	local P=$0 SH=; [[ $0 = /* ]] && P=${0##*/}; [[ -e $P && ! -x $P ]] && SH=$SHELL
 	[[ $(id -u) != 0 ]] && {
@@ -7,6 +8,12 @@ switchroot() {
 		exec sudo $SH $P "$@"
 	}
 }
+
+[[ $# < 1 || $1 = -h* ]] && {
+	echo -e "\E[1;34mUsage: $P <pkgname1> [pkgname2 ...] [-\$fedora_version] [-rpm]\E[0m"
+	exit 0
+}
+
 switchroot "$@"
 
 #according:
@@ -19,7 +26,6 @@ switchroot "$@"
 #Red Hat Enterprise Linux 7	Maipo	2014-06-10	Primarily Fedora 19 with several changes from 20 and later
 #Red Hat Enterprise Linux 8	Ootpa	2019-05-07	Fedora 28
 #Red Hat Enterprise Linux 9	Plow	2022-05-17	Fedora 34
-echo "{INFO} $0 $*"
 
 OSV=$(rpm -E %rhel)
 arch=$(uname -m)
@@ -28,7 +34,7 @@ case "$OSV" in
 7)	FEDORA_VER=$((20+2));;
 8)	FEDORA_VER=$((28+1));;
 9)	FEDORA_VER=$((34+2));;
-*)	echo "{WARN} OS is not supported, quit."; exit 1;;
+*)	echo "{WARN} OS is not supported(This program is just for RHEL or RHEL-based OS), quit."; exit 1;;
 esac
 
 pkgs=()
@@ -43,6 +49,7 @@ done
 
 #fedora_repo=https://dl.fedoraproject.org/pub/archive/fedora/linux/releases/${FEDORA_VER}/Everything/$arch/os/
 mirrorList="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${FEDORA_VER}&arch=$arch"
+echo "{INFO} fedora-version: $FEDORA_VER, url: $mirrorList"
 
 fedora_repo=$(curl -L -s "$mirrorList"|sed -n 3p)
 frepon=fedora-${FEDORA_VER}
