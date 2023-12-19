@@ -90,7 +90,13 @@ srun "systemctl restart nfs-server"
 srun "showmount -e localhost"
 
 ## config nfs tls support
-if rpm -q ktls-utils --quiet && man exports | grep -wq mtls; then
+OSV=$(rpm -E %rhel)
+if [[ "$OSV" = 9 ]] && ! grep -wq mtls <(man exports); then
+	mirrorList="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-39&arch=$(uname -m)"
+	frepo=$(curl -L -s "$mirrorList"|sed -n 3p)
+	yum install --nogpg --disablerepo="*" --repofrompath="f39,$frepo" -y --setopt=strict=0 --allowerasing nfs-utils
+fi
+if rpm -q ktls-utils --quiet && grep -wq mtls <(man exports); then
 	cat <<-EOF >>/etc/exports
 	$PREFIX/tls *(${defaultOpts},xprtsec=tls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
 	$PREFIX/mtls *(${defaultOpts},xprtsec=mtls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
