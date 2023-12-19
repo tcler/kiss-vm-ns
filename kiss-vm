@@ -1122,7 +1122,7 @@ vmlogin() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 	[[ "$(vmstat $_vmname)" = running* ]] || {
-		echo -e "{VM:WARN} $_vmname has not been running"
+		echo -e "{VM:WARN} $_vmname has not been running or not exist"
 		return 1
 	}
 	vmhomedir $_vmname 2>/dev/null | grep -q -i windows && {
