@@ -1,6 +1,9 @@
 #!/bin/bash
-#archive a dynamic binary file with the libs
-#just for fun and qemu-user test
+#Author: Jianhong Yin <yin-jianhong@163.com>
+#Purpose:
+# -Archive dynamic-linked prog and the library files it depends on and generate
+#  a self-extract and runnable script that could be run on different platform.
+# -Just for fun and qemu-user test
 
 [[ $# -eq 0 ]] && {
 	echo -e "Usage: $0 <userspace-elf-program>"
@@ -42,8 +45,9 @@ command -v qemu-${arch} &>/dev/null || {
 }
 tmpdir=$(mktemp -d)
 tar -C ${tmpdir} -axf <(sed 1,/^#__end__/d $0)
-qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/bin/${progname} "$@"
-exit $?
+qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/bin/${progname} "$@"; rc=$?
+rm -rf ${tmpdir}
+exit $rc
 #__end__
 ASH
 
