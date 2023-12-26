@@ -1647,23 +1647,41 @@ prepare_kiss_vm() {
 	}
 
 	echo -e "{VM:INFO} start libvirtd service ..."
-	test -x /etc/rc.d/rc.libvirt && /etc/rc.d/rc.libvirt start
-	if command -v systemctl >/dev/null; then
-		systemctl is-enabled --quiet libvirtd || systemctl enable libvirtd
-		systemctl is-active --quiet libvirtd || { systemctl start libvirtd && systemctl start virtlogd; }
-	fi
-
-	virtdconf=/etc/libvirt/libvirtd.conf
-	echo -e "{VM:INFO} checking value of 'unix_sock_group' and 'unix_sock_rw_perms' in $virtdconf ..."
-	ls $virtdconf &>/dev/null || chmod +x /etc/libvirt
-	awk '/^unix_sock_group = "libvirt"/{c++} /^unix_sock_rw_perms = "0770"/{c++} END {rc=1; if(c==2) rc=0; exit rc}' $virtdconf || {
-		echo -e "{*INFO*} confiure $virtdconf ..."
-		sh -c "
-			sed -ri -e '/#unix_sock_group = \"libvirt\"/s/^#//' -e '/#unix_sock_rw_perms = \"0770\"/s/^#//' $virtdconf
-			grep -E -e ^unix_sock_group -e ^unix_sock_rw_perms $virtdconf
-			systemctl restart libvirtd && systemctl restart virtlogd
-		"
+	use_monolithic() {
+		if ! grep -Fq "virtqemud.service" <(systemctl list-units -a --type service); then
+			return 0
+		elif systemctl is-enabled --quiet libvirtd; then
+			return 0
+		fi
+		return 1
 	}
+	if use_monolithic; then
+		test -x /etc/rc.d/rc.libvirt && /etc/rc.d/rc.libvirt start   #for Slackware
+		if command -v systemctl >/dev/null; then
+			systemctl is-enabled --quiet libvirtd || systemctl enable libvirtd
+			systemctl is-active --quiet libvirtd || { systemctl start libvirtd; }
+		fi
+
+		virtdconf=/etc/libvirt/libvirtd.conf
+		echo -e "{VM:INFO} confiure $virtdconf ..."
+		sed -ri -e '/#unix_sock_group = "libvirt"/s/^#//' -e '/#unix_sock_rw_perms = "0770"/s/^#//' $virtdconf
+		systemctl restart libvirtd && systemctl restart virtlogd
+	else
+		virtdrvList="qemu interface network nodedev nwfilter secret storage"
+		if command -v systemctl >/dev/null; then
+			for drv in $virtdrvList; do
+				systemctl unmask virt${drv}d.service
+				systemctl unmask virt${drv}d{,-ro,-admin}.socket
+				systemctl enable virt${drv}d.service
+				systemctl enable virt${drv}d{,-ro,-admin}.socket
+			done
+			for drv in $virtdrvList; do systemctl start virt${drv}d{,-ro,-admin}.socket; done
+		fi
+
+		echo -e "{VM:INFO} confiure /etc/libvirt/virt*.conf ..."
+		sed -ri -e '/#unix_sock_group = "libvirt"/s/^#//' -e '/#unix_sock_rw_perms = "0770"/s/^#//' /etc/libvirt/virt*.conf
+		for drv in $virtdrvList; do systemctl restart virt${drv}d{,-ro,-admin}.socket; done
+	fi
 
 	pvirtconf=$vmuserhome/.config/libvirt/libvirt.conf
 	su $vmuser -s /bin/bash -c "mkdir -p ${pvirtconf%/*}"
