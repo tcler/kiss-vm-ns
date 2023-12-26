@@ -50,7 +50,7 @@ p pu push:
 	@echo
 
 _install_macos_kvm_utils:
-	$(SUDO) cp -r macOS-kvm-utils /usr/share/.
+	test -d macOS-kvm-utils && $(SUDO) cp -r macOS-kvm-utils /usr/share/. || :
 
 _isroot:
 	@test `id -u` = 0 || { echo "[Warn] need root permission" >&2; exit 1; }
