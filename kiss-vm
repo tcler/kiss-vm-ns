@@ -1649,7 +1649,8 @@ prepare_kiss_vm() {
 	echo -e "{VM:INFO} start libvirtd service ..."
 	test -x /etc/rc.d/rc.libvirt && /etc/rc.d/rc.libvirt start
 	if command -v systemctl >/dev/null; then
-		systemctl start libvirtd && systemctl start virtlogd
+		systemctl is-enabled --quiet libvirtd || systemctl enable libvirtd
+		systemctl is-active --quiet libvirtd || { systemctl start libvirtd && systemctl start virtlogd; }
 	fi
 
 	virtdconf=/etc/libvirt/libvirtd.conf
