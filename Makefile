@@ -39,6 +39,7 @@ i in ins inst install: _install_macos_kvm_utils
 	$(SUDO) cp -r AnswerFileTemplates /usr/share/.
 	$(SUDO) cp bash-completion/* $(completion_path)/.
 	test -f /usr/bin/egrep && sed -ri '/^cmd=|^echo/d' /usr/bin/egrep || { echo 'exec grep -E "$$@"' >/usr/bin/egrep; chmod +x /usr/bin/egrep; }
+	@$(SUDO) cp -f /etc/os-release $(_confdir)/os-release
 	@$(SUDO) curl -Ls http://api.github.com/repos/tcler/$(_repon)/commits/master -o $(_confdir)/version
 
 u up update:
