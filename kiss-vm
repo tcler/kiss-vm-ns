@@ -3920,7 +3920,7 @@ elif [[ "$InstallType" = import ]]; then
 			curl_download_x $imagefile $Imageurl
 		fi
 	else
-		cp -f ${Imageurl#file://} $imagefile
+		cp -vf ${Imageurl#file://} $imagefile
 	fi
 	[[ -f "${imagefile}" || -b "$imagefile" ]] || exit 1
 
