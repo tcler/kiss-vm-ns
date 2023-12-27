@@ -189,7 +189,7 @@ create_vmhome() {
 	VMtmp=$vmhome/tmp
 	homedirf=$varlib_dir/${vmn}/homedir
 	run -debug -as=$VMUSER mkdir -p $vmhome $VMtmp $varlib_dir/${vmn}
-	run -debug -as=$VMUSER bash -c "echo $vmhome >$homedirf; chmod g+w $homedirf"
+	run -debug -as=$VMUSER bash -c "echo $vmhome >$homedirf"
 	run -as=$VMUSER "chmod 1777 $VMtmp; chcon --reference=/tmp $VMtmp 2>/dev/null"
 	setfacl -mu:${QEMU_USER}:rwx -mg:${QEMU_USER}:rwx ${vmhome%/*} ${vmhome} 2>/dev/null
 	#ensure files created in VMtmp can be accessed by others
@@ -363,6 +363,7 @@ _vmdelete() {
 	kill_installer_tmux_session ${_vmname}
 
 	echo -e "{VM:INFO} removing VM folder $_vmdir ..."
+	rm -rf $varlib_dir/$_vmname
 	rm -f $_vmdir/{url,nohup.log,ext4.qcow2,xfs.qcow2,vm.xml,qemu.argv,.kiss-vm}
 	rm -f $_vmdir/*.cfg $_vmdir/*.ks
 	rm -f $_vmdir/*.qcow2.xz $_vmdir/*.img $_vmdir/*.image
@@ -372,7 +373,6 @@ _vmdelete() {
 	rm -f $_vmdir/*
 	rmdir $_vmdir 2>/dev/null
 	rmdir ${_vmdir%/*} 2>/dev/null
-	rm -rf $varlib_dir/$_vmname
 	return 0
 }
 
@@ -1630,7 +1630,7 @@ prepare_kiss_vm() {
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
 	{ QEMU_USER=qemu; id ${QEMU_USER} &>/dev/null || QEMU_USER=libvirt-qemu; }
-	chown root:libvirt -R $varlib_dir
+	chown root:libvirt $varlib_dir
 	chmod g+ws $varlib_dir
 
 	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
