@@ -1,7 +1,7 @@
 #!/bin/bash
 
 switchroot() {
-	local P=$0 SH=; [[ $0 = /* ]] && P=${0##*/}; [[ -e $P && ! -x $P ]] && SH=$SHELL
+	local P=$0 SH=; [[ -x $0 && $0 = /* ]] && P=${0##*/}; [[ ! -f $P || ! -x $P ]] && SH=$SHELL
 	#[[ $# -eq 0 ]] && set -- "${BASH_ARGV[@]}" #need enable extdebug: shopt -s extdebug
 	[[ $(id -u) != 0 ]] && {
 		if [[ "${SHELL##*/}" = $P ]]; then
