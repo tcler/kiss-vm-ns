@@ -67,5 +67,6 @@ else
 fi
 rm -f $tmpf
 for d in /var/lib/kiss-vm/*; do chown $(awk -F/ '{print $3}' $d/homedir) -R $d; done 2>/dev/null
+rm -f /usr/bin/clear-vms-home.sh
 exit
 }
