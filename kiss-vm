@@ -575,7 +575,8 @@ vncput() {
 		msgArray+=("")
 	done
 	for msg in "${msgArray[@]}"; do
-		[[ -z "$msg" ]] && { sleep 0.5; continue; }
+		[[ -z "${msg}" ]] && { sleep 0.5; continue; }
+		[[ "${msg}" = key:sleep:* ]] && { sleep ${msg#key:sleep:}; continue; }
 		case "$msg" in
 		key:*)     vncdo --force-caps -s $vncport key "${msg#key:}";;
 		keyup:*)   vncdo --force-caps -s $vncport keyup "${msg#keyup:}";;
