@@ -9,11 +9,11 @@ vncput() {
 		echo -e "Usage:\n  $0 <vncserver:port> <strings|key-strings> [strings|key-strings ...]" >&2
 		cat <<-EOF
 			Example:
-			  $0 vncserver:5901 "systemctl enable sshd" key:enter
-			  $0 vncserver:5902 key:tab key:enter redhat key:enter key:sleep:8 key:esc key:alt-f2 gnome-terminal key:enter
-			  $0 vncserver:5902 key:ctrl-alt-f1
-			  $0 vncserver:5903 keyup:any-string
-			  $0 vncserver:5903 keydown:any-string
+			  $0 \$vncserver:5901 "systemctl enable sshd" key:enter
+			  $0 \$vncserver:5902 key:tab key:enter redhat key:enter key:sleep:8 key:esc key:alt-f2 gnome-terminal key:enter
+			  $0 \$vncserver:5902 key:ctrl-alt-f1
+			  $0 \$vncserver:5903 keyup:any-string
+			  $0 \$vncserver:5903 keydown:any-string
 		EOF
 		return 1
 	}
