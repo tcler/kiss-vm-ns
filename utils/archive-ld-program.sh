@@ -37,6 +37,7 @@ for file in $slibfiles; do
 done
 mkdir -p ${rootdir}/bin
 cp -v "${_bin}" ${rootdir}/bin/
+[[ -f /etc/os-release ]] && cp /etc/os-release ${rootdir}/
 [[ -n "$2" ]] && ls --color -l $rootdir
 
 ASH=${progname}.${arch}.ash
