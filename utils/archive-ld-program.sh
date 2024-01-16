@@ -29,23 +29,38 @@ progname=${progname// /_}
 arch=$(uname -m)
 rootdir=root-${arch}-${progname}
 slibfiles=$(get_slib_deps "${_bin}")
+slibpaths=$(echo "$slibfiles"|sed -r 's;/[^/]+$;;'|sort -u|xargs)
 for file in $slibfiles; do
 	mkdir -p "$rootdir${file%/*}"
-	cp -v "$file" "$rootdir$file"
+	cp -v "$file" "$rootdir${file}"
+	[[ "${file##*/}" = ld-linux-*.so* ]] && ldso=${file}
 done
 mkdir -p ${rootdir}/bin
 cp -v "${_bin}" ${rootdir}/bin/
+[[ -n "$2" ]] && ls --color -l $rootdir
 
 ASH=${progname}.${arch}.ash
-echo -e "#!/bin/bash\n\narch=${arch}; progname=${progname}; rootdir=${rootdir};\n" >${ASH}
+echo -e "#!/bin/bash\n\narch=${arch}; ldso=$ldso; progname=${progname}; rootdir=${rootdir}; libpaths='$slibpaths';\n" >${ASH}
 cat <<\ASH >>${ASH}
-command -v qemu-${arch} &>/dev/null || {
-	echo "{Error} command 'qemu-${arch}' is required, please install package: qemu-user" >&2
+if [[ $(arch) != ${arch} ]] && ! command -v qemu-${arch} &>/dev/null; then
+	cat <<-WARN >&2
+	{Warn} command 'qemu-${arch}' is required, please install package: 'qemu-user'
+	{Note} if you are using RHEL/CentOS/Rocky/Alma linux, try install 'qemu-user' from fedora repo
+	  see also:
+	    https://github.com/tcler/kiss-vm-ns/raw/master/utils/yum-install-from-fedora.sh
+	  example without download:
+	    curl -Ls https://github.com/tcler/kiss-vm-ns/raw/master/utils/yum-install-from-fedora.sh | sudo bash /dev/stdin qemu-user
+	WARN
 	exit 2
-}
+fi
 tmpdir=$(mktemp -d)
 tar -C ${tmpdir} -axf <(sed 1,/^#__end__/d $0)
-qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/bin/${progname} "$@"; rc=$?
+if [[ $(arch) = ${arch} ]]; then
+	lps=$(for lp in $libpaths; do echo -n ${tmpdir}/${rootdir}$lp:; done)
+	${tmpdir}/${rootdir}/$ldso --library-path ${lps} ${tmpdir}/${rootdir}/bin/${progname} "$@"; rc=$?
+else
+	qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/bin/${progname} "$@"; rc=$?
+fi
 rm -rf ${tmpdir}
 exit $rc
 #__end__
