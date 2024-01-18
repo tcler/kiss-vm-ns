@@ -208,7 +208,7 @@ kill_installer_tmux_session() {
 		[[ "$session" = *_${_vmn}: ]] && tmux kill-session -t ${session%:}
 	done < <(tmux ls 2>/dev/null)
 }
-cleanup() {
+cleanup_and_exit() {
 	if [[ -n "$VMpath" ]]; then
 		echo -e "\n{VM:clean} Removing VM dir: $VMpath"
 		rm -rfv "$VMpath"
@@ -217,9 +217,9 @@ cleanup() {
 		echo -e "{VM:clean} kill installer assistant tmux session"
 		kill_installer_tmux_session ${VMpath##*/}
 	fi
-	exit
+	exit ${1:-0}
 }
-trap cleanup SIGINT SIGQUIT SIGTERM
+trap cleanup_and_exit SIGINT SIGQUIT SIGTERM
 trap at_exit EXIT
 #-------------------------------------------------------------------------------
 
@@ -3304,7 +3304,7 @@ if [[ "$InstallType" = import ]]; then
 		if [[ ! -f "$Imageurl" && ! -b "$Imageurl" ]]; then
 			if ! is_available_url $Imageurl; then
 				echo "{VM:WARN} '$Imageurl' is neither an image file nor an available url, exit .." >&2
-				exit 2
+				cleanup_and_exit 2
 			else
 				: #do nothing
 			fi
@@ -3318,13 +3318,13 @@ if [[ "$InstallType" = import ]]; then
 	else
 		if [[ $Intranet != yes ]]; then
 			echo "{VM:WARN} can not find imageUrl of '$Distro' in database." >&2
-			exit 1
+			cleanup_and_exit 1
 		else
 			echo "{VM:INFO} getting fastest location of $Distro ..." >&2
 			Location=$(distro2location $Distro)
 			[[ -z "$Location" ]] && {
 				echo "{VM:WARN} can not find location info of '$Distro'" >&2
-				exit 1
+				cleanup_and_exit 1
 			}
 			echo -e " -> $Location"
 			echo "{VM:INFO} getting image url according location url ^^^ ..." >&2
@@ -3359,7 +3359,7 @@ if [[ "$InstallType" = import ]]; then
 			fi
 		else
 			echo "{VM:WARN} not found '$GuestARCH' image from '${ImageurlOrig}' by pattern(${_Imagepattern})" >&2
-			exit 1
+			cleanup_and_exit 1
 		fi
 	fi
 fi
@@ -3380,11 +3380,11 @@ if [[ "$InstallType" = location ]]; then
 		fi
 	else
 		echo "{VM:WARN} can not find distro location. please check if '$Distro' is valid distro" >&2
-		exit 1
+		cleanup_and_exit 1
 	fi
 fi
 
-[[ -n "$OnlyGetUrl" ]] && { exit; }
+[[ -n "$OnlyGetUrl" ]] && { cleanup_and_exit &>/dev/null; }
 
 
 if [[ "$InstallType" = pxe ]]; then
@@ -3399,7 +3399,7 @@ MSIZE=${MSIZE:-$_MSIZE}
 
 [[ "$MSIZE" -gt "$available_msize" ]] && {
 	echo "{VM:ERR} the available mem size is less than your required."
-	exit 132
+	cleanup_and_exit 132
 }
 
 echo "{VM:INFO} guess/verify os-variant ..."
@@ -3439,7 +3439,7 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 		sif=$(sed -rn '/.*\<source=([^,]+)(,.*|$)/{s//\1/;p}' <<<"${netopt}")
 		[[ -d /sys/class/net/$sif/wireless ]] && {
 			echo -e "{VM:ERROR} '$sif': macvlan/macvtap does not work on wireless interface" >&2
-			exit 0
+			cleanup_and_exit 0
 		}
 	done
 else
@@ -3799,12 +3799,11 @@ if [[ "$InstallType" = location ]]; then
 			{*\r} { exp_continue }
 		}
 	"
-	grep ^ERROR $VMpath/nohup.log && exit 1
+	grep ^ERROR $VMpath/nohup.log && cleanup_and_exit 1
 	[[ -n "$XML" ]] && {
 		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
-		rm -f $VMpath/*
-		exit
+		cleanup_and_exit &>/dev/null
 	}
 
 	if [[ "$NOAUTO" = yes ]]; then
@@ -3914,7 +3913,7 @@ elif [[ "$InstallType" = import ]]; then
 			curl_download_x ${DownloadImagePath}/${imagefilename} $Imageurl
 			[[ "$DOWNLOAD_ONLY" = yes ]] && {
 				ls -l ${DownloadImagePath}/${imagefilename}
-				exit 0
+				cleanup_and_exit 0
 			}
 			cp ${DownloadImagePath}/${imagefilename} $imagefile
 		else
@@ -3923,14 +3922,14 @@ elif [[ "$InstallType" = import ]]; then
 	else
 		cp -vf ${Imageurl#file://} $imagefile
 	fi
-	[[ -f "${imagefile}" || -b "$imagefile" ]] || exit 1
+	[[ -f "${imagefile}" || -b "$imagefile" ]] || cleanup_and_exit 1
 
 	[[ -f "${imagefile}" && $imagefile = *.xz ]] && {
 		echo "{VM:INFO} decompress $imagefile ..."
 		xz -d $imagefile
 		rm -f $imagefile
 		imagefile=${imagefile%.xz}
-		[[ -f ${imagefile} ]] || exit 1
+		[[ -f ${imagefile} ]] || cleanup_and_exit 1
 	}
 
 	[[ "$NO_CLOUD_INIT" != yes ]] && {
@@ -4027,11 +4026,11 @@ elif [[ "$InstallType" = import ]]; then
 			{*\r} { exp_continue }
 		}
 	"
-	grep ^ERROR $VMpath/nohup.log && exit 1
+	grep ^ERROR $VMpath/nohup.log && cleanup_and_exit 1
 	[[ -n "$XML" ]] && {
 		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
-		exit
+		cleanup_and_exit &>/dev/null
 	}
 
 	if [[ "$NOAUTO" = yes ]]; then
@@ -4287,11 +4286,11 @@ elif [[ "$InstallType" = pxe ]]; then
 			{*\r} { exp_continue }
 		}
 	"
-	grep ^ERROR $VMpath/nohup.log && exit 1
+	grep ^ERROR $VMpath/nohup.log && cleanup_and_exit 1
 	[[ -n "$XML" ]] && {
 		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
-		exit
+		cleanup_and_exit &>/dev/null
 	}
 
 	sleep 1
@@ -4342,7 +4341,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 			curl_download_x ${DownloadImagePath}/${isofilename} $Isourl
 			[[ "$DOWNLOAD_ONLY" = yes ]] && {
 				ls -l ${DownloadImagePath}/${isofilename}
-				exit 0
+				cleanup_and_exit 0
 			}
 			cp -v ${DownloadImagePath}/${isofilename} $isofilepath
 			#fixme: ^^ performance improve?
@@ -4353,7 +4352,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 		cp -v -f ${Isourl#file://} $isofilepath
 		#fixme: ^^ performance improve?
 	fi
-	[[ -f ${isofilepath} ]] || exit 1
+	[[ -f ${isofilepath} ]] || cleanup_and_exit 1
 	ls -lhZ ${isofilepath}
 
 	if [[ -n "$TO_DISK" ]]; then
@@ -4444,7 +4443,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 		    echo "{ERROR} unsupported answerfile template (${WIN_TEMPLATE})" >&2
 		    false;;
 		esac
-		[[ $? -ne 0 ]] && exit 1
+		[[ $? -ne 0 ]] && cleanup_and_exit 1
 
 		ANSF_DISK_OPT="--disk path=$VMpath/ansf-usb.image,bus=usb,removable=on"
 	fi
@@ -4499,11 +4498,11 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 			{*\r} { exp_continue }
 		}
 	"
-	grep ^ERROR $VMpath/nohup.log && exit 1
+	grep ^ERROR $VMpath/nohup.log && cleanup_and_exit 1
 	[[ -n "$XML" ]] && {
 		cp $VMpath/nohup.log $VMpath/vm.xml
 		virsh domxml-to-native qemu-argv $VMpath/vm.xml | tee $VMpath/qemu-argv
-		exit
+		cleanup_and_exit &>/dev/null
 	}
 
 	vm vnc $vmname -put "key:shift"
@@ -4618,7 +4617,7 @@ trap - SIGINT SIGQUIT SIGTERM
 
 if ! virsh desc $vmname &>/dev/null; then
 	echo -e "\n{VM:ERR} virt-install fail"
-	rm -rf $VMpath && rmdir {$VMpath%/*} 2>/dev/null
+	rm -rf $VMpath $varlib_dir/$vmname && rmdir {$VMpath%/*} 2>/dev/null
 	exit 1
 fi
 
