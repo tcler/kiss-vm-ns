@@ -96,7 +96,7 @@ if [[ "$OSV" = 9 ]] && ! grep -wq mtls <(man exports); then
 	frepo=$(curl -L -s "$mirrorList"|sed -n 3p)
 	yum install --nogpg --disablerepo="*" --repofrompath="f39,$frepo" -y --setopt=strict=0 --allowerasing nfs-utils
 fi
-if rpm -q ktls-utils --quiet && grep -wq mtls <(man exports); then
+if rpm -q ktls-utils --quiet && grep -wq mtls <(man exports) && [[ $(uname -r) > 5.14.0-4 ]]; then
 	cat <<-EOF >>/etc/exports
 	$PREFIX/tls *(${defaultOpts},xprtsec=tls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
 	$PREFIX/mtls *(${defaultOpts},xprtsec=mtls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
