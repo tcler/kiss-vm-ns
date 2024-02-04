@@ -1,5 +1,5 @@
 #!/bin/bash
-# this script is used to install gm(GraphicsMagick/ImageMagick) gocr and vncdotool
+# this script is used to install gm(GraphicsMagick/ImageMagick) gocr/tesseract and vncdotool
 
 [[ $(id -u) != 0 ]] && {
 	echo -e "{WARN} $0 need root permission, please try:\n  sudo $0 ${@}" | GREP_COLORS='ms=1;31' grep --color=always . >&2
@@ -78,14 +78,14 @@ echo
 
 	case ${OS,,} in
 	slackware*)
-		sbopkg_install gocr
+		sbopkg_install gocr tesseract
 		;;
 	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
-		yum $yumOpt install -y gocr || yum-install-from-fedora.sh gocr;;
+		yum $yumOpt install -y gocr tesseract || yum-install-from-fedora.sh gocr;;
 	debian*|ubuntu*)
-		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr;;
+		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr tesseract-ocr;;
 	opensuse*|sles*)
-		zypper in --no-recommends -y gocr;;
+		zypper in --no-recommends -y gocr tesseract-ocr;;
 	*)
 		:;; #fixme add more platform
 	esac
