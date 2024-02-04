@@ -18,7 +18,7 @@ slackware*)
 		yes $'Q\nY\nP\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
 	}
 	;;
-red?hat|centos*|rocky*|anolis*)
+red?hat|centos*|rocky*|alma*|anolis*)
 	OSV=$(rpm -E %rhel)
 	if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
@@ -35,7 +35,7 @@ esac
 	slackware*)
 		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install netpbm
 		;;
-	fedora*|red?hat*|centos*|rocky*|anolis*)
+	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		yum $yumOpt install -y netpbm-progs
 		;;
 	debian*|ubuntu*)
@@ -55,7 +55,7 @@ esac
 		slackware*)
 			/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install imagemagick
 			;;
-		fedora*|red?hat*|centos*|rocky*|anolis*)
+		fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 			yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
 			;;
 		debian*|ubuntu*)
@@ -80,7 +80,7 @@ echo
 	slackware*)
 		sbopkg_install gocr
 		;;
-	fedora*|red?hat*|centos*|rocky*|anolis*)
+	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		yum $yumOpt install -y gocr || yum-install-from-fedora.sh gocr;;
 	debian*|ubuntu*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr;;
@@ -93,7 +93,7 @@ echo
 	command -v gocr || {
 		echo -e "\n{ggv-install} install gocr from src ..."
 		case ${OS,,} in
-		fedora*|red?hat*|centos*|rocky*|anolis*)
+		fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 			yum $yumOpt install -y git autoconf gcc make netpbm-progs;;
 		debian*|ubuntu*)
 			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y git autoconf gcc make netpbm;;
@@ -127,7 +127,7 @@ install_python_pip() {
 	case ${OS,,} in
 	slackware*)
 		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install python3;;
-	fedora*|red?hat*|centos*|rocky*|anolis*)
+	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		python_pkgs="python3-pip"
 		[[ $(rpm -E %rhel) = 8 ]] && python_pkgs="python39-pip"
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel $python_pkgs;;

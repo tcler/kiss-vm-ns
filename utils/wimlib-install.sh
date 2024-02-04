@@ -18,7 +18,7 @@ slackware*)
 		yes $'Q\nY\nP\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
 	}
 	;;
-red?hat|centos*|rocky*|anolis*)
+red?hat|centos*|rocky*|alma*|anolis*)
 	OSV=$(rpm -E %rhel)
 	if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
@@ -33,7 +33,7 @@ command -v wiminfo || {
 	slackware*)
 		sbopkg_install wimlib
 		;;
-	fedora*|red?hat*|centos*|rocky*|anolis*)
+	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		yum $yumOpt install -y wimlib-utils || yum-install-from-fedora.sh wimlib-utils
 		;;
 	debian*|ubuntu*)
@@ -50,7 +50,7 @@ command -v wiminfo || {
 	command -v wiminfo || {
 		echo -e "\n{wimlib-install} install wimlib from src ..."
 		case ${OS,,} in
-		fedora*|red?hat*|centos*|rocky*|anolis*)
+		fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 			yum $yumOpt --setopt=strict=0 install -y \
 				autoconf git gcc make libxml2-devel fuse fuse-libs fuse-devel fuse3 fuse3-libs fuse3-devel ntfs-3g-devel;;
 		debian*|ubuntu*)

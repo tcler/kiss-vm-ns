@@ -18,7 +18,7 @@ slackware*)
 		yes $'Q\nY\nP\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
 	}
 	;;
-red?hat|centos*|rocky*|anolis*)
+red?hat|centos*|rocky*|alma*|anolis*)
 	OSV=$(rpm -E %rhel)
 	if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
@@ -33,7 +33,7 @@ esac
 	slackware*)
 		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install imagemagick
 		;;
-	fedora*|red?hat*|centos*|rocky*|anolis*)
+	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
 		;;
 	debian*|ubuntu*)

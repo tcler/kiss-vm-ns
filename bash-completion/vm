@@ -54,7 +54,7 @@ option_arg_complete() {
         ;;
     -n|--vmname)
         [[ -n "$hasarg" ]] && return 0
-        COMPREPLY=( $( compgen -W "#vmname arch-fixme rhel-fixme centos-fixme rocky-fixme debian-fixme 
+        COMPREPLY=( $( compgen -W "#vmname arch-fixme rhel-fixme centos-fixme rocky-fixme alma-fixme debian-fixme
                         win-fixme freebsd-fixme tmpvm nfs-serv opensuse-fixme slack-fixme " -- "$cur" ) )
         ;;
     *)

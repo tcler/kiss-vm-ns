@@ -20,7 +20,7 @@ case ${OS,,} in
 slackware*)
 	/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off git make
 	;;
-fedora*|red?hat*|centos*|rocky*|anolis*)
+fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 	yum $yumOpt install -y git make
 	;;
 debian*|ubuntu*)

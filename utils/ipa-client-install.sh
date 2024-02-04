@@ -26,7 +26,7 @@ echo "{INFO} installing ipa-client ..."
 #fedora
 if [[ "$OSV" =~ %rhel ]]; then
 	dnf install -y -q freeipa-client
-#rhel/centos/rocky/...
+#rhel/centos/rocky/alma/...
 else
 	case $OSV in
 	6|7)

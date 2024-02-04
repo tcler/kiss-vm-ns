@@ -1554,7 +1554,7 @@ install_requires() {
 			fi
 		done
 		;;
-	fedora*|red?hat*|centos*|rocky*|anolis*)
+	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img udisks2 genisoimage iptables-nft ipcalc"
 		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win python3-qemu-qmp"
 
@@ -2177,7 +2177,7 @@ Usage() {
 	                 #`e.g: -x  or  -x0  or  -x1,2,3  or  -x1,10,100-200
 
 	Options for sub-command vncproc:
-	  --get, --vncget #get vnc screen and convert to text by gocr
+	  --get, --vncget #get vnc screen and convert to text by gocr/tesseract
 	  --getsc, --vncgetsc
 	                 #get vnc screen image
 	  --invert       #get vnc screen image and invert
@@ -3638,9 +3638,9 @@ rhel-6*|rhel6*|centos6*|centos-6*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm;;
 rhel-7*|rhel7*|centos7*|centos-7*|anolis7*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;;
-rhel-8*|rhel8*|centos-8*|centos8*|rocky-8*|rocky8*|anolis8*)
+rhel-8*|rhel8*|centos-8*|centos8*|rocky-8*|rocky8*|alma8*|alma-8*|anolis8*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm;;
-rhel-9*|rhel9*|rocky-9*|rocky9*|anolis9*|anolis*)
+rhel-9*|rhel9*|rocky-9*|rocky9*|alma9*|alma-9*|anolis9*|anolis*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm;;
 esac
 [[ -n "$EPEL" ]] && PKGS="$EPEL $PKGS"
@@ -4639,9 +4639,9 @@ if [[ "$WAIT" = yes ]]; then
 	}
 fi
 
-#only for Fedora/RHEL/CentOS/RockyLinux
+#only for Fedora/RHEL/CentOS/RockyLinux/AlmaLinux
 case ${Distro,,} in
-fedora*|rhel*|centos*|rocky*|anolis*)
+fedora*|rhel*|centos*|rocky*|alma*|anolis*)
 	for postrepo in "${POST_REPOS[@]}"; do
 		_name=
 		_url=
