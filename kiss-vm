@@ -4294,6 +4294,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	expect -c "spawn tail -f $VMpath/nohup.log
 		set timeout $VirtInstallTimeOut
 		expect {
+			{Waiting for installation to complete} { exit }
 			{Waiting for the installation to complete} { exit }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
@@ -4505,6 +4506,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	expect -c "spawn tail -f $VMpath/nohup.log
 		set timeout $VirtInstallTimeOut
 		expect {
+			{Waiting for installation to complete} { exit }
 			{Waiting for the installation to complete} { exit }
 			{otherwise, please restart your installation} { exit }
 			{</domain>} { exit }
@@ -4543,7 +4545,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 		for ((i=0; i<180; i++)); do
 			screenocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
 			case "${screenocr,,}" in
-			*type?your?windows?product?key*|*20000-2000*|*wxxwxxwxx*|*xxxxx?xxxxx*|*xwx?xwx?xwx*)
+			*type?your?windows?product?key*|*20000-2000*|*x000*0000*windows?a?*|*xxxxxxxxxxxxxxxxxxxxx*)
 				echo "$screenocr"
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
@@ -4570,7 +4572,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 				(win7) let win7++; ((win7%2)) && vm vnc $vmn -put=key:alt-tab;;
 				esac
 				;;
-			*red?h?*vi?*red?hat,?inc*red??at,?inc*|*ed*ha*,?inc*software?from?publishers?you?trust*)
+			*red?h?*vi?*red?hat*?nc*red??at*?nc*|*ed*ha*,?inc*software?from?publ*shers?you?trust*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
 				vm vnc $vmn -put=key:alt-tab
@@ -4590,9 +4592,6 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 					;;
 				(yes)
 					let noagain++
-					#tabOpts=$(for ((i=0;i<noagain%3;i++)); do echo -n "-put=key:tab "; done)
-					#fixme: seems keydown doesnot work as expected
-					#vm vnc $vmn -put=keydown:alt $tabOpts -put=keyup:alt
 					vm vnc $vmn -put=key:alt-tab
 					;;
 				esac
