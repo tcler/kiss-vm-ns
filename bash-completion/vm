@@ -220,13 +220,17 @@ _vm()
         vn|vnc*)
             if [[ $narg -le 3 ]]; then
                 if [[ "$cur" == -* ]]; then
-                    COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln --invert" -- "$cur" ) )
+                    COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln --invert --ocr-tool" -- "$cur" ) )
                 else
                     vmlist=$(virsh list --name 2>/dev/null)
                     COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
                 fi
             else
-                COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln --invert" -- "$cur" ) )
+                if [[ ${words[$((cword-1))]} = --ocr-tool ]]; then
+                    COMPREPLY=( $( compgen -W "tesseract gocr" -- "$cur" ) )
+                else
+                    COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln --invert --ocr-tool" -- "$cur" ) )
+                fi
             fi
             ;;
         cpfrom)

@@ -470,8 +470,8 @@ vncgetsc() {
 	}
 	local fname=$_vmname-screen-$(date +%F_%T_%N).png
 	vncdo -s $vncport capture $RuntimeTmp/_screen.png
-	if [[ -n "$INVERT" ]]; then
-		image_binarize $RuntimeTmp/_screen.png $fname $INVERT
+	if [[ "$INVERT" = yes || -n "$ThresHold" ]]; then
+		image_binarize $RuntimeTmp/_screen.png $fname invert=${INVERT:-no} threshold=${ThresHold}
 	else
 		mv $RuntimeTmp/_screen.png $fname
 	fi
@@ -494,27 +494,28 @@ vncgetsc() {
 image_binarize() {
 	local srcf=${1}
 	local dstf=${2:-new-${srcf}}
-	local invert=${3}
+	local invert=${3#invert=}
+	local threshold=${4#threshold=}
 
 	GMFirst=${GMFirst:-no}
-	if [[ "$GMFirst" != yes ]] && command -v anytopnm >/dev/null; then
-		if [[ -n "$invert" ]]; then
+	if [[ -z "$threshold" ]] && command -v anytopnm >/dev/null; then
+		if [[ "$invert" = yes ]]; then
 			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnminvert | pnmtopng > $dstf
 		else
 			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnmtopng > $dstf
 		fi
 	else
 		local ConvertCmd="gm convert"
-		[[ -n "$invert" ]] && negateOpt=-negate
+		[[ "$invert" = yes ]] && negateOpt=-negate
 		! command -v gm >/dev/null && {
 			if ! command -v convert >/dev/null; then
-				echo "{VM:WARN} command gm or convert are needed by 'vncget' function!" >&2
+				echo "{VM:WARN} command gm or convert are needed by 'image_binarize' function!" >&2
 				return 1
 			else
 				ConvertCmd=convert
 			fi
 		}
-		$ConvertCmd $srcf -threshold 30% $negateOpt $dstf
+		$ConvertCmd $srcf -threshold ${threshold:-30%} $negateOpt $dstf
 	fi
 
 	return 0
@@ -522,21 +523,29 @@ image_binarize() {
 
 vncget() {
 	local vncport=$1
+	local ocrtool=${2:-gocr}
 
 	! command -v vncdo >/dev/null && {
 		echo "{VM:WARN} command vncdo is needed by 'vncget' function!" >&2
 		return 1
 	}
-	! command -v gocr >/dev/null && {
-		echo "{VM:WARN} command gocr is needed by 'vncget' function!" >&2
+	! command -v gocr >/dev/null && ! command -v tesseract >/dev/null &&  {
+		echo "{VM:WARN} command gocr or tesseract is needed by 'vncget' function!" >&2
 		return 1
 	}
 	vncdo -s $vncport capture $RuntimeTmp/_screen.png
 	[[ ! -s $RuntimeTmp/_screen.png ]] && {
 		echo "{VM:WARN} vncdo capture fail, it might because that conflict with unshared 'virt-viewer'" >&2
 	}
-	image_binarize $RuntimeTmp/_screen.png $RuntimeTmp/_screen2.png $INVERT
-	gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=30;47' grep --color .
+	image_binarize $RuntimeTmp/_screen.png $RuntimeTmp/_screen2.png invert=$INVERT threshold=${ThresHold}
+	case $ocrtool in
+	gocr)
+		gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=30;47' grep --color .
+		;;
+	tesseract|tesser*)
+		tesseract $RuntimeTmp/_screen2.png - -l eng+chi 2>/dev/null | GREP_COLORS='ms=30;47' grep --color .
+		;;
+	esac
 }
 
 vncput() {
@@ -618,7 +627,7 @@ vmvncproc() {
 		fi
 		if [[ -n "${VNCGET}" ]]; then
 			[[ -t 1 || ! -p /dev/stdout ]] && echo "[vncget@$_vmname]:" >&2
-			vncget localhost::$port $_vmname
+			vncget localhost::$port ${OCR_TOOL}
 		fi
 	fi
 }
@@ -2181,6 +2190,8 @@ Usage() {
 	  --getsc, --vncgetsc
 	                 #get vnc screen image
 	  --invert       #get vnc screen image and invert
+	  --threshold <> #get vnc screen image and binarize with specified threshold
+	  --ocr-tool <>  #ocr-tool could be: gocr(defalt), tesseract
 	  --put, --vncput <msg>
 	                 #send string or key event to vnc server, could be specified multi-times
 	                 #`e.g: --put root --put key:enter --put password --put key:enter
@@ -2444,6 +2455,8 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long nosshkey \
 	--long getsc --long vncgetsc \
 	--long invert \
+	--long threshold: \
+	--long ocr-tool: \
 	--long get --long vncget \
 	--long put: --long vncput: \
 	--long putln: --long vncputln: \
@@ -2591,6 +2604,8 @@ while true; do
 	--nosshkey)      NO_SSHKEY=yes; shift 1;;
 	--debug)         DEBUG=yes; shift 1;;
 	--invert)        INVERT=yes; shift 1;;
+	--threshold)     ThresHold=$2; shift 2;;
+	--ocr-tool)      OCR_TOOL=$2; shift 2;;
 	--get|--vncget)  VNCGET=yes; shift 1;;
 	--getsc|--vncgetsc) VNCGETSC=yes; shift 1;;
 	--put|--vncput)  VNCPUTS+=("$2"); shift 2;;
@@ -4514,7 +4529,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	if [[ "$WIN_AUTO" = yes ]]; then
 		run -tmux=langselect_$vmname 'vmn='"$vmname"'
 		for ((i=0; i<32; i++)); do
-			screenocr=$(vm vnc $vmn -get)
+			screenocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
 			case "${screenocr,,}" in
 			*lan9*|*langua*|*_jju?_ve*|*t3e1_oot3*)
 				echo "$screenocr"
@@ -4526,9 +4541,9 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 		done'
 		run -tmux=key-ask_$vmname 'sleep 64; vmn='"$vmname"'
 		for ((i=0; i<180; i++)); do
-			screenocr=$(vm vnc $vmn -get)
+			screenocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
 			case "${screenocr,,}" in
-			*wxxwxxwxx*|*xxxxx?xxxxx*|*xwx?xwx?xwx*)
+			*type?your?windows?product?key*|*20000-2000*|*wxxwxxwxx*|*xxxxx?xxxxx*|*xwx?xwx?xwx*)
 				echo "$screenocr"
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
@@ -4540,7 +4555,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 		pre=no
 		for ((i=0; i<1440; i++)); do
 			[[ "$temp" != base ]] && break
-			screenocr=$(vm vnc $vmn -get)
+			screenocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
 			case "${screenocr,,}" in
 			*v?rt?o?w?n??nstall?done*) break;;
 			*stat?c??p*) break;;
@@ -4555,11 +4570,11 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 				(win7) let win7++; ((win7%2)) && vm vnc $vmn -put=key:alt-tab;;
 				esac
 				;;
-			*virtio?win*|*publisher*red?hat*|*install?vir*|*?*nsta*v?*r*|*?ns??ll???rjr?jo*|*lwaystrust*|*==\>*_____*)
+			*red?h?*vi?*red?hat,?inc*red??at,?inc*|*ed*ha*,?inc*software?from?publishers?you?trust*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
 				echo "$screenocr"
 				vm vnc $vmn -put=key:alt-tab
-				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
+				vm vnc $vmn -put=key:tab -put=key:tab -put=" " -put=key:tab -put=key:enter
 				case $pre in
 				(no) pre=yes;;
 				(yes) let yes++; ((yes%2)) && vm vnc $vmn -put=key:alt-tab;;
