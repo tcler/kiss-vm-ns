@@ -220,7 +220,7 @@ _vm()
         vn|vnc*)
             if [[ $narg -le 3 ]]; then
                 if [[ "$cur" == -* ]]; then
-                    COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln --invert --ocr-tool" -- "$cur" ) )
+                    COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln --invert --ocr-tool --threshold" -- "$cur" ) )
                 else
                     vmlist=$(virsh list --name 2>/dev/null)
                     COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
@@ -228,8 +228,10 @@ _vm()
             else
                 if [[ ${words[$((cword-1))]} = --ocr-tool ]]; then
                     COMPREPLY=( $( compgen -W "tesseract gocr" -- "$cur" ) )
+                elif [[ ${words[$((cword-1))]} = --threshold ]]; then
+                    COMPREPLY=( $( compgen -W "70% 50% 30%" -- "$cur" ) )
                 else
-                    COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln --invert --ocr-tool" -- "$cur" ) )
+                    COMPREPLY=( $( compgen -W "#<Enter> --getsc --get --put --putln --invert --ocr-tool --threshold" -- "$cur" ) )
                 fi
             fi
             ;;
