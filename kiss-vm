@@ -3196,17 +3196,21 @@ if [[ "$VTPM" = yes ]]; then
 fi
 
 QXL_available() {
-	local rc=0
-	local qemu_kvm=${QEMU_KVM:-/usr/libexec/qemu-kvm}
-	local quitOpt=; [[ -z "$1" ]] && quitOpt=-q
+	local rc=0 qemu_kvm=$1
+	[[ -z "$qemu_kvm" ]] && qemu_kvm=$(PATH=/usr/libexec:$PATH command -v qemu-kvm 2>/dev/null)
+
+	local qemu_ver=$($qemu_kvm --version|awk '{print $4; exit}')
+	[[ "$qemu_ver" < 6 ]] && { return 1; }
+
+	local quietOpt=; [[ -z "$2" ]] && quietOpt=-q
 	for ((i=0;i<4;i++)) do DISPLAY= LANG=C timeout 0.5 $qemu_kvm -vga qxl $MACHINE_QEMUOPT 2>&1; done |
-		grep $quitOpt "${2:-QXL VGA not available}" && rc=1
+		grep $quietOpt "${2:-QXL VGA not available}" && rc=1
 	return $rc
 }
 
 [[ -n "$QEMU_KVM" ]] && {
-	QXL_available || {
-		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
+	QXL_available $QEMU_KVM || {
+		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT=""
 	}
 	LANG=C $QEMU_KVM -machine help|grep -q q35 && Q35=support
 }
