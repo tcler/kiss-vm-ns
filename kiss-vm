@@ -1201,6 +1201,7 @@ vmlogin() {
 				"Password for" { send "$defaultPasswd\r"; exp_continue }
 				"*# " { send "\r"; interact }
 				"*$ " { send "\r"; interact }
+				"PS C*> " { send "\r"; interact }
 				}
 			} else {
 				expect {
