@@ -419,7 +419,7 @@ process_ansf() {
 		curl_download_x $destdir/virtio-win.iso $VirtioDriverISOUrl
 	fi
 	mkdir $destdir/sshkeys
-	cp $SUDOUSERHOME/.ssh/id_*.pub $destdir/sshkeys/. 2>/dev/null
+	cp -v $SUDOUSERHOME/.ssh/id_*.pub $destdir/sshkeys/.
 
 	autorundir=$destdir/$ANSF_AUTORUN_DIR
 	if [[ -n "$DL_URLS" ]]; then
