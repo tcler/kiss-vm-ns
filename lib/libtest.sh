@@ -185,7 +185,7 @@ run() {
 			_cmdlx="nohup $_cmdl &>${_nohuplogf} &"
 		fi
 		[[ -n "$_SUDO" ]] && _cmdlx="$_SUDO  $_cmdlx"
-		echo "[$(date +%T) $USER $PWD]"$'\n\E[0;33;44m'"run(${_runtype:-plat})> $_cmdlx"$'\E[0m'
+		echo "[$(date +%T) $USER $PWD]"$'\n\E[0;33;44m'"run(${_runtype:-plat})> ${_cmdlx}"$'\E[0m'
 	fi
 
 	case ${_runtype:-plat} in

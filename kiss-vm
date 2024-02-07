@@ -39,10 +39,11 @@ VirtInstallTimeOut=600
 
 VMUSER=$(whoami)
 [[ $(id -u) = 0 && -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
-eval VMSHOME=~$VMUSER/VMs
-eval ImagePath=~$VMUSER/myimages
-eval perConfDir=~$VMUSER/.config/${_repon}
-eval oldperConfDir=~$VMUSER/.config/kiss-vm
+eval VMUSERHOME=~$VMUSER
+VMSHOME=${VMUSERHOME}/VMs
+ImagePath=${VMUSERHOME}/myimages
+perConfDir=${VMUSERHOME}/.config/${_repon}
+oldperConfDir=${VMUSERHOME}/.config/kiss-vm
 
 VM_DOMAIN=lab.kissvm.net
 RuntimeTmp=/tmp/vm-$$
@@ -143,7 +144,7 @@ run() {
 			_cmdlx="nohup $_cmdl &>${_nohuplogf} &"
 		fi
 		[[ -n "$_SUDO" ]] && _cmdlx="[$_SUDO] $_cmdlx"
-		echo $'\E[0;33;44m'"[${_runtype:-plat} run] $_cmdlx"$'\E[0m'
+		echo $'\E[0;33;44m'"[${_runtype:-plat} run] ${_cmdlx}"$'\E[0m'
 	fi
 
 	case ${_runtype:-plat} in
@@ -3978,7 +3979,7 @@ elif [[ "$InstallType" = import ]]; then
 		else
 			cloud-init-iso-gen.sh -d $Distro $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" \
 				-p "$PKGS" $DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS" \
-				--sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub
+				--sshkeyf ${VMUSERHOME}/.ssh/id_rsa.pub --sshkeyf ${VMUSERHOME}/.ssh/id_ecdsa.pub
 		fi
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom$iso_bus_type"
 	}
