@@ -211,7 +211,10 @@ netnsexec() {
 	local ns=$1
 	shift
 	local initpid=$(netns_init_pid $ns)
-	[[ "$VERBOSE" = yes ]] && echo "[NETNS:$ns]> $(getReusableCommandLine "$@")" | GREP_COLORS='ms=01;36' grep --color . >&2
+	[[ "$VERBOSE" = yes ]] && {
+		cmdLine=$(getReusableCommandLine "$@")
+		echo "[NETNS:$ns]> ${cmdLine//\\/\\\\}" | GREP_COLORS='ms=01;36' grep --color . >&2
+	}
 	_netnsexec "$initpid" "$@"
 	rc=$?
 

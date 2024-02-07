@@ -1159,7 +1159,7 @@ vmlogin() {
 		sshCommand=$(getReusableCommandLine "$@")
 		[[ $# = 0 ]] && set "exit 0";
 		[[ "$VERBOSE" -gt 0 ]] &&
-			echo -e "\E[01;36m[$U@$_vmname]> $sshCommand\E[0m" >&2
+			echo -e "\E[01;36m[$U@$_vmname]> ${sshCommand//\\/\\\\}\E[0m" >&2
 	else
 		[[ -n "$1" ]] && {
 			U=$1; shift;
@@ -1195,7 +1195,7 @@ vmlogin() {
 		case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 		[[ "${EXEC}" = yes ]] && sshOpts+=" -n"
 		if [[ $sshstat = yes ]]; then
-			ssh $sshOpts $U@$addr "$sshCommand"
+			ssh $sshOpts $U@$addr "${sshCommand}"
 			rc=$?
 		elif [[ $sshstat = passwd ]]; then
 			expect <(cat <<-EOF
