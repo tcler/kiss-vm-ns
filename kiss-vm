@@ -208,6 +208,12 @@ kill_installer_tmux_session() {
 		[[ "$session" = *_${_vmn}: ]] && tmux kill-session -t ${session%:}
 	done < <(tmux ls 2>/dev/null)
 }
+kill_virt_viewer() {
+	local _vm=$1
+	[[ -z "$_vm" ]] && return
+	local _pid=$(ps axf|awk -vvm=$_vm '$0 ~ ".*virt-viewe[r].*-r "vm"$" {print $1}')
+	[[ -n "$_pid" ]] && { kill $_pid; }
+}
 cleanup_and_exit() {
 	if [[ -n "$VMpath" ]]; then
 		echo -e "\n{VM:clean} Removing VM dir: $VMpath"
@@ -359,8 +365,9 @@ _vmdelete() {
 	{ virsh destroy $_vmname 2>/dev/null; sleep 0.5
 	  virsh undefine $_vmname 2>/dev/null || virsh undefine $_vmname --nvram; } | sed '/^$/d'
 
-	echo -e "{VM:INFO} kill tmux session of $_vmname ..."
+	echo -e "{VM:INFO} kill virt-viewer/tmux-session of $_vmname ..."
 	kill_installer_tmux_session ${_vmname}
+	kill_virt_viewer ${_vmname}
 
 	echo -e "{VM:INFO} removing VM folder $_vmdir ..."
 	rm -rf $varlib_dir/$_vmname
@@ -456,6 +463,7 @@ vmviewer() {
 	[[ "$WAIT" = yes ]] && waitopt=-w
 
 	set -- $(vmname_extract "$@")
+	kill_virt_viewer "$@"
 	run -debug -nohup=$logf virt-viewer -s -v -r $waitopt "$@"
 	sleep 1; cat $logf 2>/dev/null
 }
