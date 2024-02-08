@@ -1595,7 +1595,10 @@ install_requires() {
 		rpm -q virtio-win &>/dev/null || {
 			sudo tmux new -s virtio-win-iso-install -d virtio-win-iso-install.sh
 		}
-		[[ "$OSV" = 7 && $HostARCH = x86_64 ]] && { yum remove -y tmux && yum install -y ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/assmannst/CentOS_7/x86_64/tmux-2.6-3.1.x86_64.rpm; }
+		[[ "$OSV" = 7 && $HostARCH = x86_64 && "$(rpm -q tmux)" != tmux-2.6* ]] && {
+			yum remove -y tmux; pkill tmux 2>/dev/null
+			yum install -y ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/assmannst/CentOS_7/x86_64/tmux-2.6-3.1.x86_64.rpm;
+		}
 		;;
 	debian*|ubuntu*)
 		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc"
