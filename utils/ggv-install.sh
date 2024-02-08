@@ -8,6 +8,7 @@
 
 . /etc/os-release
 OS=$NAME
+yumOpt=${yumOpt:---setopt=strict=0}
 
 case ${OS,,} in
 slackware*)
@@ -71,9 +72,9 @@ esac
 	fi
 }
 
-#install gocr
+#install gocr/tesseract
 echo
-! command -v gocr && {
+! command -v gocr || ! command -v tesseract && {
 	echo -e "\n{ggv-install} install gocr ..."
 
 	case ${OS,,} in
