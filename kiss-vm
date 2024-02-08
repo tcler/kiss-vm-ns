@@ -353,7 +353,9 @@ _vmdelete() {
 
 	local userhome=$(getent passwd "$VMUSER" | cut -d: -f6)
 	local _vmdir=$(vmhomedir $_vmname 2>/dev/null|head -n1)
-	if [[ -z "$_vmdir" || "$_vmdir" != $userhome/VM[sS]/* ]]; then
+	local own=no
+	[[ $(id -u) = 0 && $_vmdir = /root/VM[sS]/* ]] || [[ "$_vmdir" = $userhome/VM[sS]/* ]] && own=yes
+	if [[ $own != yes ]]; then
 		echo -e "{VM:WARN} VM '$_vmname' was not created by current user($VMUSER); try:"
 		cat <<-EOF
 		  virsh destroy $_vmname
