@@ -4553,7 +4553,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 		for ((i=0; i<32; i++)); do
 			scocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
 			case "${scocr,,}" in
-			*lan9*|*langua*)
+			*lan9*|*langua*|*l?ngua*)
 				echo "$scocr"
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
