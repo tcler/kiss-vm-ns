@@ -4549,10 +4549,10 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	if [[ "$WIN_AUTO" = yes ]]; then
 		run -tmux=langselect_$vmname 'vmn='"$vmname"'
 		for ((i=0; i<32; i++)); do
-			screenocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
-			case "${screenocr,,}" in
-			*lan9*|*langua*|*_jju?_ve*|*t3e1_oot3*)
-				echo "$screenocr"
+			scocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
+			case "${scocr,,}" in
+			*lan9*|*langua*)
+				echo "$scocr"
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
 			*)
@@ -4561,10 +4561,11 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 		done'
 		run -tmux=key-ask_$vmname 'sleep 64; vmn='"$vmname"'
 		for ((i=0; i<180; i++)); do
-			screenocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
-			case "${screenocr,,}" in
+			scocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
+			case "${scocr,,}" in
 			*type?your?windows?product?key*|*20000-2000*|*x000*0000*windows?a?*|*xxxxxxxxxxxxxxxxxxxxx*)
-				echo "$screenocr"
+				echo "$scocr"
+				vm vnc $vmn -put=emm
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
 			*)
@@ -4572,47 +4573,20 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 			esac
 		done'
 		run -tmux=virtio-win-install_$vmname 'sleep 180; vmn='"$vmname"'; temp='"$WIN_TEMPLATE"'
-		pre=no
 		for ((i=0; i<1440; i++)); do
 			[[ "$temp" != base ]] && break
-			screenocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
-			case "${screenocr,,}" in
+			scocr=$(vm vnc $vmn -get -ocr-tool=tesseract)
+			case "${scocr,,}" in
 			*v?rt?o?w?n??nstall?done*) break;;
 			*stat?c??p*) break;;
-			*win7*|*c3_53j3j3__0_e*|*0e3??*53j3e3*_0_e*|*88??o0_8*4j*bj*%i*|*j_ll_%d_r__a_y*)
-				[[ "$screenocr" = *==\>*==\>*==\>*==\>?install?virtio-win?driver?...* ]] && {
-					vm vnc $vmn -put=key:alt-tab; continue; }
-				echo "--------[$(date +%F_%T)]------------------------------------------"
-				echo "$screenocr"
-				vm vnc $vmn -put=key:tab -put=key:enter
-				case $pre in
-				(no) pre=win7;;
-				(win7) let win7++; ((win7%2)) && vm vnc $vmn -put=key:alt-tab;;
-				esac
-				;;
 			*red?h?*vi?*red?hat*?nc*red??at*?nc*|*ed*ha*,?inc*software?from?publ*shers?you?trust*)
 				echo "--------[$(date +%F_%T)]------------------------------------------"
-				echo "$screenocr"
-				vm vnc $vmn -put=key:alt-tab
+				echo "$scocr"
+				[[ "$scocr" = "$pre" ]] && vm vnc $vmn -put=key:alt-tab || pre="${scocr}"
 				vm vnc $vmn -put=key:tab -put=key:tab -put=" " -put=key:tab -put=key:enter
-				case $pre in
-				(no) pre=yes;;
-				(yes) let yes++; ((yes%2)) && vm vnc $vmn -put=key:alt-tab;;
-				esac
 				;;
 			*)
-				case $pre in
-				(no)
-					case "${screenocr,,}" in
-					*[_8][_8]_*ecomm?n?*) vm vnc $vmn -put=key:alt-tab;;
-					*) sleep 5;;
-					esac
-					;;
-				(yes)
-					let noagain++
-					vm vnc $vmn -put=key:alt-tab
-					;;
-				esac
+				vm vnc $vmn -put=key:alt-tab
 				;;
 			esac
 			vm port-available $vmn 22 &>/dev/null && break
