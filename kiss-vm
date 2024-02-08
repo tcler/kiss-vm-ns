@@ -870,7 +870,7 @@ vmclone() {
 
 sshtest() {
 	local target=$1
-	local sshOpts=${2:--o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no}
+	local sshOpts=${2:--o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no $sshKeyOpts}
 	local result=255
 	local tmpf=${RuntimeTmp}/_sshtest
 	local KexAlgorithmsOpt=
@@ -923,7 +923,7 @@ vmcopyto() {
 	}
 
 	local sshstat=unavailable
-	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR"
+	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR $sshKeyOpts"
 	vmhomedir $_vmname | grep -E -q -i -e windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
@@ -985,7 +985,7 @@ vmcopyfrom() {
 	}
 
 	local sshstat=unavailable
-	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR"
+	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR $sshKeyOpts"
 	vmhomedir $_vmname | grep -q -i windows && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
@@ -1176,7 +1176,7 @@ vmlogin() {
 		return $?
 	}
 
-	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no"
+	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no $sshKeyOpts"
 	echo -n "$sshCommand" >$RuntimeTmp/sshcmd
 	for addr in $addrs; do
 		[[ "$DEBUG" = yes ]] &&
@@ -2997,6 +2997,10 @@ fi
 VCPUN=$(vcpuN "$VCPUS")
 
 run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
+
+[[ $(id -u) = 0 && -n "$SUDO_USER" ]] && {
+	sshKeyOpts=$(for keyf in {$VMUSERHOME,/root}/.ssh/id_*; do [[ $keyf != *.pub ]] && echo -n "-i $keyf "; done)
+}
 
 subcmd="$1"; shift;
 case "$subcmd" in
