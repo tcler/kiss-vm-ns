@@ -4572,7 +4572,8 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 			case "${scocr,,}" in
 			*type?your?windows?product?key*|*20000-2000*|*x000*0000*windows?a?*|*xxxxxxxxxxxxxxxxxxxxx*)
 				echo "$scocr"
-				vm vnc $vmn -put=emm
+				tmux kill-session -t langselect_$vmn 2>/dev/null
+				vm vnc $vmn -put=key:alt-tab -put=emm
 				vm vnc $vmn -put=key:tab -put=key:tab -put=key:tab -put=key:tab -put=key:enter
 				break;;
 			*)
