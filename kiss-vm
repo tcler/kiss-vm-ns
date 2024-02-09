@@ -506,14 +506,16 @@ image_binarize() {
 	local srcf=${1}
 	local dstf=${2:-new-${srcf}}
 	local invert=${3#invert=}
-	local threshold=${4#threshold=}
+	local threshold=${4#threshold=} _hold=
 
+	threshold=${threshold:-50%}
+	_hold=0.${threshold%\%}
 	GMFirst=${GMFirst:-no}
-	if [[ -z "$threshold" ]] && command -v anytopnm >/dev/null; then
+	if command -v anytopnm >/dev/null; then
 		if [[ "$invert" = yes ]]; then
-			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnminvert | pnmtopng > $dstf
+			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold -value ${_hold} | pnminvert | pnmtopng > $dstf
 		else
-			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold | pnmtopng > $dstf
+			anytopnm $srcf | ppmtopgm | pgmtopbm -threshold -value ${_hold}| pnmtopng > $dstf
 		fi
 	else
 		local ConvertCmd="gm convert"
@@ -526,7 +528,7 @@ image_binarize() {
 				ConvertCmd=convert
 			fi
 		}
-		$ConvertCmd $srcf -threshold ${threshold:-30%} $negateOpt $dstf
+		$ConvertCmd $srcf -threshold ${threshold%\%}% $negateOpt $dstf
 	fi
 
 	return 0
@@ -2205,8 +2207,8 @@ Usage() {
 	  --getsc, --vncgetsc
 	                 #get vnc screen image
 	  --invert       #get vnc screen image and invert
-	  --threshold <> #get vnc screen image and binarize with specified threshold
-	  --ocr-tool <>  #ocr-tool could be: gocr(defalt), tesseract
+	  --threshold <> #threshold of image binarize, default value: 33%
+	  --ocr-tool <>  #ocr-tool could be: tesseract, default value: gocr
 	  --put, --vncput <msg>
 	                 #send string or key event to vnc server, could be specified multi-times
 	                 #`e.g: --put root --put key:enter --put password --put key:enter
