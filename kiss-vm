@@ -535,8 +535,8 @@ image_binarize() {
 }
 
 vncget() {
-	local vncport=$1
-	local ocrtool=${2:-gocr}
+	local vncport=${1}
+	local ocrtool=${2}
 
 	! command -v vncdo >/dev/null && {
 		echo "{VM:WARN} command vncdo is needed by 'vncget' function!" >&2
@@ -551,12 +551,13 @@ vncget() {
 		echo "{VM:WARN} vncdo capture fail, it might because that conflict with unshared 'virt-viewer'" >&2
 	}
 	image_binarize $RuntimeTmp/_screen.png $RuntimeTmp/_screen2.png invert=$INVERT threshold=${ThresHold}
+	[[ -n "$ocrtool" ]] && shift 2 || { ocrtool=gocr; shift 1; }
 	case $ocrtool in
 	gocr)
-		gocr -i $RuntimeTmp/_screen2.png 2>/dev/null | GREP_COLORS='ms=30;47' grep --color .
+		gocr -i $RuntimeTmp/_screen2.png "${@}" 2>/dev/null | GREP_COLORS='ms=30;47' grep --color .
 		;;
 	tesseract|tesser*)
-		tesseract $RuntimeTmp/_screen2.png - -l eng+chi 2>/dev/null | GREP_COLORS='ms=30;47' grep --color .
+		tesseract $RuntimeTmp/_screen2.png - "${@}" 2>/dev/null | GREP_COLORS='ms=30;47' grep --color .
 		;;
 	esac
 }
@@ -2208,7 +2209,8 @@ Usage() {
 	                 #get vnc screen image
 	  --invert       #get vnc screen image and invert
 	  --threshold <> #threshold of image binarize, default value: 33%
-	  --ocr-tool <>  #ocr-tool could be: tesseract, default value: gocr
+	  --ocr-tool <>  #ocr-tool command: 'tesseract[ options]', default value: gocr
+	                 #`e.g: --ocr-tool='tesseract -l chi_sim --psm 11'
 	  --put, --vncput <msg>
 	                 #send string or key event to vnc server, could be specified multi-times
 	                 #`e.g: --put root --put key:enter --put password --put key:enter
