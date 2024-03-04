@@ -13,9 +13,12 @@ switchroot "$@"
 
 #Prepare: install deps
 yum install -y acl attr automake bc dbench dump e2fsprogs fio gawk gcc \
-	gdbm-devel git indent kernel-devel libacl-devel libaio-devel \
-	libcap-devel libtool liburing-devel libuuid-devel lvm2 make psmisc \
+	gdbm-devel git indent kernel-devel libacl-devel \
+	libcap-devel libtool libuuid-devel lvm2 make psmisc \
 	python3 quota sed sqlite udftools xfsprogs xfsprogs-devel
+grep -q CONFIG_AIO=y /boot/config-$(uname -r) && yum install -y libaio-devel
+#https://unix.stackexchange.com/questions/596276/how-to-tell-if-a-linux-machine-supports-io-uring
+grep -q io_uring_setup /proc/kallsyms && yum install -y liburing-devel
 
 # clone
 pkg=xfstests
