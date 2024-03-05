@@ -1218,6 +1218,7 @@ vmlogin() {
 				"PS C*> " { send "\r"; interact }
 				}
 			} else {
+				set timeout -1
 				expect {
 				"\[Pp]assword:" { send "$defaultPasswd\r"; exp_continue }
 				"Password for" { send "$defaultPasswd\r"; exp_continue }
