@@ -11,6 +11,15 @@ switchroot() {
 }
 switchroot "$@"
 
+# clone xfstests in background
+command -v git || _deps=git; command -v tmux || _deps+=" tmux"
+[[ -n "$_deps" ]] && yum install -y $_deps
+pkg=xfstests
+gitUrl=git://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git
+backupUrl=https://github.com/kdave/xfstests
+cloneSession=clone-xfstests-$$
+tmux new -s $cloneSession -d "git clone $gitUrl $pkg || git clone $backupUrl $pkg"
+
 #Prepare: install deps
 yum install -y acl attr automake bc dbench dump e2fsprogs fio gawk gcc \
 	gdbm-devel git indent kernel-devel libacl-devel \
@@ -23,11 +32,8 @@ grep -q io_uring_setup /proc/kallsyms && {
 	yum install -y liburing-devel
 }
 
-# clone
-pkg=xfstests
-gitUrl=git://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git
-backupUrl=https://github.com/kdave/xfstests
-git clone $gitUrl $pkg || git clone $backupUrl $pkg
+# wait clone finish
+while tmux ls | grep $cloneSession; do sleep 8; done
 
 #Install form src
 cd $pkg && make && make install
