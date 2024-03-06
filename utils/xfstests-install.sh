@@ -11,6 +11,8 @@ switchroot() {
 }
 switchroot "$@"
 
+nouring=$1
+
 # clone xfstests in background
 command -v git || _deps=git; command -v tmux || _deps+=" tmux"
 [[ -n "$_deps" ]] && yum install -y $_deps
@@ -27,8 +29,8 @@ yum install -y acl attr automake bc dbench dump e2fsprogs fio gawk gcc \
 	python3 quota sed sqlite udftools xfsprogs xfsprogs-devel
 grep -q CONFIG_AIO=y /boot/config-$(uname -r) && yum install -y libaio-devel
 #https://unix.stackexchange.com/questions/596276/how-to-tell-if-a-linux-machine-supports-io-uring
-grep -q io_uring_setup /proc/kallsyms && {
-	sysctl kernel.io_uring_disabled=0
+[[ -z "$nouring" ]] && grep -q io_uring_setup /proc/kallsyms && {
+	test -f /proc/sys/kernel/io_uring_disabled && sysctl kernel.io_uring_disabled=0
 	yum install -y liburing-devel
 }
 
