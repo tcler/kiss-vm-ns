@@ -18,7 +18,10 @@ yum install -y acl attr automake bc dbench dump e2fsprogs fio gawk gcc \
 	python3 quota sed sqlite udftools xfsprogs xfsprogs-devel
 grep -q CONFIG_AIO=y /boot/config-$(uname -r) && yum install -y libaio-devel
 #https://unix.stackexchange.com/questions/596276/how-to-tell-if-a-linux-machine-supports-io-uring
-grep -q io_uring_setup /proc/kallsyms && yum install -y liburing-devel
+grep -q io_uring_setup /proc/kallsyms && {
+	sysctl kernel.io_uring_disabled=0
+	yum install -y liburing-devel
+}
 
 # clone
 pkg=xfstests
