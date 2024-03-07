@@ -3536,8 +3536,13 @@ for disk in "${EXTRA_DISKS[@]}"; do
 		_format=raw
 		ximage=$_ximage.$_format
 		_rootdir=$(mktemp -d)
-		virt-make-fs -v --partition --label=$_ximage \
-			-s ${size}G -t $fstype $_rootdir $VMpath/${ximage}
+		if [[ "$VIRT_MKFS" = yes ]]; then
+			#there are wrongs on filesystem that created by virt-make-fs
+			virt-make-fs -v --partition --label=$_ximage \
+				-s ${size}G -t $fstype $_rootdir $VMpath/${ximage}
+		else
+			create-vdisk.sh $VMpath/${ximage} ${size}G $fstype
+		fi
 		rmdir $_rootdir
 	fi
 	[[ -z "$_args" ]] && _args=bus=${DISK_BUS:-$DEFAULT_DISK_BUS}
