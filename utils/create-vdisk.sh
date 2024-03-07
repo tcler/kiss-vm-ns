@@ -5,8 +5,23 @@
 #update 2022-03-11: just found out that 'virt-make-fs' has already implemented
 #same function. please use 'virt-make-fs' instead for most cases:
 #$ virt-make-fs -s $size -t $fstype $dir_or_tar $image --partition
+#create_vdiskm() {
+#	local path=$1
+#	local dsize=$2
+#	local fstype=$3
+#	local fsroot=$4 _fsroot=
+#	local fn=${FUNCNAME[0]}
+#
+#	[[ -z "$fsroot" ]] && _fsroot=$(mktemp -d) || _fsroot=$fsroot
+#	virt-make-fs -v --partition --label=label \
+#		-s "$dsize" -t "$fstype" "$_fsroot" "$path"
+#	[[ -z "$fsroot" ]] && rmdir "$_fsroot"
+#}
 #
 #still keep this script as a souvenir
+#
+#update 2024-03-07: virt-make-fs still has some bugs cause unexpected fail
+#so recommend: use back this script instead virt-make-fs util those bugs fixed
 
 LANG=C
 
@@ -35,19 +50,6 @@ create_vdiskn() {
 	echo -e "\n[$fn:info] concat image-head and partition"
 	cat $imghead $imgtail >$path
 	rm -vf $imghead $imgtail
-}
-
-create_vdiskm() {
-	local path=$1
-	local dsize=$2
-	local fstype=$3
-	local fsroot=$4 _fsroot=
-	local fn=${FUNCNAME[0]}
-
-	[[ -z "$fsroot" ]] && _fsroot=$(mktemp -d) || _fsroot=$fsroot
-	virt-make-fs -v --partition --label=label \
-		-s "$dsize" -t "$fstype" "$_fsroot" "$path"
-	[[ -z "$fsroot" ]] && rmdir "$_fsroot"
 }
 
 [[ $# -lt 3 ]] && {
