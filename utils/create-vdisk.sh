@@ -29,6 +29,7 @@ create_vdiskn() {
 	local path=$1
 	local dsize=$2
 	local fstype=$3
+	local fslabel=$4
 	local imghead=img-head-$$
 	local imgtail=img-tail-$$
 	local fn=${FUNCNAME[0]}
@@ -45,6 +46,13 @@ create_vdiskn() {
 	truncate --size=${psize} $imgtail
 
 	echo -e "\n[$fn:info] making fs($fstype)"
+	[[ -n "$fslabel" ]] && {
+		case $fstype in
+		btrfs|ext*|xfs|exfat|nilfs2|ntfs) MKFS_OPT+=" -L $fslabel";;
+		f2fs|udf) MKFS_OPT+=" -l $fslabel";;
+		fat|msdos|vfat) MKFS_OPT+=" -n $fslabel";;
+		esac
+	}
 	mkfs.$fstype $MKFS_OPT "$imgtail"
 
 	echo -e "\n[$fn:info] concat image-head and partition"
@@ -54,7 +62,7 @@ create_vdiskn() {
 
 [[ $# -lt 3 ]] && {
 	cat <<-COMM
-	Usage: [MKFS_OPT=xxx] $0 <image> <size> <fstype> [fsroot]
+	Usage: [MKFS_OPT=xxx] $0 <image> <size> <fstype> [fs-label]
 
 	Examples:
 	  $0 usb.img 256M vfat

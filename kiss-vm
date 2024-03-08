@@ -3538,10 +3538,10 @@ for disk in "${EXTRA_DISKS[@]}"; do
 		_rootdir=$(mktemp -d)
 		if [[ "$VIRT_MKFS" = yes ]]; then
 			#there are wrongs on filesystem that created by virt-make-fs
-			virt-make-fs -v --partition --label=$_ximage \
-				-s ${size}G -t $fstype $_rootdir $VMpath/${ximage}
+			virt-make-fs -v --partition --label=${_ximage} \
+				-s ${size}G -t ${fstype} ${_rootdir} $VMpath/${ximage}
 		else
-			create-vdisk.sh $VMpath/${ximage} ${size}G $fstype
+			create-vdisk.sh $VMpath/${ximage} ${size}G ${fstype} ${_ximage}
 		fi
 		rmdir $_rootdir
 	fi
