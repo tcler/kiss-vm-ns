@@ -3604,7 +3604,11 @@ LANG=C virt-install -h | grep -q -- --qemu-commandline || QEMU_OPTS=()
 ### nvdimm option
 CONTROLLER_OPTS=
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
-	[[ "$GuestARCH" = x86_64 ]] && { MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"; }
+	[[ "$GuestARCH" = x86_64 ]] && {
+		MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35";
+		#see: https://www.kraxel.org/blog/2023/12/qemu-phys-bits
+		lscpu|grep -q Address.sizes:\ *39 && QEMU_OPTS+=("--qemu-commandline=-cpu EPYC-Milan")
+	}
 	CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
 
 	hpmemMax=$((1024*512))   #units Mi
