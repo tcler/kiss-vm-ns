@@ -11,9 +11,9 @@ switchroot() {
 }
 switchroot "$@"
 
-nouring=$1
+for arg; do [[ "$arg" = *=* ]] && eval "$arg"; done
 
-# clone xfstests in background
+# download xfstests in background
 command -v git || _deps=git; command -v tmux || _deps+=" tmux"
 [[ -n "$_deps" ]] && yum install -y $_deps
 tgzUrl=https://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git/snapshot/xfstests-dev-master.tar.gz
@@ -34,7 +34,7 @@ grep -q CONFIG_AIO=y /boot/config-$(uname -r) && yum install -y libaio-devel
 	yum install -y liburing-devel
 }
 
-# wait clone finish
+# wait download finish
 while tmux ls | grep $downloadSession; do sleep 8; done
 
 #Install form src
