@@ -2553,7 +2553,7 @@ while true; do
 	--ks-append)      KS_APPEND+=$'\n'"$2"; InstallType=location; shift 2;;
 	--ks-post)        KS_APPEND+=$'\n%post --interpreter=/usr/bin/bash\n'"$2"$'\n%end'; InstallType=location; shift 2;;
 	--ks-pre)         KS_APPEND+=$'\n%pre --interpreter=/usr/bin/bash\n'"$2"$'\n%end'; InstallType=location; shift 2;;
-	--ks-only-use)    KS_OnlyUse="$2"; InstallType=location; shift 2;;
+	--ks-only-use)    KS_OnlyUse="$2"; shift 2;;
 	--kernel-opts)    KOPTS="$2"; shift 2;;
 	--rm)      RM=yes; shift 1;;
 	--xzopt)          XZ="$2"; shift 2;;
