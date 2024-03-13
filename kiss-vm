@@ -1785,6 +1785,45 @@ is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
 is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
 is_rh_intranet || Intranet=no
 
+getimageurls() {
+	local parenturl=$1
+	local suffix_pattern=$2
+	local rc=1
+
+	local imagenames=$(curl -L -s -k ${parenturl} | sed -nr '/.*"([^"]+'"${suffix_pattern}"')".*/{s//\1/;p}')
+	local qcow2Imgs= rawImgs= otherImgs=
+
+	local arch=$GuestARCH
+	[[ $arch = aarch64 || $arch = arm64 ]] && arch="(aarch64|arm64)"
+	[[ $arch = x86_64 || $arch = amd64 ]] && arch="(x86_64|amd64)"
+	[[ $arch = ppc64 || $arch = ppc64le ]] && arch="(ppc64|ppc64le)"
+	imgs=$(grep -E "$arch" <<< "$imagenames")
+	if [[ -n "$imgs" ]]; then imagenames="$imgs"; else return 1; fi
+
+	for imagename in $imagenames; do
+		case $imagename in
+		*qcow2*) qcow2Imgs+=$imagename$'\n';;
+		*raw*)   rawImgs+=$imagename$'\n';;
+		*)       otherImgs+=$imagename$'\n';;
+		esac
+	done
+
+	[[ -n "$qcow2Imgs" ]] && rawImgs=
+	[[ -n "$rawImgs" ]] && otherImgs=
+
+	for image in $qcow2Imgs $rawImgs $otherImgs; do
+		echo -e "{VM:INFO} image: $image" >&2
+		if [[ -n "${image}" ]]; then
+			[[ "${image}" = *Atomic* ]] && continue
+			[[ "${image}" = *-ec2* ]] && continue
+			[[ "${image}" = *-nocloud* ]] && continue
+			echo ${parenturl%/}/${image}
+			rc=0
+		fi
+	done
+	return $rc
+}
+
 # env and functions that work in Intranet
 if [[ $Intranet = yes ]]; then
 	export RESTRAINT=yes
@@ -1824,44 +1863,6 @@ if [[ $Intranet = yes ]]; then
 		echo -e "\n====\n$urls\n====\n" >&2
 
 		fastesturl.sh $urls
-	}
-	getimageurls() {
-		local parenturl=$1
-		local suffix_pattern=$2
-		local rc=1
-
-		local imagenames=$(curl -L -s -k ${parenturl} | sed -nr '/.*"([^"]+'"${suffix_pattern}"')".*/{s//\1/;p}')
-		local qcow2Imgs= rawImgs= otherImgs=
-
-		local arch=$GuestARCH
-		[[ $arch = aarch64 || $arch = arm64 ]] && arch="(aarch64|arm64)"
-		[[ $arch = x86_64 || $arch = amd64 ]] && arch="(x86_64|amd64)"
-		[[ $arch = ppc64 || $arch = ppc64le ]] && arch="(ppc64|ppc64le)"
-		imgs=$(grep -E "$arch" <<< "$imagenames")
-		if [[ -n "$imgs" ]]; then imagenames="$imgs"; else return 1; fi
-
-		for imagename in $imagenames; do
-			case $imagename in
-			*qcow2*) qcow2Imgs+=$imagename$'\n';;
-			*raw*)   rawImgs+=$imagename$'\n';;
-			*)       otherImgs+=$imagename$'\n';;
-			esac
-		done
-
-		[[ -n "$qcow2Imgs" ]] && rawImgs=
-		[[ -n "$rawImgs" ]] && otherImgs=
-
-		for image in $qcow2Imgs $rawImgs $otherImgs; do
-			echo -e "{VM:INFO} image: $image" >&2
-			if [[ -n "${image}" ]]; then
-				[[ "${image}" = *Atomic* ]] && continue
-				[[ "${image}" = *-ec2* ]] && continue
-				[[ "${image}" = *-nocloud* ]] && continue
-				echo ${parenturl%/}/${image}
-				rc=0
-			fi
-		done
-		return $rc
 	}
 
 	distro2repos() {
