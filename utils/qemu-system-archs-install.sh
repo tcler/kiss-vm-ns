@@ -79,3 +79,11 @@ opensuse*|sles*)
 	: #fixme add more platform
 	;;
 esac
+
+rc=$?
+
+#workaround for error:
+# qemu-system-aarch64: unable to map backing store for guest RAM: Permission denied
+setsebool -P domain_can_mmap_files=1
+
+exit $rc
