@@ -121,7 +121,7 @@ vm exec -v $ipaclnt -- 'command -v authselect && { authselect test -a sssd with-
 
 #-------------------------------------------------------------------------------
 #nfs-server: configure krb5 nfs server
-vm exec -v $nfsserv -- make-nfs-server.sh
+vm exec -v $nfsserv -- make-nfs-server.sh --no-tlshd
 vm exec -vx $nfsserv -- "chown :qe /nfsshare/qe; chown :devel /nfsshare/devel"
 vm exec -vx $nfsserv -- chmod g+ws /nfsshare/qe /nfsshare/devel
 vm exec -v $nfsserv -- ls -l /nfsshare
