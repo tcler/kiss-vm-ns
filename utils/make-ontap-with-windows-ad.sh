@@ -36,7 +36,7 @@ vm prepare >/dev/null
 
 distro=${1:-9}
 clientvm=${2:-rhel-client}
-trun -tmux=- vm create -n $clientvm $distro -p 'vim bind-utils nfs-utils expect' --nointeract --saveimage -f
+trun -tmux=- vm create -n $clientvm $distro -p vim,bind-utils,nfs-utils,expect --nointeract --saveimage -f
 
 #-------------------------------------------------------------------------------
 read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')

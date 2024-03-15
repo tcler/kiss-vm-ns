@@ -13,7 +13,7 @@ vm prepare >/dev/null
 [[ "$1" = -s ]] && { shift; Single=yes; }
 distro=${1:-9}
 clientvm=${2:-rhel-client}
-trun -tmux=- vm create -n $clientvm $distro -p 'vim bind-utils nfs-utils expect' --nointeract --saveimage -f
+trun -tmux=- vm create -n $clientvm $distro -p vim,bind-utils,nfs-utils,expect --nointeract --saveimage -f
 
 #-------------------------------------------------------------------------------
 g_ontap_img_dir=/usr/share/Netapp-simulator
@@ -84,4 +84,8 @@ tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loo
 source "$ONTAP_ENV_FILE"
 trun     host $NETAPP_NAS_HOSTNAME
 trun -x0 showmount -e "$NETAPP_NAS_IP_LOC"
-vm exec -vx $clientvm -- showmount -e $NETAPP_NAS_IP
+if vm exec $clientvm -- ip a | grep eth1; then
+	vm exec -vx $clientvm -- showmount -e $NETAPP_NAS_IP
+else
+	:
+fi
