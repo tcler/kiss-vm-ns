@@ -19,6 +19,7 @@ Options:
   -h, -help              ; show this help
   -prefix <path>         ; root directory of nfs share(default: /nfsshare/)
   -t                     ; run extra tests after nfs start
+  -no-tlshd              ; don't configure tlshd
 EOF
 }
 test `id -u` = 0 || { echo "{Warn} This command has to be run under the root user"|grep --color=always . >&2; Usage >&2; exit 1; }
@@ -42,6 +43,7 @@ _at=$(getopt -a -o ht \
 	--long help \
 	--long test \
 	--long prefix: \
+	--long no-tlshd \
 	-n "$P" -- "$@")
 eval set -- "$_at"
 while true; do
@@ -49,6 +51,7 @@ while true; do
 	-h|--help)    Usage; shift 1; exit 0;;
 	-t|--test)    eTEST=yes; shift 1;;
 	--prefix)     PREFIX=$2; shift 2;;
+	--no-tlshd)   TLSHD=no; shift 1;;
 	--) shift; break;;
 	esac
 done
@@ -96,7 +99,7 @@ if [[ "$OSV" = 9 ]] && ! grep -wq mtls <(man exports); then
 	frepo=$(curl -L -s "$mirrorList"|sed -n 3p)
 	yum install --nogpg --disablerepo="*" --repofrompath="f39,$frepo" -y --setopt=strict=0 --allowerasing nfs-utils
 fi
-if rpm -q ktls-utils --quiet && grep -wq mtls <(man exports) && [[ $(uname -r) > 5.14.0-4 ]]; then
+if [[ "$TLSHD" != no ]] && rpm -q ktls-utils --quiet && grep -wq mtls <(man exports) && [[ $(uname -r) > 5.14.0-4 ]]; then
 	cat <<-EOF >>/etc/exports
 	$PREFIX/tls *(${defaultOpts},xprtsec=tls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
 	$PREFIX/mtls *(${defaultOpts},xprtsec=mtls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
