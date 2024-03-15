@@ -23,7 +23,7 @@ mkdir -p $ontap_img_dir
 
 #-------------------------------------------------------------------------------
 #download/check ONTAP simulator image files
-sver=${ONTAP_VER:-9.11.1}
+sver=${ONTAP_VER:-9.13.1}
 verx=$(rpm -E %rhel)
 [[ "$verx" = 7 ]] && sver=9.8
 
