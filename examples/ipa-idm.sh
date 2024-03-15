@@ -11,19 +11,19 @@ dnsdomain=lab.kissvm.net
 domain=${dnsdomain}
 realm=${domain^^}
 ipaserv=ipa-server
-nfsserv=nfs-server
-ipaclnt=ipa-client
+nfsserv=ipa-nfs-server
+ipaclnt=ipa-nfs-client
 password=redhat123
 
 ### __prepare__ test env build
-stdlog=$(trun vm create $distro --downloadonly |& tee /dev/tty)
+stdlog=$(trun vm create $distro --downloadonly "$@" |& tee /dev/tty)
 imgf=$(sed -n '${s/^.* //;p}' <<<"$stdlog")
 
-trun -tmux=$$-ipaserv vm create -n $ipaserv $distro --msize 4096 -p firewalld,bind-utils,expect,vim,tomcat,NetworkManager,sssd-tools --nointeract -I=$imgf -f
-trun -tmux=$$-ipaclnt vm create -n $ipaclnt $distro --msize 4096 -p bind-utils,vim,nfs-utils,NetworkManager --nointeract -I=$imgf -f
-trun                  vm create -n $nfsserv $distro --msize 4096 -p bind-utils,vim,nfs-utils,NetworkManager --nointeract -I=$imgf -f
+trun -tmux=$$-ipaserv vm create -n $ipaserv $distro --msize 4096 -p firewalld,bind-utils,expect,vim,tomcat,NetworkManager,sssd-tools,krb5-server --nointeract -I=$imgf -f "$@"
+trun -tmux=$$-ipaclnt vm create -n $ipaclnt $distro --msize 4096 -p bind-utils,vim,nfs-utils,NetworkManager --nointeract -I=$imgf -f "$@"
+trun                  vm create -n $nfsserv $distro --msize 4096 -p bind-utils,vim,nfs-utils,NetworkManager --nointeract -I=$imgf -f "$@"
 echo "{INFO} waiting all vm create process finished ..."
-while ps axf|grep tmux.new.*-d.vm.creat[e]; do sleep 10; done
+while ps axf|grep tmux.new.*$$-$USER.*-d.vm.creat[e]; do sleep 10; done
 
 vm cpto -v $ipaserv /usr/bin/ipa-server-install.sh /usr/bin/kinit.sh /usr/bin/.
 vm cpto -v $nfsserv /usr/bin/ipa-client-install.sh /usr/bin/{kinit.sh,make-nfs-server.sh} /usr/bin/.
@@ -32,7 +32,7 @@ trun -tmux=$$-tmp1 vm exec -v $nfsserv -- "systemctl enable NetworkManager; syst
 trun -tmux=$$-tmp2 vm exec -v $ipaclnt -- "systemctl enable NetworkManager; systemctl start NetworkManager; ipa-client-install.sh"
 trun               vm exec -v $ipaserv -- "systemctl enable NetworkManager; systemctl start NetworkManager; ipa-server-install.sh"
 echo "{INFO} waiting all vm exec process finished ..."
-while ps axf|grep tmux.new.*-d.vm.exe[c].*.ipa-.*-install.sh; do sleep 10; done
+while ps axf|grep tmux.new.*$$-.*-d.vm.exe[c].*.ipa-.*-install.sh; do sleep 10; done
 
 #-------------------------------------------------------------------------------
 #configure ipa-server
