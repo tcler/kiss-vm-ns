@@ -1,8 +1,9 @@
 declare -A distroInfo
 
-#### CentOS stream and CentOS
 GuestARCH=${GuestARCH:-$(uname -m)}
 _GuestARCH=${GuestARCH}; [[ "$GuestARCH" = ppc64 ]] && _GuestARCH=ppc64le;
+
+#### CentOS stream and CentOS
 distroInfo[Alma-9]="https://repo.almalinux.org/almalinux/9/cloud/$_GuestARCH/images/AlmaLinux-9-GenericCloud-latest.$_GuestARCH.qcow2 https://repo.almalinux.org/almalinux/9/BaseOS/$_GuestARCH/os/"
 distroInfo[Alma-8]="https://repo.almalinux.org/almalinux/8/cloud/$_GuestARCH/images/AlmaLinux-8-GenericCloud-latest.$_GuestARCH.qcow2 https://repo.almalinux.org/almalinux/8/BaseOS/$_GuestARCH/os/"
 
@@ -39,10 +40,11 @@ distroInfo[openSUSE-leap-15.3]="https://download.opensuse.org/repositories/Cloud
 distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.$GuestARCH.qcow2"
 
 #### FreeBSD
-distroInfo[FreeBSD-12.4]="https://download.freebsd.org/ftp/releases/VM-IMAGES/12.4-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
-distroInfo[FreeBSD-13.2]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.2-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
-distroInfo[FreeBSD-13.1]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
+distroInfo[FreeBSD-14.0-zfs]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}-zfs.qcow2.xz"
 distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
+distroInfo[FreeBSD-13.3]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.3-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
+distroInfo[FreeBSD-13.2]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.2-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
+distroInfo[FreeBSD-12.4]="https://download.freebsd.org/ftp/releases/VM-IMAGES/12.4-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-15.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/15.0-CURRENT/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 
 #### ArchLinux
@@ -57,7 +59,9 @@ if [[ -n "$IntranetBaseUrl" ]]; then
 		(riscv64|riscv) echo riscv-riscv64;;
 		esac
 	)
+	distroInfo[FreeBSD-14.0-zfs]="$IntranetBaseUrl/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}-zfs.qcow2.xz"
 	distroInfo[FreeBSD-14.0]="$IntranetBaseUrl/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-13.3]="$IntranetBaseUrl/vm-images/FreeBSD-13.3/FreeBSD-13.3-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-13.2]="$IntranetBaseUrl/vm-images/FreeBSD-13.2/FreeBSD-13.2-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-13.1]="$IntranetBaseUrl/vm-images/FreeBSD-13.1/FreeBSD-13.1-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-13.0]="$IntranetBaseUrl/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-${guestARCH}.qcow2.xz"
