@@ -3584,7 +3584,7 @@ c=1
 for devinfo in "${NVME_DEVS[@]}"; do
 	for attr in ${devinfo//,/ }; do
 		case $attr in
-		size=*) fsize=${attr#size=};;
+		size=*|[0-9]*) fsize=${attr#size=};;
 		format=*) format=${attr#format=};;
 		esac
 	done
