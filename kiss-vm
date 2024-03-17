@@ -3140,7 +3140,7 @@ shopt -u extglob
 		familys=$(sed -e 's/.*/"&" "" 1/' $distropatternIntra $distropatternInter)
 		dialog --backtitle "$dialogTitle" --radiolist "please selet distro family/pattern:" 22 40 20 $familys 2>$dialogres || { distroSelectNull; exit 0; }
 		pattern=$(head -n1 $dialogres|sed 's/"//g')
-		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|grep -E "$pattern")
+		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|grep -E "${pattern/fedora/f[0-9]+}")
 		[[ "$Intranet" = yes ]] && grep -F "$pattern" $distropatternIntra && {
 			dialog --title "If include nightly build" \
 				--backtitle "Do you want nightly build distros?" \
