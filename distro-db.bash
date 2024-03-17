@@ -2,6 +2,7 @@ declare -A distroInfo
 
 GuestARCH=${GuestARCH:-$(uname -m)}
 _GuestARCH=${GuestARCH}; [[ "$GuestARCH" = ppc64 ]] && _GuestARCH=ppc64le;
+Country=$(timeout 2 curl -s ipinfo.io/country)
 
 #### CentOS stream and CentOS
 distroInfo[Alma-9]="https://repo.almalinux.org/almalinux/9/cloud/$_GuestARCH/images/AlmaLinux-9-GenericCloud-latest.$_GuestARCH.qcow2 https://repo.almalinux.org/almalinux/9/BaseOS/$_GuestARCH/os/"
@@ -18,8 +19,7 @@ distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/%%GenericCloud.qc
 
 #### Fedora
 fbaseurl=https://download.fedoraproject.org/pub/fedora/linux
-#fvers=$(curl -Ls $fbaseurl/releases|sed -rn '/^.*>([0-9]+)\/<.*$/{s//\1/;p}'|tail -4)
-lstv=38
+lstv=39
 for fv in rawhide $((lstv+1)); do distroInfo[f$fv]=$fbaseurl/development/$fv/Cloud/$GuestARCH/images/; done
 eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/releases/$fv/Cloud/$GuestARCH/images/; done'
 
@@ -50,6 +50,33 @@ distroInfo[FreeBSD-15.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/1
 #### ArchLinux
 distroInfo[archlinux]="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-${GuestARCH}-cloudimg.qcow2"
 distroInfo[archlinux]="https://linuximages.de/openstack/arch/arch-openstack-LATEST-image-bootstrap${GuestARCH/x86_64/}.qcow2"
+
+case "$Country" in
+CN)
+	#### CentOS stream and CentOS
+	distroInfo[Alma-9]="https://mirrors.aliyun.com/almalinux/9/cloud/${_GuestARCH}/images/AlmaLinux-9-GenericCloud-latest.${_GuestARCH}.qcow2"
+	distroInfo[Alma-8]="https://mirrors.aliyun.com/almalinux/8/cloud/${_GuestARCH}/images/AlmaLinux-8-GenericCloud-latest.${_GuestARCH}.qcow2"
+	distroInfo[Rocky-9]="https://mirrors.sdu.edu.cn/rocky/9/images/$_GuestARCH/%%GenericCloud.*.qcow2"
+	distroInfo[Rocky-8]="https://mirrors.sdu.edu.cn/rocky/8/images/$_GuestARCH/%%GenericCloud.*.qcow2"
+
+	#### Fedora
+	lstv=39
+	fbaseurl=https://mirrors.ustc.edu.cn/fedora/releases
+	eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/$fv/Cloud/$GuestARCH/images/; done'
+
+	#### Debian
+	# https://cloud.debian.org/images/openstack/testing/
+	# https://cloud.debian.org/images/openstack/$latestVersion/
+	# https://cloud.debian.org/images/openstack/archive/$olderVersion/
+
+	#### OpenSUSE
+	#distroInfo[openSUSE-leap-15.5]=""
+
+	#### FreeBSD
+	distroInfo[FreeBSD-14.0-zfs]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-14.0-RELEASE-${GuestARCH/x86_64/amd64}-zfs.qcow2.xz"
+	distroInfo[FreeBSD-14.0]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-14.0-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
+	;;
+esac
 
 #### only available in intranet
 if [[ -n "$IntranetBaseUrl" ]]; then
