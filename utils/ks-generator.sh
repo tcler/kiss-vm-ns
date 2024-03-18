@@ -82,7 +82,11 @@ rhel-8*|rhel8*|centos8*|centos-8*|rocky8*|rocky-8*|alma8*|alma-8*)
 	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion expect"
 	AuthConfigure=
 	;;
-rhel-9*|rhel9*|centos9*|centos-9*|rocky9*|rocky-9*|alma9*|alma-9*|fedora-*|anolis*|rhel-10*|rhel10*)
+rhel-9*|rhel9*|centos9*|centos-9*|rocky9*|rocky-9*|alma9*|alma-9*|anolis9*)
+	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion expect"
+	AuthConfigure=
+	;;
+fedora*|rhel-1[0-9]*|rhel1[0-9]*|centos1[0-9]*|centos-1[0-9]*|rocky-1[0-9]*|rocky1[0-9]*|alma1[0-9]*|alma-1[0-9]*|anolis1[0-9]*)
 	Packages="-iwl* @standard @file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion expect"
 	AuthConfigure=
 	;;

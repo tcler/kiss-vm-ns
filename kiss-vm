@@ -1974,7 +1974,7 @@ if [[ $Intranet = yes ]]; then
 				nbeaker-harness:http://$downhostname/qa/rhts/lookaside/beaker-harness-active/rhel-8
 			)
 			;;
-		rhel-9*|rhel9*)
+		rhel-9*|rhel9*|rhel-1[0-9]|rhel1[0-9])
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug\/tree}
 			read rtype distro <<< $(awk -F/+ '{
@@ -3692,8 +3692,10 @@ rhel-7*|rhel7*|centos7*|centos-7*|anolis7*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;;
 rhel-8*|rhel8*|centos-8*|centos8*|rocky-8*|rocky8*|alma8*|alma-8*|anolis8*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm;;
-rhel-9*|rhel9*|rocky-9*|rocky9*|alma9*|alma-9*|anolis9*|anolis*)
+rhel-9*|rhel9*|rocky-9*|rocky9*|alma9*|alma-9*|anolis9*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm;;
+rhel-1[0-9]*|rhel1[0-9]*|rocky-1[0-9]*|rocky1[0-9]*|alma1[0-9]*|alma-1[0-9]*|anolis1[0-9]*)
+	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm;;
 esac
 [[ -n "$EPEL" ]] && PKGS="$EPEL $PKGS"
 
