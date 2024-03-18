@@ -23,10 +23,10 @@ tmux new -s $downloadSession -d "{ curl -LO $tgzUrl && tar axf ${tgzUrl##*/} || 
 
 #Prepare: install deps
 yum clean packages
-yum install -y --nogpgcheck acl attr automake bc dbench dump e2fsprogs fio gawk gcc \
-	gdbm-devel git indent kernel-devel libacl-devel \
-	libcap-devel libtool libuuid-devel lvm2 make psmisc \
-	python3 quota sed sqlite udftools xfsprogs xfsprogs-devel
+yum install -y --setopt=strict=0 --nogpgcheck acl attr automake \
+	bc dbench dump e2fsprogs fio gawk gcc gdbm-devel git indent \
+	kernel-devel libacl-devel libcap-devel libtool libuuid-devel lvm2 \
+	make psmisc python3 quota sed sqlite udftools xfsprogs xfsprogs-devel
 grep -q CONFIG_AIO=y /boot/config-$(uname -r) && yum install -y libaio-devel
 #https://unix.stackexchange.com/questions/596276/how-to-tell-if-a-linux-machine-supports-io-uring
 [[ -z "$nouring" ]] && grep -q io_uring_setup /proc/kallsyms && {
