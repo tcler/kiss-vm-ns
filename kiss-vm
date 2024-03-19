@@ -3726,7 +3726,8 @@ if [[ "$InstallType" = location ]]; then
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] getting taskfetch tools and brew-install $BPKGS ..."
 		(cd /usr/bin && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/utils/{brewinstall.sh,taskfetch.sh} && chmod +x brewinstall.sh taskfetch.sh)
-		nohup taskfetch.sh --install-deps &>/dev/null & brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot
+		brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot
+		[[ "$TASK_FETCH" = yes ]] && taskfetch.sh --install-deps
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] systemctl start restraintd ..."
 		yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd
