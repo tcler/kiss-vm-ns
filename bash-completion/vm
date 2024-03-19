@@ -51,6 +51,11 @@ option_arg_complete() {
         archlist=$(ls /usr/bin/qemu-system-* |& awk -F- 'NF==3{a=$3; if(a=="ppc64")a="ppc64le"; print a}')
         COMPREPLY=( $( compgen -W "$archlist" -- "$cur" ) )
         ;;
+    --virt-type)
+        [[ -n "$hasarg" ]] && return 0
+        vtypelist="qemu kvm xen"
+        COMPREPLY=( $( compgen -W "$vtypelist" -- "$cur" ) )
+        ;;
     -n|--vmname)
         [[ -n "$hasarg" ]] && return 0
         COMPREPLY=( $( compgen -W "#vmname arch-fixme rhel-fixme centos-fixme rocky-fixme alma-fixme debian-fixme

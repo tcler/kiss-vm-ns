@@ -2092,6 +2092,7 @@ Usage() {
 	                 #see also: virt-install --vcpus=?
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
 	  --arch         #Guest cpu arch. Note: require qemu-system-$arch already installed
+	  --virt-type <T>#pass thru to virt-install's --virt-type option
 	  --qemucpu <arg>
 	                 #alias of --qemu-opts="-cpu <arg>", and will cover it if both are specified
 	                 #see also: `qemu-system-$arch -machine <$machine> -cpu help`
@@ -2438,6 +2439,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long nocloud-init --long nocloud \
 	--long cpus: --long vcpus: \
 	--long arch: \
+	--long virt-type: \
 	--long qemucpu: \
 	--long nvmeboot --long NB \
 	--long boot: \
@@ -2573,6 +2575,7 @@ while true; do
 	--ms|--msize|-m) MSIZE="$2"; shift 2;;
 	--cpus|--vcpus)  SPECIFIED_VCPUS=yes; VCPUS="$2"; shift 2;;
 	--arch)	         GuestARCH="${2/ppc64le/ppc64}"; ARCH_OPT=--arch=$GuestARCH; shift 2;;
+	--virt-type)     VIRT_TYPE=$2; shift 2;;
 	--qemucpu)       QEMU_CPU=$2; QEMU_CPU_OPT="--qemu-commandline=-cpu $2"; shift 2;;
 	--nvmeboot|--NB) NVME_BOOT=yes; shift 1;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
@@ -2839,6 +2842,7 @@ enable_nested_kvm() {
 GuestARCH=${GuestARCH:-$HostARCH}
 if [[ "$GuestARCH" = "$HostARCH" ]]; then
 	virtualizationOption=--hvm
+	[[ -n "$VIRT_TYPE" ]] && virtualizationOption=--virt-type=${VIRT_TYPE}
 	case "$HostARCH" in
 	(aarch64)
 		virtualizationOption=
@@ -2854,7 +2858,7 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 		;;
 	esac
 else
-	virtualizationOption=--virt-type=qemu
+	virtualizationOption=--virt-type=${VIRT_TYPE:-qemu}
 	VirtInstallTimeOut=1200
 	_QEMU_KVM=qemu-system-${GuestARCH}
 	case "$GuestARCH" in
