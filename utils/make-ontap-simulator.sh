@@ -13,7 +13,7 @@ vm prepare >/dev/null
 [[ "$1" = -s ]] && { shift; Single=yes; }
 distro=${1:-9}
 clientvm=${2:-rhel-client}
-trun -tmux=- vm create -n $clientvm $distro -p vim,bind-utils,nfs-utils,expect --nointeract --saveimage -f
+trun -tmux=- vm create -n $clientvm $distro -p nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils --nointeract --saveimage -f
 
 #-------------------------------------------------------------------------------
 g_ontap_img_dir=/usr/share/Netapp-simulator
