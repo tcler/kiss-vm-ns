@@ -49,9 +49,19 @@ done
 
 #fedora_repo=https://dl.fedoraproject.org/pub/archive/fedora/linux/releases/${FEDORA_VER}/Everything/$arch/os/
 mirrorList="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${FEDORA_VER}&arch=$arch"
-echo "{INFO} fedora-version: $FEDORA_VER, url: $mirrorList"
+echo "{INFO} fedora-version: $FEDORA_VER, mirror-url: $mirrorList"
 
-fedora_repo=$(curl -L -s "$mirrorList"|sed -n 3p)
+Country=$(timeout 2 curl -s ipinfo.io/country)
+case "$Country" in
+CN|HK)
+	fedora_repo='http://ftp.iij.ad.jp/pub/linux/Fedora/archive/fedora/linux/releases/'"$FEDORA_VER"'/Everything/$basearch/os'
+	;;
+*)
+	fedora_repo=$(curl -L -s "$mirrorList"|sed -n 2p)
+	;;
+esac
+echo "{INFO} fedora-version: $FEDORA_VER, repo-url: $fedora_repo"
+
 frepon=fedora-${FEDORA_VER}
 if [[ "$OSV" -le 7 ]]; then
 	yum install -y yum-utils &>/dev/null
