@@ -3108,8 +3108,10 @@ decodeDistro() {
 		(5) Distro=RHEL5-Server-U11;; (6) Distro=RHEL-6.10;;
 		(7) Distro="RHEL-7.9-updates-????????.[0-9]+";;
 		(7.+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
-		(8|9|1[0-9]) Distro="rhel-${d%[rn]}.[0-9]+.[0-9]+-????????.[0-9]+";;
-		(@(8|9|1[0-9]).+([0-9])) Distro="RHEL-${d}.[0-9]-updates-????????.[0-9]+";;
+		(8|9) Distro="rhel-${d%[rn]}.[0-9]+.[0-9]+-????????.[0-9]+";;
+		(1[0-9]) Distro="rhel-${d%[rn]}.[0-9]+-????????.[0-9]+";;
+		(@(8|9).+([0-9])) Distro="RHEL-${d}.[0-9]-updates-????????.[0-9]+";;
+		(@(1[0-9]).+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
 		esac
 		[[ ${d} = *r ]] && case ${d%r} in (8|9|1[0-9]) Distro="rhel-${d%r}.[0-9]+.[0-9]+";; esac
 	else
@@ -3136,7 +3138,7 @@ shopt -u extglob
 
 		dialogTitle="vm-create"
 		[[ "$Intranet" = yes ]] && {
-			echo -e "Fedora\nRHEL-9\nRHEL-8\nRHEL-7\nRHEL-6\nRHEL5" >>$distropatternIntra
+			echo -e "Fedora\nRHEL-10\nRHEL-9\nRHEL-8\nRHEL-7\nRHEL-6\nRHEL5" >>$distropatternIntra
 			fetch_distro_list >>$distrolist
 			dialogTitle+=" Intranet"
 		}
