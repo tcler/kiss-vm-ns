@@ -34,6 +34,7 @@ case "$OSV" in
 7)	FEDORA_VER=$((20+2));;
 8)	FEDORA_VER=$((28+1));;
 9)	FEDORA_VER=$((34+2));;
+10)	FEDORA_VER=$((40+2));;
 *)	echo "{WARN} OS is not supported(This program is just for RHEL or RHEL-based OS), quit."; exit 1;;
 esac
 
