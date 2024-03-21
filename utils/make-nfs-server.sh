@@ -96,7 +96,11 @@ srun "showmount -e localhost"
 OSV=$(rpm -E %rhel)
 if [[ "$OSV" = 9 ]] && ! grep -wq mtls <(man exports); then
 	mirrorList="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-39&arch=$(uname -m)"
-	frepo=$(curl -L -s "$mirrorList"|sed -n 3p)
+	Country=$(timeout 2 curl -s ipinfo.io/country)
+	case "$Country" in
+	CN|HK)	frepo='http://ftp.iij.ad.jp/pub/linux/Fedora/archive/fedora/linux/releases/39/Everything/$basearch/os';;
+	*)	frepo=$(curl -L -s "$mirrorList"|sed -n 2p);;
+	esac
 	yum install --nogpg --disablerepo="*" --repofrompath="f39,$frepo" -y --setopt=strict=0 --allowerasing nfs-utils
 fi
 if [[ "$TLSHD" != no ]] && rpm -q ktls-utils --quiet && grep -wq mtls <(man exports) && [[ $(uname -r) > 5.14.0-4 ]]; then
