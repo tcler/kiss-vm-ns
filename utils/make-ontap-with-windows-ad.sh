@@ -35,8 +35,8 @@ run -debug mkdir -p $win_img_dir $ontap_img_dir
 vm prepare >/dev/null
 
 distro=${1:-9}
-clientvm=${2:-rhel-client}
-trun -tmux=- vm create -n $clientvm $distro -p vim,bind-utils,nfs-utils,expect --nointeract --saveimage -f
+clientvm=${2:-ontap-ad-rhel-client}
+trun -tmux=- vm create $distro -n $clientvm -p vim,bind-utils,nfs-utils,expect --nointeract --saveimage -f
 
 #-------------------------------------------------------------------------------
 read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')

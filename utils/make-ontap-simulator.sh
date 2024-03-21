@@ -12,11 +12,11 @@ vm prepare >/dev/null
 
 [[ "$1" = -s ]] && { shift; Single=yes; }
 distro=${1:-9}
-clientvm=${2:-rhel-client}
+clientvm=${2:-ontap-rhel-client}
 pkgs=nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils
 net=ontap2-data
 trun -tmux=- "while ! grep -qw $net <(virsh net-list --name); do sleep 5; done;
-    vm create -n $clientvm $distro -p $pkgs --nointeract --saveimage -f --net $net --netmacvtap"
+    vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f --net $net --netmacvtap"
 
 #-------------------------------------------------------------------------------
 g_ontap_img_dir=/usr/share/Netapp-simulator
