@@ -2021,7 +2021,7 @@ if [[ $Intranet = yes ]]; then
 
 		for repo in "${Repos[@]}"; do
 			read _name _url <<<"${repo/:/ }"
-			if is_available_url $_url; then
+			if is_available_url $_url || { sleep 1; is_available_url $_url; }; then
 				echo "$repo"
 			else
 				echo -e "\033[31m[VM:WARN] this url not available: $_url\033[0m" >&2
