@@ -88,6 +88,8 @@ srun "cat /etc/exports"
 ## start nfs-server service
 systemctl enable nfs-server
 srun "systemctl restart nfs-server"
+command -v firewall-cmd &>/dev/null &&
+	srun "firewall-cmd --permanent --add-service={mountd,nfs,rpc-bind}; firewall-cmd --reload; :;"
 
 ## test/verify
 srun "showmount -e localhost"
