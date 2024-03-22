@@ -3163,13 +3163,20 @@ shopt -u extglob
 		exit 1
 	fi
 }
+
 [[ -z "$Distro" ]] && {
-	echo -e "{VM:WARN} you have to select a distro name or specified it by adding command line parameter:\n"
+	echo -e "{VM:WARN} you have to select a distro name or specified it by adding command line parameter:\n" >&2
 	Usage
 	exit 1
 }
+
 if grep -E --color=always "[~\!@#$^&=\":;|<>'\` ]" <<<"$Distro"; then
-	echo -e "{VM:WARN} ^^^ invalid character[s] in distro name: '$Distro'"
+	echo -e "{VM:WARN} ^^^ invalid character[s] in distro name: '$Distro'" >&2
+	exit 1
+fi
+
+if [[ "$InstallType" = location && "${DOWNLOAD_ONLY}" = yes ]]; then
+	echo -e "{VM:WARN} --downloadonly is conflict with install mode: location" >&2
 	exit 1
 fi
 
