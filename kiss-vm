@@ -3385,7 +3385,12 @@ if [[ "$InstallType" = import ]]; then
 				imageLocation=${imageLocation/Cloud/CloudImages}
 			read Imageurl _ < <(getimageurls $imageLocation "${_Imagepattern}"|sort -Vr)
 			if [[ $? != 0 ]]; then
-				echo "{VM:INFO} can not find imageUrl of '${Distro}:${GuestARCH}' in database, switching to Location mode" >&2
+				if [[ "${DOWNLOAD_ONLY}" = yes ]]; then
+					echo "{VM:WARN} can not find imageUrl of '${Distro}:${GuestARCH}' in database." >&2
+					cleanup_and_exit 1 &>/dev/null
+				else
+					echo "{VM:INFO} can not find imageUrl of '${Distro}:${GuestARCH}' in database, switching to Location mode" >&2
+				fi
 				InstallType=location
 				Imageurl=
 			fi
