@@ -1974,19 +1974,19 @@ if [[ $Intranet = yes ]]; then
 				nbeaker-harness:http://$downhostname/qa/rhts/lookaside/beaker-harness-active/rhel-8
 			)
 			;;
-		rhel-9*|rhel9*|rhel-1[0-9]|rhel1[0-9])
+		rhel-9*|rhel9*|rhel-1[0-9]*|rhel1[0-9]*)
 			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
 			debug_url=${url/\/os/\/debug\/tree}
 			read rtype distro <<< $(awk -F/+ '{
 				for (i=3;i<NF;i++) { if ($(i+1) ~ /RHEL-/) {
 					d=$(i+1)
-					if (d ~ /RHEL-[0-9]$/) d=$(i+2)
+					if (d ~ /RHEL-[0-9]+$/) d=$(i+2)
 					print($i, d); break }
 				}
 			}' <<<"$url")
 			read prefix ver time <<< ${distro//-/ }
 			[[ "$rtype" =~ rel-eng|nightly ]] || rtype=nightly
-			verx=9
+			read verx _ <<<${ver//./ }
 			Repos+=(
 				BaseOS:${url}
 				AppStream:${url/BaseOS/AppStream}
@@ -2008,8 +2008,8 @@ if [[ $Intranet = yes ]]; then
 				SAP-debuginfo:${debug_url/BaseOS/SAP}
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
 				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
-				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux9
-				nbeaker-harness:http://$downhostname/qa/rhts/lookaside/beaker-harness-active/rhel-9
+				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux${verx}
+				nbeaker-harness:http://$downhostname/qa/rhts/lookaside/beaker-harness-active/rhel-${verx}
 			)
 			;;
 		esac
