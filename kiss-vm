@@ -624,7 +624,8 @@ vmvncproc() {
 	local port=$(_vmvncport $_vmname)
 	if [[ -n "${port}" ]]; then
 		if [[ -z "${VNCPUTS}" && -z "${VNCGET}" && -z "${VNCGETSC}" ]]; then
-			for _host in $(hostname -A|xargs -n 1|sort -u); do
+			hnames=$(hostname -A); test -z "$hnames" && hnames=$(hostname)
+			for _host in $(echo "${hnames}"|xargs -n 1|sort -u); do
 				ping -c 2 $_host &>/dev/null || continue
 				echo $_host:$port
 			done
