@@ -29,7 +29,7 @@ mkdir -p $ontap_img_dir
 #-------------------------------------------------------------------------------
 #download/check ONTAP simulator image files
 sver=${ONTAP_VER:-9.13.1}
-verx=$(rpm -E %rhel)
+verx=$(command -v rpm &>/dev/null && rpm -E %rhel)
 [[ "$verx" = 7 ]] && sver=9.8
 
 ovaImage=vsim-netapp-DOT${sver}-cm_nodar.ova
@@ -41,7 +41,7 @@ test -n "$Single" && {
 	ONTAP_ENV_FILE=/tmp/ontapinfo.env
 }
 minram=$((15*1000))
-ramsize=$(free -m|awk '/Mem:/{print $2}')
+ramsize=$(LANGUAGE=C free -m|awk '/Mem:/{print $2}')
 [[ "$ramsize" -le "$minram" ]] && {
 	echo "{WARN} total ram size(${ramsize}m) on your system is not enough(>=$minram)" >&2
 	exit 1
