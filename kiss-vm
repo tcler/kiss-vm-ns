@@ -2596,12 +2596,17 @@ while true; do
 		read brname _arg <<<"${2/,/ }"
 		NETWORK_OPTS+=("--network=bridge=$brname,$(_netarg $_arg)"); shift 2;;
 	--net-macvtap|--netmacvtap)
-		read srcif _arg <<<"${2/,/ }"
-		[[ "$srcif" = - || "$srcif" = default ]] && srcif=
+		read _srcif _arg <<<"${2/,/ }"
+		[[ "$_srcif" = - || "$_srcif" = default || "$_srcif" = ? ]] && srcif=
 		srcif=${srcif:-$(get_default_if)}
 		_arg=$(_netarg $_arg)
-		[[ "$_arg" != *source_mode=* ]] && _arg=source_mode=$MacvtapMode,$_arg
-		NETWORK_OPTS+=("--network=type=direct,source=$srcif,$_arg"); shift 2;;
+		if [[ -d /sys/class/net/$srcif/wireless && "$_srcif" = ? ]]; then
+			NETWORK_OPTS+=("--network=network=kissaltnet,$_arg")
+		else
+			[[ "$_arg" != *source_mode=* ]] && _arg=source_mode=$MacvtapMode,$_arg
+			NETWORK_OPTS+=("--network=type=direct,source=$srcif,$_arg")
+		fi
+		shift 2;;
 	--macvtapmode)   MacvtapMode="$2"; shift 2;;
 	--saveimage|--sa)
 		SAVE_IMAGE="yes"
