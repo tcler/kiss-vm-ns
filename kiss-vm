@@ -3838,7 +3838,7 @@ if [[ "$InstallType" = location ]]; then
 
 	#workaround: see Bug 1707389 #c15
 	workaroundExtraArgs="rd.driver.pre=loop"
-	LANG=C run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
+	LANGUAGE=C run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
 	  --name $vmname \
 	  $OS_VARIANT_OPT \
 	  ${ARCH_OPT} \
@@ -4067,7 +4067,7 @@ elif [[ "$InstallType" = import ]]; then
 		QEMU_OPTS+=("--qemu-commandline=-drive file=$imagefile,format=$imgfmt,if=none,id=NVME0 -device nvme,drive=NVME0,serial=nvme-0,bootindex=0,addr=0x10")
 	fi
 
-	LANG=C run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
+	LANGUAGE=C run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
 	  --name $vmname \
 	  $OS_VARIANT_OPT \
 	  ${ARCH_OPT} \
@@ -4330,7 +4330,7 @@ elif [[ "$InstallType" = pxe ]]; then
 		}
 	fi
 
-	LANG=C run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
+	LANGUAGE=C run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
 	  --name $vmname \
 	  $OS_VARIANT_OPT \
 	  ${ARCH_OPT} \
@@ -4539,7 +4539,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	else
 		bootOption="--import --disk path=$isofilepath,$BOOT_DISK_ATTRS"
 	fi
-	LANG=C run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
+	LANGUAGE=C run -debug -nohup unbuffer virt-install --connect=qemu:///system $virtualizationOption --accelerate $XML \
 	  --name $vmname \
 	  $OS_VARIANT_OPT \
 	  ${ARCH_OPT} \
