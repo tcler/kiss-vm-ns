@@ -12,9 +12,9 @@ vm prepare >/dev/null
 
 [[ "$1" = -s ]] && { shift; Single=yes; }
 [[ $# -ge 1 && $1 != -* ]] && { distro=${1:-9}; shift;
-	[[ $# -ge 1 && $1 != -* ]] && { clientvm=${1:-ontap-ad-rhel-client}; shift; }; }
+	[[ $# -ge 1 && $1 != -* ]] && { clientvm=${1:-ontap-rhel-client}; shift; }; }
 distro=${distro:-9}
-clientvm=${clientvm:-ontap-ad-rhel-client}
+clientvm=${clientvm:-ontap-rhel-client}
 pkgs=nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils
 net=ontap2-data
 trun -tmux=- "while ! grep -qw $net <(virsh net-list --name); do sleep 5; done;
