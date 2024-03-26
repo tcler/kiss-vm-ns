@@ -1605,7 +1605,7 @@ install_requires() {
 		}
 		;;
 	debian*|ubuntu*)
-		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc"
+		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat-traditional tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc"
 		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
 
 		read -d . verx 2>/dev/null </etc/debian_version
@@ -3683,7 +3683,9 @@ complete_qmp_mon_arg() {
 	fi
 	echo -n "$_addr,server,nowait"
 }
-QEMU_QMP=${QEMU_QMP:-yes}
+
+#there's a issue: mknod unix socket fail on debian-12.5, so disable qmp by default on debian HOST
+if command -v apt-get &>/dev/null; then QEMU_QMP=${QEMU_QMP}; else QEMU_QMP=${QEMU_QMP:-yes}; fi
 [[ -n "$QEMU_QMP" ]] && {
 	[[ "$QEMU_QMP" = yes ]] && QEMU_QMP=unix:$VMtmp/qmp.socket,server,nowait || {
 		QEMU_QMP=$(complete_qmp_mon_arg $QEMU_QMP)

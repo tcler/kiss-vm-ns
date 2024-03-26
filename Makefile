@@ -9,7 +9,8 @@ _sharedir=/usr/share/kiss-vm
 _libdir=/usr/lib/bash
 _dnfconf=$(shell test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf)
 completion_path=/usr/share/bash-completion/completions
-required_pkgs=iproute tmux expect bind-utils bash-completion nmap
+required_pkgs=curl iproute tmux expect bind-utils bash-completion nmap
+required_pkgs_debian=curl iproute2 tmux expect bind9-utils bash-completion nmap
 ifeq ("$(wildcard $(completion_path))", "")
 	completion_path=/usr/local/share/bash-completion/completions
 endif
@@ -21,7 +22,7 @@ endif
 HTTP_PROXY := $(shell grep -q redhat.com /etc/resolv.conf && echo "squid.redhat.com:8080")
 
 i in ins inst install: _install_macos_kvm_utils
-	@grep -q ^metadata_expire= $(_dnfconf) 2>/dev/null || echo metadata_expire=7d >>$(_dnfconf)
+	@-test -f $(_dnfconf) && { grep -q ^metadata_expire= $(_dnfconf) 2>/dev/null || echo metadata_expire=7d >>$(_dnfconf); }
 	$(SUDO) cp -af utils/* $(_bin)/.
 	@$(SUDO) rm -f $(_bin)/install-sbopkg.sh /usr/local/bin/port-available.sh
 	$(SUDO) cp -af kiss-vm $(_bin)/vm
@@ -36,7 +37,7 @@ i in ins inst install: _install_macos_kvm_utils
 	$(SUDO) cp -af lib/* $(_libdir)/.
 	$(SUDO) cp -af share/* $(_sharedir)/.
 	@command -v yum >/dev/null && $(SUDO) yum install -y $(required_pkgs) 2>/dev/null || :
-	@command -v apt >/dev/null && $(SUDO) apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $(required_pkgs) 2>/dev/null || :
+	command -v apt >/dev/null && $(SUDO) apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $(required_pkgs_debian) 2>/dev/null || :
 	@command -v zypper >/dev/null && $(SUDO) zypper in --no-recommends -y $(required_pkgs) 2>/dev/null || :
 	$(SUDO) cp -r AnswerFileTemplates /usr/share/.
 	$(SUDO) cp bash-completion/* $(completion_path)/.

@@ -70,6 +70,8 @@ red?hat*|centos*|rocky*|alma*|anolis*)
 	esac
 	;;
 debian*|ubuntu*)
+	archlist="x86 arm ppc misc"
+	pkglist=$(printf "qemu-system-%s " $archlist)
 	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $pkglist
 	;;
 opensuse*|sles*)

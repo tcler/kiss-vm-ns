@@ -133,7 +133,7 @@ install_python_pip() {
 		[[ $(rpm -E %rhel) = 8 ]] && python_pkgs="python39-pip"
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel $python_pkgs;;
 	debian*|ubuntu*)
-		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python-pip python3-pip;;
+		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python3-pip;;
 	opensuse*|sles*)
 		zypper in --no-recommends -y python-pip python3-pip;;
 	*)
