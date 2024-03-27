@@ -1607,7 +1607,7 @@ install_requires() {
 		;;
 	debian*|ubuntu*)
 		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect netcat-traditional tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc"
-		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
+		recommend_pkglist="swtpm-tools edk2-ovmf"
 
 		read -d . verx 2>/dev/null </etc/debian_version
 		[[ "$verx" = 9 ]] && {
@@ -1616,6 +1616,7 @@ install_requires() {
 		}
 		sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y $pkglist
 		sudo apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 --ignore-missing -y $recommend_pkglist
+		sudo tmux new -s virtio-win-iso-install -d virtio-win-iso-install.sh
 		;;
 	opensuse*|sles*)
 		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools udisks2 mkisofs iptables-nft ipcalc"

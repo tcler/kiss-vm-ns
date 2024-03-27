@@ -9,6 +9,8 @@ switchroot() {
 }
 switchroot "$@"
 
+case "$1" in (silent|quiet) curlOpts=-s;; esac
+
 baseurl=https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio
 isofname=$(curl -L -s "$baseurl" | sed -rn '/.*"(virtio-win[^"]+.iso)".*/{s//\1/;p}'|head -1)
 if [[ -z "$isofname" ]]; then
@@ -18,6 +20,7 @@ echo "$isofname"
 finalurl="$baseurl/$isofname"
 
 mkdir -p /usr/share/virtio-win
-curl -L -s "$finalurl" -o /usr/share/virtio-win/$isofname
+curl -L $curlOpts "$finalurl" -o /usr/share/virtio-win/$isofname ||
+	curl-download.sh /usr/share/virtio-win/$isofname "$finalurl" $curlOpts
 ln -sf $isofname /usr/share/virtio-win/virtio-win.iso
 ls -l /usr/share/virtio-win/
