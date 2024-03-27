@@ -1677,7 +1677,7 @@ prepare_kiss_vm() {
 		sed -ri '/^hosts:/s/files /&libvirt libvirt_guest /' /etc/nsswitch.conf
 	}
 
-	echo -e "{VM:INFO} start libvirtd service ..."
+	# start libvirt services ..."
 	use_monolithic() {
 		if ! grep -Fq "virtqemud.service" <(systemctl list-units -a --type service); then
 			return 0
@@ -1687,6 +1687,7 @@ prepare_kiss_vm() {
 		return 1
 	}
 	if use_monolithic; then
+		echo -e "{VM:INFO} start libvirtd service:"
 		test -x /etc/rc.d/rc.libvirt && /etc/rc.d/rc.libvirt start   #for Slackware
 		if command -v systemctl >/dev/null; then
 			systemctl is-enabled --quiet libvirtd || systemctl enable libvirtd
@@ -1699,6 +1700,7 @@ prepare_kiss_vm() {
 		systemctl restart libvirtd && systemctl restart virtlogd
 	else
 		virtdrvList="qemu interface network nodedev nwfilter secret storage"
+		echo -e "{VM:INFO} start virt{${virtdrvList// /,}}d-* services:"
 		if command -v systemctl >/dev/null; then
 			for drv in $virtdrvList; do
 				systemctl unmask virt${drv}d.service
