@@ -87,8 +87,9 @@ bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee  $ONTAP_IF_INFO
 
 source "$ONTAP_ENV_FILE"
-trun     host $NETAPP_NAS_HOSTNAME
-trun -x0 showmount -e "$NETAPP_NAS_IP_LOC"
+trun host $NETAPP_NAS_HOSTNAME
+command -v showmount && { trun -x0 showmount -e "$NETAPP_NAS_IP_LOC"; }
+vm exec -vx $clientvm -- showmount -e $NETAPP_NAS_IP_LOC
 if vm exec $clientvm -- ip a | grep eth1; then
 	vm exec -vx $clientvm -- showmount -e $NETAPP_NAS_IP
 else
