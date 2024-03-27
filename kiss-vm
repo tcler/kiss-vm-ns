@@ -1607,7 +1607,7 @@ install_requires() {
 		;;
 	debian*|ubuntu*)
 		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect nmap tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc-ng"
-		recommend_pkglist="swtpm-tools edk2-ovmf"
+		recommend_pkglist="swtpm-tools ovmf"
 
 		read -d . verx 2>/dev/null </etc/debian_version
 		[[ "$verx" = 9 ]] && {
