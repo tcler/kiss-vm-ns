@@ -2817,7 +2817,7 @@ is_slackware && export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
 		foreach {pid spawnid os_error_flag value} [wait] break
 		exit \$value
 		EOF
-		) > >(awk 'NR==1 {print >"/dev/stderr"} NR>2 {print last} {last=$0}')
+		) > >(awk 'NR>2 {print last} {last=$0}')
 		exit $?
 	fi
 }
