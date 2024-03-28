@@ -3,7 +3,7 @@
 #Purpose:
 # -Archive dynamic-linked prog and the library files it depends on and generate
 #  a self-extract and runnable script that could be run on different platform.
-# -Just for fun and qemu-user test
+# -Just for fun and qemu-user/qemu-linux-user test
 
 [[ $# -eq 0 ]] && {
 	echo -e "Usage: $0 <userspace-elf-program>"
@@ -45,7 +45,7 @@ echo -e "#!/bin/bash\n\narch=${arch}; ldso=$ldso; progname=${progname}; rootdir=
 cat <<\ASH >>${ASH}
 if [[ $(arch) != ${arch} ]] && ! command -v qemu-${arch} &>/dev/null; then
 	cat <<-WARN >&2
-	{Warn} command 'qemu-${arch}' is required, please install package: 'qemu-user'
+	{Warn} command 'qemu-${arch}' is required, please install package: 'qemu-user or qemu-linux-user'
 	{Note} if you are using RHEL/CentOS/Rocky/Alma linux, try install 'qemu-user' from fedora repo
 	  see also:
 	    https://github.com/tcler/kiss-vm-ns/raw/master/utils/yum-install-from-fedora.sh
