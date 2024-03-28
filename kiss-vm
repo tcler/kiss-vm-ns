@@ -625,10 +625,13 @@ vmvncproc() {
 	if [[ -n "${port}" ]]; then
 		if [[ -z "${VNCPUTS}" && -z "${VNCGET}" && -z "${VNCGETSC}" ]]; then
 			hnames=$(hostname -A); test -z "$hnames" && hnames=$(hostname)
+			h=0
 			for _host in $(echo "${hnames}"|xargs -n 1|sort -u); do
-				ping -c 2 $_host &>/dev/null || continue
-				echo $_host:$port
+				_host=${_host%.localdomain}
+				ping -c 2 ${_host} &>/dev/null || continue
+				let h++; echo ${_host}:$port
 			done
+			[[ $h = 0 ]] && echo localhost:$port
 			return
 		fi
 
@@ -1619,11 +1622,12 @@ install_requires() {
 		sudo tmux new -s virtio-win-iso-install -d virtio-win-iso-install.sh
 		;;
 	opensuse*|sles*)
-		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs libvirt-nss dialog qemu-tools udisks2 mkisofs iptables-nft ipcalc"
-		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win"
+		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs guestfs-tools libvirt-nss dialog qemu-tools udisks2 mkisofs iptables-nft ipcalc"
+		recommend_pkglist="swtpm ovmf"
 
 		sudo zypper in --no-recommends -y $pkglist
 		sudo zypper in --no-recommends -y $recommend_pkglist
+		sudo tmux new -s virtio-win-iso-install -d virtio-win-iso-install.sh
 		;;
 	*)
 		: #fixme add more platform
@@ -2758,7 +2762,7 @@ fi
 support_virtualization() {
 	local rc=1
 	case ${OSTYPE,,} in
-	linux-gnu*)
+	linux|linux-gnu*)
 		case $(uname -m) in
 		x86_64|amd64)
 			grep -E -q -wo '(vmx|svm)' /proc/cpuinfo && rc=0;;
@@ -2813,13 +2817,13 @@ is_slackware && export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
 		foreach {pid spawnid os_error_flag value} [wait] break
 		exit \$value
 		EOF
-		)
+		) > >(awk 'NR==1 {print >"/dev/stderr"} NR>2 {print last} {last=$0}')
 		exit $?
 	fi
 }
 
 enable_nested_kvm() {
-	if [[ "$OSTYPE" = linux-gnu* ]]; then
+	if [[ "$OSTYPE" = linux* ]]; then
 		local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 		local vendor=${kmodule#kvm_}
 
@@ -2930,7 +2934,7 @@ fuzzy_match_cpu_model_name() {
 }
 support_nested_kvm() {
 	local rc=1
-	if [[ "$OSTYPE" = linux-gnu* && "$HostARCH" = "$GuestARCH" ]]; then
+	if [[ "$OSTYPE" = linux* && "$HostARCH" = "$GuestARCH" ]]; then
 		local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
 		local paramf=/sys/module/$kmodule/parameters/nested
 

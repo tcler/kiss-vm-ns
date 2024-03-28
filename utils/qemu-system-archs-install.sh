@@ -32,7 +32,6 @@ red?hat|centos*|rocky*|alma*|anolis*)
 esac
 
 #install qemu-system-*
-#archlist=$(yum search qemu-system- | sed -n '/^qemu-system-/ {s///; s/.x86_64.*$//; p}' | grep -v core)
 for arch; do
 	[[ "$arch" = -f ]] && { FORCE=yes; continue; } || archlist+="$arch "
 done
@@ -49,7 +48,7 @@ fedora*)
 red?hat*|centos*|rocky*|alma*|anolis*)
 	OSV=$(rpm -E %rhel)
 	case "$OSV" in
-	8|9)
+	8|9|1[0-9])
 		if [[ "$FORCE" = yes ]]; then
 			yum-install-from-fedora.sh -rpm $pkglist qemu-device-display-virtio-gpu-ccw
 		else
@@ -75,6 +74,8 @@ debian*|ubuntu*)
 	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $pkglist
 	;;
 opensuse*|sles*)
+	archlist="x86 arm ppc s390x"
+	pkglist=$(printf "qemu-%s " $archlist)
 	zypper in --no-recommends -y $pkglist
 	;;
 *)
