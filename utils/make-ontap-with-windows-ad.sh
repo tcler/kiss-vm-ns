@@ -119,7 +119,7 @@ fi
 	if [[ -n "$rh_intranet" ]]; then
 		echo "{Error} download '$ImageUrl' and/or '$LicenseFileUrl' fail" >&2
 	else
-		echo "{Error} ONTAP simulator image '$ImageUrl' and/or '$LicenseFileUrl' not found in '$ontap_img_dir'" >&2
+		echo "{Error} ONTAP simulator image '$ovaImage' and/or '$licenseFile' not found in '$ontap_img_dir'" >&2
 	fi
 	exit 1
 }
@@ -133,8 +133,10 @@ dirname=${pjname}
 tarfpath=$targetdir/${pjname}.tar.gz
 logf=/tmp/${pjname}.log
 _url=https://github.com/tcler/ontap-simulator-in-kvm/archive/refs/heads/master.tar.gz
-curl-download.sh $tarfpath "$_url"
-extract.sh $tarfpath $HOME/Downloads $dirname
+
+run -debug mkdir -p $targetdir
+run -debug curl-download.sh $tarfpath "$_url"
+run -debug extract.sh $tarfpath $HOME/Downloads $dirname
 [[ -d "$targetdir/$dirname" ]] || {
 	echo "{Error} download or extract '$tarfpath' fail" >&2
 	exit 1
