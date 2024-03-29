@@ -58,7 +58,7 @@ openssh_file=OpenSSH-Win64.zip
 echo -e "{INFO} check if Windows image files exist ..."
 address="download.dev el.red hat.com"
 BaseUrl=http://${address// /}/qa/rhts/lookaside
-if is_rh_intranet; then
+if is_rh_intranet2; then
 	rh_intranet=yes
 	win_img_url="$BaseUrl/windows-images/$win_img_name"
 	openssh_url="$BaseUrl/windows-images/$openssh_file"

@@ -48,7 +48,7 @@ ramsize=$(LANGUAGE=C free -m|awk '/Mem:/{print $2}')
 }
 
 echo -e "{INFO} check if Netapp ONTAP simulator image exist ..."
-if is_rh_intranet; then
+if is_rh_intranet2; then
 	rh_intranet=yes
 	ImageUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$ovaImage
 	LicenseFileUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$licenseFile

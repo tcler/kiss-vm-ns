@@ -11,7 +11,7 @@ switchroot "$@"
 
 is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail "$1" &>/dev/null; }
 is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
-is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
+is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 
 . /etc/os-release
 OS=$NAME
@@ -56,7 +56,7 @@ tmpf=$(mktemp)
 cleanup() { rm -rf $tmp; }
 trap cleanup SIGINT SIGQUIT SIGTERM
 
-is_rh_intranet && export https_proxy=squid.redhat.com:8080
+is_rh_intranet2 && export https_proxy=squid.redhat.com:8080
 curl -Ls http://api.github.com/repos/tcler/$_repon/commits/master -o $tmpf
 if cmp $tmpf $_confdir/version 2>/dev/null; then
 	echo "[Info] you are using the latest version"

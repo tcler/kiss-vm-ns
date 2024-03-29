@@ -6,8 +6,8 @@ if yq -h |& grep -q mikefarah; then
 fi
 
 is_rh_intranet() { host ipa.redhat.com &>/dev/null; }
-is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
-is_rh_intranet && export https_proxy=squid.redhat.com:8080
+is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
+is_rh_intranet2 && export https_proxy=squid.redhat.com:8080
 
 arch=$(uname -m)
 case $arch in

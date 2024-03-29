@@ -211,7 +211,7 @@ xrc() { chkrc "$@"; }
 
 is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail "$1" &>/dev/null; }
 is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
-is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
+is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 
 #return if I'm being sourced
 (return 0 2>/dev/null) && sourced=yes || sourced=no

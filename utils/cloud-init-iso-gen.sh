@@ -16,7 +16,7 @@ KernelOpts=
 
 is_available_url() { local _url=$1; curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null; }
 is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
-is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
+is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 
 Usage() {
 	cat <<-EOF >&2
@@ -64,7 +64,7 @@ else
 	isof=$(readlink -f $isof)
 fi
 
-is_rh_intranet && {
+is_rh_intranet2 && {
 	Intranet=yes
 	baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
 	bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
