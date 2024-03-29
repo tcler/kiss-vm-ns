@@ -1633,7 +1633,7 @@ install_requires() {
 		sudo tmux new -s virtio-win-iso-install -d virtio-win-iso-install.sh
 		;;
 	arch?linux)
-		pkglist="bash-completion libvirt dnsmasq virt-install virt-viewer qemu-full qemu-tools inetutils expect gnu-netcat tmux dialog udisks2 cdrtools ipcalc swtpm edk2-ovmf"
+		pkglist="bash-completion libvirt dnsmasq virt-install virt-viewer qemu-full qemu-tools guestfs-tools inetutils expect gnu-netcat tmux dialog udisks2 cdrtools ipcalc swtpm edk2-ovmf"
 		recommend_pkglist="iptables-nft"
 
 		sudo pacman -Sy --noconfirm $pkglist
