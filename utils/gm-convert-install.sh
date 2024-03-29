@@ -42,6 +42,9 @@ esac
 	opensuse*|sles*)
 		zypper in --no-recommends -y GraphicsMagick; command -v gm || zypper in --no-recommends -y ImageMagick
 		;;
+	arch?linux)
+		pacman -Sy --noconfirm graphicsmagick
+		;;
 	*)
 		: #fixme add more platform
 		;;

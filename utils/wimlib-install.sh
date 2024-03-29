@@ -42,6 +42,9 @@ command -v wiminfo || {
 	opensuse*|sles*)
 		zypper in --no-recommends -y wimtools
 		;;
+	arch?linux)
+		pacman -Sy --noconfirm wimlib
+		;;
 	*)
 		: #fixme add more platform
 		;;
@@ -58,6 +61,8 @@ command -v wiminfo || {
 				git autoconf pkg-config gcc make libxml2-dev libfuse-dev ntfs-3g-dev;;
 		opensuse*|sles*)
 			zypper in --no-recommends -y autoconf git gcc make libxml2-devel fuse-devel libntfs-3g-devel;;
+		arch?linux)
+			pacman -Sy --noconfirm autoconf git gcc make libxml2 fuse ntfs-3g;;
 		*)
 			:;; #fixme add more platform
 		esac

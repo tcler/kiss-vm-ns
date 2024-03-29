@@ -45,6 +45,9 @@ esac
 	opensuse*|sles*)
 		zypper in --no-recommends -y netpbm
 		;;
+	arch?linux)
+		pacman -Sy --noconfirm netpbm
+		;;
 	*)
 		: #fixme add more platform
 		;;
@@ -64,6 +67,9 @@ esac
 			;;
 		opensuse*|sles*)
 			zypper in --no-recommends -y GraphicsMagick; command -v gm || zypper in --no-recommends -y ImageMagick
+			;;
+		arch?linux)
+			pacman -Sy --noconfirm graphicsmagick
 			;;
 		*)
 			: #fixme add more platform
@@ -87,6 +93,8 @@ echo
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr tesseract-ocr;;
 	opensuse*|sles*)
 		zypper in --no-recommends -y gocr tesseract-ocr;;
+	arch?linux)
+		pacman -Sy --noconfirm gocr tesseract;;
 	*)
 		:;; #fixme add more platform
 	esac
@@ -100,6 +108,8 @@ echo
 			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y git autoconf gcc make netpbm;;
 		opensuse*|sles*)
 			zypper in --no-recommends -y git autoconf gcc make netpbm;;
+		arch?linux)
+			pacman -Sy --noconfirm git autoconf gcc make netpbm;;
 		*)
 			:;; #fixme add more platform
 		esac
@@ -136,6 +146,8 @@ install_python_pip() {
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python3-pip;;
 	opensuse*|sles*)
 		zypper in --no-recommends -y python-pip python3-pip;;
+	arch?linux)
+		pacman -Sy --noconfirm python-pip;;
 	*)
 		:;; #fixme add more platform
 	esac

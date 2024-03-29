@@ -78,6 +78,11 @@ opensuse*|sles*)
 	pkglist=$(printf "qemu-%s " $archlist)
 	zypper in --no-recommends -y $pkglist
 	;;
+arch?linux)
+	archlist="x86 aarch64 ppc s390x"
+	pkglist=$(printf "qemu-system-%s " $archlist)
+	pacman -Sy --noconfirm $pkglist
+	;;
 *)
 	: #fixme add more platform
 	;;

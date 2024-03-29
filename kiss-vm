@@ -70,7 +70,7 @@ DEFAULT_IF_MODEL=virtio
 defaultPasswd=redhat
 defaultWindowsPasswd=Sesame~0pen
 orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)
-{ QEMU_USER=qemu; id ${QEMU_USER} &>/dev/null || QEMU_USER=libvirt-qemu; }
+{ QEMU_USER=qemu; { ! id ${QEMU_USER} &>/dev/null || id libvirt-qemu &>/dev/null; } && QEMU_USER=libvirt-qemu; }
 
 quote() {
 	local at=$1
@@ -1444,8 +1444,11 @@ netcreate() {
 		  </ip>"
 	fi
 
-	virsh net-info -- "$netname" &>/dev/null && {
+	_netinfo=$(LANG=C virsh net-info -- "$netname" 2>/dev/null) && {
 		echo "{VM:WARN} Virt network $netname has been there."
+		grep -q ^Active:.*yes <<<"$_netinfo" || {
+			virsh net-start "$netname"
+		}
 		return
 	}
 
@@ -1629,6 +1632,14 @@ install_requires() {
 		sudo zypper in --no-recommends -y $recommend_pkglist
 		sudo tmux new -s virtio-win-iso-install -d virtio-win-iso-install.sh
 		;;
+	arch?linux)
+		pkglist="bash-completion libvirt dnsmasq virt-install virt-viewer qemu-full qemu-tools inetutils expect gnu-netcat tmux dialog udisks2 cdrtools ipcalc swtpm edk2-ovmf"
+		recommend_pkglist="iptables-nft"
+
+		sudo pacman -Sy --noconfirm $pkglist
+		#sudo pacman -Sy --noconfirm $recommend_pkglist
+		sudo tmux new -s virtio-win-iso-install -d virtio-win-iso-install.sh
+		;;
 	*)
 		: #fixme add more platform
 		echo -e "{VM:WARN} kiss-vm doesn't supported this platform($OS)"
@@ -1664,7 +1675,7 @@ prepare_kiss_vm() {
 
 	#install packages required by kiss-vm
 	install_requires; [[ $? = 2 ]] && return 1
-	{ QEMU_USER=qemu; id ${QEMU_USER} &>/dev/null || QEMU_USER=libvirt-qemu; }
+	{ QEMU_USER=qemu; { ! id ${QEMU_USER} &>/dev/null || id libvirt-qemu &>/dev/null; } && QEMU_USER=libvirt-qemu; }
 	chown root:libvirt $varlib_dir
 	chmod g+ws $varlib_dir
 
@@ -1790,8 +1801,8 @@ COMM
 
 is_available_url() { local _url=$1; curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null; }
 is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
-is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
-is_rh_intranet || Intranet=no
+is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
+is_rh_intranet2 || Intranet=no
 
 getimageurls() {
 	local parenturl=$1

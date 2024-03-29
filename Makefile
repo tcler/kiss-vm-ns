@@ -11,6 +11,7 @@ _dnfconf=$(shell test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dn
 completion_path=/usr/share/bash-completion/completions
 required_pkgs=curl iproute tmux expect bind-utils bash-completion nmap
 required_pkgs_debian=curl iproute2 tmux expect bind9-utils bash-completion nmap
+required_pkgs_arch=curl iproute2 tmux expect bind bash-completion nmap
 ifeq ("$(wildcard $(completion_path))", "")
 	completion_path=/usr/local/share/bash-completion/completions
 endif
@@ -37,8 +38,9 @@ i in ins inst install: _install_macos_kvm_utils
 	$(SUDO) cp -af lib/* $(_libdir)/.
 	$(SUDO) cp -af share/* $(_sharedir)/.
 	@command -v yum >/dev/null && $(SUDO) yum install -y $(required_pkgs) 2>/dev/null || :
-	command -v apt >/dev/null && $(SUDO) apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $(required_pkgs_debian) 2>/dev/null || :
+	@command -v apt >/dev/null && $(SUDO) apt-get install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $(required_pkgs_debian) 2>/dev/null || :
 	@command -v zypper >/dev/null && $(SUDO) zypper in --no-recommends -y $(required_pkgs) 2>/dev/null || :
+	@command -v pacman >/dev/null && $(SUDO) pacman -Sy --noconfirm $(required_pkgs_arch) 2>/dev/null || :
 	$(SUDO) cp -r AnswerFileTemplates /usr/share/.
 	$(SUDO) cp bash-completion/* $(completion_path)/.
 	test -f /usr/bin/egrep && sed -ri '/^cmd=|^echo/d' /usr/bin/egrep || { echo 'exec grep -E "$$@"' >/usr/bin/egrep; chmod +x /usr/bin/egrep; }

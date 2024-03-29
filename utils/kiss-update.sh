@@ -29,6 +29,9 @@ debian*|ubuntu*)
 opensuse*|sles*)
 	zypper in --no-recommends -y git make
 	;;
+arch?linux)
+	pacman -Sy --noconfirm git make
+	;;
 *)
 	exit
 	echo "[Error] not supported platform($OS)"
