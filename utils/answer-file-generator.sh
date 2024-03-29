@@ -320,7 +320,7 @@ IPCONFIG_LOGF=ipconfig.log
 INSTALL_COMPLETE_FILE=installcomplete
 POST_INSTALL_LOGF=postinstall.log
 VIRTHOST=$(
-for H in $(hostname -A); do
+for H in $(hostname -A 2>/dev/null || hostname); do
 	if [[ ${#H} > 15 && $H = *.*.* ]]; then
 		echo $H;
 		break;

@@ -624,7 +624,7 @@ vmvncproc() {
 	local port=$(_vmvncport $_vmname)
 	if [[ -n "${port}" ]]; then
 		if [[ -z "${VNCPUTS}" && -z "${VNCGET}" && -z "${VNCGETSC}" ]]; then
-			hnames=$(hostname -A); test -z "$hnames" && hnames=$(hostname)
+			hnames=$(hostname -A 2>/dev/null); test -z "$hnames" && hnames=$(hostname)
 			h=0
 			for _host in $(echo "${hnames}"|xargs -n 1|sort -u); do
 				_host=${_host%.localdomain}
