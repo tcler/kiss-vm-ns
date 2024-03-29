@@ -38,7 +38,8 @@ vm prepare >/dev/null
 	[[ $# -ge 1 && $1 != -* ]] && { clientvm=${1:-ontap-ad-rhel-client}; shift; }; }
 distro=${distro:-9}
 clientvm=${clientvm:-ontap-ad-rhel-client}
-trun -tmux=- vm create $distro -n $clientvm -p vim,bind-utils,nfs-utils,expect --nointeract --saveimage -f "$@"
+pkgs=vim,bind-utils,nfs-utils,expect,tcpdump
+trun -tmux=- vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f "$@"
 
 #-------------------------------------------------------------------------------
 read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')
