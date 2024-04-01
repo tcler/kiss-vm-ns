@@ -20,7 +20,7 @@ else
 fi
 
 for ((i=0; i<${#vflags[@]}; i++)); do
-	echo "{debug} v$((i+1)): ${vflags[$i]}"
+	echo "{debug} v$((i+1)): ${vflags[$i]}" >&2
 	rt=1;
 	missing=();
 	for flag in ${vflags[$i]}; do
@@ -28,7 +28,9 @@ for ((i=0; i<${#vflags[@]}; i++)); do
 	done;
 	if [[ ${#missing[@]} -gt 0 ]]; then
 		rt=0;
-		echo "support amd64-v$((i+rt))   #missing v$((i+rt+1)) flags: (${missing[*]})/${vflags[$i]}";
+		echo "  #missing v$((i+rt+1)) flags: (${missing[*]})";
 		break;
+	else
+		echo "support amd64-v$((i+rt))";
 	fi
 done
