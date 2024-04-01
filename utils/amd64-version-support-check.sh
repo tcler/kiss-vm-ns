@@ -12,10 +12,15 @@ v3="avx avx2 bmi1 bmi2 f16c fma abm movbe xsave";
 v4="avx512f avx512bw avx512cd avx512dq avx512vl"; 
 
 vflags=("$v1" "$v2" "$v3" "$v4")
-cpuflags=$(awk -F'[: ]+' '/^flags/{$1=""; print}' /proc/cpuinfo)
+cpuflags=$(awk -F'[: ]+' '/^flags/{$1=""; print; exit}' /proc/cpuinfo)
+if [[ "$1" = =* ]]; then
+	cpuflags="${*#=}"
+else
+	cpuflags+=" $*"
+fi
 
 for ((i=0; i<${#vflags[@]}; i++)); do
-	echo "{debug} v$i: ${vflags[$i]}"
+	echo "{debug} v$((i+1)): ${vflags[$i]}"
 	rt=1;
 	missing=();
 	for flag in ${vflags[$i]}; do
