@@ -20,17 +20,16 @@ else
 fi
 
 for ((i=0; i<${#vflags[@]}; i++)); do
-	echo "{debug} v$((i+1)): ${vflags[$i]}" >&2
-	rt=1;
+	ver=$((i+1))
+	echo "{debug} v$ver: ${vflags[$i]}" >&2
 	missing=();
 	for flag in ${vflags[$i]}; do
 		grep -q $flag <<<"$cpuflags" || missing+=($flag);
 	done;
 	if [[ ${#missing[@]} -gt 0 ]]; then
-		rt=0;
-		echo "  #missing v$((i+rt+1)) flags: (${missing[*]})";
+		echo "  #missing v$ver flags: (${missing[*]})";
 		break;
 	else
-		echo "support amd64-v$((i+rt))";
+		echo "support amd64-v$ver";
 	fi
 done
