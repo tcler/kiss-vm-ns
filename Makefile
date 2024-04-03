@@ -22,7 +22,7 @@ endif
 
 HTTP_PROXY := $(shell grep -q redhat.com /etc/resolv.conf && echo "squid.redhat.com:8080")
 
-i in ins inst install: _install_macos_kvm_utils
+i in ins inst install: _isroot
 	@-test -f $(_dnfconf) && { grep -q ^metadata_expire= $(_dnfconf) 2>/dev/null || echo metadata_expire=7d >>$(_dnfconf); }
 	$(SUDO) cp -af utils/* $(_bin)/.
 	@$(SUDO) rm -f $(_bin)/install-sbopkg.sh /usr/local/bin/port-available.sh
@@ -54,8 +54,8 @@ p pu push:
 	https_proxy=$(HTTP_PROXY) git push origin master || :
 	@echo
 
-_install_macos_kvm_utils:
-	test -d macOS-kvm-utils && $(SUDO) cp -r macOS-kvm-utils /usr/share/. || :
+install_macos_kvm_utils:
+	echo "{JFYI} macOS-kvm-utils has been moved to https://github.com/tcler/macOS-kvm-utils"
 
 _isroot:
 	@test `id -u` = 0 || { echo "[Warn] need root permission" >&2; exit 1; }
