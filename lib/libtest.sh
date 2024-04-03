@@ -1,5 +1,17 @@
 #!/bin/bash
 
+#ref: https://stackoverflow.com/questions/2683279/how-to-detect-if-a-script-is-being-sourced
+(return 0 2>/dev/null) && sourced=yes || sourced=no
+if [[  $sourced = yes && "$KISS_LIB_LOADED" = yes ]]; then
+ 	echo "{warn} kiss test lib has been loaded" >&2
+	return 0
+fi
+
+KISS_LIB_LOADED=yes
+KISS_FAIL_CNT=0
+KISS_PASS_CNT=0
+_RC=
+
 switchroot() {
 	local P=$0 SH=; [[ -x $0 && $0 = /* ]] && P=${0##*/}; [[ ! -f $P || ! -x $P ]] && SH=$SHELL
 	#[[ $# -eq 0 ]] && set -- "${BASH_ARGV[@]}" #need enable extdebug: shopt -s extdebug
@@ -47,9 +59,11 @@ chkrc() {
 		comment="$*"
 	fi
 	if rc_isexpected "$RC" "$xrange"; then
-		echo -e "\E[1;34m{TEST PASS} $comment\E[0m"
+		let KISS_PASS_CNT++
+		echo -e "\E[1;34m{KISS.TEST PASS} ($RC/$xrange) $comment\E[0m"
 	else
-		echo -e "\E[1;31m{TEST FAIL} $comment\E[0m"
+		let KISS_FAIL_CNT++
+		echo -e "\E[1;31m{KISS.TEST FAIL} ($RC/$xrange) $comment\E[0m"
 	fi
 	return $RC
 }
@@ -96,7 +110,6 @@ getReusableCommandLine() {
 	echo
 }
 
-_RC=
 run() {
 	#ref: https://superuser.com/questions/927544/run-command-in-detached-tmux-session-and-log-console-output-to-file
 	local _logpath=${TEST_LOGPATH}
@@ -208,13 +221,13 @@ run() {
 }
 trun() { run -d "$@"; }
 xrc() { chkrc "$@"; }
+tcnt() { echo -e "\n{KISS.TEST COUNT} $KISS_FAIL_CNT test fail, $KISS_PASS_CNT test pass."; }
 
 is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail "$1" &>/dev/null; }
 is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
 is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 
 #return if I'm being sourced
-(return 0 2>/dev/null) && sourced=yes || sourced=no
 if [[ $sourced = yes ]]; then return 0; fi
 
 #__main__
@@ -223,12 +236,14 @@ trun -x ls --color=always /root
 run switchroot "$@"
 trun 'for ((i=0; i<8; i++)); do echo $i; done'
 trun 'var=$(ls -l)'
-trun -x 'grep OS /etc/os-release'
-trun 'grep OS /etc/os-release'
-	xrc 1 "there should not be OS string in /etc/os-release"
+trun -x 'grep -w OS /etc/os-release'
+trun 'grep -w OS /etc/os-release'
+	xrc 1,2,3,4-255 "there should not be word OS in /etc/os-release"
 trun 'grep RHEL /etc/os-release'
 	xrc 0 "there should be RHEL string in /etc/os-release"
 trun 'systemctl status nfs-server | grep inactive'
 	xrc 1 "nfs-server should has been started"
 
 trun -eval systemctl status nfs-server \| grep inactive
+
+tcnt
