@@ -4750,6 +4750,7 @@ if [[ "$GenerateImage" = yes ]]; then
 	read _type _dev _target image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
 	imgfilename=${imgfilename#${VMUSER}-}
+	[[ "$imgfilename" != *${GuestARCH}* ]] && imgfilename=$(echo $imgfilename|sed -r "s/\\.[^.]+$/-${GuestARCH}&/")
 	newimage=$ImagePath/$Distro/${imgfilename}
 
 	echo -e "\n{VM:INFO} force shutdown $vmname ..."
