@@ -4002,7 +4002,7 @@ elif [[ "$InstallType" = import ]]; then
 	[[ -f $Imageurl ]] && Imageurl=file://$(readlink -f ${Imageurl})
 	imagefilename=${Imageurl##*/}
 	imagefile=$VMpath/$imagefilename
-	[[ "$DOWNLOAD_ONLY" = yes ]] && imagefile=${DownloadImagePath%/}/${imagefilename}
+	[[ -n "$SAVE_IMAGE" || "$DOWNLOAD_ONLY" = yes ]] && imagefile=${DownloadImagePath%/}/${imagefilename}
 
 	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
 	if [[ -b "$Imageurl" ]]; then
