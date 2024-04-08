@@ -5,7 +5,7 @@
 #install python3 for rhel/centos/fedora
 command -v python3 || {
 	OSVER=$(rpm -E %rhel)
-	if [[ $OSVER != %rhel && $OSVER < 9 ]]; then
+	if [[ $OSVER != %rhel && $OSVER -lt 9 ]]; then
 		case $OSVER in
 		8) sudo yum install -y python39;;
 		7) sudo yum install -y python36;;

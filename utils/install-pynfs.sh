@@ -5,7 +5,7 @@ OSVER=$(rpm -E %rhel)
 sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSVER}.noarch.rpm
 
 #install python3 and pip3
-if [[ $OSVER < 9 ]]; then
+if [[ $OSVER != %rhel && $OSVER -lt 9 ]]; then
 	case $OSVER in
 	8) sudo yum install -y python39 python39-pip python39-devel;;
 	7) sudo yum install -y python36 python36-pip python36-devel;;
