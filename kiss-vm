@@ -2564,7 +2564,7 @@ while true; do
 	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
 	-C|-F)     InstallType=cdrom_image; Isourl=$2; shift 2;;
-	--usb-cd)  InstallType=cdrom_image; Isourl=$2; USB_CDROM=yes; shift 2;;
+	--usb-cd)  InstallType=cdrom_image; Isourl=$2; CDROM_BUS_TYPE=usb; shift 2;;
 	-L|-l)     InstallType=location; _url=${2#=}; read Location BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
 	-I|-i)     InstallType=import; _url=${2#=}; read Imageurl BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
 	-P|--pxe)  InstallType=pxe; shift 1;;
@@ -2894,7 +2894,7 @@ else
 			QEMU_OPTS+=("--qemu-commandline=-cpu $_cpu")
 		fi
 		;;
-	(s390x|ppc*)
+	(s390x|ppc*|loongarch*)
 		#qemu-system-s390x doesn't support --video=sql on fedora-35
 		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT="--video=virtio"
 		;;
@@ -2917,13 +2917,15 @@ fi
 
 case "$GuestARCH" in
 (s390*)
-	_MSIZE=2048;;
+	_MSIZE=2048
+	;;
 (loongarch*)
-	edk2path=/usr/share/qemu
-	BOOT_OPTS+=(--boot=loader=$edk2path/edk2-loongarch64-code.fd,nvram=$edk2path/edk2-loongarch64-vars.fd)
+	edk2path=/usr/share/edk2/loongarch64  #require pkg: edk2-loongarch64.noarch
+	BOOT_OPTS+=(--boot=loader=$edk2path/QEMU_EFI.fd,nvram=$edk2path/QEMU_VARS.fd)
 	QEMU_OPTS+=('--qemu-commandline=-device nec-usb-xhci,id=xhci,addr=0x1b -device usb-tablet,id=tablet,bus=xhci.0,port=1 -device usb-kbd,id=keyboard,bus=xhci.0,port=2')
-	VIRT_INSTALL_OPTS+=("--features=acpi=on")
-	USB_CDROM=yes;;
+	CDROM_BUS_TYPE=usb
+	CDROM_BUS_TYPE=scsi
+	;;
 esac
 
 fuzzy_match_cpu_model_name() {
@@ -3272,7 +3274,7 @@ QXL_available() {
 
 [[ -n "$QEMU_KVM" ]] && {
 	QXL_available $QEMU_KVM || {
-		[[ -z "$SPECIFIED_VIDEO" ]] && VIDEO_OPT=""
+		[[ -z "$SPECIFIED_VIDEO" && "$VIDEO_OPT" = *=qxl ]] && VIDEO_OPT=""
 	}
 	LANG=C $QEMU_KVM -machine help|grep -q q35 && Q35=support
 }
@@ -4036,6 +4038,7 @@ elif [[ "$InstallType" = import ]]; then
 		cloudinitiso=$VMpath/$vmname-cloud-init.iso
 		iso_bus_type=
 		[[ "${Distro,,}" = debian* ]] && iso_bus_type=,bus=scsi
+		[[ -n "${CDROM_BUS_TYPE}" ]] && iso_bus_type=,bus=${CDROM_BUS_TYPE}
 
 		[[ "$fips" = yes ]] && FIPS_OPT=--fips
 		[[ "$kdump" = yes ]] && KDUMP_OPT=--kdump
@@ -4559,7 +4562,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 
 	bootOption="--cdrom $isofilepath"
 	if LANG=C file -b --mime-type $isofilepath | grep -q iso; then
-		[[ -n "$USB_CDROM" ]] && bootOption="--import --disk path=$isofilepath,device=cdrom,bus=usb"
+		[[ -n "$CDROM_BUS_TYPE" ]] && bootOption="--import --disk path=$isofilepath,device=cdrom,bus=${CDROM_BUS_TYPE}"
 	else
 		bootOption="--import --disk path=$isofilepath,$BOOT_DISK_ATTRS"
 	fi
