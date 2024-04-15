@@ -1346,7 +1346,7 @@ vmadd_if_bridge() {
 
 vmadd_if_direct() {
 	local vmname=$(vmname_extract -all "$1")
-	local srcif=${srcif:-$(get_default_if)}
+	local srcif=${srcif:-$(get-default-if.sh)}
 
 	run -debug virsh attach-interface --type direct --domain $vmname --source $srcif \
 		--model virtio --config --live
@@ -2372,7 +2372,7 @@ Usage() {
 	  $P add.disk <VM> <disk-file[size=,drv=,bus=]> //alias of virsh attach-disk \$vm \$diskf \$target [--subdriver=qcow2,raw, --targetbus=scsi,sata,virtio,]
 	  $P add.if <VM> <network>                 //alias of virsh attach-interface --type network --domain \$vm --source \$network
 	  $P add.if.bridge <VM> <bridge>           //alias of virsh attach-interface --type network --domain \$vm --source \$bridge
-	  $P add.if.direct <VM> <srcif>            //alias of virsh attach-interface --type direct --domain \$vm --source \$(get_default_if)
+	  $P add.if.direct <VM> <srcif>            //alias of virsh attach-interface --type direct --domain \$vm --source \$(get-default-if.sh)
 	  $P add.if.passthru <VM> <hostif|pciAddr> //alias of virsh attach-interface --type hostdev --domain \$vm --source \$hostif_or_pciaddr
 
 	  $P netls             #list all virtual network
@@ -2396,37 +2396,6 @@ expandrc() {
 		fi
 	done
 	echo -n ${rclist[@]}
-}
-
-is_bridge() {
-	local ifname=$1
-	[[ -z "$ifname" ]] && return 1
-	LANG=C ip -d a s $ifname | grep -qw bridge
-}
-
-get_default_if() {
-	local notbr=$1  #indicate get real NIC not bridge
-	local _iface= iface=
-	local type=
-
-	ifaces=$(ip route | awk '/^default/{print $5}')
-	for _iface in $ifaces; do
-		type=$(ip -d link show dev $_iface|sed -n '3{s/^\s*//; p}')
-		[[ -z "$type" || "$type" = altname* || "$type" = bridge* ]] && {
-			iface=$_iface
-			break
-		}
-	done
-	if [[ -n "$notbr" ]] && is_bridge $iface; then
-		# ls /sys/class/net/$iface/brif
-		if command -v brctl >/dev/null; then
-			brctl show $iface | awk 'NR==2 {print $4}'
-		else
-			ip link show type bridge_slave | awk -F'[ :]+' '/master '$iface' state UP/{print $2}' | head -n1
-		fi
-		return 0
-	fi
-	echo $iface
 }
 
 # command line parse
@@ -2616,7 +2585,7 @@ while true; do
 	--net-macvtap|--netmacvtap)
 		read _srcif _arg <<<"${2/,/ }"
 		[[ "$_srcif" = - || "$_srcif" = default || "$_srcif" = ? ]] && srcif=
-		srcif=${srcif:-$(get_default_if)}
+		srcif=${srcif:-$(get-default-if.sh)}
 		_arg=$(_netarg $_arg)
 		if [[ -d /sys/class/net/$srcif/wireless && "$_srcif" = ? ]]; then
 			NETWORK_OPTS+=("--network=network=kissaltnet,$_arg")
@@ -3531,7 +3500,7 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 		}
 	done
 else
-	srcif=$(get_default_if)
+	srcif=$(get-default-if.sh)
 	defaultSecondNetOpt="--network=type=direct,source=$srcif,source_mode=$MacvtapMode"
 	[[ -d /sys/class/net/$srcif/wireless ]] && defaultSecondNetOpt="--network=network=kissaltnet"
 	if [[ "$InstallType" = pxe ]]; then

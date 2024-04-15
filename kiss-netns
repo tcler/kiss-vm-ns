@@ -115,37 +115,6 @@ run() {
 	"$@"
 }
 
-is_bridge() {
-	local ifname=$1
-	[[ -z "$ifname" ]] && return 1
-	ip -d a s $ifname | grep -qw bridge
-}
-
-get_default_if() {
-	local notbr=$1  #indicate get real NIC not bridge
-	local _iface= iface=
-	local type=
-
-	ifaces=$(ip route | awk '/^default/{print $5}')
-	for _iface in $ifaces; do
-		type=$(ip -d link show dev $_iface|sed -n '3{s/^\s*//; p}')
-		[[ -z "$type" || "$type" = altname* || "$type" = bridge* ]] && {
-			iface=$_iface
-			break
-		}
-	done
-	if [[ -n "$notbr" ]] && is_bridge $iface; then
-		# ls /sys/class/net/$iface/brif
-		if command -v brctl >/dev/null; then
-			brctl show $iface | awk 'NR==2 {print $4}'
-		else
-			ip link show type bridge_slave | awk -F'[ :]+' '/master '$iface' state UP/{print $2}' | head -n1
-		fi
-		return 0
-	fi
-	echo $iface
-}
-
 is_valid_ip() {
     local  ip=$1
     local  stat=1
@@ -399,7 +368,7 @@ addmacvlan() {
 	local fname=${FUNCNAME[0]}
 	Usage() { echo -e "Usage:\n  $fname [-updev=updev] [-mode={bridge|vepa|private|passthru}] mv1 [mv2 ...]"; }
 
-	local updev=$(get_default_if)
+	local updev=$(get-default-if.sh)
 	local mode=bridge
 
 	# parse options
@@ -426,7 +395,7 @@ addipvlan() {
 	local fname=${FUNCNAME[0]}
 	Usage() { echo -e "Usage:\n  $fname [-updev=updev] [-mode={l2|l3}] iv1 [iv2 ...]"; }
 
-	local updev=$(get_default_if)
+	local updev=$(get-default-if.sh)
 	local mode=l2
 
 	# parse options
@@ -693,7 +662,7 @@ for veth in "${VethList[@]}"; do
 done
 
 # creating other VNICs
-Upperdev=$(get_default_if)
+Upperdev=$(get-default-if.sh)
 if is_bridge $Upperdev; then
 	Upperdev=kss-netns-dummy
 	run ip link add name $Upperdev type dummy 2>/dev/null
