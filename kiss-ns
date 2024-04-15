@@ -294,10 +294,6 @@ expandrc() {
 	echo -n ${rclist[@]}
 }
 
-getDefaultNic() {
-	ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'
-}
-
 xaddr() {
 	local addr=$1
 	[[ "$addr" =~ .*/[1-9]+$ ]] || addr+=/24

@@ -35,6 +35,38 @@ get_ip() {
 	[[ -z "$ret" ]] && return 1 || return 0
 }
 
+is_bridge() {
+	local ifname=$1
+	[[ -z "$ifname" ]] && return 1
+	LANG=C ip -d a s $ifname | grep -qw bridge
+}
+
+get_default_if() {
+	local notbr=$1  #indicate get real NIC not bridge
+	local _iface= iface=
+	local type=
+
+	ifaces=$(ip route | awk '/^default/{print $5}')
+	for _iface in $ifaces; do
+		type=$(ip -d link show dev $_iface|sed -n '3{s/^\s*//; p}')
+		[[ -z "$type" || "$type" = altname* || "$type" = bridge* ]] && {
+			iface=$_iface
+			break
+		}
+	done
+	if [[ -n "$notbr" ]] && is_bridge $iface; then
+		# ls /sys/class/net/$iface/brif
+		if command -v brctl >/dev/null; then
+			brctl show $iface | awk 'NR==2 {print $4}'
+		else
+			ip link show type bridge_slave | awk -F'[ :]+' '/master '$iface' state UP/{print $2}' | head -n1
+		fi
+		return 0
+	fi
+	echo $iface
+}
+
+: <<\COMM
 get_default_nic() {
 	local ifs=$(ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1];}')
 	for iface in $ifs; do
@@ -44,6 +76,8 @@ get_default_nic() {
 	done
 	echo $iface
 }
+COMM
+get_default_nic() { get_default_if "$@"; }
 
 get_default_ip() {
 	local nic=$(get_default_nic)
