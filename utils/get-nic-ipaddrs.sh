@@ -80,22 +80,18 @@ COMM
 get_default_nic() { get_default_if "$@"; }
 
 get_default_ip() {
-	local nic=$(get_default_nic)
+	local nic=$(get_default_if)
 	[[ -z "$nic" ]] && return 1
 
 	get_ip "$nic" "$@"
 }
 
+get_default_gateway() { ip route show | awk '$1=="default"{print $3; exit}'; }
+
 _P=${P%.sh}
 funname=${_P//-/_}
 case ${funname} in
-get_ip)
-	${funname} "$@"
-	;;
-get_default_nic|get_default_if)
-	${funname} "$@"
-	;;
-get_default_ip)
+get_ip|get_default_nic|get_default_if|get_default_ip|get_default_gateway)
 	${funname} "$@"
 	;;
 *)
