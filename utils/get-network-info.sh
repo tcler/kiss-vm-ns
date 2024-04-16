@@ -88,10 +88,24 @@ get_default_ip() {
 
 get_default_gateway() { ip route show | awk '$1=="default"{print $3; exit}'; }
 
+_get_ipcalc() { IPCALC=ipcalc; command -v ipcalc-ng &>/dev/null && IPCALC=ipcalc-ng; }
+get-net-mask() {
+	[[ $# = 0 ]] && { echo "Usage: $0 <ip4>" >&2; return 1; }
+	local ip4="$1";
+	_get_ipcalc
+	$IPCALC $ip4 | awk '/Netmask:/{print $2}';
+}
+get-net-addr() {
+	[[ $# = 0 ]] && { echo "Usage: $0 <ip4>" >&2; return 1; }
+	local ip4="$1";
+	_get_ipcalc
+	$IPCALC $ip4 | awk -F'[[:space:]/]+' '/Network:/{print $2}';
+}
+
 _P=${P%.sh}
 funname=${_P//-/_}
 case ${funname} in
-get_ip|get_default_nic|get_default_if|get_default_ip|get_default_gateway)
+get_ip|get_default_nic|get_default_if|get_default_ip|get_default_gateway|get_net_mask|get_net_addr)
 	${funname} "$@"
 	;;
 *)

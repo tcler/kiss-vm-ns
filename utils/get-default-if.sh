@@ -1,1 +1,1 @@
-get-nic-ipaddrs.sh
+get-network-info.sh
