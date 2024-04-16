@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 
+IPCALC=ipcalc; command -v ipcalc-ng &>/dev/null && IPCALC=ipcalc-ng
 command -v expect &>/dev/null || {
 	echo "{error} command 'expect' is required, but not found; please install expect first." >&2
 	exit 2
@@ -15,9 +16,9 @@ password=$3
 }
 shift 3
 
-ipcalc -cs $host || {
+$IPCALC -cs $host || {
 	read hostaddr _ < <(vm if "$host" 2>/dev/null || getent hosts "$host"|awk '{print $1}')
-	ipcalc -cs $hostaddr && host=$hostaddr
+	$IPCALC -cs $hostaddr && host=$hostaddr
 }
 
 test -f ~/.ssh/id_ecdsa || {
