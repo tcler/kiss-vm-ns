@@ -5,7 +5,7 @@ P=${0##*/}
 #===============================================================================
 # get ip addr
 get_ip() {
-	local ret= with_mask= _at=()
+	local ret= ipaddr= masklen= with_mask= _at=()
 	for arg; do [[ "$arg" = -m ]] && with_mask=yes || _at+=("$arg"); done
 	set -- "${_at[@]}"
 	local nic=$1
@@ -25,15 +25,16 @@ get_ip() {
 
 	case $ver in
 	6|6nfs)
-		ret=$(echo "$ipaddr" | awk '/inet6.*'"$sc"'/{match($0,"inet6 ([0-9a-f:]+/[0-9]+)",M); print M[1]}')
-		[[ -n "$ret" && $ver = 6nfs ]] && ret=$ret%$nic
+		IFS=/ read ipaddr masklen < <(echo "$ipaddr" | awk '/inet6.*'"$sc"'/{match($0,"inet6 ([0-9a-f:]+/[0-9]+)",M); print M[1]}')
+		ret=$ipaddr/$masklen; [[ -n "$ret" && $ver = 6nfs ]] && ret=$ret%$nic
 		;;
 	4|*)
-		ret=$(echo "$ipaddr" | awk '/inet .*'"$flg"'/{match($0,"inet ([0-9.]+/[0-9]+)",M); print M[1]}')
+		IFS=/ read ipaddr masklen < <(echo "$ipaddr" | awk '/inet .*'"$flg"'/{match($0,"inet ([0-9.]+/[0-9]+)",M); print M[1]}')
+		ret=$ipaddr/$masklen
 		;;
 	esac
 
-	[[ "$with_mask" != yes ]] && ret=${ret%/*}
+	[[ "$with_mask" != yes ]] && ret=${ret/\/${masklen}/}
 	echo "${ret}"
 	[[ -z "$ret" ]] && return 1 || return 0
 }
