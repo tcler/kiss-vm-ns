@@ -5,13 +5,15 @@ P=${0##*/}
 #===============================================================================
 # get ip addr
 get_ip() {
-	local ret
+	local ret= with_mask= _at=()
+	for arg; do [[ "$arg" = -m ]] && with_mask=yes || _at+=("$arg"); done
+	set -- "${_at[@]}"
 	local nic=$1
 	local ver=$2
 	local sc=${3}
 	local ipaddr=$(ip addr show $nic)
 	[[ -z "$nic" || -z "$ipaddr" ]] && {
-		echo "Usage: $0 <NIC> [4|6|6nfs] [global|link]" >&2
+		echo "Usage: $0 [-m] <NIC> [4|6|6nfs] [global|link]" >&2
 		return 2
 	}
 
@@ -23,15 +25,16 @@ get_ip() {
 
 	case $ver in
 	6|6nfs)
-		ret=$(echo "$ipaddr" | awk '/inet6.*'"$sc"'/{match($0,"inet6 ([0-9a-f:]+)",M); print M[1]}')
+		ret=$(echo "$ipaddr" | awk '/inet6.*'"$sc"'/{match($0,"inet6 ([0-9a-f:]+/[0-9]+)",M); print M[1]}')
 		[[ -n "$ret" && $ver = 6nfs ]] && ret=$ret%$nic
 		;;
 	4|*)
-		ret=$(echo "$ipaddr" | awk '/inet .*'"$flg"'/{match($0,"inet ([0-9.]+)",M); print M[1]}')
+		ret=$(echo "$ipaddr" | awk '/inet .*'"$flg"'/{match($0,"inet ([0-9.]+/[0-9]+)",M); print M[1]}')
 		;;
 	esac
 
-	echo "$ret"
+	[[ "$with_mask" != yes ]] && ret=${ret%/*}
+	echo "${ret}"
 	[[ -z "$ret" ]] && return 1 || return 0
 }
 
@@ -89,13 +92,13 @@ get_default_ip() {
 get_default_gateway() { ip route show | awk '$1=="default"{print $3; exit}'; }
 
 _get_ipcalc() { IPCALC=ipcalc; command -v ipcalc-ng &>/dev/null && IPCALC=ipcalc-ng; }
-get-net-mask() {
+get_net_mask() {
 	[[ $# = 0 ]] && { echo "Usage: $0 <ip4>" >&2; return 1; }
 	local ip4="$1";
 	_get_ipcalc
 	$IPCALC $ip4 | awk '/Netmask:/{print $2}';
 }
-get-net-addr() {
+get_net_addr() {
 	[[ $# = 0 ]] && { echo "Usage: $0 <ip4>" >&2; return 1; }
 	local ip4="$1";
 	_get_ipcalc
