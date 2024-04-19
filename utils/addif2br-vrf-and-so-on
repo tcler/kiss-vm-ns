@@ -1,4 +1,4 @@
-#!ddif2bridge/bin/bash
+#!/bin/bash
 
 run() {
 	[[ $# -eq 0 ]] && return 0
