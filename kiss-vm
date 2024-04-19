@@ -3500,11 +3500,14 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 		}
 	done
 else
+	is_bridge() { local ifname=$1; ip -d a s "$ifname" | grep -qw bridge; }
 	srcif=$(get-default-if.sh)
 	defaultSecondNetOpt="--network=type=direct,source=$srcif,source_mode=$MacvtapMode"
+	is_bridge $srcif && defaultSecondNetOpt="--network=type=bridge,source=$srcif"
 	[[ -d /sys/class/net/$srcif/wireless ]] && defaultSecondNetOpt="--network=network=kissaltnet"
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS=("--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}")
+		is_bridge $srcif && NETWORK_OPTS=("--network=type=bridge,source=$srcif,model=${DEFAULT_IF_MODEL}")
 	elif [[ "$WIN_AUTO" = yes ]]; then
 		gen_virt_mac() { echo -n 54:52:00$(od -txC -An -N3 /dev/random | tr \  :); }
 		WIN_MAC_INT=$(gen_virt_mac); WIN_MAC_EXT=$(gen_virt_mac)
