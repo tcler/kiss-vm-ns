@@ -42,7 +42,7 @@ if br=$(is_slave $ifname); then
 	exit 1
 fi
 if is_bridge $ifname && [[ "$force" != yes ]]; then
-	echo "{warn} network interface '$ifname' is bridge device, and -f option you really want nested bridge device?" >&2
+	echo "{warn} network interface '$ifname' is bridge device, add -f option if you really want nested bridge device?" >&2
 	exit 1
 fi
 
