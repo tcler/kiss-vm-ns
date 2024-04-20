@@ -669,7 +669,7 @@ vmedit() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 
-	virsh edit "$_vmname"
+	EDITOR=${EDITOR:-$(command -v vim)} virsh edit "$_vmname"
 }
 
 port_available() {
