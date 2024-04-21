@@ -37,6 +37,7 @@ _at=`getopt -o hd: \
 	--long only-use: \
 	--long pkgs: \
 	--long append: \
+	--long netn: \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -51,6 +52,7 @@ while true; do
 	--only-use) [[ -n "${2// /}" ]] && IgnoreDisk="ignoredisk --only-use=$2"; shift 2;;
 	--pkgs)    PKGS=" $2"; shift 2;;
 	--append)  APPEND="$2"; shift 2;;
+	--netn)    NetN="$2"; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -60,19 +62,21 @@ done
 	exit 1
 }
 
+NetN=${NetN:-1}
+
 shopt -s nocasematch
 case ${Distro,,} in
 rhel-5*|rhel5*|centos5*|centos-5*)
 	Packages="@base @cifs-file-server @nfs-file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion expect"
 
-	NetCommand="network --device=eth0 --bootproto=dhcp"
+	NetCommand=$(for ((i=0; i<NetN; i++)); do echo "network --device=eth$i --bootproto=dhcp"; done)
 	KeyCommand="key --skip"
 	Bootloader='bootloader --location=mbr --append="console=ttyS0,9600 rhgb quiet"'
 	;;
 rhel-6*|rhel6*|centos6*|centos-6*)
 	Packages="-iwl* @base @cifs-file-server @nfs-file-server redhat-lsb-core vim-enhanced git iproute screen wget bash-completion expect"
 
-	NetCommand="network --device=eth0 --bootproto=dhcp"
+	NetCommand=$(for ((i=0; i<NetN; i++)); do echo "network --device=eth$i --bootproto=dhcp"; done)
 	KeyCommand="key --skip"
 	;;
 rhel-7*|rhel7*|centos7*|centos-7*)
@@ -153,7 +157,7 @@ COMM
 
 echo "$APPEND"
 
-echo -e "\n%post --interpreter=/usr/bin/bash"
+echo -e "\n%post --interpreter=/bin/bash"
 for repo in "${Repos[@]}"; do
 	if [[ "$repo" =~ ^[^:]+:(https|http|ftp|file):// ]]; then
 		read name url _ <<<"${repo/:/ }"
@@ -179,7 +183,7 @@ done
 echo -e "%end\n"
 
 # post script
-echo -e "%post --interpreter=/usr/bin/bash --log=/root/extra-ks-post.log"
+echo -e "%post --interpreter=/bin/bash --log=/root/extra-ks-post.log"
 cat <<'DNFCONF'
 _dnfconf=$(test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf)
 grep -q ^metadata_expire= $_dnfconf 2>/dev/null || echo metadata_expire=7d >>$_dnfconf
@@ -187,6 +191,7 @@ DNFCONF
 
 cat <<'KSF'
 ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= "/eth1/&&/inet/{rc=0}END{exit rc}" || dhclient eth1 2>/dev/null
+ip a s
 USER=$(id -un)
 echo "[$USER@${HOSTNAME} ${HOME} $(pwd)] join wheel user to sudoers ..."
 echo "%wheel        ALL=(ALL)       ALL" >> /etc/sudoers
