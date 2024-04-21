@@ -3502,9 +3502,9 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 else
 	is_bridge() { local ifname=$1; ip -d a s "$ifname" | grep -qw bridge; }
 	srcif=$(get-default-if.sh)
-	defaultSecondNetOpt="--network=type=direct,source=$srcif,source_mode=$MacvtapMode"
-	is_bridge $srcif && defaultSecondNetOpt="--network=type=bridge,source=$srcif"
-	[[ -d /sys/class/net/$srcif/wireless ]] && defaultSecondNetOpt="--network=network=kissaltnet"
+	defaultFirstNetOpt="--network=type=direct,source=$srcif,source_mode=$MacvtapMode"
+	is_bridge $srcif && defaultFirstNetOpt="--network=type=bridge,source=$srcif"
+	[[ -d /sys/class/net/$srcif/wireless ]] && defaultFirstNetOpt="--network=network=kissaltnet"
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS=("--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}")
 		is_bridge $srcif && NETWORK_OPTS=("--network=type=bridge,source=$srcif,model=${DEFAULT_IF_MODEL}")
@@ -3517,9 +3517,9 @@ else
 			case "$WIN_TEMPLATE" in (base) WIN_IF_MODEL=virtio;; esac
 			intIfModel=e1000
 		fi
-		NETWORK_OPTS=("--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel}" "$defaultSecondNetOpt,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}")
+		NETWORK_OPTS=("$defaultFirstNetOpt,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}" "--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel}")
 	else
-		NETWORK_OPTS=("--network=network=default,model=${DEFAULT_IF_MODEL}" "${defaultSecondNetOpt},model=${DEFAULT_IF_MODEL}")
+		NETWORK_OPTS=("${defaultFirstNetOpt},model=${DEFAULT_IF_MODEL}" "--network=network=default,model=${DEFAULT_IF_MODEL}")
 	fi
 fi
 
@@ -4264,6 +4264,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 							expect "Restarting system" { exit 0 }
 						}
 
+						send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= "/eth1/&&/inet/{rc=0}END{exit rc}" || dhclient eth1 2>/dev/null;}; send "\r\n"
 						send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
 						send "\r\n"
 						expect {

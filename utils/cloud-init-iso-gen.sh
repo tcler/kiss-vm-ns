@@ -133,6 +133,7 @@ done
 
 runcmd:
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; }
+  - ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= "/eth1/&&/inet/{rc=0}END{exit rc}" || dhclient eth1 2>/dev/null
   - command -v yum && { \
      _dnfconf=\$(test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf); \
      grep -q ^metadata_expire= \$_dnfconf 2>/dev/null || echo metadata_expire=7d >>\$_dnfconf; \
