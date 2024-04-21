@@ -669,7 +669,8 @@ vmedit() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 
-	EDITOR=${EDITOR:-$(command -v vim)} virsh edit "$_vmname"
+	grep -q export.EDITOR= ~/.bashrc /etc/bashrc || export EDITOR=$(command -v vim)
+	virsh edit "$_vmname"
 }
 
 port_available() {
