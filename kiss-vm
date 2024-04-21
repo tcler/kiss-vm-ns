@@ -3702,10 +3702,13 @@ if command -v apt-get &>/dev/null; then QEMU_QMP=${QEMU_QMP}; else QEMU_QMP=${QE
 [[ -n "$QEMU_QMP_OPT" || -n "$QEMU_MONITOR_OPT" ]] &&
 	QEMU_QMP_MON_OPT=("--qemu-commandline=$QEMU_QMP_OPT $QEMU_MONITOR_OPT")
 
+kskey=inst.ks
 case ${Distro,,} in
 rhel-5*|rhel5*|centos5*|centos-5*)
+	kskey=ks
 	EPEL=http://archive.fedoraproject.org/pub/archive/epel/epel-release-latest-5.noarch.rpm;;
 rhel-6*|rhel6*|centos6*|centos-6*)
+	kskey=ks
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm;;
 rhel-7*|rhel7*|centos7*|centos-7*|anolis7*)
 	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;;
@@ -3852,7 +3855,7 @@ if [[ "$InstallType" = location ]]; then
 	  $CONTROLLER_OPTS \
 	  "${HOST_DEV_OPTS[@]}" \
 	  --initrd-inject $KSPath \
-	  --extra-args="inst.ks=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
+	  --extra-args="$kskey=file:/$ksfile console=tty0 console=ttyS0,${baudrate}n8 $workaroundExtraArgs" \
 	  $VTPM_OPT \
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
