@@ -3959,7 +3959,7 @@ if [[ "$InstallType" = location ]]; then
 				}
 				expect "Password:" {
 					send "'"$defaultPasswd"'\r"
-					send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= "/eth1/&&/inet/{rc=0}END{exit rc}" || dhclient eth1 2>/dev/null;}; send "\r\n"
+					send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= "/eth1/&&!/inet/{rc=0}END{exit rc}" && dhclient eth1 2>/dev/null;}; send "\r\n"
 					send "\r\r\r\r\r\r"
 					send "# your are in console, Ctr + ] to exit \r"
 					send "\r\r\r\r\r\r"
@@ -4274,7 +4274,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 							expect "Restarting system" { exit 0 }
 						}
 
-						send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= "/eth1/&&/inet/{rc=0}END{exit rc}" || dhclient eth1 2>/dev/null;}; send "\r\n"
+						send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= "/eth1/&&!/inet/{rc=0}END{exit rc}" && dhclient eth1 2>/dev/null;}; send "\r\n"
 						send {while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
 						send "\r\n"
 						expect {
