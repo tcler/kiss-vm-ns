@@ -45,7 +45,7 @@ install_kiss_tools() {
 	local tmpdir=$(mktemp -d)
 	curl -k -Ls $url | tar zxf - -C $tmpdir && gmake -C $tmpdir/${_repon}-master
 	rm -rf $tmpdir
-	test -f ~/.config/kiss-vm/kiss-vm -o -f ~/.config/kiss-vm-ns/kiss-vm && vm prepare -f
+	test -f ~/.config/kiss-vm/kiss-vm -o -f ~/.config/kiss-vm-ns/kiss-vm || vm prepare -f
 	vm netls | grep -qw kissaltnet ||
 		vm netcreate netname=kissaltnet brname=virbr-kissalt subnet=10.172.192.0 domain=alt.kissvm.net
 	command -v tesseract &>/dev/null ||
