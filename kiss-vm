@@ -3493,6 +3493,27 @@ fi
 [[ -f ~/.ssh/id_ecdsa && -f ~/.ssh/id_ecdsa.pub ]] || {
 	echo -e 'y\n' | ssh-keygen -q -t ecdsa -f ~/.ssh/id_ecdsa -N ''
 }
+
+kskey=inst.ks
+case ${Distro,,} in
+rhel-5*|rhel5*|centos5*|centos-5*)
+	lerhel7=yes; kskey=ks
+	EPEL=http://archive.fedoraproject.org/pub/archive/epel/epel-release-latest-5.noarch.rpm;;
+rhel-6*|rhel6*|centos6*|centos-6*)
+	lerhel7=yes; kskey=ks
+	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm;;
+rhel-7*|rhel7*|centos7*|centos-7*|anolis7*)
+	lerhel7=yes;
+	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;;
+rhel-8*|rhel8*|centos-8*|centos8*|rocky-8*|rocky8*|alma8*|alma-8*|anolis8*)
+	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm;;
+rhel-9*|rhel9*|rocky-9*|rocky9*|alma9*|alma-9*|anolis9*)
+	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm;;
+rhel-1[0-9]*|rhel1[0-9]*|rocky-1[0-9]*|rocky1[0-9]*|alma1[0-9]*|alma-1[0-9]*|anolis1[0-9]*)
+	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm;;
+esac
+[[ -n "$EPEL" ]] && PKGS="$EPEL $PKGS"
+
 # prepare network option
 if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 	for ((i=0; i < ${#NETWORK_OPTS[@]}; i++)); do
@@ -3522,8 +3543,12 @@ else
 			intIfModel=e1000
 		fi
 		NETWORK_OPTS=("$defaultFirstNetOpt,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}" "--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel}")
+		[[ "$lerhel7" = yes ]] &&
+			NETWORK_OPTS=("--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel}" "$defaultFirstNetOpt,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}")
 	else
 		NETWORK_OPTS=("${defaultFirstNetOpt},model=${DEFAULT_IF_MODEL}" "--network=network=default,model=${DEFAULT_IF_MODEL}")
+		[[ "$lerhel7" = yes ]] &&
+			NETWORK_OPTS=("--network=network=default,model=${DEFAULT_IF_MODEL}" "${defaultFirstNetOpt},model=${DEFAULT_IF_MODEL}")
 	fi
 fi
 
@@ -3704,25 +3729,6 @@ if command -v apt-get &>/dev/null; then QEMU_QMP=${QEMU_QMP}; else QEMU_QMP=${QE
 }
 [[ -n "$QEMU_QMP_OPT" || -n "$QEMU_MONITOR_OPT" ]] &&
 	QEMU_QMP_MON_OPT=("--qemu-commandline=$QEMU_QMP_OPT $QEMU_MONITOR_OPT")
-
-kskey=inst.ks
-case ${Distro,,} in
-rhel-5*|rhel5*|centos5*|centos-5*)
-	kskey=ks
-	EPEL=http://archive.fedoraproject.org/pub/archive/epel/epel-release-latest-5.noarch.rpm;;
-rhel-6*|rhel6*|centos6*|centos-6*)
-	kskey=ks
-	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm;;
-rhel-7*|rhel7*|centos7*|centos-7*|anolis7*)
-	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm;;
-rhel-8*|rhel8*|centos-8*|centos8*|rocky-8*|rocky8*|alma8*|alma-8*|anolis8*)
-	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm;;
-rhel-9*|rhel9*|rocky-9*|rocky9*|alma9*|alma-9*|anolis9*)
-	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm;;
-rhel-1[0-9]*|rhel1[0-9]*|rocky-1[0-9]*|rocky1[0-9]*|alma1[0-9]*|alma-1[0-9]*|anolis1[0-9]*)
-	EPEL=http://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm;;
-esac
-[[ -n "$EPEL" ]] && PKGS="$EPEL $PKGS"
 
 ### start install
 if [[ "$InstallType" = location ]]; then
