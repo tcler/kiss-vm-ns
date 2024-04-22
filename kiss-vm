@@ -880,7 +880,7 @@ vmclone() {
 
 sshtest() {
 	local target=$1
-	local sshOpts=${2:--o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no $sshKeyOpts}
+	local sshOpts=${2:--oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -oGSSAPIAuthentication=no $sshKeyOpts}
 	local result=255
 	local tmpf=${RuntimeTmp}/_sshtest
 	local KexAlgorithmsOpt=
@@ -907,6 +907,9 @@ sshtest() {
 		else
 			result=2  #can not connect to ssh
 		fi
+	elif grep -iq "no matching host key type found. Their offer: ssh-rsa" $tmpf; then
+		sshtest $target "-oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedKeyTypes=+ssh-rsa $sshOpts"
+		result=$?
 	fi
 	[[ -z "${RuntimeTmp}" ]] && rm -f $tmpf
 
@@ -1237,10 +1240,10 @@ vmlogin() {
 			rc=$?
 		else
 			if [[ "${EXEC}" = yes ]]; then
-				echo -e "{VM:ERR} ssh $U@$addr is not available, exit."
+				echo -e "{VM:ERR} ssh $sshOpts $U@$addr fail, exit." >&2
 				return 1
 			else
-				echo -e "{VM:WARN} ssh $U@$addr is not available, try login with console ..."
+				echo -e "{VM:WARN} ssh $sshOpts $U@$addr fail, try login with console ..." >&2
 				virsh console "$_vmname"
 				rc=$?
 			fi
