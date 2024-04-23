@@ -3992,19 +3992,20 @@ elif [[ "$InstallType" = import ]]; then
 	[[ -f $Imageurl ]] && Imageurl=file://$(readlink -f ${Imageurl})
 	imagefilename=${Imageurl##*/}
 	imagefile=$VMpath/$imagefilename
-	[[ -n "$SAVE_IMAGE" || "$DOWNLOAD_ONLY" = yes ]] && imagefile=${DownloadImagePath%/}/${imagefilename}
+	dlimagefile=$imagefile
+	[[ -n "$SAVE_IMAGE" || "$DOWNLOAD_ONLY" = yes ]] && dlimagefile=${DownloadImagePath%/}/${imagefilename}
 
-	echo "{VM:INFO} downloading cloud image file of $Distro to $imagefile ..."
+	echo "{VM:INFO} downloading cloud image file of $Distro to $dlimagefile ..."
 	if [[ -b "$Imageurl" ]]; then
 		imagefile=$Imageurl
 	elif [[ $Imageurl != file:///* ]]; then
 		if [[ -n "$SAVE_IMAGE" ]]; then
-			curl_download_x ${DownloadImagePath}/${imagefilename} $Imageurl
+			curl_download_x ${dlimagefile} $Imageurl
 			[[ "$DOWNLOAD_ONLY" = yes ]] && {
-				ls -l ${DownloadImagePath}/${imagefilename}
+				ls -l ${dlimagefile}
 				cleanup_and_exit 0
 			}
-			cp ${DownloadImagePath}/${imagefilename} $imagefile
+			cp ${dlimagefile} $imagefile
 		else
 			curl_download_x $imagefile $Imageurl
 		fi
