@@ -29,7 +29,7 @@ i in ins inst install: _isroot
 	$(SUDO) cp -af kiss-vm $(_bin)/vm
 	$(SUDO) cp -af kiss-ns $(_bin)/ns
 	$(SUDO) cp -af kiss-netns $(_bin)/netns
-	@test -d $(_oldconfdir) && $(SUDO) mv $(_oldconfdir) $(_confdir) || true
+	@test ! -L $(_oldconfdir) -a -d $(_oldconfdir) && $(SUDO) mv $(_oldconfdir) $(_confdir) || true
 	$(SUDO) mkdir -p $(_confdir) $(_libdir) $(_varlibdir) $(_sharedir)
 	@-if getent group libvirt &>/dev/null; then \
 	  $(SUDO) chown root:libvirt -R $(_varlibdir) && $(SUDO) chmod g+ws $(_varlibdir); fi
