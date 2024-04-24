@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # author: yin-jianhong@163.com
-# test pass on RHEL-7/CentOS-7, RHEL-8/CentOS-8 RHEL-9/CentOS-9s and Fedora-{29..36}
+# test pass on RHEL-7/CentOS-7, RHEL-8/CentOS-8 RHEL-9/CentOS-9s and Fedora-{29..41}
 #
 # inspired by https://www.brianlinkletter.com/2019/02/build-a-network-emulator-using-libvirt/
 # `and inspired by Red Hat traning Virtual Lab
