@@ -961,7 +961,7 @@ vmcopyto() {
 	elif [[ $sshstat = passwd ]]; then
 		expect <(cat <<-EOF
 		set timeout 120
-		spawn scp $sshOpts -r "${srcarray[@]}" $U@${_addr}:$dstdir/.
+		spawn {*}\${argv}
 		expect {
 			"password:" { send "$defaultPasswd\r"; exp_continue }
 			"Password for" { send "$defaultPasswd\r"; exp_continue }
@@ -970,7 +970,7 @@ vmcopyto() {
 		foreach {pid spawnid os_error_flag value} [wait] break
 		exit \$value
 		EOF
-		)
+		) scp $sshOpts -r "${srcarray[@]}" $U@${_addr}:$dstdir/.
 		rc=$?
 	else
 		echo -e "{VM:WARN} ssh $_vmname is not available ..."
@@ -1018,7 +1018,7 @@ vmcopyfrom() {
 	elif [[ $sshstat = passwd ]]; then
 		expect <(cat <<-EOF
 		set timeout 120
-		spawn scp $sshOpts -r $U@${_addr}:$src $dstf
+		spawn {*}\${argv}
 		expect {
 			"password:" { send "$defaultPasswd\r"; exp_continue }
 			"Password for" { send "$defaultPasswd\r"; exp_continue }
@@ -1027,7 +1027,7 @@ vmcopyfrom() {
 		foreach {pid spawnid os_error_flag value} [wait] break
 		exit \$value
 		EOF
-		)
+		) scp $sshOpts -r $U@${_addr}:$src $dstf
 		rc=$?
 	else
 		echo -e "{VM:WARN} ssh $_vmname is not available ..."
