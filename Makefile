@@ -29,11 +29,12 @@ i in ins inst install: _isroot
 	$(SUDO) cp -af kiss-vm $(_bin)/vm
 	$(SUDO) cp -af kiss-ns $(_bin)/ns
 	$(SUDO) cp -af kiss-netns $(_bin)/netns
-	@test ! -L $(_oldconfdir) -a -d $(_oldconfdir) && $(SUDO) mv $(_oldconfdir) $(_confdir) || true
+	@-test ! -L $(_oldconfdir) -a -d $(_oldconfdir) && $(SUDO) mv -T $(_oldconfdir) $(_confdir) || :
+	@-test -L $(_confdir)/kiss-vm && { rm -f $(_confdir)/kiss-vm; touch $(_confdir)/kiss-vm; } || :
+	@$(SUDO) ln -sf $(_confdir) $(_oldconfdir)
 	$(SUDO) mkdir -p $(_confdir) $(_libdir) $(_varlibdir) $(_sharedir)
 	@-if getent group libvirt &>/dev/null; then \
 	  $(SUDO) chown root:libvirt -R $(_varlibdir) && $(SUDO) chmod g+ws $(_varlibdir); fi
-	@$(SUDO) ln -s $(_confdir) $(_oldconfdir)
 	$(SUDO) cp -af distro-db.bash $(_confdir)/.
 	$(SUDO) cp -af lib/* $(_libdir)/.
 	$(SUDO) cp -af share/* $(_sharedir)/.

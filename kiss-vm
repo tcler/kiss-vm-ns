@@ -1659,7 +1659,10 @@ prepare_kiss_vm() {
 	if [[ -n "$force" ]]; then
 		echo -e "{VM:INFO} force re-prepare kiss-vm env"
 	else
-		[[ -d $oldperConfDir ]] && { mv $oldperConfDir $perConfDir; run -as=$vmuser touch $perConfDir/kiss-vm; }
+		[[ ! -L ${oldperConfDir} && -d $oldperConfDir ]] && {
+			mv -T $oldperConfDir $perConfDir;
+			run -as=$vmuser touch $perConfDir/kiss-vm;
+		}
 		if [[ -f $perConfDir/kiss-vm ]]; then
 			[[ "$ONLY_PREPARE" = yes ]] && echo -e "{VM:INFO} kiss-vm has been initialized."
 			return 0
