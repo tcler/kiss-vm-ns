@@ -1,18 +1,22 @@
 #!/bin/bash
 
 if [[ $# = 0 ]]; then
-	echo "Usage: $0 <hostname|ipaddr> [port] [--wait|-w[=retry]]" >&2
+	echo "Usage: $0 <hostname|ipaddr> [port] [--wait|-w[=retry]] [-v]" >&2
 	exit 1
 fi
 
+WTIME=0
 _at=()
 for arg; do
 	case "$arg" in
-	(--w*|-w*) WAIT=yes; [[ "$arg" = *=* ]] && TIME=${arg/*=/};;
+	(--w*|-w*) WAIT=yes; [[ "$arg" = *=* ]] && WTIME=${arg//[^0-9]/};;
+	(--v*|-v*) VERBOSE=yes;;
 	(*) _at+=($arg);;
 	esac
 	shift
 done
+[[ ${#_at[@]} -lt 2 ]] && _at+=(22)
+set -- "${_at[@]}"
 
 port_available() {
 	local rc=1
@@ -29,18 +33,21 @@ port_available() {
 
 rc=1
 if [[ "$WAIT" != yes ]]; then
-	port_available "${_at[@]}"; rc=$?
+	port_available "${@}"; rc=$?
 else
-	TIME=${TIME//[^0-9]/}
-	TIME=${TIME:-0}
-	CNT=$(((TIME+10)/10))
-	T=$TIME; [[ "$T" = 0 ]] && T=forever
-	echo "[INFO] waiting port ${_at[@]} available, max time(${T}), CNT($CNT)"
+	WTIME=${WTIME:-0}
+	CNT=$(((WTIME+10)/10))
+	T=$WTIME; [[ "$T" = 0 ]] && T=forever
+	echo "{INFO} waiting port $1:$2 available, max time(${T}), CNT($CNT)"
 	for ((i=0; i<CNT; i++)); do
-		port_available "${_at[@]}"; rc=$?
+		port_available "${@}"; rc=$?
 		[[ $rc = 0 ]] && break
-		[[ "$TIME" = 0 ]] && { i=0; CNT=2; }
+		[[ "$WTIME" = 0 ]] && { i=0; CNT=2; }
 		sleep 10
 	done
 fi
+[[ -n "$VERBOSE" ]] && {
+	[[ $rc != 0 ]] && NOT="*NOT* "
+	echo -e "{info} port $1:$2 is ${NOT}available"
+}
 exit $rc
