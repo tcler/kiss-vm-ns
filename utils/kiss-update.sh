@@ -9,6 +9,10 @@ switchroot() {
 }
 switchroot "$@"
 
+VMUSER=$(whoami)
+[[ $(id -u) = 0 && -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
+eval VMUSERHOME=~$VMUSER
+
 is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail "$1" &>/dev/null; }
 is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
 is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
@@ -45,7 +49,7 @@ install_kiss_tools() {
 	local tmpdir=$(mktemp -d)
 	curl -k -Ls $url | tar zxf - -C $tmpdir && gmake -C $tmpdir/${_repon}-master
 	rm -rf $tmpdir
-	test -f ~/.config/kiss-vm/kiss-vm -o -f ~/.config/kiss-vm-ns/kiss-vm || vm prepare -f
+	test -f $VMUSERHOME/.config/kiss-vm/kiss-vm -o -f $VMUSERHOME/.config/kiss-vm-ns/kiss-vm || vm prepare -f
 	vm netls | grep -qw kissaltnet ||
 		vm netcreate netname=kissaltnet brname=virbr-kissalt subnet=10.172.192.0 domain=alt.kissvm.net
 	command -v tesseract &>/dev/null ||
@@ -61,7 +65,7 @@ curl -Ls http://api.github.com/repos/tcler/$_repon/commits/master -o $tmpf
 if cmp $tmpf $_confdir/version 2>/dev/null; then
 	echo "[Info] you are using the latest version"
 	if ! cmp /etc/os-release $_confdir/os-release 2>/dev/null; then
-		test -f ~/.config/kiss-vm/kiss-vm -o -f ~/.config/kiss-vm-ns/kiss-vm && {
+		test -f $VMUSERHOME/.config/kiss-vm/kiss-vm -o -f $VMUSERHOME/.config/kiss-vm-ns/kiss-vm && {
 			echo "[Info] exec vm-prepare again, because you os-version has been updated."
 			vm prepare -f
 		}
