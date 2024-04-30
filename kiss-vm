@@ -2794,22 +2794,6 @@ is_slackware && export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
 	[[ "$ONLY_PREPARE" = yes ]] && exit
 }
 
-#first time
-[[ $(id -u) != 0 ]] && ! is_slackware && {
-	if ! id | grep -E -qw libvirt; then
-		expect <(cat <<-EOF
-		set timeout -1
-		log_user 0
-		spawn -noecho newgrp libvirt
-		expect "*\[>\$]" { send ": newgrp libvirt; $P ${orig_at[@]}; exit \$?\r"; interact; }
-		foreach {pid spawnid os_error_flag value} [wait] break
-		exit \$value
-		EOF
-		) > >(awk 'NR>2 {print last} {last=$0}')
-		exit $?
-	fi
-}
-
 enable_nested_kvm() {
 	if [[ "$OSTYPE" = linux* ]]; then
 		local kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
@@ -3124,9 +3108,33 @@ decodeDistro() {
 		esac
 	fi
 }
+
+run_with_newgrp() {
+	expect <(cat <<-'EOF'
+	set timeout -1
+	log_user 0
+	set cmdline {*}${argv}
+	spawn -noecho newgrp libvirt
+	expect "*\[>\$]" { send ": newgrp libvirt; ${cmdline}; exit \$?\r"; interact; }
+	foreach {pid spawnid os_error_flag value} [wait] break
+	exit $value
+	EOF
+	) "$(getReusableCommandLine "${@}")"
+	exit $?
+}
+
 # Phase-0 get distro name
 [[ -z "$Distro" ]] && Distro=$1
 [[ $Distro =~ ^[0-9]+(\.[0-9]+)?[rn]?$ ]] && { decodeDistro $Distro; }
+
+if [[ $(id -u) != 0 ]] && ! is_slackware && ! id | grep -E -qw libvirt; then
+	if [[ -z "$Distro" ]]; then
+		run_with_newgrp $P "${orig_at[@]}"
+	else
+		run_with_newgrp $P "${orig_at[@]}" > >(awk 'NR>2 {print last} {last=$0}')
+	fi
+fi
+
 shopt -u extglob
 [[ -z "$Distro" ]] && {
 	if [[ -z "$Location" && -z "$Imageurl" && -z "$Isourl" ]]; then
