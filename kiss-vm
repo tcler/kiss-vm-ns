@@ -3049,6 +3049,55 @@ case "$subcmd" in
 	netdel|netdelete)	netdelete "$@"; exit $?;;
 esac
 
+run_with_newgrp() {
+	expect <(cat <<-'EOF'
+	set timeout -1
+	log_user 0
+	set cmdline {*}${argv}
+	spawn -noecho newgrp libvirt
+	expect "*\[>\$]" { send ": newgrp libvirt; ${cmdline}; exit \$?\r"; interact; }
+	foreach {pid spawnid os_error_flag value} [wait] break
+	exit $value
+	EOF
+	) "$(getReusableCommandLine "${@}")"
+	exit $?
+}
+
+# Phase-0 process distro name
+shopt -s extglob
+decodeDistro() {
+	local d="$1"
+	if [[ "$Intranet" = yes ]]; then
+		case ${d%[rn]} in
+		(5) Distro=RHEL5-Server-U11;; (6) Distro=RHEL-6.10;;
+		(7) Distro="RHEL-7.9-updates-????????.[0-9]+";;
+		(7.+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
+		(8|9) Distro="rhel-${d%[rn]}.[0-9]+.[0-9]+-????????.[0-9]+";;
+		(1[0-9]) Distro="rhel-${d%[rn]}.[0-9]+-????????.[0-9]+";;
+		(@(8|9).+([0-9])) Distro="RHEL-${d}.[0-9]-updates-????????.[0-9]+";;
+		(@(1[0-9]).+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
+		esac
+		[[ ${d} = *r ]] && case ${d%r} in (8|9|1[0-9]) Distro="rhel-${d%r}.[0-9]+.[0-9]+";; esac
+	else
+		case ${d%[rn]} in
+		(6|7) Distro="CentOS-${d%[rn]}";;
+		(8|9|1[0-9]) Distro="CentOS-${d%[rn]}-stream";;
+		esac
+	fi
+}
+[[ -z "$Distro" ]] && Distro=$1
+[[ $Distro =~ ^[0-9]+(\.[0-9]+)?[rn]?$ ]] && { decodeDistro $Distro; }
+shopt -u extglob
+
+#run with newgrp if new added group libvirt has not applied
+if [[ $(id -u) != 0 ]] && ! is_slackware && ! id | grep -E -qw libvirt; then
+	if [[ -z "$Distro" ]]; then
+		run_with_newgrp $P "${orig_at[@]}"
+	else
+		run_with_newgrp $P "${orig_at[@]}" > >(awk 'NR>2 {print last} {last=$0}')
+	fi
+fi
+
 [[ -n "$VNCPUTS" || -n "$VNCGET" || -n "$VNCGETSC" ]] && { vmvncproc "$@"; exit $?; }
 
 LANG=C
@@ -3084,58 +3133,10 @@ for disk in "${EXTRA_DISKS[@]}"; do
 	read size fstype _ <<<"${disk//,/ }"
 done
 
+#get distro name in interactive mode if not specified
 #thanks: https://stackoverflow.com/questions/49733211/bash-jump-to-bottom-of-terminal
 # { echo -ne "\E[${LINES};0H"; }  works the same as { tput cup $(tput lines) 0; }
 distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn't select any distro/family, it is necessary!"; }
-shopt -s extglob
-decodeDistro() {
-	local d="$1"
-	if [[ "$Intranet" = yes ]]; then
-		case ${d%[rn]} in
-		(5) Distro=RHEL5-Server-U11;; (6) Distro=RHEL-6.10;;
-		(7) Distro="RHEL-7.9-updates-????????.[0-9]+";;
-		(7.+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
-		(8|9) Distro="rhel-${d%[rn]}.[0-9]+.[0-9]+-????????.[0-9]+";;
-		(1[0-9]) Distro="rhel-${d%[rn]}.[0-9]+-????????.[0-9]+";;
-		(@(8|9).+([0-9])) Distro="RHEL-${d}.[0-9]-updates-????????.[0-9]+";;
-		(@(1[0-9]).+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
-		esac
-		[[ ${d} = *r ]] && case ${d%r} in (8|9|1[0-9]) Distro="rhel-${d%r}.[0-9]+.[0-9]+";; esac
-	else
-		case ${d%[rn]} in
-		(6|7) Distro="CentOS-${d%[rn]}";;
-		(8|9|1[0-9]) Distro="CentOS-${d%[rn]}-stream";;
-		esac
-	fi
-}
-
-run_with_newgrp() {
-	expect <(cat <<-'EOF'
-	set timeout -1
-	log_user 0
-	set cmdline {*}${argv}
-	spawn -noecho newgrp libvirt
-	expect "*\[>\$]" { send ": newgrp libvirt; ${cmdline}; exit \$?\r"; interact; }
-	foreach {pid spawnid os_error_flag value} [wait] break
-	exit $value
-	EOF
-	) "$(getReusableCommandLine "${@}")"
-	exit $?
-}
-
-# Phase-0 get distro name
-[[ -z "$Distro" ]] && Distro=$1
-[[ $Distro =~ ^[0-9]+(\.[0-9]+)?[rn]?$ ]] && { decodeDistro $Distro; }
-
-if [[ $(id -u) != 0 ]] && ! is_slackware && ! id | grep -E -qw libvirt; then
-	if [[ -z "$Distro" ]]; then
-		run_with_newgrp $P "${orig_at[@]}"
-	else
-		run_with_newgrp $P "${orig_at[@]}" > >(awk 'NR>2 {print last} {last=$0}')
-	fi
-fi
-
-shopt -u extglob
 [[ -z "$Distro" ]] && {
 	if [[ -z "$Location" && -z "$Imageurl" && -z "$Isourl" ]]; then
 		distropatternInter=$RuntimeTmp/distroPatternInternet
