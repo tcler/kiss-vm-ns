@@ -38,6 +38,7 @@ _at=`getopt -o hd: \
 	--long pkgs: \
 	--long append: \
 	--long netn: \
+	--long default-dns: \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -53,6 +54,7 @@ while true; do
 	--pkgs)    PKGS=" $2"; shift 2;;
 	--append)  APPEND="$2"; shift 2;;
 	--netn)    NetN="$2"; shift 2;;
+	--default-dns) defaultDNS="$2"; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -220,6 +222,11 @@ KSF
 [[ -n "$Post" && -f "$Post" ]] && {
 	cat $Post
 }
+
+[[ -n "$defaultDNS" ]] && cat <<DNS
+grep -q systemd-resolved /etc/resolv.conf || { sed -i -e "/$defaultDNS/d" -e "0,/nameserver/s//nameserver $defaultDNS\n&/" /etc/resolv.conf; sed -ri '/^\[main]/s//&\ndns=none\nrc-manager=unmanaged/' /etc/NetworkManager/NetworkManager.conf; }
+cp /etc/resolv.conf{,.new}
+DNS
 
 cat <<EOF
 echo "export DISTRO=$Distro DISTRO_BUILD=$Distro RSTRNT_OSDISTRO=$Distro" >>/etc/bashrc

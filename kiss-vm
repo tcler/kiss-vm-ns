@@ -3573,6 +3573,13 @@ else
 	fi
 fi
 
+get_ip_of_virt_network() { virsh net-dumpxml "$1" | sed -rn '/ *<ip.address=.([0-9.]+)..*/{s//\1/;p}'; }
+if grep -q network=default <<<"${NETWORK_OPTS[*]}"; then
+	defaultDNS=$(get_ip_of_virt_network default)
+elif grep -q network=kissaltnet <<<"${NETWORK_OPTS[*]}"; then
+	defaultDNS=$(get_ip_of_virt_network kissaltnet)
+fi
+
 ### hostdev option
 HOST_DEV_OPTS=()
 for dev in "${HOST_DEV_LIST[@]}"; do
@@ -3824,12 +3831,12 @@ if [[ "$InstallType" = location ]]; then
 		if [[ "$NO_SSHKEY" = yes ]]; then
 			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript \
 				--kopts="$KOPTS" --pkgs=$KS_PKGS --only-use=$KS_OnlyUse --append="$KS_APPEND" \
-				--netn ${#NETWORK_OPTS[@]} >$KSPath
+				--netn ${#NETWORK_OPTS[@]} --default-dns=$defaultDNS >$KSPath
 		else
 			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript \
 				--kopts="$KOPTS" --pkgs=$KS_PKGS --only-use=$KS_OnlyUse --append="$KS_APPEND" \
 				--sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub \
-				--netn ${#NETWORK_OPTS[@]} >$KSPath
+				--netn ${#NETWORK_OPTS[@]} --default-dns=$defaultDNS >$KSPath
 		fi
 	}
 
@@ -4058,11 +4065,13 @@ elif [[ "$InstallType" = import ]]; then
 		[[ "$DEBUG" = yes ]] && DEBUG_OPT=--debug
 		if [[ "$NO_SSHKEY" = yes ]]; then
 			cloud-init-iso-gen.sh -d $Distro $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" \
-				-p "$PKGS" $DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS"
+				-p "$PKGS" $DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS" \
+				--default-dns=$defaultDNS
 		else
 			cloud-init-iso-gen.sh -d $Distro $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" \
 				-p "$PKGS" $DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS" \
-				--sshkeyf ${VMUSERHOME}/.ssh/id_rsa.pub --sshkeyf ${VMUSERHOME}/.ssh/id_ecdsa.pub
+				--sshkeyf ${VMUSERHOME}/.ssh/id_rsa.pub --sshkeyf ${VMUSERHOME}/.ssh/id_ecdsa.pub \
+				--default-dns=$defaultDNS
 		fi
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom$iso_bus_type"
 	}

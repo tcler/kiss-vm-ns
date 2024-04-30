@@ -35,6 +35,7 @@ _at=`getopt -o hp:b:Dd: \
 	--long kdump \
 	--long fips \
 	--long kernel-opts: --long kopts: \
+	--long default-dns: \
     -a -n "$0" -- "$@"`
 eval set -- "$_at"
 while true; do
@@ -50,6 +51,7 @@ while true; do
 	--kdump) kdump=yes; shift 1;;
 	--fips) fips=yes; shift 1;;
 	--kernel-opts|--kopts) KernelOpts="$2"; shift 2;;
+	--default-dns) defaultDNS="$2"; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -182,9 +184,15 @@ $(
 KDUMP
 )
 $(
-[[ -n "$KernelOpts" ]] && cat <<KDUMP
+[[ -n "$KernelOpts" ]] && cat <<KOPTS
   - grubby --args="$KernelOpts" --update-kernel=DEFAULT
-KDUMP
+KOPTS
+)
+$(
+[[ -n "$defaultDNS" ]] && cat <<DNS
+  - grep -q systemd-resolved /etc/resolv.conf || { sed -i -e "/$defaultDNS/d" -e "0,/nameserver/s//nameserver $defaultDNS\n&/" /etc/resolv.conf; sed -ri '/^\[main]/s//&\ndns=none\nrc-manager=unmanaged/' /etc/NetworkManager/NetworkManager.conf; }
+  - cp /etc/resolv.conf{,.new}
+DNS
 )
 $(
 [[ "$kdump" = yes || "$fips" = yes || -n "$BPKGS" || -n "$KernelOpts" ]] && cat <<REBOOT
