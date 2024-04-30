@@ -3,7 +3,7 @@
 #ref: https://stackoverflow.com/questions/2683279/how-to-detect-if-a-script-is-being-sourced
 (return 0 2>/dev/null) && sourced=yes || sourced=no
 if [[  $sourced = yes && "$KISS_LIB_LOADED" = yes ]]; then
- 	echo "{warn} kiss test lib has been loaded" >&2
+	echo "{warn} kiss test lib has been loaded" >&2
 	return 0
 fi
 
@@ -226,6 +226,17 @@ tcnt() { echo -e "\n{KISS.TEST COUNT} $KISS_FAIL_CNT test fail, $KISS_PASS_CNT t
 is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail "$1" &>/dev/null; }
 is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
 is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
+
+gen_distro_dir_name() {
+	#generate the distro-dir-name that will be used to making test-result-dir
+	local vmname=$1
+	local suffix=$2
+	local arch=$(vm exec $vmname -- uname -m)
+	local distro=$(vm homedir $vmname|awk -F/ 'NR==1{print $(NF-1)}')
+	[[ -z "${arch}" || -z "${distro}" ]] && return 1
+	local distrodir=${distro}.${arch}; [[ -n "${suffix}" ]] && distrodir+=+${suffix}
+	echo "${distrodir}"
+}
 
 #return if I'm being sourced
 if [[ $sourced = yes ]]; then return 0; fi
