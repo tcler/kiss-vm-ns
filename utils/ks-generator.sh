@@ -190,7 +190,7 @@ grep -q ^metadata_expire= $_dnfconf 2>/dev/null || echo metadata_expire=7d >>$_d
 DNFCONF
 
 cat <<'KSF'
-ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= "/eth1/&&!/inet/{rc=0}END{exit rc}" && {
+ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '/eth1/&&!/inet/{rc=0}END{exit rc}' && {
 	dhclient eth1 2>/dev/null
 }
 USER=$(id -un)

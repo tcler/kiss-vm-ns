@@ -133,7 +133,7 @@ done
 
 runcmd:
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; }
-  - ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= "/eth1/&&!/inet/{rc=0}END{exit rc}" && { \
+  - ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '/eth1/&&!/inet/{rc=0}END{exit rc}' && { \
      dhclient eth1 2>/dev/null; \
   }
   - command -v yum && { \
