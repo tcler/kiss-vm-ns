@@ -428,6 +428,32 @@ vmdelete() {
 	for vm; do _vmdelete $vm; done
 }
 
+vmiflist() {
+	local _vmname=$(vmname_extract -all "$1")
+	[[ -z "$_vmname" ]] && {
+		resf=$RuntimeTmp/vmlist
+		vmdialogradiolist vm-iflist $resf all && _vmname=$(sed 's/"//g' $resf)
+		[[ -z "$_vmname" ]] && { return; }
+	}
+	virsh domiflist "$_vmname" | awk 'NR>2&&$NF'
+}
+
+vmifunplugin() {
+	local _vmname=$(vmname_extract -all "$1")
+	local _ifid=$2
+	[[ $_ifid = [0-9] ]] && _ifid=$(vmiflist $_vmname|awk "NR==${_ifid}{print \$NF}")
+	[[ -z "$_ifid" ]] && { echo "{WARN} Usage: $0 <vmname> <if-mac|if-srcname|if-number>" >&2; return 1; }
+	run -debug virsh domif-setlink "$_vmname" "$_ifid" down
+}
+
+vmifplugin() {
+	local _vmname=$(vmname_extract -all "$1")
+	local _ifid=$2
+	[[ $_ifid = [0-9] ]] && _ifid=$(vmiflist $_vmname|awk "NR==${_ifid}{print \$NF}")
+	[[ -z "$_ifid" ]] && { echo "{WARN} Usage: $0 <vmname> <if-mac|if-srcname|if-number>" >&2; return 1; }
+	run -debug virsh domif-setlink "$_vmname" "$_ifid" up
+}
+
 vmifaddr() {
 	local GETENT=
 	local VERBOSEIF=
@@ -2361,7 +2387,10 @@ Usage() {
 	  $P login [VM [U [P]]]#login VM via ssh   //you can use l,lo,log* instead login
 	  $P console [VM]      #log VM via console //you can use co,con,cons* instead console
 	  $P delete [VM list]  #delete VMs         //you can use d,de,del*,r,rm instead delete
-	  $P ifaddr [VM]       #show ip address    //you can use i,if,if* instead ifaddr
+	  $P ifaddr [VM]       #show ip address    //you can use if,ifa* instead ifaddr
+	  $P iflist [VM]       #show domif list    //you can use ifl,ifl* instead iflist
+	  $P if.unplugin <vmname> <if-num> #unplug //you can use if.u* instead full spell
+	  $P if.plugin <vmname> <if-num> #plugin   //you can use if.p* instead full spell
 	  $P viewer [VM]       #call virt-viewer   //you can use vi,vie,view instead
 	  $P vnc [VM]          #show vnc host:port //you can use vn instead
 	  $P vnc [-get|-put|-putln] [VM]           #read screen text or send string thru vnc
@@ -3020,7 +3049,10 @@ case "$subcmd" in
 	cpto|cpt*)		vmcopyto "$@"; exit $?;;
 	e|ex|ex*)		vmexec "$@"; exit $?;;
 	ls|li|lis|list)		vmlist "$@"; exit $?;;
-	i|if|if*)		vmifaddr "$@"; exit $?;;
+	if|ifa*|ifaddr)		vmifaddr "$@"; exit $?;;
+	ifl*|iflist)		vmiflist "$@"; exit $?;;
+	if.un*|if.unplug)	vmifunplugin "$@"; exit $?;;
+	if.pl*|if.plug)		vmifplugin "$@"; exit $?;;
 	vi|vie|view*)		vmviewer "$@"; exit $?;;
 	vn|vnc|vncp*)		vmvncproc "$@"; exit $?;;
 	x|xm*)			vmxml "$@"; exit $?;;

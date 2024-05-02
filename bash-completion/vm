@@ -87,7 +87,7 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList=(prepare enable-nested-vm help h create ls list clone port-available login console qmp monitor delete ifaddr viewer vncproc xml edit exec restart reboot stop start autostart stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthru)
+    subcommandList=(prepare enable-nested-vm help h create ls list clone port-available login console qmp monitor delete ifaddr iflist if.unplugin if.plugin viewer vncproc xml edit exec restart reboot stop start autostart stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthru)
 
     for ((i=0; i<${#words[@]}; i++)); do
         w=${words[$i]}
@@ -138,7 +138,7 @@ _vm()
                 fi
             fi
             ;;
-        del|delete|stop|autos*|start|stat|blk*|srcfiles|homedir)
+        del|delete|stop|autos*|start|stat|blk*|srcfiles|homedir|iflist|ifl*)
             vmlist=$(virsh list --all --name 2>/dev/null)
             COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             ;;
@@ -152,6 +152,17 @@ _vm()
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
                 COMPREPLY=( $( compgen -W "#new-vm-name" -- "$cur" ) )
+            else
+                COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
+            fi
+            ;;
+        if.unplug*|if.u*|if.plug*|if.p*)
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --all --name 2>/dev/null)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                _iflist="$(seq $(vm iflist ${words[2]} 2>/dev/null|wc -l))"
+                COMPREPLY=( $( compgen -W "$_iflist" -- "${cur}" ) )
             else
                 COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             fi
