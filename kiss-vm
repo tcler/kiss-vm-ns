@@ -957,7 +957,7 @@ vmcopyto() {
 
 	read _addr < <(vmifaddr "$_vmname")
 	port_available $_addr 22 || {
-		echo -e "{VM:ERR} port $_vmname:22 is not available"
+		echo -e "{VM:ERR} port $_vmname:22 is not available" >&2
 		return 1
 	}
 
@@ -999,7 +999,7 @@ vmcopyto() {
 		) scp $sshOpts -r "${srcarray[@]}" $U@${_addr}:$dstdir/.
 		rc=$?
 	else
-		echo -e "{VM:WARN} ssh $_vmname is not available ..."
+		echo -e "{VM:WARN} ssh $_vmname is not available ..." >&2
 		rc=1
 	fi
 	return $rc
@@ -1019,7 +1019,7 @@ vmcopyfrom() {
 
 	read _addr < <(vmifaddr "$_vmname")
 	port_available $_addr 22 || {
-		echo -e "{VM:ERR} port $_vmname:22 is not available"
+		echo -e "{VM:ERR} port $_vmname:22 is not available" >&2
 		return 1
 	}
 
@@ -1056,7 +1056,7 @@ vmcopyfrom() {
 		) scp $sshOpts -r $U@${_addr}:$src $dstf
 		rc=$?
 	else
-		echo -e "{VM:WARN} ssh $_vmname is not available ..."
+		echo -e "{VM:WARN} ssh $_vmname is not available ..." >&2
 		rc=1
 	fi
 
@@ -1222,7 +1222,7 @@ vmlogin() {
 			echo -e "\E[01;36m[vmlogin:debug] detect port ${addr}:22 ...\E[0m" >&2
 
 		port_available $addr 22 || {
-			echo -e "{VM:WARN} port $addr:22 is not available"
+			echo -e "{VM:WARN} port $addr:22 is not available" >&2
 			continue
 		}
 
