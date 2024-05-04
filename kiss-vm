@@ -3330,8 +3330,8 @@ QXL_available() {
 			exit
 		fi
 	}
-	vmhostname=${vmname%_${GuestARCH}}
-	vmhostname=${vmname#${VMUSER}-}
+	#vmhostname=${vmname%_${GuestARCH}}; vmhostname=${vmname#${VMUSER}-}
+	vmhostname=${vmname}
 
 	VMpath=$VMSHOME/$Distro/$vmname
 	[[ "$InstallType" = pxe ]] && VMpath=$VMSHOME/PXE/$vmname
