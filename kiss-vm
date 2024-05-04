@@ -2060,6 +2060,7 @@ if [[ $Intranet = yes ]]; then
 				SAP-debuginfo:${debug_url/BaseOS/SAP}
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
 				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
+				Buildroot-10b:http://$downhostname/rhel-$verx/nightly/BUILDROOT-10-Public-Beta/latest-BUILDROOT-10-RHEL-10/compose/Buildroot/$arch/os/
 				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux${verx}
 				nbeaker-harness:http://$downhostname/qa/rhts/lookaside/beaker-harness-active/rhel-${verx}
 			)
