@@ -3614,7 +3614,7 @@ if grep -q network=default <<<"${NETWORK_OPTS[*]}"; then
 elif grep -q network=kissaltnet <<<"${NETWORK_OPTS[*]}"; then
 	defaultDNS=$(get_ip_of_virt_network kissaltnet)
 else
-	netlist=$(grep -Eo 'network=[^ ,]+' <<<"${NETWORK_OPTS[*]}"|sed 's/.*=//')
+	netlist=$(grep -Eo 'network=network=[^ ,]+' <<<"${NETWORK_OPTS[*]}"|sed 's/.*=//')
 	for net in $netlist; do
 		if vm netinfo $net | xargs | grep -q =nat.*/dhcp; then
 			defaultDNS=$(get_ip_of_virt_network $net)
