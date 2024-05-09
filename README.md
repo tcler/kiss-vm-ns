@@ -142,15 +142,14 @@ Update\[2023-06-06] now also support creating x86_64 Guest on aarch64 host(Fedor
 **A:** try add **-o "HostKeyAlgorithms ssh-rsa"** option to ssh command; see also **ssh -Q key**, **ssh -Q help**
 
 ## [kiss-netns](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-netns)
-example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/nfs-stress/nfs-stress.sh#L176  
-example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/multipath/multipath-netns.sh#L38  
+example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/multipath-and-nconnect/main-netns.sh#L26  
 ```
 [me@ws ~]$ netns -h  #get usage/help info
 ```
 
 
 ## [kiss-ns](https://github.com/tcler/kiss-vm-ns/blob/master/kiss-ns)
-example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/labelled-nfs/labelled-nfs-ns.sh  
+example: https://github.com/tcler/linux-network-filesystems/blob/master/testcases/nfs/multipath-and-nconnect/main-ns.sh#L26  
 ```
 [me@ws ~]$ ns -h  #get usage/help info
 ```
