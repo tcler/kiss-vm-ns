@@ -2577,7 +2577,7 @@ while true; do
 	-L|-l)     InstallType=location; _url=${2#=}; read Location BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
 	-I|-i)     InstallType=import; _url=${2#=}; read Imageurl BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
 	-P|--pxe)  InstallType=pxe; shift 1;;
-	--to-disk) TO_DISK="$2"; shift 2;;
+	--to-disk) TO_DISK="$(readlink -f "$2")"; shift 2;;
 	--diskless) DISKLESS=yes; shift 1;;
 	--ks)      KSPath=$2; InstallType=location; shift 2;;
 	--ks-pkgs)        KS_PKGS="$2"; InstallType=location; shift 2;;
@@ -2644,7 +2644,7 @@ while true; do
 	--share)         VMSHARE="yes"; shift 1;;
 	-r|--ready)      KISS_VM_READY=yes; shift 1;;
 	--diskbus|--bus) DISK_BUS="$2"; shift 2;;
-	--disk)          DISKS+=("$2"); shift 2;;
+	--disk)          DISKS+=("$(readlink -f "$2")"); shift 2;;
 	--xdisk)         EXTRA_DISKS+=("$2"); shift 2;;
 	--xcdrom)        EXTRA_CDROMS+=("$2"); shift 2;;
 	--sharedir)      SHARE_DIRS+=("$2"); shift 2;;
@@ -3667,18 +3667,23 @@ done
 ### disk option
 for disk in "${DISKS[@]}"; do
 	read img _args <<<"${disk/,/ }"
-	if [[ ! -f "$img" ]]; then
+	if [[ ! -f "$img" && ! -b "$img" ]]; then
 		echo -e "\n{VM:WARN} '--disk $disk': file '$img' does not exist, ignore it.\n"
 		continue
 	fi
-	cp -f $img $VMpath/.
 
 	[[ -z "$_args" ]] && _args=bus=${DISK_BUS:-$DEFAULT_DISK_BUS}
 	[[ "$_args" != *format=* ]] && {
 		_fmt=$(qemu-img info $img|awk '/file.format:/{print $NF}')
 		[[ -n "$_fmt" ]] && _fmt=",format=$_fmt"
 	}
-	DISK_OPTS+=" --disk path=$VMpath/${img##*/},${_args}${_fmt}"
+
+	if [[ -f "$img" ]]; then
+		cp -f $img $VMpath/.
+		DISK_OPTS+=" --disk path=$VMpath/${img##*/},${_args}${_fmt}"
+	elif [[ -b "$img" ]]; then
+		DISK_OPTS+=" --disk path=${img},${_args}${_fmt}"
+	fi
 done
 
 ### xcdrom option
