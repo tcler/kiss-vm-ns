@@ -1,6 +1,7 @@
 #export PATH:=${PATH}:/usr/local/bin:~/bin
 
 _bin=/usr/bin
+_local_bin=/usr/local/bin
 _repon=kiss-vm-ns
 _confdir=/etc/$(_repon)
 _oldconfdir=/etc/kiss-vm
@@ -22,9 +23,8 @@ endif
 
 HTTP_PROXY := $(shell grep -q redhat.com /etc/resolv.conf && echo "squid.redhat.com:8080")
 
-i in ins inst install: _isroot
+i in ins inst install: _isroot kiss_utils
 	@-test -f $(_dnfconf) && { grep -q ^metadata_expire= $(_dnfconf) 2>/dev/null || echo metadata_expire=7d >>$(_dnfconf); }
-	$(SUDO) cp -af utils/* $(_bin)/.
 	@$(SUDO) rm -f $(_bin)/install-sbopkg.sh /usr/local/bin/port-available.sh
 	$(SUDO) cp -af kiss-vm $(_bin)/vm
 	$(SUDO) cp -af kiss-ns $(_bin)/ns
@@ -55,6 +55,10 @@ u up update:
 p pu push:
 	https_proxy=$(HTTP_PROXY) git push origin master || :
 	@echo
+
+kiss_utils:
+	$(SUDO) cp -df --preserve=all utils/* $(_bin)/. 2>/dev/null || :
+	$(SUDO) cp -df --preserve=all utils/local/* $(_local_bin)/.
 
 install_macos_kvm_utils:
 	echo "{JFYI} macOS-kvm-utils has been moved to https://github.com/tcler/macOS-kvm-utils"

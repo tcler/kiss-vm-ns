@@ -913,7 +913,7 @@ sshtest() {
 	[[ -z "${RuntimeTmp}" ]] && tmpf=$(mktemp)
 	local _cmd=  #work-around for avoiding hang while test against windows openssh-server
 	[[ "${target,,}" = administrator@* ]] && _cmd=exit
-	LANG=C ssh -v -n -o Batchmode=yes $sshOpts $target $_cmd &>$tmpf; sshrc=$?
+	LANG=C /usr/bin/ssh -v -n -o Batchmode=yes $sshOpts $target $_cmd &>$tmpf; sshrc=$?
 	[[ "$DEBUG" = yes ]] && {
 		echo "[sshtest:debug] sshrc=$sshrc" >&2
 		echo -e "\033[32m$(tail -n 20 $tmpf)\033[0m" >&2
@@ -982,7 +982,7 @@ vmcopyto() {
 		[[ $rc = 0 ]] && {
 			flist=()
 			for f in "${srcarray[@]}"; do f=${f%/}; flist+=("$dstdir/${f##*/}"); done
-			ssh $sshOpts $U@${_addr} ls -ld "${flist[@]}"
+			/usr/bin/ssh $sshOpts $U@${_addr} ls -ld "${flist[@]}"
 		}
 	elif [[ $sshstat = passwd ]]; then
 		expect <(cat <<-EOF
@@ -999,7 +999,7 @@ vmcopyto() {
 		) scp $sshOpts -r "${srcarray[@]}" $U@${_addr}:$dstdir/.
 		rc=$?
 	else
-		echo -e "{VM:WARN} ssh $_vmname is not available ..." >&2
+		echo -e "{VM:WARN} /usr/bin/ssh $_vmname is not available ..." >&2
 		rc=1
 	fi
 	return $rc
@@ -1056,7 +1056,7 @@ vmcopyfrom() {
 		) scp $sshOpts -r $U@${_addr}:$src $dstf
 		rc=$?
 	else
-		echo -e "{VM:WARN} ssh $_vmname is not available ..." >&2
+		echo -e "{VM:WARN} /usr/bin/ssh $_vmname is not available ..." >&2
 		rc=1
 	fi
 
@@ -1234,14 +1234,14 @@ vmlogin() {
 		case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 		[[ "${EXEC}" = yes ]] && sshOpts+=" -n"
 		if [[ $sshstat = yes ]]; then
-			ssh $sshOpts $U@$addr "${sshCommand}"
+			/usr/bin/ssh $sshOpts $U@$addr "${sshCommand}"
 			rc=$?
 		elif [[ $sshstat = passwd ]]; then
 			expect <(cat <<-EOF
 			set timeout 120
 			set sshcmd [exec cat $RuntimeTmp/sshcmd]
 			log_user 0
-			spawn ssh $sshOpts $U@$addr \$sshcmd
+			spawn /usr/bin/ssh $sshOpts $U@$addr \$sshcmd
 			log_user 1
 			if {\$argc == 0 || \$sshcmd == ""} {
 				expect {
@@ -1266,10 +1266,10 @@ vmlogin() {
 			rc=$?
 		else
 			if [[ "${EXEC}" = yes ]]; then
-				echo -e "{VM:ERR} ssh $sshOpts $U@$addr fail, exit." >&2
+				echo -e "{VM:ERR} /usr/bin/ssh $sshOpts $U@$addr fail, exit." >&2
 				return 1
 			else
-				echo -e "{VM:WARN} ssh $sshOpts $U@$addr fail, try login with console ..." >&2
+				echo -e "{VM:WARN} /usr/bin/ssh $sshOpts $U@$addr fail, try login with console ..." >&2
 				virsh console "$_vmname"
 				rc=$?
 			fi
@@ -4959,23 +4959,6 @@ if [[ ! -f ~/.ssh/config ]]; then
 	EOF
 	chmod 600 ~/.ssh/config
 fi
-
-: <<\COMM
-echo -e "\n{VM:INFO} attach test disk ext4.qcow2 and xfs.qcow2:"
-qemu-img create -f qcow2 $VMpath/ext4.qcow2 10G
-qemu-img create -f qcow2 $VMpath/xfs.qcow2 10G
-virsh attach-disk $vmname --subdriver qcow2 --persistent $VMpath/ext4.qcow2 vdb #--current --targetbus usb
-virsh attach-disk $vmname --subdriver qcow2 --persistent $VMpath/xfs.qcow2 vdc #--current --targetbus usb
-#virsh detach-disk $vmname --persistent vdb
-#virsh detach-disk $vmname --persistent vdc
-
-echo -e "  $ virsh console $vmname"
-echo -e "  $ ssh foo@$vmname  #password: $defaultPasswd"
-read addr < <(vmifaddr $vmname)
-[[ -n "$addr" ]] && {
-	echo -e "  $ ssh foo@$addr  #password: $defaultPasswd"
-}
-COMM
 
 #only for linux
 [[ -n "$DEFAULT_KERNEL" ]] && {
