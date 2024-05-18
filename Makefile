@@ -58,7 +58,7 @@ p pu push:
 
 kiss_utils:
 	$(SUDO) cp -df --preserve=all utils/* $(_bin)/. 2>/dev/null || :
-	$(SUDO) cp -df --preserve=all utils/local/* $(_local_bin)/.
+#	$(SUDO) cp -df --preserve=all utils/local/* $(_local_bin)/.
 
 install_macos_kvm_utils:
 	echo "{JFYI} macOS-kvm-utils has been moved to https://github.com/tcler/macOS-kvm-utils"
