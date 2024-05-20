@@ -1210,9 +1210,14 @@ vmlogin() {
 	#of them does not exist. detect and ignore it/them
 	addrs=$(vmifaddr "$_vmname")
 	[[ -z "$addrs" ]] && {
-		echo -e "{VM:WARN} can not get ip info of $_vmname, try login with console ..."
-		virsh console "$_vmname"
-		return $?
+		if [[ "${EXEC}" = yes ]]; then
+			echo -e "{VM:WARN} can not get ip info of $_vmname ..."
+			return 107
+		else
+			echo -e "{VM:WARN} can not get ip info of $_vmname, try login with console ..."
+			virsh console "$_vmname"
+			return $?
+		fi
 	}
 
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no $sshKeyOpts"
