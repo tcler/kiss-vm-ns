@@ -53,7 +53,7 @@ VIRT_READY=unkown
 _MSIZE=1536M
 DSIZE=64
 baudrate=115200
-GRAPHICS_OPT="--graphics=vnc,listen=0.0.0.0"
+DEFAULT_GRAPHICS_CONF="vnc,listen=0.0.0.0"
 HostARCH=$(uname -m)
 GuestARCH=$HostARCH
 VIDEO_OPT="--video=qxl"
@@ -2165,6 +2165,7 @@ Usage() {
 	                 #Possible TYPE values are: vnc, spice, none
 	                 #Possible sub-options are: port, listen, tlsPort, websocket, password, gl.enable, gl.rendernode ..
 	                 #see also: `virt-install --graphics=?`
+	  --vncport <port> #vncport
 	  --video <type> #video device model, Possible value for recent kvm are: cirrus, vga, qxl, virtio
 	                 #see also: `virt-install --video=?`
 	  --sound <type> #sound MODEL, Possible values are ich6, ich9, ac97, es1370, sb16, pcspk, or default
@@ -2476,6 +2477,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long qemucpu: \
 	--long nvmeboot --long NB \
 	--long boot: \
+	--long vncport: \
 	--long video: \
 	--long sound: \
 	--long graphics: \
@@ -2613,6 +2615,7 @@ while true; do
 	--nvmeboot|--NB) NVME_BOOT=yes; shift 1;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
 	--graphics)      GRAPHICS_OPT="--graphics=$2"; shift 2;;
+	--vncport)       VNC_PORT="$2"; DEFAULT_GRAPHICS_CONF+=,port=$VNC_PORT; shift 2;;
 	--video)         SPECIFIED_VIDEO=yes; [[ -z "$2" || "$2" = auto ]] && VIDEO_OPT= || VIDEO_OPT="--video=$2"; shift 2;;
 	--sound)         SOUND_OPT="--sound=$2"; shift 2;;
 	--nointeract)    INTERACT="no"; shift 1;;
@@ -3953,7 +3956,7 @@ if [[ "$InstallType" = location ]]; then
 	  ${SOUND_OPT} \
 	  $NOREBOOT \
 	  --noautoconsole \
-	  ${GRAPHICS_OPT} \
+	  ${GRAPHICS_OPT:---graphics=${DEFAULT_GRAPHICS_CONF}} \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
@@ -4185,7 +4188,7 @@ elif [[ "$InstallType" = import ]]; then
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
 	  --noautoconsole \
-	  ${GRAPHICS_OPT} \
+	  ${GRAPHICS_OPT:---graphics=${DEFAULT_GRAPHICS_CONF}} \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
@@ -4456,7 +4459,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
-	  ${GRAPHICS_OPT} \
+	  ${GRAPHICS_OPT:---graphics=${DEFAULT_GRAPHICS_CONF}} \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
@@ -4668,7 +4671,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	  ${VIDEO_OPT} \
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
-	  ${GRAPHICS_OPT} \
+	  ${GRAPHICS_OPT:---graphics=${DEFAULT_GRAPHICS_CONF}} \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
