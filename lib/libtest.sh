@@ -58,12 +58,14 @@ chkrc() {
 	else
 		comment="$*"
 	fi
-	if rc_isexpected "$RC" "$xrange"; then
+	if [[ "$xrange" = - ]]; then
+		return $RC
+	elif rc_isexpected "$RC" "$xrange"; then
 		let KISS_PASS_CNT++
-		echo -e "\E[1;34m{KISS.TEST PASS} ($RC/$xrange) $comment\E[0m"
+		echo -e "\E[1;34m{KISS.TEST PASS} ($RC/$xrange)  #$comment\E[0m"
 	else
 		let KISS_FAIL_CNT++
-		echo -e "\E[1;31m{KISS.TEST FAIL} ($RC/$xrange) $comment\E[0m"
+		echo -e "\E[1;31m{KISS.TEST FAIL} ($RC/$xrange)  #$comment\E[0m"
 	fi
 	return $RC
 }
@@ -236,6 +238,22 @@ gen_distro_dir_name() {
 	[[ -z "${arch}" || -z "${distro}" ]] && return 1
 	local distrodir=${distro}.${arch}; [[ -n "${suffix}" ]] && distrodir+=+${suffix}
 	echo "${distrodir}"
+}
+
+vmrunx() {
+	local comment=
+	local _xrange_and_comment=${1} vmname=${2}; shift 2
+	read _xrange comment <<<"${_xrange_and_comment/:/ }"
+	[[ "${_xrange}" =~ ^[0-9,-]+$ ]] || {
+		cat <<-ERR_MSG >&2
+		{error} invalid expected return codes format: ${_xrange}
+		Usage: ${FUNCNAME} <0|1-255|1-8,124,127|-[:comment]> <vmname> <command [options or arguments]>
+		ERR_MSG
+		return 2
+	}
+	[[ "${1}" = -- ]] && shift 1
+	vm exec -v ${vmname} -- "${@}"
+	chkrc "${_xrange}" "${comment}"
 }
 
 #return if I'm being sourced
