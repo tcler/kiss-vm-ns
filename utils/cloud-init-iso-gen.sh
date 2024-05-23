@@ -192,6 +192,7 @@ $(
 cat <<DNS_DOMAIN
   - hostn=\$(hostname); domain=\${hostn#*.}; grep -q "search .* \${domain}" /etc/resolv.conf && sed -i -e "/^search/{s/ \${domain}//;s/search/& \${domain}/}" /etc/resolv.conf
 DNS_DOMAIN
+  - grep ^nameserver /etc/resolv.conf || ip r|awk '/^default/{print "nameserver", \$3}' >>/etc/resolv.conf
 [[ -n "$defaultDNS" ]] && cat <<DNS
   - grep -q systemd-resolved /etc/resolv.conf || { sed -i -e "/$defaultDNS/d" -e "0,/nameserver/s//nameserver $defaultDNS\n&/" /etc/resolv.conf; sed -ri '/^\[main]/s//&\ndns=none\nrc-manager=unmanaged/' /etc/NetworkManager/NetworkManager.conf; }
   - cp /etc/resolv.conf{,.new}
