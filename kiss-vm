@@ -1488,11 +1488,13 @@ netcreate() {
 		return
 	}
 
+	stpAttr='stp="off"'
+	macTableManagerAttr='macTableManager="libvirt"'
 	virsh net-define --file <(
 		cat <<-NET
 		<network>
 		  <name>$netname</name>
-		  <bridge name="$brname" />
+		  <bridge name="$brname" $stpAttr $macTableManagerAttr/>
 		  $forwardNode
 		  $domainNode
 		  $ipNode
