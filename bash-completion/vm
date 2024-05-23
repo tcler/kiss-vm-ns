@@ -319,7 +319,7 @@ _vm()
             ;;
         netc*)
             netparams="netname=fixme brname=virbr-fixme subnet=192.168.fixme.0 subnet=172.25.fixme.0 \
-                forward=no forward=nat domain=fixme tftproot= bootpfile= #<netname=_and_brname=_is_necessary>"
+                forward=no forward=nat domain=fixme tftproot= bootpfile= dhcphosts={mac}@{ip}[,{mac}@{ip}] #<netname=_and_brname=_is_necessary>"
             COMPREPLY=( $( compgen -W "$netparams" -- "$cur" ) )
             ;;
         netinfo)
