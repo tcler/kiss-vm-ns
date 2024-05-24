@@ -26,13 +26,16 @@ reip='^([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
 [[ "$ipaddr" =~ $remac && "$mac" =~ $reip ]] && read ipaddr mac <<<"$mac $ipaddr"
 [[ "$ipaddr" =~ .*/[0-9]+$ ]] || ipaddr+=/24
 
-ifname_=$(ip -o link | awk "/$mac/{print \$2}"); ifname=${ifname_%:}
-#coname=$(nmcli -g GENERAL.CONNECTION device show ${ifname})
-#[[ -z "$coname" ]] && { coname=con-$ifname; nmcli con add type ethernet ifname eth1 con-name $coname; }
-while :; do
+for ((i=0;i<8;i++)); do
+	ifname=$(ip -o link | awk -F'[ :]+' "/$mac/{print \$2}")
+	[[ -z "$ifname" ]] && sleep 2 || break
+done
+[[ -z "$ifname" ]] && { echo "mac-addr($mac) not found" >&2; exit 2; }
+
+for ((i=0;i<16;i++)); do
 	coname=$(nmcli -g GENERAL.CONNECTION device show ${ifname})
-	#[[ -z "$coname" ]] && { coname=con-$ifname; nmcli con add type ethernet ifname eth1 con-name $coname; }
 	[[ -z "$coname" ]] && sleep 2 || break
 done
+[[ -z "$coname" ]] && { coname=con-${ifname}; nmcli con add type ethernet ifname ${ifname} con-name $coname; }
 nmcli con mod "${coname}" ipv4.addresses $ipaddr ipv4.method manual
 nmcli con up "${coname}"
