@@ -1366,25 +1366,28 @@ vmadd_disk() {
 vmadd_if() {
 	local vmname=$(vmname_extract -all "$1")
 	local network=$2
+	shift 2
 
 	run -debug virsh attach-interface --type network --domain $vmname --source $network \
-		--model virtio --config --live
+		--model virtio --config --live "$@"
 }
 
 vmadd_if_bridge() {
 	local vmname=$(vmname_extract -all "$1")
 	local brg=$2
+	shift 2
 
 	run -debug virsh attach-interface --type bridge --domain $vmname --source $brg \
-		--model virtio --config --live
+		--model virtio --config --live "$@"
 }
 
 vmadd_if_direct() {
 	local vmname=$(vmname_extract -all "$1")
 	local srcif=${srcif:-$(get-default-if.sh)}
+	shift
 
 	run -debug virsh attach-interface --type direct --domain $vmname --source $srcif \
-		--model virtio --config --live
+		--model virtio --config --live "$@"
 }
 
 nic2pcislot() {
@@ -1403,9 +1406,10 @@ vmadd_if_passthr() {
 	if [[ -e $eventf ]]; then
 		pci_addr=$(nic2pcislot $_hostif)
 	fi
+	shift 2
 
 	run -debug virsh attach-interface --type hostdev --domain $vmname --source ${pci_addr#pci_} \
-		--config --live
+		--config --live "$@"
 }
 
 vmpassthr() {
