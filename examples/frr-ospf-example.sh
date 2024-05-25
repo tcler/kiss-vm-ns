@@ -33,6 +33,8 @@ tmux new -s frr-serv -d "vm create -n server ${distro} --net=default -p tracerou
 tmux new -s frr-r1 -d "vm create -n r1 ${distro} --net=default -nointeract -I=$imgf $@"
 tmux new -s frr-r2 -d "vm create -n r2 ${distro} --net=default -nointeract -I=$imgf $@"
 vm create -n r3 ${distro} --net=default -nointeract -I=$imgf "$@"
+echo "{INFO} waiting all frr-vm create process finished ..."
+while tmux ls|grep ^frr-; do sleep 16; done
 
 #attach interfaces to connecting the routers and workstations
 vm add.if user   net_user_r1 -- --mac=${addr_user_r1}
@@ -67,9 +69,9 @@ vm exec -v r3 -- ip2mac.sh ${addr_r3_serv[@]}
 
 #install frr on route VMs
 for vm in r{1..3}; do
-	vm exec -v $vm -- 'while ! rpm -q frr; do frr-install.sh; sleep 2; done'
 	vm exec -v $vm -- sysctl -w net.ipv4.ip_forward=1 net.ipv6.conf.all.forwarding=1
-	vm exec -v $vm -- sed -ri 's/(ospfd|zebra|staticd)=no/\1=yes/' /etc/frr/daemons
+	vm exec -v $vm -- frr-install.sh
+	vm exec -v $vm -- "sed -ri 's/(ospfd|zebra|staticd)=no/\\1=yes/' /etc/frr/daemons; systemctl restart frr"
 done
 
 #configure frr on route VMs
@@ -132,6 +134,9 @@ if_user_r1=$(vm exec user -- "ip -o link | awk -F'[ :]+' '/${addr_user_r1}/{prin
 if_serv_r3=$(vm exec server -- "ip -o link | awk -F'[ :]+' '/${addr_serv_r3}/{print \$2}'")
 vm exec -v user -- ip route add 10.10.0.0/16 via ${addr_r1_user[1]%/*} dev $if_user_r1 metric 99
 vm exec -v server -- ip route add 10.10.0.0/16 via ${addr_r3_serv[1]%/*} dev $if_serv_r3 metric 99
+
+#workaround: ensure service frr is started
+for vm in r{1..3}; do vm exec $vm -- systemctl start frr; done
 
 #ping test before ospf route generated
 vm exec -v user -- ping -c 4  10.10.200.1
