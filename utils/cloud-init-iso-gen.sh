@@ -148,8 +148,8 @@ runcmd:
   - command -v yum && yum --setopt=strict=0 install -y bash-completion curl wget vim ipcalc expect $PKGS
   -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget vim ipcalc expect network-manager $PKGS; }
   -   command -v zypper && { zypper in --no-recommends -y bash-completion curl wget vim ipcalc expect NetworkManager $PKGS; systemctl restart NetworkManager; }
-  -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; }
-  -   command -v pacman && pacman -S --needed --noconfirm bash-completion curl wget vim ipcalc expect $PKGS
+  -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; pacman-key --init; pacman-key --populate; }
+  -   command -v pacman && { pacman -S --needed --noconfirm bash-completion curl wget vim ipcalc expect networkmanager $PKGS; systemctl restart NetworkManager; }
   - echo "export DISTRO=$Distro DISTRO_BUILD=$Distro RSTRNT_OSDISTRO=$Distro" >>/etc/bashrc
 $(
 if [[ $Intranet = yes ]]; then

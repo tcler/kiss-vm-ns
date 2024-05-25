@@ -25,6 +25,8 @@ elif command -v apt; then
 	apt install -y frr
 elif command -v zypper; then
 	zypper in --no-recommends -y frr
+elif command -v pacman; then
+	pacman -Sy --noconfirm frr
 fi
 
 command -v systemctl && {
