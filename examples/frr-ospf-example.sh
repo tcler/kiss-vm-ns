@@ -52,7 +52,7 @@ vm add.if r3     net_r3_serv -- --mac=${addr_r3_serv}
 for vm in user server r{1..3}; do
 	vm port-available -w $vm
 	vm cpto -v $vm /bin/static-ip-to-mac-or-if.sh /bin/frr-install.sh  /bin
-	vm exec -v $vm -- "systemctl stop firewalld; systemctl disable firewalld"
+	vm exec -v $vm -- "{ systemctl stop firewalld; systemctl disable firewalld; } &>/dev/null;"
 done
 
 #apply static-ip to every network interface
@@ -66,6 +66,8 @@ vm exec -v r2 -- static-ip-to-mac-or-if.sh ${addr_r2_r1[@]}
 vm exec -v r3 -- static-ip-to-mac-or-if.sh ${addr_r3_r1[@]}
 vm exec -v r3 -- static-ip-to-mac-or-if.sh ${addr_r3_r2[@]}
 vm exec -v r3 -- static-ip-to-mac-or-if.sh ${addr_r3_serv[@]}
+#workaround for issue that can not up network-interface on Ubuntu
+for vm in user server r{1..3}; do vm exec -v $vm -- systemctl restart NetworkManager; done
 
 #install frr on route VMs
 for vm in r{1..3}; do
