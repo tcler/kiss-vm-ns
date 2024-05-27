@@ -23,7 +23,7 @@ lstv=39
 for fv in rawhide $((lstv+1)); do distroInfo[f$fv]=$fbaseurl/development/$fv/Cloud/$GuestARCH/images/; done
 eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/releases/$fv/Cloud/$GuestARCH/images/; done'
 
-#### Debian
+#### Debian/Ubuntu
 # https://cloud.debian.org/images/openstack/testing/
 # https://cloud.debian.org/images/openstack/$latestVersion/
 # https://cloud.debian.org/images/openstack/archive/$olderVersion/
@@ -32,6 +32,8 @@ distroInfo[debian-12]="http://cloud.debian.org/images/cloud/bookworm/latest/"
 distroInfo[debian-11]="http://cloud.debian.org/images/cloud/bullseye/latest/"
 distroInfo[debian-10]="https://cloud.debian.org/images/openstack/current-10/debian-10-openstack-${GuestARCH/x86_64/amd64}.qcow2"
 distroInfo[debian-9]="https://cloud.debian.org/images/openstack/current-9/debian-9-openstack-${GuestARCH/x86_64/amd64}.qcow2"
+distroInfo[ubuntu-24.04]="https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-${GuestARCH/x86_64/amd64}.img"
+distroInfo[ubuntu-23.10]="https://cloud-images.ubuntu.com/releases/23.10/release/ubuntu-23.10-server-cloudimg-${GuestARCH/x86_64/amd64}.img"
 
 #### OpenSUSE
 distroInfo[openSUSE-leap-15.5]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.5/images/openSUSE-Leap-15.5.$GuestARCH-NoCloud.qcow2"
