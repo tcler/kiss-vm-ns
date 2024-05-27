@@ -25,7 +25,7 @@ vm netcreate netname=net_r1_r3 brname=br_r1_r3 forward=no
 vm netcreate netname=net_r3_serv brname=br_r3_serv forward=no
 
 #create VM
-vm del user server r{1..3} &>/dev/null
+for vm in user server r{1..3}; do tmux kill-session -t frr-$vm; vm del $vm; done &>/dev/null
 stdlog=$(vm create $distro --downloadonly "$@" |& tee /dev/tty)
 imgf=$(sed -rn '${/^-[-rwx]{9}.? /{s/^.* //;p}}' <<<"$stdlog")
 tmux new -s frr-user -d "vm create -n user ${distro} --net=default -p traceroute,tcpdump,nmap -nointeract -I=$imgf $*"
@@ -51,21 +51,21 @@ vm add.if r3     net_r3_serv -- --mac=${addr_r3_serv}
 #waiting ssh available and copy tools in VMs
 for vm in user server r{1..3}; do
 	vm port-available -w $vm
-	vm cpto -v $vm /bin/ip2mac.sh /bin/frr-install.sh  /bin
+	vm cpto -v $vm /bin/static-ip-to-mac-or-if.sh /bin/frr-install.sh  /bin
 	vm exec -v $vm -- "systemctl stop firewalld; systemctl disable firewalld"
 done
 
 #apply static-ip to every network interface
-vm exec -v user -- ip2mac.sh ${addr_user_r1[@]}
-vm exec -v server -- ip2mac.sh ${addr_serv_r3[@]}
-vm exec -v r1 -- ip2mac.sh ${addr_r1_user[@]}
-vm exec -v r1 -- ip2mac.sh ${addr_r1_r2[@]}
-vm exec -v r1 -- ip2mac.sh ${addr_r1_r3[@]}
-vm exec -v r2 -- ip2mac.sh ${addr_r2_r3[@]}
-vm exec -v r2 -- ip2mac.sh ${addr_r2_r1[@]}
-vm exec -v r3 -- ip2mac.sh ${addr_r3_r1[@]}
-vm exec -v r3 -- ip2mac.sh ${addr_r3_r2[@]}
-vm exec -v r3 -- ip2mac.sh ${addr_r3_serv[@]}
+vm exec -v user -- static-ip-to-mac-or-if.sh ${addr_user_r1[@]}
+vm exec -v server -- static-ip-to-mac-or-if.sh ${addr_serv_r3[@]}
+vm exec -v r1 -- static-ip-to-mac-or-if.sh ${addr_r1_user[@]}
+vm exec -v r1 -- static-ip-to-mac-or-if.sh ${addr_r1_r2[@]}
+vm exec -v r1 -- static-ip-to-mac-or-if.sh ${addr_r1_r3[@]}
+vm exec -v r2 -- static-ip-to-mac-or-if.sh ${addr_r2_r3[@]}
+vm exec -v r2 -- static-ip-to-mac-or-if.sh ${addr_r2_r1[@]}
+vm exec -v r3 -- static-ip-to-mac-or-if.sh ${addr_r3_r1[@]}
+vm exec -v r3 -- static-ip-to-mac-or-if.sh ${addr_r3_r2[@]}
+vm exec -v r3 -- static-ip-to-mac-or-if.sh ${addr_r3_serv[@]}
 
 #install frr on route VMs
 for vm in r{1..3}; do
