@@ -66,8 +66,6 @@ vm exec -v r2 -- static-ip-to-mac-or-if.sh ${addr_r2_r1[@]}
 vm exec -v r3 -- static-ip-to-mac-or-if.sh ${addr_r3_r1[@]}
 vm exec -v r3 -- static-ip-to-mac-or-if.sh ${addr_r3_r2[@]}
 vm exec -v r3 -- static-ip-to-mac-or-if.sh ${addr_r3_serv[@]}
-#workaround for issue that can not up network-interface on Ubuntu
-for vm in user server r{1..3}; do vm exec -v $vm -- systemctl restart NetworkManager; done
 
 #install frr on route VMs
 for vm in r{1..3}; do

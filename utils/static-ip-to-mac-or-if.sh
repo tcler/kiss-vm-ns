@@ -37,7 +37,7 @@ done
 [[ -z "$ifname" && -n "$mac" ]] && {
 	for ((i=0;i<8;i++)); do
 		ifname=$(ip -o link | awk -F'[ :]+' "/$mac/{print \$2}")
-		[[ -z "$ifname" ]] && sleep 2 || break
+		[[ -z "$ifname" ]] && { sleep 1; } || break
 	done
 }
 [[ -z "$ifname" ]] && { echo "{error} mac-addr($mac) not found" >&2; exit 2; }
@@ -46,9 +46,13 @@ done
 #get connection name by ifname
 for ((i=0;i<8;i++)); do
 	coname=$(nmcli -g GENERAL.CONNECTION device show ${ifname})
-	[[ -z "$coname" ]] && sleep 2 || break
+	[[ -z "$coname" ]] && { sleep 1; } || break
 done
-[[ -z "$coname" ]] && { coname=con-${ifname}; nmcli con add type ethernet ifname ${ifname} con-name $coname; }
+[[ -z "$coname" ]] && {
+	coname=con-${ifname}
+	nmcli con add type ethernet ifname ${ifname} con-name $coname
+	systemctl restart NetworkManager
+}
 
 #assign static-ip to connection/ifname
 nmcli con mod "${coname}" ipv4.addresses $ipaddr ipv4.method manual
