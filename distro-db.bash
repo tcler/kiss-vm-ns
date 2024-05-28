@@ -32,8 +32,12 @@ distroInfo[debian-12]="http://cloud.debian.org/images/cloud/bookworm/latest/"
 distroInfo[debian-11]="http://cloud.debian.org/images/cloud/bullseye/latest/"
 distroInfo[debian-10]="https://cloud.debian.org/images/openstack/current-10/debian-10-openstack-${GuestARCH/x86_64/amd64}.qcow2"
 distroInfo[debian-9]="https://cloud.debian.org/images/openstack/current-9/debian-9-openstack-${GuestARCH/x86_64/amd64}.qcow2"
-distroInfo[ubuntu-24.04]="https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-${GuestARCH/x86_64/amd64}.img"
-distroInfo[ubuntu-23.10]="https://cloud-images.ubuntu.com/releases/23.10/release/ubuntu-23.10-server-cloudimg-${GuestARCH/x86_64/amd64}.img"
+lyy=$(date +%y -d '-1year'); llyy=$(date +%y -d '-2year'); read yy MM < <(date +%y\ %m); uvers=()
+if [[ $MM -gt 10 ]]; then uvers+=(${yy}.{10,04}); elif [[ $MM -gt 4 ]] then uvers+=(${yy}.04); fi
+uvers+=(${lyy}.{10,04} ${llyy}.{10,04})
+for uver in ${uvers[@]}; do
+	distroInfo[ubuntu-${uver}]="https://cloud-images.ubuntu.com/releases/${uver}/release/ubuntu-${uver}-server-cloudimg-${GuestARCH/x86_64/amd64}.img"
+done
 
 #### OpenSUSE
 distroInfo[openSUSE-leap-15.5]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.5/images/openSUSE-Leap-15.5.$GuestARCH-NoCloud.qcow2"
