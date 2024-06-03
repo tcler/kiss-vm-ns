@@ -90,6 +90,13 @@ get_default_ip() {
 	get_ip "$nic" "$@"
 }
 
+get_default_netaddr() {
+	local nic=$(get_default_if)
+	[[ -z "$nic" ]] && return 1
+
+	get_net_addr -m $(get_ip "$nic" -m)
+}
+
 get_default_gateway() { ip route show | awk '$1=="default"{print $3; exit}'; }
 
 _get_ipcalc() { IPCALC=ipcalc; command -v ipcalc-ng &>/dev/null && IPCALC=ipcalc-ng; }
@@ -100,16 +107,24 @@ get_net_mask() {
 	$IPCALC $ip4 | awk '/Netmask:/{print $2}';
 }
 get_net_addr() {
-	[[ $# = 0 ]] && { echo "Usage: $0 <ip4>" >&2; return 1; }
-	local ip4="$1";
+	[[ $# = 0 ]] && { echo "Usage: $0 <ip4/masklen>" >&2; return 1; }
+	local with_mask= ip4=
+	for arg; do [[ "$arg" = -m ]] && with_mask=yes || _at+=("$arg"); done
+	set -- "${_at[@]}"
+	ip4="$1"
 	_get_ipcalc
-	$IPCALC $ip4 | awk -F'[[:space:]/]+' '/Network:/{print $2}';
+
+	if [[ "$with_mask" = yes ]]; then
+		$IPCALC $ip4 | awk '/Network:/{print $2}';
+	else
+		$IPCALC $ip4 | awk -F'[[:space:]/]+' '/Network:/{print $2}';
+	fi
 }
 
 _P=${P%.sh}
 funname=${_P//-/_}
 case ${funname} in
-get_ip|get_default_nic|get_default_if|get_default_ip|get_default_gateway|get_net_mask|get_net_addr)
+get_ip|get_default_nic|get_default_if|get_default_ip|get_default_netaddr|get_default_gateway|get_net_mask|get_net_addr)
 	${funname} "$@"
 	;;
 *)
