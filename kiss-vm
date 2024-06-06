@@ -1973,8 +1973,8 @@ if [[ $Intranet = yes ]]; then
 				${osv}-debuginfo:${debug_url}
 				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
 				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$GuestARCH/extras/os
-				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/6/6Server/$GuestARCH/os
+				extras:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/6/6Server/$GuestARCH/extras/os
+				cdn_os:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/6/6Server/$GuestARCH/os
 			)
 			;;
 		rhel-7*|rhel7*|centos7*|centos-7*)
@@ -1994,8 +1994,8 @@ if [[ $Intranet = yes ]]; then
 				${osv}-RT-debuginfo:${debug_url/$osv/${osv}-RT}
 				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
 				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-				extras:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$GuestARCH/extras/os
-				cdn_os:http://${_cdnhost/fedora/red}/content/dist/rhel/server/7/7Server/$GuestARCH/os
+				extras:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/7Server/$GuestARCH/extras/os
+				cdn_os:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/7Server/$GuestARCH/os
 				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux7
 				nbeaker-harness:http://$downhostname/qa/rhts/lookaside/beaker-harness-active/rhel-7
 			)
