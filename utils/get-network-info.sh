@@ -120,15 +120,19 @@ get_net_addr() {
 		$IPCALC $ip4 | awk -F'[[:space:]/]+' '/Network:/{print $2}';
 	fi
 }
+get_if_by_ip() {
+	[[ $# = 0 ]] && { echo "Usage: $0 <ip4|ip6>" >&2; return 1; }
+	local ipaddr="${1%%/*}"
+	ip -br a sh | awk -v pat=${ipaddr}/ '$0 ~ pat {print $1}'
+}
 
 _P=${P%.sh}
 funname=${_P//-/_}
 case ${funname} in
-get_ip|get_default_nic|get_default_if|get_default_ip|get_default_netaddr|get_default_gateway|get_net_mask|get_net_addr)
+get_ip|get_default_nic|get_default_if|get_default_ip|get_default_netaddr|get_default_gateway|get_net_mask|get_net_addr|get_if_by_ip)
 	${funname} "$@"
 	;;
 *)
 	ip -o addr | awk '!/^[0-9]*: ?lo|link\// {gsub("/", " "); print $2" "$4}'
 	;;
 esac
-
