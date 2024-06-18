@@ -1635,6 +1635,7 @@ install_requires() {
 		OSV=$(rpm -E %rhel)
 		if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 			[[ "$OSV" != "%rhel" ]] && yum $yumOpt install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSV}.noarch.rpm 2>/dev/null
+			[[ "$OSV" -ge 9 ]] && { pkglist+=' kernel-modules-extra'; }
 		fi
 		rpm -q $pkglist || {
 			sudo yum $yumOpt --setopt=strict=0 install -y $pkglist

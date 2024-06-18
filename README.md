@@ -22,13 +22,10 @@ kiss-ns:
 
 # Install
 ```
-curl -s https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/utils/kiss-update.sh|sudo bash && sudo vm prepare
+curl -Lks https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/utils/kiss-update.sh|sudo bash && sudo vm prepare
 #or
-git clone https://github.com/tcler/kiss-vm-ns &&
-    sudo make -C kiss-vm-ns && sudo vm prepare
-#or (git clone fail)
-curl -Ls https://github.com/tcler/kiss-vm-ns/archive/refs/heads/master.tar.gz | tar zxf - &&
-    sudo make -C kiss-vm-ns-master && sudo vm prepare
+curl -Lks https://github.com/tcler/kiss-vm-ns/archive/refs/heads/master.tar.gz | tar zxf - &&
+    sudo gmake -C kiss-vm-ns-master && sudo vm prepare
 ```
 
 # FAQ & Examples
