@@ -33,7 +33,7 @@ distroInfo[debian-11]="http://cloud.debian.org/images/cloud/bullseye/latest/"
 distroInfo[debian-10]="https://cloud.debian.org/images/openstack/current-10/debian-10-openstack-${GuestARCH/x86_64/amd64}.qcow2"
 distroInfo[debian-9]="https://cloud.debian.org/images/openstack/current-9/debian-9-openstack-${GuestARCH/x86_64/amd64}.qcow2"
 lyy=$(date +%y -d '-1year'); llyy=$(date +%y -d '-2year'); read yy MM < <(date +%y\ %m); uvers=()
-if [[ $MM -gt 10 ]]; then uvers+=(${yy}.{10,04}); elif [[ $MM -gt 4 ]] then uvers+=(${yy}.04); fi
+if [[ $MM -gt 10 ]]; then uvers+=(${yy}.{10,04}); elif [[ $MM -gt 4 ]]; then uvers+=(${yy}.04); fi
 uvers+=(${lyy}.{10,04} ${llyy}.{10,04})
 for uver in ${uvers[@]}; do
 	distroInfo[ubuntu-${uver}]="https://cloud-images.ubuntu.com/releases/${uver}/release/ubuntu-${uver}-server-cloudimg-${GuestARCH/x86_64/amd64}.img"
