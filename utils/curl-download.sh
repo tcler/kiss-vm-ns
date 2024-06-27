@@ -22,7 +22,7 @@ curl_download() {
 		filename=${filename%/}/${url##*/}
 	fi
 
-	header=$(curl -L -I -s $url|sed 's/\r//')
+	header=$(curl -Lks -I $url|sed 's/\r//')
 	fsizer=$(echo "$header"|awk -v IGNORECASE=1 '/Content-Length:/ {print $2; exit}')
 	if echo "$header"|grep -iq 'Accept-Ranges: bytes'; then
 		curlopts+=' --continue-at -'
