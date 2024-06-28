@@ -3,9 +3,10 @@
 ## argparse
 P=${0##*/}
 Usage() {
-	echo "Usage: $P <compressed-file> [targetdir] [topdirname] [-l|--list] [--path=dir1 [-p dir2 ...]]"
+	echo "Usage: $P <compressed-file> [targetdir] [topdirname] [-l|--list] [--path=dir1 [-p dir2 ...]] [--strip=<\$N|max[-\$N]>]"
 	echo "  e.g: $P /path/to/kernel-src.tar.gz /usr/src kernel-devel"
 	echo "  e.g: $P /path/to/kernel-src.tar.gz /usr/src kernel-doc --path=Documentation"
+	echo "  e.g: $P /path/to/kernel-src.tar.gz /usr/src kernel-devel --strip=max"
 	echo "  e.g: $P /path/to/linux-2.6.5.tar.bz2 -l"
 	echo "  e.g: $P /path/to/linux-6.5.tar.xz -l -p '*loongarch/boot'"
 }
@@ -22,6 +23,7 @@ while true; do
 	-h|--help)      Usage; shift 1; exit 0;;
 	-p|--path)      folders+=("$2"); shift 2;;
 	-l|--list)      list=yes; shift 1;;
+	--strip)        stripN=${2:-max}; shift 1;;
 	--) shift; break;;
 	esac
 done
@@ -85,8 +87,16 @@ else
 	fi
 	[[ "$list" = yes ]] && { tar taf ${compressedFile} "${folders[@]}"; exit; }
 	man tar|grep -q '^ *timestamp' && warnOpt=--warning=no-timestamp
+	[[ -n "$stripN" ]] && {
+		[[ "$stripN" = max* ]] && {
+			max=$(tar taf ${compressedFile}|sed -e '$!{N;s/^\(.*\).*\n\1.*$/\1\n\1/;D;}'|
+				grep -o /|wc -l)
+			stripN=$((${stripN/max/$max}))
+		}
+		stripOpt=--strip-components=$stripN
+	}
 	echo "{run} tar -C '$_targetdir' -${xtype}xf '${compressedFile}' ${folders[@]} $warnOpt" >&2
-	tar -C "$_targetdir" -${xtype}xf "${compressedFile}" "${folders[@]}" $warnOpt   #--strip-components=1
+	tar -C "$_targetdir" -${xtype}xf "${compressedFile}" "${folders[@]}" $warnOpt  $stripOpt
 fi
 [[ -d "$_targetdir/${otopdir}" ]] || {
 	echo "{Error} extract to '$_targetdir' fail, please theck permission" >&2
