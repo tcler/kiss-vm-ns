@@ -19,7 +19,8 @@ curl_download() {
 	}
 
 	if [[ -d "$filename" ]]; then
-		filename=${filename%/}/${url##*/}
+		_fname=${url##*/}; _fname=${_fname%%\?*}
+		filename=${filename%/}/${_fname}
 	fi
 
 	header=$(curl -Lks -I $url|sed 's/\r//')
