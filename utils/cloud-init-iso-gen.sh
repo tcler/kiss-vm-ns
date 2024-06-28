@@ -9,8 +9,8 @@ BPKGS=
 PKGS=
 Intranet=no
 _downhostname="download.devel.fedorahat.com"
-baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
 downhostname=${_downhostname/fedora/red}
+baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
 bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
 KernelOpts=
 
@@ -68,8 +68,8 @@ fi
 
 is_rh_intranet2 && {
 	Intranet=yes
-	baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
-	bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
+	baseUrl=http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/kiss-vm-ns
+	bkrClientImprovedUrl=http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/bkr-client-improved
 }
 
 sshkeyf=${sshkeyf:-/dev/null}
