@@ -1103,7 +1103,7 @@ vmconsole() {
 		vmdialogradiolist vm-console $resf && _vmname=$(sed 's/"//g' $resf)
 		[[ -z "$_vmname" ]] && { return; }
 	}
-	virsh console "$_vmname"
+	virsh console ${FORCE:+--force} "$_vmname"
 	return $?
 }
 
@@ -2133,6 +2133,7 @@ Usage() {
 	                 #VM name, will auto generate according distro name if omitting
 	  -f, --force    #for sub-cmd vm create: over write existing VM with same name
 	                 #for sub-cmd vm prepare: force execute vm-prepare
+	                 #for sub-cmd vm console: force to connect console
 	  -p, --pkginstall <pkgs>
 	                 #pkgs in default system repo, install by yum/apt/zypper/pacman
 	  -b, --brewinstall <args>
