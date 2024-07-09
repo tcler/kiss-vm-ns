@@ -2131,7 +2131,8 @@ Usage() {
 	                 #Note: conflict with '--ks + -L[url]' option
 	  -n, --vmname <name>
 	                 #VM name, will auto generate according distro name if omitting
-	  -f, --force     #over write existing VM with same name
+	  -f, --force    #for sub-cmd vm create: over write existing VM with same name
+	                 #for sub-cmd vm prepare: force execute vm-prepare
 	  -p, --pkginstall <pkgs>
 	                 #pkgs in default system repo, install by yum/apt/zypper/pacman
 	  -b, --brewinstall <args>
