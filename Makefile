@@ -16,7 +16,7 @@ required_pkgs_arch=curl iproute2 tmux expect bind bash-completion nmap ipcalc su
 ifeq ("$(wildcard $(completion_path))", "")
 	completion_path=/usr/local/share/bash-completion/completions
 endif
-SUDO=sudo
+SUDO=
 ifeq (, $(shell which sudo))
 	SUDO=
 endif
