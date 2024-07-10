@@ -286,9 +286,11 @@ _vm()
             fi
             ;;
         co|con|cons*)
-            if [[ $narg -le 4 ]]; then
-                vmlist=$(virsh list --name 2>/dev/null)
-                COMPREPLY=( $( compgen -W "$vmlist -f --force" -- "$cur" ) )
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --name --state-running 2>/dev/null)
+                COMPREPLY=( $( compgen -W "${vmlist:-#No-Running-Guest} -f --force" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                COMPREPLY=( $( compgen -W "#<Enter> -f --force" -- "${cur}" ) )
             fi
             ;;
         e|ex|exe|exec)
