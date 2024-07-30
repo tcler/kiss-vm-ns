@@ -769,8 +769,11 @@ vmautostart() {
  
 	set -- $(vmname_extract -all "$@")
 	for vm; do
-		virsh autostart "$vm"
+		virsh autostart $AutoStartOpt "$vm"
 	done
+}
+vmnoautostart() {
+	AutoStartOpt=--disable vmautostart "$@"
 }
 
 vmstat() {
@@ -3084,6 +3087,7 @@ case "$subcmd" in
 	stop|sto*)		vmstop "$@"; exit $?;;
 	start|star*)		vmstart "$@"; exit $?;;
 	autostart|autostar*)	vmautostart "$@"; exit $?;;
+	noautostart|noautosta*)	vmnoautostart "$@"; exit $?;;
 	stat)			vmstat "$@"; exit $?;;
 	blk*|srcfiles)		_vmblklist "$@"; exit $?;;
 	rootdir)		vmrootdir "$@"; exit $?;;
