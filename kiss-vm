@@ -356,19 +356,21 @@ _vmdelete() {
 	local userhome=$(getent passwd "$VMUSER" | cut -d: -f6)
 	local _vmdir=$(vmhomedir $_vmname 2>/dev/null|head -n1)
 	local own=no
+    local delOpts=
+    [[ -n "$(virsh snapshot-list $_vmname --name)" ]] && delOpts=--snapshots-metadata
 	[[ $(id -u) = 0 && $_vmdir = /root/VM[sS]/* ]] || [[ "$_vmdir" = $userhome/VM[sS]/* ]] && own=yes
 	if [[ $own != yes ]]; then
 		echo -e "{VM:WARN} VM '$_vmname' was not created by current user($VMUSER); try:"
 		cat <<-EOF
 		  virsh destroy $_vmname
-		  virsh undefine $_vmname #--remove-all-storage --nvram
+		  virsh undefine $_vmname $delOpts #--remove-all-storage --nvram
 		EOF
 		return 1
 	fi
 
 	echo -e "\n{VM:INFO} => dist removing VM $_vmname .."
 	{ virsh destroy $_vmname 2>/dev/null; sleep 0.5
-	  virsh undefine $_vmname 2>/dev/null || virsh undefine $_vmname --nvram; } | sed '/^$/d'
+	  virsh undefine $_vmname $delOpts 2>/dev/null || virsh undefine $_vmname --nvram; } | sed '/^$/d'
 
 	echo -e "{VM:INFO} kill virt-viewer/tmux-session of $_vmname ..."
 	kill_installer_tmux_session ${_vmname}
