@@ -2,6 +2,9 @@
 
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
+downhostname=download.devel.redhat.com
+LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
+
 export LANG=C
 getDefaultNic() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
 getDefaultIp4() {
@@ -56,12 +59,10 @@ win_img_name=Win2022-Evaluation.iso
 openssh_file=OpenSSH-Win64.zip
 
 echo -e "{INFO} check if Windows image files exist ..."
-address="download.dev el.red hat.com"
-BaseUrl=http://${address// /}/qa/rhts/lookaside
 if is_rh_intranet2; then
 	rh_intranet=yes
-	win_img_url="$BaseUrl/windows-images/$win_img_name"
-	openssh_url="$BaseUrl/windows-images/$openssh_file"
+	win_img_url="${LOOKASIDE_BASE_URL}/windows-images/$win_img_name"
+	openssh_url="${LOOKASIDE_BASE_URL}/windows-images/$openssh_file"
 	curl-download.sh $win_img_dir/$win_img_name "$win_img_url"
 	curl-download.sh $win_img_dir/OpenSSH-Win64.zip "$openssh_url"
 fi
@@ -110,8 +111,8 @@ ramsize=$(LANGUAGE=C free -m|awk '/Mem:/{print $2}')
 echo -e "{INFO} check if Netapp ONTAP simulator image exist ..."
 if is_rh_intranet; then
 	rh_intranet=yes
-	ImageUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$ovaImage
-	LicenseFileUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$licenseFile
+	ImageUrl=${LOOKASIDE_BASE_URL}/Netapp-Simulator/$ovaImage
+	LicenseFileUrl=${LOOKASIDE_BASE_URL}/Netapp-Simulator/$licenseFile
 	curl-download.sh $ontap_img_dir/$ovaImage "$ImageUrl"
 	curl-download.sh $ontap_img_dir/$licenseFile "$LicenseFileUrl"
 fi

@@ -13,6 +13,7 @@ downhostname=${_downhostname/fedora/red}
 baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
 bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
 KernelOpts=
+LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 
 is_available_url() { local _url=$1; curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null; }
 is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
@@ -68,8 +69,8 @@ fi
 
 is_rh_intranet2 && {
 	Intranet=yes
-	baseUrl=http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/kiss-vm-ns
-	bkrClientImprovedUrl=http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/bkr-client-improved
+	baseUrl=${LOOKASIDE_BASE_URL}/kiss-vm-ns
+	bkrClientImprovedUrl=${LOOKASIDE_BASE_URL}/bkr-client-improved
 }
 
 sshkeyf=${sshkeyf:-/dev/null}

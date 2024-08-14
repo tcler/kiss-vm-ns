@@ -6,6 +6,9 @@ PROG=${0}; [[ $0 = /* ]] && PROG=${0##*/}
 SUDOUSER=${SUDO_USER:-$(whoami)}
 eval SUDOUSERHOME=~$SUDOUSER
 
+downhostname=download.devel.redhat.com
+LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
+
 # ==============================================================================
 # Parameter Processing
 # ==============================================================================
@@ -229,7 +232,7 @@ is_rh_intranet() { grep -q redhat.com /etc/resolv.conf; }
 is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 if [[ -z "$OpenSSHUrl" ]]; then
 	OpenSSHUrl=https://github.com/PowerShell/Win32-OpenSSH/releases/download/V8.6.0.0p1-Beta/OpenSSH-Win64.zip
-	is_rh_intranet2 && OpenSSHUrl=http://download.devel.redhat.com/qa/rhts/lookaside/windows-images/OpenSSH-Win64.zip
+	is_rh_intranet2 && OpenSSHUrl=${LOOKASIDE_BASE_URL}/windows-images/OpenSSH-Win64.zip
 fi
 : <<EOF
 if [[ -z "$VirtioDriverISOUrl" ]]; then

@@ -4,6 +4,8 @@
 #ref: https://cn.mellanox.com/products/infiniband-drivers/linux/mlnx_ofed  #ofed driver download page
 
 LANG=C
+downhostname=download.devel.redhat.com
+LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 
 # add kernel option "intel_iommu=on iommu=pt" and reboot
 : <<\COMM

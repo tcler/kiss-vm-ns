@@ -5,6 +5,9 @@ if yq -h |& grep -q mikefarah; then
 	exit 0
 fi
 
+downhostname=download.devel.redhat.com
+LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
+
 is_rh_intranet() { host ipa.redhat.com &>/dev/null; }
 is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 is_rh_intranet2 && export https_proxy=squid.redhat.com:8080
@@ -19,7 +22,7 @@ eval installpath=~/bin
 [[ $(id -u) = 0 ]] && installpath=/usr/bin
 
 if is_rh_intranet; then
-	YQ_URL=http://download.devel.redhat.com/qa/rhts/lookaside/yq/v4.35.2/yq_linux_$arch
+	YQ_URL=${LOOKASIDE_BASE_URL}/yq/v4.35.2/yq_linux_$arch
 else
 	YQ_URL=https://github.com/mikefarah/yq/releases/download/v4.35.2/yq_linux_$arch
 	YQ_URL=$(curl -Ls https://api.github.com/repos/mikefarah/yq/releases/latest |

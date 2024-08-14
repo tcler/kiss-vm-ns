@@ -1,6 +1,8 @@
 #!/bin/bash
 
 Arch=$(arch)
+downhostname=download.devel.redhat.com
+LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 
 ausyscall() {
 	if [[ $# = 0 ]]; then
@@ -27,7 +29,7 @@ lsyscall() {
 	is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null --silent --head --fail $1 &>/dev/null; }
 	is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
 	is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
-	is_rh_intranet2 && tableurl=http://download.devel.redhat.com/qa/rhts/lookaside/syscalls-table/tables
+	is_rh_intranet2 && tableurl=${LOOKASIDE_BASE_URL}/syscalls-table/tables
 
 	local tablefurl=$tableurl/syscalls-${Arch}
 	local tables=$(curl -s -L $tablefurl | sort -n -k2)

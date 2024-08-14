@@ -5,6 +5,8 @@
 timeServer=clock.corp.redhat.com
 host $timeServer|grep -q not.found: && timeServer=2.fedora.pool.ntp.org
 TIME_SERVER=$timeServer
+downhostname=download.devel.redhat.com
+LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 
 #-------------------------------------------------------------------------------
 #kiss-vm should have been installed and initialized
@@ -50,8 +52,8 @@ ramsize=$(LANGUAGE=C free -m|awk '/Mem:/{print $2}')
 echo -e "{INFO} check if Netapp ONTAP simulator image exist ..."
 if is_rh_intranet2; then
 	rh_intranet=yes
-	ImageUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$ovaImage
-	LicenseFileUrl=http://download.devel.redhat.com/qa/rhts/lookaside/Netapp-Simulator/$licenseFile
+	ImageUrl=${LOOKASIDE_BASE_URL}/Netapp-Simulator/$ovaImage
+	LicenseFileUrl=${LOOKASIDE_BASE_URL}/Netapp-Simulator/$licenseFile
 	curl-download.sh $ontap_img_dir/$ovaImage "$ImageUrl"
 	curl-download.sh $ontap_img_dir/$licenseFile "$LicenseFileUrl"
 fi

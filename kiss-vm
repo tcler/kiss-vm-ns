@@ -19,6 +19,8 @@ trap_retry() {
 	VM_RETRY=yes exec $PROG "${ARGS[@]}" -f --qemucpu=$cpu;
 }
 trap trap_retry SIGALRM SIGUSR2
+downhostname=download.devel.redhat.com
+LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 #<================ for recall self if something happen ================
 
 P=$0; [[ $0 = /* ]] && P=${0##*/}
@@ -60,12 +62,8 @@ VIDEO_OPT="--video=qxl"
 SOUND_OPT=""
 QEMU_OPTS=()
 QEMU_ENV=()
-_downhostname="download.devel.fedorahat.com"
-downhostname=${_downhostname/fedora/red}
-#baseUrl=http://$downhostname/qa/rhts/lookaside/kiss-vm-ns
-#bkrClientImprovedUrl=http://$downhostname/qa/rhts/lookaside/bkr-client-improved
-baseUrl=http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/kiss-vm-ns
-bkrClientImprovedUrl=http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/bkr-client-improved
+baseUrl=${LOOKASIDE_BASE_URL}/kiss-vm-ns
+bkrClientImprovedUrl=${LOOKASIDE_BASE_URL}/bkr-client-improved
 VCPUS=4,sockets=1,cores=4
 DEFAULT_DISK_BUS=virtio
 DEFAULT_IF_MODEL=virtio
@@ -1952,7 +1950,7 @@ if [[ $Intranet = yes ]]; then
 		fedora*)
 			Repos+=(
 				beaker-harness:http://download.devel.redhat.com/beakerrepos/harness/Fedora\$releasever/
-				nbeaker-harness:http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/beaker-harness-active/fedora\$releasever
+				nbeaker-harness:${LOOKASIDE_BASE_URL}/beaker-harness-active/fedora\$releasever
 			)
 			;;
 		rhel-5*|rhel5*)
@@ -2005,7 +2003,7 @@ if [[ $Intranet = yes ]]; then
 				extras:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/7Server/$GuestARCH/extras/os
 				cdn_os:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/7Server/$GuestARCH/os
 				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux7
-				nbeaker-harness:http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/beaker-harness-active/rhel-7
+				nbeaker-harness:${LOOKASIDE_BASE_URL}/beaker-harness-active/rhel-7
 			)
 			;;
 		rhel-8*|rhel8*)
@@ -2043,7 +2041,7 @@ if [[ $Intranet = yes ]]; then
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
 				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
 				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux8
-				nbeaker-harness:http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/beaker-harness-active/rhel-8
+				nbeaker-harness:${LOOKASIDE_BASE_URL}/beaker-harness-active/rhel-8
 			)
 			;;
 		rhel-9*|rhel9*|rhel-1[0-9]*|rhel1[0-9]*)
@@ -2081,7 +2079,7 @@ if [[ $Intranet = yes ]]; then
 				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
 				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
 				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux${verx}
-				nbeaker-harness:http://fs-qe.usersys.redhat.com/ftp/pub/lookaside/beaker-harness-active/rhel-${verx}
+				nbeaker-harness:${LOOKASIDE_BASE_URL}/beaker-harness-active/rhel-${verx}
 			)
 			[[ "$verx" = 10 ]] && Repos+=(
 				Buildroot-10b:http://$downhostname/rhel-$verx/nightly/BUILDROOT-10-Public-Beta/latest-BUILDROOT-10-RHEL-10/compose/Buildroot/$arch/os/
