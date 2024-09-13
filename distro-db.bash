@@ -87,33 +87,33 @@ CN)
 esac
 
 #### only available in intranet
-if [[ -n "$IntranetBaseUrl" ]]; then
+if [[ "$Intranet" = yes ]]; then
 	guestARCH=$(case $GuestARCH in
 		(x86_64) echo amd64;;
 		(aarch64) echo arm64-aarch64;;
 		(riscv64|riscv) echo riscv-riscv64;;
 		esac
 	)
-	distroInfo[FreeBSD-14.0-zfs]="$IntranetBaseUrl/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}-zfs.qcow2.xz"
-	distroInfo[FreeBSD-14.0]="$IntranetBaseUrl/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-13.3]="$IntranetBaseUrl/vm-images/FreeBSD-13.3/FreeBSD-13.3-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-13.2]="$IntranetBaseUrl/vm-images/FreeBSD-13.2/FreeBSD-13.2-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-13.1]="$IntranetBaseUrl/vm-images/FreeBSD-13.1/FreeBSD-13.1-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-13.0]="$IntranetBaseUrl/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-12.4]="$IntranetBaseUrl/vm-images/FreeBSD-12.4/FreeBSD-12.4-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-14.0-zfs]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}-zfs.qcow2.xz"
+	distroInfo[FreeBSD-14.0]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-13.3]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.3/FreeBSD-13.3-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-13.2]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.2/FreeBSD-13.2-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-13.1]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.1/FreeBSD-13.1-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-13.0]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-12.4]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-12.4/FreeBSD-12.4-RELEASE-${guestARCH}.qcow2.xz"
 
 	if [[ "$GuestARCH" = x86_64 ]]; then
 		for _d in RHEL-7.{1..2} RHEL-6.{0..10} RHEL5-Server-U{10..11}; do
-			distroInfo[$_d]="$IntranetBaseUrl/vm-images/$_d/"
+			distroInfo[$_d]="$LOOKASIDE_BASE_URL/vm-images/$_d/"
 		done
-		distroInfo[Windows-server-2022]="cdrom:$IntranetBaseUrl/windows-images/Win2022-Evaluation.iso"
-		distroInfo[Windows-server-2019]="cdrom:$IntranetBaseUrl/windows-images/Win2019-Evaluation.iso"
-		distroInfo[Windows-server-2016]="cdrom:$IntranetBaseUrl/windows-images/Win2016-Evaluation.iso"
-		distroInfo[Windows-server-2012r2]="cdrom:$IntranetBaseUrl/windows-images/Win2012r2-Evaluation.iso"
-		distroInfo[Windows-11]="cdrom:$IntranetBaseUrl/windows-images/Win11-Evaluation.iso"
-		distroInfo[Windows-10]="cdrom:$IntranetBaseUrl/windows-images/Win10-Evaluation.iso"
-		distroInfo[Windows-7]="cdrom:$IntranetBaseUrl/windows-images/Win7-cn.iso"
-		distroInfo[Windows-7cn]="cdrom:$IntranetBaseUrl/windows-images/Win7-cn.iso"
-		distroInfo[Windows-7en]="cdrom:$IntranetBaseUrl/windows-images/Win7-en.iso"
+		distroInfo[Windows-server-2022]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win2022-Evaluation.iso"
+		distroInfo[Windows-server-2019]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win2019-Evaluation.iso"
+		distroInfo[Windows-server-2016]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win2016-Evaluation.iso"
+		distroInfo[Windows-server-2012r2]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win2012r2-Evaluation.iso"
+		distroInfo[Windows-11]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win11-Evaluation.iso"
+		distroInfo[Windows-10]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win10-Evaluation.iso"
+		distroInfo[Windows-7]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win7-cn.iso"
+		distroInfo[Windows-7cn]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win7-cn.iso"
+		distroInfo[Windows-7en]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win7-en.iso"
 	fi
 fi
