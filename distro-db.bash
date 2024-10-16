@@ -52,8 +52,8 @@ distroInfo[FreeBSD-14.1-zfs]="https://download.freebsd.org/ftp/releases/VM-IMAGE
 distroInfo[FreeBSD-14.1]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-14.0-zfs]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}-zfs.qcow2.xz"
 distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
+distroInfo[FreeBSD-13.4]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.4-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-13.3]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.3-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
-distroInfo[FreeBSD-13.2]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.2-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-12.4]="https://download.freebsd.org/ftp/releases/VM-IMAGES/12.4-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-15.0]="https://download.freebsd.org/ftp/snapshots/VM-IMAGES/15.0-CURRENT/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 
@@ -102,10 +102,8 @@ if [[ "$Intranet" = yes ]]; then
 	distroInfo[FreeBSD-14.1]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.1/FreeBSD-14.1-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-14.0-zfs]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}-zfs.qcow2.xz"
 	distroInfo[FreeBSD-14.0]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}.qcow2.xz"
+	distroInfo[FreeBSD-13.4]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.4/FreeBSD-13.4-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-13.3]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.3/FreeBSD-13.3-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-13.2]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.2/FreeBSD-13.2-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-13.1]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.1/FreeBSD-13.1-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-13.0]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.0/FreeBSD-13.0-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-12.4]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-12.4/FreeBSD-12.4-RELEASE-${guestARCH}.qcow2.xz"
 
 	if [[ "$GuestARCH" = x86_64 ]]; then
