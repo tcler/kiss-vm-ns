@@ -48,6 +48,8 @@ distroInfo[openSUSE-leap-15.3]="https://download.opensuse.org/repositories/Cloud
 distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.$GuestARCH.qcow2"
 
 #### FreeBSD
+distroInfo[FreeBSD-14.1-zfs]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}-zfs.qcow2.xz"
+distroInfo[FreeBSD-14.1]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-14.0-zfs]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}-zfs.qcow2.xz"
 distroInfo[FreeBSD-14.0]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-13.3]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.3-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
@@ -81,6 +83,8 @@ CN)
 	#distroInfo[openSUSE-leap-15.5]=""
 
 	#### FreeBSD
+	distroInfo[FreeBSD-14.1-zfs]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/14.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-14.1-RELEASE-${GuestARCH/x86_64/amd64}-zfs.qcow2.xz"
+	distroInfo[FreeBSD-14.1]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/14.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-14.1-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	distroInfo[FreeBSD-14.0-zfs]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-14.0-RELEASE-${GuestARCH/x86_64/amd64}-zfs.qcow2.xz"
 	distroInfo[FreeBSD-14.0]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/14.0-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-14.0-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	;;
@@ -94,6 +98,8 @@ if [[ "$Intranet" = yes ]]; then
 		(riscv64|riscv) echo riscv-riscv64;;
 		esac
 	)
+	distroInfo[FreeBSD-14.1-zfs]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.1/FreeBSD-14.1-RELEASE-${guestARCH}-zfs.qcow2.xz"
+	distroInfo[FreeBSD-14.1]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.1/FreeBSD-14.1-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-14.0-zfs]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}-zfs.qcow2.xz"
 	distroInfo[FreeBSD-14.0]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}.qcow2.xz"
 	distroInfo[FreeBSD-13.3]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.3/FreeBSD-13.3-RELEASE-${guestARCH}.qcow2.xz"
