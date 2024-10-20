@@ -316,9 +316,9 @@ vmhomedir() {
 		virsh desc $vmn &>/dev/null || {
 			echo -e "{VM:WARN} VM $vmn not exist!" >&2; continue
 		}
-		_vmdir=$(ls -d $VMSHOME/*/$vmn 2>/dev/null)
+		_vmdir=$(cat $varlib_dir/$vmn/homedir 2>/dev/null)
 		if test -z "$_vmdir"; then
-			_vmdir=$(cat $varlib_dir/$vmn/homedir 2>/dev/null)
+			_vmdir=$(ls -d $VMSHOME/*/$vmn 2>/dev/null|head -1)
 			if test -z "$_vmdir"; then
 				echo "{VM:ERR} [$vmn] get home dir fail, something is wrong" >&2
 				continue
