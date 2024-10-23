@@ -95,7 +95,7 @@ fi
 
 #-------------------------------------------------------------------------------
 #download/check ONTAP simulator image files
-sver=${ONTAP_VER:-9.13.1}
+sver=${ONTAP_VER:-9.15.1}
 verx=$(command -v rpm &>/dev/null && rpm -E %rhel)
 [[ "$verx" = 7 ]] && sver=9.8
 
