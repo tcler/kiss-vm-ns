@@ -62,7 +62,7 @@ distroInfo[archlinux]="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-
 distroInfo[archlinux]="https://linuximages.de/openstack/arch/arch-openstack-LATEST-image-bootstrap${GuestARCH/x86_64/}.qcow2"
 
 case "$Country" in
-CN)
+CN|HK)
 	#### CentOS stream and CentOS
 	distroInfo[Alma-9]="https://mirrors.aliyun.com/almalinux/9/cloud/${_GuestARCH}/images/AlmaLinux-9-GenericCloud-latest.${_GuestARCH}.qcow2"
 	distroInfo[Alma-8]="https://mirrors.aliyun.com/almalinux/8/cloud/${_GuestARCH}/images/AlmaLinux-8-GenericCloud-latest.${_GuestARCH}.qcow2"
