@@ -3135,17 +3135,19 @@ decodeDistro() {
 		(1[0-9]) Distro="rhel-${d%[rn]}.[0-9]+-????????.[0-9]+";;
 		(@(8|9).+([0-9])) Distro="RHEL-${d}.[0-9]-updates-????????.[0-9]+";;
 		(@(1[0-9]).+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
+		(fedora) Distro="Fedora-[0-9]+";;
 		esac
 		[[ ${d} = *r ]] && case ${d%r} in (8|9|1[0-9]) Distro="rhel-${d%r}.[0-9]+.[0-9]+";; esac
 	else
 		case ${d%[rn]} in
 		(6|7) Distro="CentOS-${d%[rn]}";;
 		(8|9|1[0-9]) Distro="CentOS-${d%[rn]}-stream";;
+		(fedora) Distro="$lstv";;
 		esac
 	fi
 }
 [[ -z "$Distro" ]] && Distro=$1
-[[ $Distro =~ ^[0-9]+(\.[0-9]+)?[rn]?$ ]] && { decodeDistro $Distro; }
+[[ $Distro =~ ^[0-9]+(\.[0-9]+)?[rn]?$ || $Distro = fedora ]] && { decodeDistro $Distro; }
 shopt -u extglob
 
 #run with newgrp if new added group libvirt has not applied
@@ -3258,6 +3260,7 @@ fi
 	WIN_IF_MODEL=${WIN_IF_MODEL:-e1000}
 }
 [[ "$NOAUTO" = yes ]] && { WIN_AUTO=no; }
+[[ "${Distro,,}" =~ fedora* ]] && { UEFI=yes; }
 if [[ "$VM_OS_VARIANT" = win11 || "${*,,}" =~ (win|windows-?)11 ]]; then
 	UEFI_TPM_SB=yes
 fi

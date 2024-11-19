@@ -70,7 +70,7 @@ option_arg_complete() {
 
 distro_list_complete() {
     local distroList=() dlist=() intranet=
-    distroList=( $(source /etc/kiss-vm-ns/distro-db.bash;
+    distroList=( fedora $(source /etc/kiss-vm-ns/distro-db.bash;
                     printf "%s\n" ${!distroInfo[@]};
                     printf "%s\n" ${!distroInfo[@]} | sed -rn '/(RHEL|centos)-?/I{s///;s/[-.].*$//;p}' | sort -u) )
     dlist=( "${distroList[@]}" "#<aDistroFamilyName>" "#<Enter>" )
