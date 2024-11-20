@@ -3142,7 +3142,7 @@ decodeDistro() {
 		case ${d%[rn]} in
 		(6|7) Distro="CentOS-${d%[rn]}";;
 		(8|9|1[0-9]) Distro="CentOS-${d%[rn]}-stream";;
-		(fedora) Distro="$lstv";;
+		(fedora) Distro="f$lstv";;
 		esac
 	fi
 }
