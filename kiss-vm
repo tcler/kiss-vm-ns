@@ -3123,6 +3123,8 @@ run_with_newgrp() {
 }
 
 # Phase-0 process distro name
+dbfile=${_confdir}/distro-db.bash
+owndbfile=$perConfDir/distro-db.bash
 shopt -s extglob
 decodeDistro() {
 	local d="$1"
@@ -3142,7 +3144,7 @@ decodeDistro() {
 		case ${d%[rn]} in
 		(6|7) Distro="CentOS-${d%[rn]}";;
 		(8|9|1[0-9]) Distro="CentOS-${d%[rn]}-stream";;
-		(fedora) Distro="f$lstv";;
+		(fedora) source $dbfile; Distro="f$lstv";;
 		esac
 	fi
 }
@@ -3163,8 +3165,6 @@ fi
 
 LANG=C
 declare -A distroInfo
-dbfile=${_confdir}/distro-db.bash
-owndbfile=$perConfDir/distro-db.bash
 if [[ $Intranet = yes ]]; then
 	export TIME_SERVER=${TIME_SERVER:-clock.redhat.com}
 else
@@ -3260,7 +3260,7 @@ fi
 	WIN_IF_MODEL=${WIN_IF_MODEL:-e1000}
 }
 [[ "$NOAUTO" = yes ]] && { WIN_AUTO=no; }
-[[ "${Distro,,}" =~ fedora* ]] && { UEFI=yes; }
+[[ "${Distro,,}" = fedora* || "${Distro,,}" =~ ^f[0-9]+$ ]] && { UEFI=yes; }
 if [[ "$VM_OS_VARIANT" = win11 || "${*,,}" =~ (win|windows-?)11 ]]; then
 	UEFI_TPM_SB=yes
 fi
