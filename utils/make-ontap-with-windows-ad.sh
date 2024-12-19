@@ -41,7 +41,7 @@ vm prepare >/dev/null
 	[[ $# -ge 1 && $1 != -* ]] && { clientvm=${1:-ontap-ad-rhel-client}; shift; }; }
 distro=${distro:-9}
 clientvm=${clientvm:-ontap-ad-rhel-client}
-pkgs=vim,bind-utils,nfs-utils,expect,tcpdump
+pkgs=vim,bind-utils,nfs-utils,expect,tcpdump,tmux
 trun -tmux=- vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f "$@"
 
 #-------------------------------------------------------------------------------

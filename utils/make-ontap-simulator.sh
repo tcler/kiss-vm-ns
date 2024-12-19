@@ -17,7 +17,7 @@ vm prepare >/dev/null
 	[[ $# -ge 1 && $1 != -* ]] && { clientvm=${1:-ontap-rhel-client}; shift; }; }
 distro=${distro:-9}
 clientvm=${clientvm:-ontap-rhel-client}
-pkgs=nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils,tcpdump
+pkgs=nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils,tcpdump,tmux
 net=ontap2-data
 trun -tmux=- "while ! grep -qw $net <(virsh net-list --name); do sleep 5; done;
     vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f --net $net --netmacvtap=? ${*}"
