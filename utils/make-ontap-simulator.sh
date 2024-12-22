@@ -19,8 +19,9 @@ distro=${distro:-9}
 clientvm=${clientvm:-ontap-rhel-client}
 pkgs=nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils,tcpdump,tmux
 net=ontap2-data
+net2Opt=--netmacvtap=?
 trun -tmux=- "while ! grep -qw $net <(virsh net-list --name); do sleep 5; done;
-    vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f --net $net --netmacvtap=? ${*}"
+    vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f --net=$net $net2Opt ${*}"
 
 #-------------------------------------------------------------------------------
 g_ontap_img_dir=/usr/share/Netapp-simulator
@@ -87,6 +88,7 @@ run -debug extract.sh $tarfpath $HOME/Downloads $dirname
 optx=(--time-server=$TIME_SERVER)
 ONTAP_INSTALL_LOG=/tmp/ontap2-install.log
 ONTAP_IF_INFO=/tmp/ontap2-if-info.txt
+[[ "$PUBIF" = no ]] && optx+=(--no-pubif)
 bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "${optx[@]}" &> >(tee $ONTAP_INSTALL_LOG)
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee  $ONTAP_IF_INFO
 
@@ -94,8 +96,8 @@ source "$ONTAP_ENV_FILE"
 trun host $NETAPP_NAS_HOSTNAME
 command -v showmount && { trun -x0 showmount -e "$NETAPP_NAS_IP_LOC"; }
 vm exec -vx $clientvm -- showmount -e $NETAPP_NAS_IP_LOC
-if vm exec $clientvm -- ip a | grep eth1; then
-	vm exec -vx $clientvm -- showmount -e $NETAPP_NAS_IP
+if vm exec $clientvm -- ip -br addr show eth1|grep ${NETAPP_NAS_IP%?.*}; then
+	vm exec -vx $clientvm -- showmount -e ${NETAPP_NAS_IP}
 else
 	:
 fi
