@@ -175,7 +175,7 @@ run() {
 		_nohuplogf=${_nohuplogf:-$_default_nohuplogf}
 	}
 	[[ "$_runtype" = tmux ]] && {
-		_tmuxSession=${_tmuxSession:-$$-${USER}-s$((_TMUX_SID++))}
+		_tmuxSession=${_tmuxSession:-kissrun-$$-${USER}-s$((_TMUX_SID++))}
 		_tmuxSOpt="-s $_tmuxSession"
 		_tmuxlogf=${_logpath:-/tmp}/run-tmux-${_tmuxSession}.log
 		if [[ "$_tmuxSession" = - ]]; then
