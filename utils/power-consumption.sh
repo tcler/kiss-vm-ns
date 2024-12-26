@@ -15,11 +15,12 @@ switchroot() {
 }
 switchroot "$@"
 
-time=${1:-1}
-T0=($(sudo cat /sys/class/powercap/*/energy_uj))
+time=${1:-8}
+ZN=($(sudo cat /sys/class/powercap/*/name))      #Name of the power zone
+E0=($(sudo cat /sys/class/powercap/*/energy_uj)) #energy counter in micro joules at time A
 sleep $time;
-T1=($(sudo cat /sys/class/powercap/*/energy_uj))
+E1=($(sudo cat /sys/class/powercap/*/energy_uj)) #energy counter in micro joules at time A + $time
 
-for i in "${!T0[@]}"; do
-	awk -v T1=${T1[$i]} -v T0=${T0[$i]} -v time=$time 'BEGIN { printf "%.1f W\n", (T1-T0) / time / 1e6 }'
+for i in "${!E0[@]}"; do
+	awk -v ZN=${ZN[i]} -v E1=${E1[i]} -v E0=${E0[i]} -v time=$time 'BEGIN { printf "%s: %.1f W\n", ZN, (E1-E0) / time / 1e6 }'
 done
