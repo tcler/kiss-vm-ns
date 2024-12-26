@@ -20,7 +20,7 @@ switchroot() {
 			echo -e "\E[1;31m{WARN} $P need root permission, please add sudo before $P\E[0m" >&2
 			exit
 		else
-			echo -e "\E[1;30m{WARN} $P need root permission, switch to:\n  sudo $SH $P $@\E[0m" >&2
+			echo -e "\E[1;4m{WARN} $P need root permission, switch to:\n  sudo $SH $P $@\E[0m" >&2
 			exec sudo $SH $P "$@"
 		fi
 	}
