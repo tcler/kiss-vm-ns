@@ -21,9 +21,12 @@ kiss-ns:
 ```
 
 # Install
+To install kiss-vm with internet connection.
 ```
 curl -Lks https://raw.githubusercontent.com/tcler/kiss-vm-ns/master/utils/kiss-update.sh|sudo bash && sudo vm prepare
-#or
+```
+Or to install kiss-vm with a downloaded tarball.
+```
 curl -Lks https://github.com/tcler/kiss-vm-ns/archive/refs/heads/master.tar.gz | tar zxf - &&
     sudo gmake -C kiss-vm-ns-master && sudo vm prepare
 ```
