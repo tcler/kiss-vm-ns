@@ -28,6 +28,7 @@ stime() {
 powercap() {
 	local time=${1,,}
 	local ZN=($(sudo cat /sys/class/powercap/*/name))      #Name of the power zone
+	[[ -z "${ZN}" ]] && { echo -e "{ERR} feature 'powercap' is required, seems current platform does not support it." >&2; return 1; }
 	local E0=($(sudo cat /sys/class/powercap/*/energy_uj)) #energy counter in micro joules at _time A
 	local stime=$(stime $time)
 	{
@@ -47,6 +48,6 @@ if command -v powerstat &>/dev/null; then
 	$powerstat_cmd
 else
 	time=${1:-8}
-	[[ ${time,,} =~ ^[0-9]+[smh]?$ ]] || { echo -e "{ERR} '$time' is not a valid time string.\nUsage: $0 [during_time[smh]]"; exit 1; }
+	[[ ${time,,} =~ ^[0-9]+[smh]?$ ]] || { echo -e "{ERR} '$time' is not a valid time string.\nUsage: $0 [during_time[smh]]" >&2; exit 1; }
 	powercap ${time,,}
 fi
