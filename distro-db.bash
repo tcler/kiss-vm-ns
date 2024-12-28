@@ -92,6 +92,8 @@ CN|HK)
 esac
 
 #### only available in intranet
+is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf; }
+[[ -z "$Intranet" ]] && is_rh_intranet2 && Intranet=yes
 if [[ "$Intranet" = yes ]]; then
 	guestARCH=$(case $GuestARCH in
 		(x86_64) echo amd64;;
