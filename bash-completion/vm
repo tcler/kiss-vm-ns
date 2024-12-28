@@ -344,7 +344,11 @@ _vm()
                 COMPREPLY=( $( compgen -W "$users" -- "$cur" ) )
             fi
             ;;
-        ls|list|netls|enable-nested-vm|h|help|rootdir)
+        ls|list)
+            lsOpts=$(LANG=C virsh list --help|awk '$1 ~ "^--" {print gensub("--", "/", 1, $1)}')
+            COMPREPLY=( $( compgen -W "/help $lsOpts" -- "$cur" ) )
+            ;;
+        netls|enable-nested-vm|h|help|rootdir)
             COMPREPLY=( $( compgen -W "#<Enter>" -- "$cur" ) )
             ;;
         *)

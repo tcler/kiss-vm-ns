@@ -1424,8 +1424,16 @@ vmpassthr() {
 	#virt-xml $vmname --update --add-device --hostdev $devaddr
 }
 
-vmexec() { EXEC=yes vmlogin "$@"; }
-vmlist() { virsh list --all; }
+vmexec() { EXEC=yes vmlogin "${@}"; }
+vmlist() {
+	[[ $# = 0 || "$*" = / ]] && set /all
+	[[ "$*" = */help* ]] && {
+		virsh list --help | awk '$1 ~ "^--" {print gensub("--", "/", 1)}'
+		return
+	}
+	virsh list "${@/\//--}"
+}
+
 netls() { virsh net-list; }
 netcreate() {
 	local netname=
