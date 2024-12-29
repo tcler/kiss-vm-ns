@@ -1,6 +1,6 @@
 #!/bin/bash
 #autor: Jianhong Yin <yin-jianhong@163.com>
-#function: get cpu power consumption of current computer
+#function: get cpu power consumption of current computer. #just for fun
 #ref: https://www.kernel.org/doc/html/next/power/powercap/powercap.html
 #ref: https://www.baeldung.com/linux/power-consumption
 #ref: https://www.onitroad.com/jc/faq/how-to-measure-power-consumption-using-powerstat-in-linux.html
@@ -42,12 +42,12 @@ powercap() {
 	done | awk '{ print; sum+=$2 } END { printf "[total]: %.1f W\n", sum }'
 }
 
-if command -v powerstat &>/dev/null; then
+time=${1:-8}; [[ $time = [.k-] ]] && time=8
+[[ ${time,,} =~ ^[0-9]+[smh]?$ ]] || { echo -e "{ERR} '$time' is not a valid time string.\nUsage: $0 [\$during_time[smh] [ps]]" >&2; exit 1; }
+powercap ${time,,}
+
+if [[ -n "$2" ]] && command -v powerstat &>/dev/null; then
 	powerstat_cmd="powerstat -R -c -z 5 12"
 	echo "{DEBUG} running: $powerstat_cmd"
 	$powerstat_cmd
-else
-	time=${1:-8}
-	[[ ${time,,} =~ ^[0-9]+[smh]?$ ]] || { echo -e "{ERR} '$time' is not a valid time string.\nUsage: $0 [during_time[smh]]" >&2; exit 1; }
-	powercap ${time,,}
 fi
