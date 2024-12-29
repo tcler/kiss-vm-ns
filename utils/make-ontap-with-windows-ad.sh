@@ -197,6 +197,7 @@ source "$ONTAP_ENV_FILE"
 vm exec -vx $clientvm -- ping -c 4 $NETAPP_NAS_HOSTNAME
 vm exec -vx $clientvm -- systemctl restart nfs-client.target gssproxy.service rpc-statd.service rpc-gssd.service
 vm exec -vx $clientvm -- mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
+vm exec -v  $clientvm -- showmount -e $NETAPP_NAS_HOSTNAME
 vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5
 vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i
 vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5p -osec=krb5p
