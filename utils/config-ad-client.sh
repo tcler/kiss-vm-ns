@@ -111,10 +111,6 @@ HOST_NETBIOS=${HOST_NETBIOS:-$HOSTNAME}
 # PART: [Dependency] Specify all dependencies during integration related jobs
 #
 
-# Specify NetBIOS name of current client in target AD Domain
-MY_FQDN=${HOST_NETBIOS^^}
-MY_NETBIOS=${MY_FQDN%%.*}
-
 # Specify packages for "Windows AD Integration (SSSD ad_provider)"
 pkgs="adcli krb5-workstation sssd pam_krb5
     samba samba-winbind samba-common samba-client
@@ -160,7 +156,8 @@ krbConfTemp="[logging]
 
 [domain_realm]
   .example.com = .EXAMPLE.COM
-  example.com = EXAMPLE.COM"
+  example.com = EXAMPLE.COM
+"
 
 #
 # PART: [Preparing] Prepare AD DS/DC Information
@@ -195,6 +192,10 @@ AD_DC_FQDN=$(adcli info --domain-controller=${AD_DC_IP}    | awk '/domain-contro
 AD_DS_NAME=$(adcli info --domain-controller=${AD_DC_IP}    | awk '/domain-name =/{print $NF}'       | tr a-z A-Z);
 AD_DS_NETBIOS=$(adcli info --domain-controller=${AD_DC_IP} | awk '/domain-short =/{print $NF}'      | tr a-z A-Z);
 AD_DC_NETBIOS=$(echo $AD_DC_FQDN | awk -F . '{print $1}'                  | tr a-z A-Z);
+
+# Specify NetBIOS name of current client in target AD Domain
+MY_FQDN=${HOST_NETBIOS^^}.${AD_DS_NAME,,}
+MY_NETBIOS=${MY_FQDN%%.*}
 
 echo -e "\n{Info} Logging the variables:"
 echo "AD_DC_FQDN is $AD_DC_FQDN"
@@ -318,10 +319,12 @@ if [ $? -ne 0 ]; then
 fi
 run "kinit Administrator <<< ${AD_DS_SUPERPW}"
 run "klist"
+krb5CCACHE=$(LANG=C klist | sed -n '/Ticket.cache: /{s///;p}')
+netKrb5Opt=--use-krb5-ccache=${krb5CCACHE#*:}
 
 # Join host to an Active Directory (AD), and update the DNS
 for ((i=0; i<16; i++)); do
-	run "net ads join --kerberos"
+	run "net ads join $netKrb5Opt"
 	join_res=$?
 	if [ $join_res -eq 0 ]; then
 		break
@@ -334,15 +337,15 @@ if [ $join_res -ne 0 ]; then
 	exit 1
 fi
 
-run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS"
+run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS $netKrb5Opt"
 if [ $? -ne 0 ]; then
 	errecho "Failed to find dns entry from AD"
-	run "net ads dns register $HOST_NETBIOS"
+	run "net ads dns register $HOST_NETBIOS $netKrb5Opt"
 	if [ $? -ne 0 ]; then
 		errecho "Failed to add host dns entry to AD"
 		#exit 1;
 	else
-		run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS"
+		run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS $netKrb5Opt"
 	fi
 fi
 
@@ -364,38 +367,25 @@ if [ "$config_krb" == "yes" ]; then
 
 	# Only need "-U Administrator%${AD_DS_SUPERPW}" when ticket
 	# "Administrator@${AD_DS_NAME}" expires, otherwise just skip
-	run "net ads setspn list"
+	run "net ads setspn list $netKrb5Opt"
 
-	net ads setspn list | grep -q HOST || {
-		run "net ads setspn add HOST/$MY_FQDN"
-		run "net ads setspn add HOST/$MY_NETBIOS"
-	}
-	run "net ads keytab add HOST"
-	if [ $? -ne 0 ]; then
-		errecho "Configure Secure NFS Client Failed, cannot add principal: HOST"
-		exit 1;
-	fi
+	#net ads setspn list $netKrb5Opt | grep -q HOST || {
+		run "net ads setspn add HOST/$MY_FQDN $netKrb5Opt"
+		run "net ads setspn add HOST/$MY_NETBIOS $netKrb5Opt"
+	#}
 
-	net ads setspn list | grep -q ROOT || {
-		run "net ads setspn add ROOT/$MY_FQDN"
-		run "net ads setspn add ROOT/$MY_NETBIOS"
-	}
-	run "net ads keytab add ROOT"
-	if [ $? -ne 0 ]; then
-		errecho "Configure Secure NFS Client Failed, cannot add principal: ROOT"
-		exit 1;
-	fi
+	#net ads setspn list $netKrb5Opt | grep -q ROOT || {
+		run "net ads setspn add ROOT/$MY_FQDN $netKrb5Opt"
+		run "net ads setspn add ROOT/$MY_NETBIOS $netKrb5Opt"
+	#}
 
-	net ads setspn list | grep -q NFS || {
-		run "net ads setspn add NFS/$MY_FQDN"
-		run "net ads setspn add NFS/$MY_NETBIOS"
-	}
-	run "net ads keytab add NFS"
-	if [ $? -ne 0 ]; then
-		errecho "Configure Secure NFS Client Failed, cannot add principal: NFS"
-		exit 1;
-	fi
-	run "net ads setspn list"
+	#net ads setspn list $netKrb5Opt | grep -q NFS || {
+		run "net ads setspn add NFS/$MY_FQDN $netKrb5Opt"
+		run "net ads setspn add NFS/$MY_NETBIOS $netKrb5Opt"
+	#}
+
+	run "net ads keytab create $netKrb5Opt"
+	run "net ads setspn list $netKrb5Opt"
 
 	run "klist -e -k -t /etc/krb5.keytab"
 	if [ $? -ne 0 ]; then
