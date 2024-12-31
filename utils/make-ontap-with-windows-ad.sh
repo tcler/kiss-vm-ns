@@ -181,7 +181,7 @@ fi
 echo -e "join $clientvm to $AD_DOMAIN($AD_HOSTNAME) ..."
 netbiosname=host-${HostIPSuffix}
 vm cpto -v $clientvm /usr/bin/config-ad-client.sh /usr/bin
-vm exec -v $clientvm -- "echo '$netbiosname \$HOSTNAME' >/etc/host.aliases"
+vm exec -v $clientvm -- "echo \"$netbiosname \$HOSTNAME\" >/etc/host.aliases"
 vm exec -v $clientvm -- "echo 'export HOSTALIASES=/etc/host.aliases' >>/etc/profile"
 vm exec -v $clientvm -- "source /etc/profile;
 	config-ad-client.sh --addc-ip=$VM_INT_IP --addc-ip-ext=$VM_EXT_IP -p $AD_PASS --config-krb --enctypes AES --host-netbios=$netbiosname"
