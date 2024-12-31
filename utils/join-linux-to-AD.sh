@@ -194,7 +194,7 @@ AD_DS_NETBIOS=$(adcli info --domain-controller=${AD_DC_IP} | awk '/domain-short 
 AD_DC_NETBIOS=$(echo $AD_DC_FQDN | awk -F . '{print $1}'                  | tr a-z A-Z);
 
 # Specify NetBIOS name of current client in target AD Domain
-MY_FQDN=${HOST_NETBIOS^^}.${AD_DS_NAME,,}
+MY_FQDN=${HOST_NETBIOS,,}.${AD_DS_NAME,,}
 MY_NETBIOS=${MY_FQDN%%.*}
 
 echo -e "\n{Info} Logging the variables:"
