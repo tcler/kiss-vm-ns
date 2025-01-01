@@ -366,26 +366,21 @@ hostnamectl hostname ${MY_FQDN}
 #
 
 if [ "$config_krb" == "yes" ]; then
-	infoecho "krb 1. Use 'net ads' to add related service principals..."
+	sed -ri '/^# ?verbosity=.*$/{s//verbosity=3/}' /etc/nfs.conf
 
+	infoecho "krb 1. Use 'net ads' to add related service principals..."
 	# Only need "-U Administrator%${AD_DS_SUPERPW}" when ticket
 	# "Administrator@${AD_DS_NAME}" expires, otherwise just skip
 	run "net ads setspn list $netKrb5Opt"
 
-	#net ads setspn list $netKrb5Opt | grep -q HOST || {
-		run "net ads setspn add host/$MY_FQDN $netKrb5Opt"
-		run "net ads setspn add host/$MY_NETBIOS $netKrb5Opt"
-	#}
+	run "net ads setspn add host/$MY_FQDN $netKrb5Opt"
+	run "net ads setspn add host/$MY_NETBIOS $netKrb5Opt"
 
-	#net ads setspn list $netKrb5Opt | grep -q ROOT || {
-		run "net ads setspn add root/$MY_FQDN $netKrb5Opt"
-		run "net ads setspn add root/$MY_NETBIOS $netKrb5Opt"
-	#}
+	run "net ads setspn add root/$MY_FQDN $netKrb5Opt"
+	run "net ads setspn add root/$MY_NETBIOS $netKrb5Opt"
 
-	#net ads setspn list $netKrb5Opt | grep -q NFS || {
-		run "net ads setspn add nfs/$MY_FQDN $netKrb5Opt"
-		run "net ads setspn add nfs/$MY_NETBIOS $netKrb5Opt"
-	#}
+	run "net ads setspn add nfs/$MY_FQDN $netKrb5Opt"
+	run "net ads setspn add nfs/$MY_NETBIOS $netKrb5Opt"
 
 	run "net ads keytab create $netKrb5Opt"
 	run "net ads setspn list $netKrb5Opt"
