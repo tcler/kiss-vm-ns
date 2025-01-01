@@ -324,7 +324,7 @@ netKrb5Opt=--use-krb5-ccache=${krb5CCACHE#*:}
 
 # Join host to an Active Directory (AD), and update the DNS
 for ((i=0; i<16; i++)); do
-	run "net ads join $netKrb5Opt"
+	run "net ads join $netKrb5Opt dnshostname=${MY_FQDN}"
 	join_res=$?
 	if [ $join_res -eq 0 ]; then
 		break
@@ -337,7 +337,8 @@ if [ $join_res -ne 0 ]; then
 	exit 1
 fi
 
-run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS $netKrb5Opt"
+#run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS $netKrb5Opt"
+run "net ads dns async ${MY_FQDN} $netKrb5Opt"
 if [ $? -ne 0 ]; then
 	errecho "Failed to find dns entry from AD"
 	run "net ads dns register ${MY_FQDN} $netKrb5Opt"
@@ -345,7 +346,7 @@ if [ $? -ne 0 ]; then
 		errecho "Failed to add host dns entry to AD"
 		#exit 1;
 	else
-		run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS $netKrb5Opt"
+		run "net ads dns async ${MY_FQDN} $netKrb5Opt"
 	fi
 fi
 
@@ -357,6 +358,8 @@ systemctl restart nfs-client.target gssproxy.service rpc-statd.service rpc-gssd.
 #nfs krb5 mount requires hostname == netbios_name
 infoecho "hostname $HOST_NETBIOS ..."
 hostname $HOST_NETBIOS
+hostname ${MY_FQDN}
+hostnamectl hostname ${MY_FQDN}
 
 #
 # PART: [Extra Functions] Config current client as a Secure NFS client
