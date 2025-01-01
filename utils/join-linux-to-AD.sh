@@ -292,10 +292,11 @@ workgroup = $AD_DS_NETBIOS
 client signing = yes
 client use spnego = yes
 kerberos method = secrets and keytab
-password server = $AD_DC_FQDN
 realm = $AD_DS_NAME
 netbios name = $HOST_NETBIOS
 security = ads
+#password server = $AD_DC_FQDN
+sync machine password to keytab = /etc/krb5.keytab:account_name:machine_password
 EOFL
 run "cat $SMB_CONF"
 
