@@ -340,7 +340,7 @@ fi
 run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS $netKrb5Opt"
 if [ $? -ne 0 ]; then
 	errecho "Failed to find dns entry from AD"
-	run "net ads dns register $HOST_NETBIOS $netKrb5Opt"
+	run "net ads dns register ${MY_FQDN} $netKrb5Opt"
 	if [ $? -ne 0 ]; then
 		errecho "Failed to add host dns entry to AD"
 		#exit 1;
@@ -370,18 +370,18 @@ if [ "$config_krb" == "yes" ]; then
 	run "net ads setspn list $netKrb5Opt"
 
 	#net ads setspn list $netKrb5Opt | grep -q HOST || {
-		run "net ads setspn add HOST/$MY_FQDN $netKrb5Opt"
-		run "net ads setspn add HOST/$MY_NETBIOS $netKrb5Opt"
+		run "net ads setspn add host/$MY_FQDN $netKrb5Opt"
+		run "net ads setspn add host/$MY_NETBIOS $netKrb5Opt"
 	#}
 
 	#net ads setspn list $netKrb5Opt | grep -q ROOT || {
-		run "net ads setspn add ROOT/$MY_FQDN $netKrb5Opt"
-		run "net ads setspn add ROOT/$MY_NETBIOS $netKrb5Opt"
+		run "net ads setspn add root/$MY_FQDN $netKrb5Opt"
+		run "net ads setspn add root/$MY_NETBIOS $netKrb5Opt"
 	#}
 
 	#net ads setspn list $netKrb5Opt | grep -q NFS || {
-		run "net ads setspn add NFS/$MY_FQDN $netKrb5Opt"
-		run "net ads setspn add NFS/$MY_NETBIOS $netKrb5Opt"
+		run "net ads setspn add nfs/$MY_FQDN $netKrb5Opt"
+		run "net ads setspn add nfs/$MY_NETBIOS $netKrb5Opt"
 	#}
 
 	run "net ads keytab create $netKrb5Opt"
