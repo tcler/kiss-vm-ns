@@ -5,8 +5,8 @@ LANG=C
 P=${0##*/}
 
 # Current Supported Extra Functions:
-config_krb="no"    # Config secure NFS client
-cleanup="no"       # Quit current AD Domain, clear entries in AD DS database
+CONFIG_KRB5="no"   # Config secure NFS client
+CLEANUP="no"       # Quit current AD Domain, clear entries in AD DS database
 
 infoecho() { echo -e "\n<${P}>""\E[1;34m" "$@" "\E[0m"; }
 errecho()  { echo -e "\n<${P}>""\E[31m" "$@" "\E[0m"; }
@@ -42,7 +42,7 @@ getDefaultIp4() {
 
 Usage() {
 cat <<END
-Usage: $P -i <AD_DC_IP> -p <Password> --host-netbios <netbois_name> [-e <AES|DES>] [--config-krb]
+Usage: $P -i <AD_DC_IP> -p <Password> --host-netbios <netbois-name> [-e <AES|DES>] [--config-krb]
 
         -h|--help                  # Print this help
 
@@ -66,24 +66,24 @@ _at=`getopt -o hcp:i:e: \
 	--long cleanup \
 	--long passwd: \
 	--long host-netbios: \
-	--long addc-ip: --long addc_ip: \
-	--long addc-ip-ext: --long addc_ip_ext: \
+	--long addc-ip: \
+	--long addc-ip-ext: \
 	--long enctypes: \
 	--long rootdc: \
-	--long config_krb --long config-krb \
+	--long config-krb \
     -n '$P' -- "$@"`
 eval set -- "$_at"
 while true; do
 	case "$1" in
 	-h|--help)      Usage; shift; exit 0;;
-	-c|--cleanup)   cleanup="yes"; shift 1;;
+	-c|--cleanup)   CLEANUP="yes"; shift 1;;
 	-p|--passwd)    AD_DS_SUPERPW="$2"; shift 2;;
 	--host-netbios) HOST_NETBIOS=$2; shift 2;;
 	-e|--enctypes)  krbEnc="$2"; shift 2;;
 	--rootdc)       ROOT_DC="$2"; shift 2;;
-	-i|--addc-ip|--addc_ip)        AD_DC_IP="$2"; shift 2;;
-	--addc-ip-ext|--addc_ip_ext)   [[ "$2" != 169.254.* ]] && AD_DC_IP_EXT="$2"; shift 2;;
-	--config-krb*|--config_krb*)     config_krb="yes"; shift 1;;
+	--config-krb*)  CONFIG_KRB5="yes"; shift 1;;
+	-i|--addc-ip)   AD_DC_IP="$2"; shift 2;;
+	--addc-ip-ext)  [[ "$2" != 169.254.* ]] && AD_DC_IP_EXT="$2"; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -163,7 +163,7 @@ krbConfTemp="[logging]
 # PART: [Preparing] Prepare AD DS/DC Information
 #
 
-if [ "$cleanup" == "yes" ]; then
+if [ "$CLEANUP" == "yes" ]; then
 	echo "{Info} Try to leave the current AD DS Domain"
 	run "net ads leave -U Administrator%${AD_DS_SUPERPW}"
 	if [ $? -eq 0 ]; then
@@ -191,7 +191,7 @@ run "adcli info --domain-controller=${AD_DC_IP}"
 AD_DC_FQDN=$(adcli info --domain-controller=${AD_DC_IP}    | awk '/domain-controller =/{print $NF}' | tr a-z A-Z);
 AD_DS_NAME=$(adcli info --domain-controller=${AD_DC_IP}    | awk '/domain-name =/{print $NF}'       | tr a-z A-Z);
 AD_DS_NETBIOS=$(adcli info --domain-controller=${AD_DC_IP} | awk '/domain-short =/{print $NF}'      | tr a-z A-Z);
-AD_DC_NETBIOS=$(echo $AD_DC_FQDN | awk -F . '{print $1}'                  | tr a-z A-Z);
+AD_DC_NETBIOS=$(echo $AD_DC_FQDN | awk -F . '{print $1}' | tr a-z A-Z);
 
 # Specify NetBIOS name of current client in target AD Domain
 MY_FQDN=${HOST_NETBIOS,,}.${AD_DS_NAME,,}
@@ -379,7 +379,7 @@ hostnamectl hostname ${MY_FQDN}
 # PART: [Extra Functions] Config current client as a Secure NFS client
 #
 
-if [ "$config_krb" == "yes" ]; then
+if [ "$CONFIG_KRB5" == "yes" ]; then
 	sed -ri '/^# ?verbosity=.*$/{s//verbosity=3/}' /etc/nfs.conf
 
 	infoecho "krb 1. Use 'net ads' to add related service principals..."
