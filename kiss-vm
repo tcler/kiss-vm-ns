@@ -2956,14 +2956,14 @@ esac
 fuzzy_match_cpu_model_name() {
 	local QEMU_CMD=$QEMU_KVM
 	local modelname=${1%%,*}
-	$QEMU_CMD $MACHINE_QEMUOPT -cpu ? | sed -n '1,/^$/{/Available CPUs:/d;p}' |
+	$QEMU_CMD $MACHINE_QEMUOPT -cpu ? | sed -rn '1,/^$/{/Available CPUs:/d; s/^x86 //; p}' |
 		awk -v modelname=$modelname -v pat=".*${modelname,,}.*" '
 		{
-			if (length($2) > 0) { M=$2 } else { M=$1 }
+			M=$1
 			if (M == modelname) {
 				yes++
 			} else if (tolower(M) ~ pat) {
-				if (length(m) == 0 || length(m) >= length($2)) { m=M }
+				if (length(m) == 0 || length(m) >= length(M)) { m=M }
 			}
 		}
 		END {
