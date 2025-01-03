@@ -294,9 +294,22 @@ client use spnego = yes
 kerberos method = secrets and keytab
 realm = $AD_DS_NAME
 netbios name = $HOST_NETBIOS
+
 security = ads
-#password server = $AD_DC_FQDN
+#password server = $AD_DC_FQDN  #conflict with security=ads
+
+#to create entry using principal 'computer$@REALM'
 sync machine password to keytab = /etc/krb5.keytab:account_name:machine_password
+
+#idmap config is necessary to avoid testparm ERROR
+#see also:
+#- https://www.linuxquestions.org/questions/linux-software-2/samba-4-10-16-error-invalid-idmap-range-for-domain-%2A-on-centos-linux-7-core-4175730670/#post6467357
+#- man smb.conf(5)
+#idmap config CORP : backend  = ad
+#idmap config CORP : range = 1000-999999
+idmap config * : backend = tdb
+idmap config * : range = 1000000-1999999
+min domain uid = 1000
 EOFL
 run "cat $SMB_CONF"
 
