@@ -15,9 +15,10 @@ qmpQueryCpuModelExpation() {
 		local qmpshcmd="query-cpu-model-expansion type=full model={'name':'${model:-host}'}"
 		qmp-shell -p ${usock} <<<"$qmpshcmd"
 	else
+		local pycmd=python; command -v $pycmd &>/dev/null || pycmd=python3
 		local jsoncmd="{'execute': 'qmp_capabilities'}
 			{'execute': 'query-cpu-model-expansion', 'arguments': {'model': {'name': '${model:-host}'}, 'type': 'full'}}"
-		nc -U ${usock} <<<"$jsoncmd" | sed '1,2d' | python -m json.tool
+		nc -U ${usock} <<<"$jsoncmd" | sed '1,2d' | $pycmd -m json.tool
 	fi
 }
 
