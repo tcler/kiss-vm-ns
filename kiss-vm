@@ -72,6 +72,13 @@ defaultWindowsPasswd=Sesame~0pen
 orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)
 { QEMU_USER=qemu; { ! id ${QEMU_USER} &>/dev/null || id libvirt-qemu &>/dev/null; } && QEMU_USER=libvirt-qemu; }
 
+#workaround for creating Windows VM fail with virt-install-5.0
+[[ "$(virt-install --version 2>/dev/null)" = 5.0* ]] && {
+	hyofflist=$(qmp-query-cpu-model-expansion.sh | sed -rn '/ *"hv-(.+)": false,/{s//hyperv.\1.state=off/;p}' |
+		grep -Ev '\.(apicv|crash|emsr-bitmap|enforce-cpuid|passthrough|stimer-direct|syndbg|time|tlb|xmm)' | paste -s -d,)
+	VIRT_INSTALL_OPTS+=("--features=$hyofflist")
+}
+
 quote() {
 	local at=$1
 	if [[ -z "$at" ]]; then
