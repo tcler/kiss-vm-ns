@@ -3767,7 +3767,7 @@ if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
 	[[ "$GuestARCH" = x86_64 ]] && {
 		MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35";
 		#see: https://www.kraxel.org/blog/2023/12/qemu-phys-bits
-		lscpu|grep -q Address.sizes:\ *39 && QEMU_OPTS+=("--qemu-commandline=-cpu EPYC-Milan")
+		lscpu|grep -q Address.sizes:\ *39 && QEMU_OPTS+=("--qemu-commandline=-cpu EPYC-Milan,vendor=AuthenticAMD")
 	}
 	CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
 
