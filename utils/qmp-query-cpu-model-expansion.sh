@@ -9,7 +9,16 @@ machineOpt="-M q35,accel=kvm"
 sessionName=qmpQueryCpuModel-$$
 unixSocketPath=/tmp/${sessionName}.unix
 qmpQueryCpuModelExpation() {
-	local sock=$1; qmp-shell -p ${sock} <<<"query-cpu-model-expansion type=full model={'name':'${model:-host}'}"
+	local usock=$1
+	while [[ ! -e ${usock} ]]; do sleep 1; done
+	if command -v qmp-shell &>/dev/null; then
+		local qmpshcmd="query-cpu-model-expansion type=full model={'name':'${model:-host}'}"
+		qmp-shell -p ${usock} <<<"$qmpshcmd"
+	else
+		local jsoncmd="{'execute': 'qmp_capabilities'}
+			{'execute': 'query-cpu-model-expansion', 'arguments': {'model': {'name': '${model:-host}'}, 'type': 'full'}}"
+		nc -U ${usock} <<<"$jsoncmd" | sed '1,2d' | python -m json.tool
+	fi
 }
 
 viewCmd=cat
