@@ -2170,7 +2170,7 @@ Usage() {
 	                 #save image in path if install with import mode
 	  --downloadonly #download image only if there is qcow* image
 	  --share        #give others read permission to the VM image file
-	  --cpus, --vcpus <N|sockets=1,cores=2,threads=2>
+	  --vcpus <N|sockets=1,cores=2,threads=2>
 	                 #number of virtual cpus, default: sockets=1,cores=2,threads=2
 	                 #see also: virt-install --vcpus=?
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
@@ -2495,7 +2495,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long geturl \
 	--long getvmname \
 	--long nocloud-init --long nocloud \
-	--long cpus: --long vcpus: \
+	--long vcpus: --long cpus: \
 	--long arch: \
 	--long virt-type: \
 	--long qemucpu: \
@@ -2632,7 +2632,7 @@ while true; do
 	--nocloud*)      NO_CLOUD_INIT="yes"; shift 1;;
 	--ds|--dsize)    dsizeflag=1; DSIZE="${2%[Gg]}"; shift 2;;
 	--ms|--msize|-m) MSIZE="$2"; shift 2;;
-	--cpus|--vcpus)  SPECIFIED_VCPUS=yes; VCPUS="$2"; shift 2;;
+	--vcpus|--cpus)  SPECIFIED_VCPUS=yes; VCPUS="$2"; shift 2;;
 	--arch)	         GuestARCH="${2/ppc64le/ppc64}"; ARCH_OPT=--arch=$GuestARCH; shift 2;;
 	--virt-type)     VIRT_TYPE=$2; shift 2;;
 	--qemucpu)       QEMU_CPU=$2; QEMU_CPU_OPT="--qemu-commandline=-cpu $2"; shift 2;;
