@@ -75,7 +75,7 @@ orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)
 #workaround for creating Windows VM fail with virt-install-5.0
 [[ "$(virt-install --version 2>/dev/null)" = 5.0* ]] && {
 	virtinstHypervList=$(virt-install --features=?|awk '/hyperv/{print $1}')
-	qemuHyvFalseList=$(qmp-query-cpu-model-expansion.sh | sed -rn '/ *"hv-(.+)": false,/{s//hyperv.\1.state/;p}')
+	qemuHyvFalseList=$(cpuOpt=host qmp-query-cpu-model-expansion.sh | sed -rn '/ *"hv-(.+)": false,/{s//hyperv.\1.state/;p}')
 	hyvofflist=$(for hyvf in $qemuHyvFalseList; do grep -q ${hyvf} <<<"${virtinstHypervList}" && echo ${hyvf}=off; done | paste -s -d,)
 	VIRT_INSTALL_OPTS+=("--features=$hyvofflist")
 }
