@@ -6,8 +6,8 @@ HostARCH=$(uname -m)
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm 2>/dev/null)
 availableHypervFlags() {
 	local hvflags=$(virt-install --features=? |
-		awk -F. '/hyperv/{f=$2; if(f=="spinlocks") flag=f"=0x1fff"; else flag=f"=on"; print "hv-"flag}')
-	hvflags=$(for _f in $hvflags "$@"; do echo $_f; done | sort -u)
+		awk -F. '/hyperv/{f=$2; print f}')
+	hvflags=$(for _f in $hvflags "$@"; do [[ $_f = spinlocks ]] && _f+==0x1fff || _f+==on; echo hv-$_f; done | sort -u)
 	for _flag in $hvflags; do
 		sname=availableHyperv-$$
 		tmux new -s ${sname} -d ${QEMU_KVM} -M ${machineOpt:-q35,accel=kvm} -cpu host,migratable=on,$_flag -nographic
@@ -19,8 +19,14 @@ availableHypervFlags() {
 	done | paste -s -d,
 }
 
+althvflags="time relaxed vapic vpindex runtime synic stimer frequencies tlbflush ipi avic"
+subcmd=$1
+case $subcmd in
+hvflag*) availableHypervFlags $althvflags; exit;;
+esac
+
 if [[ -z "$cpuOpt" ]]; then
-	hvflags=$(availableHypervFlags time relaxed vapic vpindex runtime synic stimer frequencies tlbflush ipi avic)
+	hvflags=$(availableHypervFlags $althvflags)
 	cpuOpt="host,migratable=on,${hvflags}"
 fi
 machineOpt="${machineOpt:-q35,accel=kvm}"
