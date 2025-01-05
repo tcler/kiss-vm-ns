@@ -73,12 +73,18 @@ orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)
 { QEMU_USER=qemu; { ! id ${QEMU_USER} &>/dev/null || id libvirt-qemu &>/dev/null; } && QEMU_USER=libvirt-qemu; }
 
 #workaround for creating Windows VM fail with virt-install-5.0
-[[ "$(virt-install --version 2>/dev/null)" = 5.0* ]] && {
-	virtinstHypervList=$(virt-install --features=?|awk '/hyperv/{print $1}')
-	qemuHyvFalseList=$(cpuOpt=host qmp-query-cpu-model-expansion.sh | sed -rn '/ *"hv-(.+)": false,/{s//hyperv.\1.state/;p}')
-	hyvofflist=$(for hyvf in $qemuHyvFalseList; do grep -q ${hyvf} <<<"${virtinstHypervList}" && echo ${hyvf}=off; done | paste -s -d,)
+virtinstVer=$(virt-install --version 2>/dev/null)
+disableHyperv() {
+	local virtinstHypervList=$(virt-install --features=?|awk '/hyperv/{print $1}')
+	local qemuHyvFalseList=$(cpuOpt=host qmp-query-cpu-model-expansion.sh | sed -rn '/ *"hv-(.+)": false,/{s//hyperv.\1.state/;p}')
+	local hyvofflist=$(for hyvf in $qemuHyvFalseList; do grep -q ${hyvf} <<<"${virtinstHypervList}" && echo ${hyvf}=off; done | paste -s -d,)
 	VIRT_INSTALL_OPTS+=("--features=$hyvofflist")
 }
+if vercmp "$virtinstVer" ge 5.0; then
+	cpuHvFlags="migratable=on,hv-time=on,hv-relaxed=on,hv-vapic=on,hv-spinlocks=0x1fff,hv-vpindex=on,hv-runtime=on,hv-synic=on,hv-stimer=on,hv-frequencies=on,hv-tlbflush=on,hv-ipi=on,hv-avic=on"
+	cpuHvFlags=
+	disableHyperv
+fi
 
 quote() {
 	local at=$1
@@ -3041,12 +3047,18 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 				else
 					QEMU_OPTS[$i]="$qemuopt"
 				fi
+				if [[ "$modelname" = host && -n "$cpuHvFlags" ]]; then
+					QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$cpuHvFlags/")
+				else
+					disableHyperv
+				fi
 				[[ "$DEBUG" = yes ]] &&
 					echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
 				break
 			fi
 		done
 	else
+		[[ -n "cpuHvFlags" ]] && flag+=,$cpuHvFlags
 		QEMU_OPTS+=("--qemu-commandline=-cpu $modelname,$flag")
 	fi
 else
@@ -3060,7 +3072,12 @@ else
 				exit 2
 			fi
 			[[ "$omodelname" != "$modelname" ]] &&
-				QEMU_OPTS[$i]=$(echo "$qemuopt"|sed -r "s/-cpu [^,]+/-cpu $modelname/")
+				QEMU_OPTS[$i]=$(echo "$qemuopt"|sed -r "s/-cpu +[^,]+/-cpu $modelname/")
+			if [[ "$modelname" = host && -n "$cpuHvFlags" ]]; then
+				QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$cpuHvFlags/")
+			else
+				disableHyperv
+			fi
 			[[ "$DEBUG" = yes ]] &&
 				echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
 			break
