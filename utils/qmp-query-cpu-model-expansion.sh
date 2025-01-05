@@ -12,14 +12,14 @@ availableHypervFlags() {
 		sname=availableHyperv-$$
 		tmux new -s ${sname} -d ${QEMU_KVM} -M ${machineOpt:-q35,accel=kvm} -cpu host,migratable=on,$_flag -nographic
 		sleep 0.2
-		if tmux ls | grep -q ${sname}; then
+		if tmux ls 2>/dev/null | grep -q ${sname}; then
 			echo "$_flag"
 			tmux kill-session -t ${sname}
 		fi
 	done | paste -s -d,
 }
 
-althvflags="time relaxed vapic vpindex runtime synic stimer frequencies tlbflush ipi avic"
+althvflags="time relaxed vapic vpindex runtime synic syndbg stimer frequencies tlbflush ipi avic"
 subcmd=$1
 case $subcmd in
 hvflag*) availableHypervFlags $althvflags; exit;;

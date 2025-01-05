@@ -75,14 +75,14 @@ orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)
 #workaround for creating Windows VM fail with virt-install-5.0
 virtinstVer=$(virt-install --version 2>/dev/null)
 disableHyperv() {
+	local cpuOpt=$1
 	local virtinstHypervList=$(virt-install --features=?|awk '/hyperv/{print $1}')
-	local qemuHyvFalseList=$(cpuOpt=host qmp-query-cpu-model-expansion.sh | sed -rn '/ *"hv-(.+)": false,/{s//hyperv.\1.state/;p}')
+	local qemuHyvFalseList=$(cpuOpt=$cpuOpt qmp-query-cpu-model-expansion.sh | sed -rn '/ *"hv-(.+)": false,/{s//hyperv.\1.state/;p}')
 	local hyvofflist=$(for hyvf in $qemuHyvFalseList; do grep -q ${hyvf} <<<"${virtinstHypervList}" && echo ${hyvf}=off; done | paste -s -d,)
 	VIRT_INSTALL_OPTS+=("--features=$hyvofflist")
 }
 if vercmp "$virtinstVer" ge 5.0; then
-	cpuHvFlags="migratable=on,hv-time=on,hv-relaxed=on,hv-vapic=on,hv-spinlocks=0x1fff,hv-vpindex=on,hv-runtime=on,hv-synic=on,hv-stimer=on,hv-frequencies=on,hv-tlbflush=on,hv-ipi=on,hv-avic=on"
-	cpuHvFlags=
+	cpuHvFlags=migratable=on,$(qmp-query-cpu-model-expansion.sh hvflags)
 	disableHyperv
 fi
 
@@ -3050,7 +3050,7 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 				if [[ "$modelname" = host && -n "$cpuHvFlags" ]]; then
 					QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$cpuHvFlags/")
 				else
-					disableHyperv
+					disableHyperv host
 				fi
 				[[ "$DEBUG" = yes ]] &&
 					echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
@@ -3076,7 +3076,7 @@ else
 			if [[ "$modelname" = host && -n "$cpuHvFlags" ]]; then
 				QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$cpuHvFlags/")
 			else
-				disableHyperv
+				disableHyperv host
 			fi
 			[[ "$DEBUG" = yes ]] &&
 				echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
