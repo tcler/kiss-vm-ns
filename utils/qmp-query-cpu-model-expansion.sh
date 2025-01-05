@@ -4,8 +4,25 @@
 
 HostARCH=$(uname -m)
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm 2>/dev/null)
+availableHypervFlags() {
+	local hvflags=$(virt-install --features=? |
+		awk -F. '/hyperv/{f=$2; if(f=="spinlocks") flag=f"=0x1fff"; else flag=f"=on"; print "hv-"flag}')
+	hvflags=$(for _f in $hvflags "$@"; do echo $_f; done | sort -u)
+	for _flag in $hvflags; do
+		sname=availableHyperv-$$
+		tmux new -s ${sname} -d ${QEMU_KVM} -M ${machineOpt:-q35,accel=kvm} -cpu host,migratable=on,$_flag -nographic
+		sleep 0.2
+		if tmux ls | grep -q ${sname}; then
+			echo "$_flag"
+			tmux kill-session -t ${sname}
+		fi
+	done | paste -s -d,
+}
 
-cpuOpt="${cpuOpt:-host,migratable=on,hv-time=on,hv-relaxed=on,hv-vapic=on,hv-spinlocks=0x1fff,hv-vpindex=on,hv-runtime=on,hv-synic=on,hv-stimer=on,hv-frequencies=on,hv-tlbflush=on,hv-ipi=on,hv-avic=on}"
+if [[ -z "$cpuOpt" ]]; then
+	hvflags=$(availableHypervFlags time relaxed vapic vpindex runtime synic stimer frequencies tlbflush ipi avic)
+	cpuOpt="host,migratable=on,${hvflags}"
+fi
 machineOpt="${machineOpt:-q35,accel=kvm}"
 sessionName=qmpQueryCpuModel-$$
 unixSocketPath=/tmp/${sessionName}.unix
