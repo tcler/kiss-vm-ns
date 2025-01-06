@@ -10,7 +10,7 @@ availableHypervFlags() {
 	hvflags=$(for _f in $hvflags "$@"; do [[ $_f = spinlocks ]] && _f+==0x1fff || _f+==on; echo hv-$_f; done | sort -u)
 	for _flag in $hvflags; do
 		sname=availableHyperv-$$
-		tmux new -s ${sname} -d ${QEMU_KVM} -M ${machineOpt:-q35,accel=kvm} -cpu host,migratable=on,$_flag -nographic
+		tmux new -s ${sname} -d ${QEMU_KVM} -M ${machineOpt:-q35,accel=kvm} -cpu ${cpuOpt:-host,migratable=on},$_flag -nographic
 		sleep 0.2
 		if tmux ls 2>/dev/null | grep -q ${sname}; then
 			echo "$_flag"
@@ -36,12 +36,12 @@ qmpQueryCpuModelExpation() {
 	local usock=$1
 	while [[ ! -e ${usock} ]]; do sleep 1; done
 	if command -v qmp-shell &>/dev/null; then
-		local qmpshcmd="query-cpu-model-expansion type=full model={'name':'${model:-host}'}"
+		local qmpshcmd="query-cpu-model-expansion type=full model={'name':'${cpuOpt%%,*}'}"
 		qmp-shell -p ${usock} <<<"$qmpshcmd"
 	else
 		local pycmd=python; command -v $pycmd &>/dev/null || pycmd=python3
 		local jsoncmd="{'execute': 'qmp_capabilities'}
-			{'execute': 'query-cpu-model-expansion', 'arguments': {'model': {'name': '${model:-host}'}, 'type': 'full'}}"
+			{'execute': 'query-cpu-model-expansion', 'arguments': {'model': {'name': '${cpuOpt%%,*}'}, 'type': 'full'}}"
 		nc -U ${usock} <<<"$jsoncmd" | sed '1,2d' | $pycmd -m json.tool
 	fi
 }

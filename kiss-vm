@@ -76,6 +76,7 @@ orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)
 virtinstVer=$(virt-install --version 2>/dev/null)
 disableVirtinstHypervFeaturesThatHostNotSupport() {
 	local cpuset=$1
+	echo -e "\n{VM:INFO} => disable virt-install hyperv features that host doesn't support, cpuset($cpuset) .."
 	local virtinstHypervList=$(virt-install --features=?|awk '/hyperv/{print $1}')
 	local qemuHyvFalseList=$(cpuOpt=$cpuset qmp-query-cpu-model-expansion.sh | sed -rn '/ *"hv-(.+)": false,/{s//hyperv.\1.state/;p}')
 	local hyvofflist=$(for hyvf in $qemuHyvFalseList; do grep -q ${hyvf} <<<"${virtinstHypervList}" && echo ${hyvf}=off; done | paste -s -d,)
@@ -83,7 +84,6 @@ disableVirtinstHypervFeaturesThatHostNotSupport() {
 }
 if vercmp "$virtinstVer" ge 5.0; then
 	cpuHvFlags=migratable=on,$(qmp-query-cpu-model-expansion.sh hvflags)
-	disableVirtinstHypervFeaturesThatHostNotSupport
 fi
 
 quote() {
@@ -2996,6 +2996,56 @@ support_nested_kvm() {
 	fi
 	return $rc
 }
+
+subcmd="$1"; shift;
+case "$subcmd" in
+	h|\?|help)		Usage|less; exit;;
+	prepare)		prepare_kiss_vm force; exit $?;;
+	enable-nested-vm)	enable_nested_kvm; exit $?;;
+	create|creat)		Distro=$1;;
+	r|rm|d|de|del*)		vmdelete "$@"; exit $?;;
+	co|con|cons*)		vmconsole "$@"; exit $?;;
+	port|port*)		vmport_available "$@"; exit $?;;
+	l|lo|log*)		vmlogin "$@"; exit $?;;
+	qmp)			vmqmp "$@"; exit $?;;
+	mon|monitor)		vmmonitor "$@"; exit $?;;
+	cpfrom|cpf*)		vmcopyfrom "$@"; exit $?;;
+	cpto|cpt*)		vmcopyto "$@"; exit $?;;
+	e|ex|ex*)		vmexec "$@"; exit $?;;
+	ls|li|lis|list)		vmlist "$@"; exit $?;;
+	if|ifa*|ifaddr)		vmifaddr "$@"; exit $?;;
+	ifl*|iflist)		vmiflist "$@"; exit $?;;
+	if.un*|if.unplug)	vmifunplugin "$@"; exit $?;;
+	if.pl*|if.plug)		vmifplugin "$@"; exit $?;;
+	vi|vie|view*)		vmviewer "$@"; exit $?;;
+	vn|vnc|vncp*)		vmvncproc "$@"; exit $?;;
+	x|xm*)			vmxml "$@"; exit $?;;
+	ed|ed*)			vmedit "$@"; exit $?;;
+	restart|reboot|reb|re*)	vmreboot "$@"; exit $?;;
+	stop|sto*)		vmstop "$@"; exit $?;;
+	start|star*)		vmstart "$@"; exit $?;;
+	autostart|autostar*)	vmautostart "$@"; exit $?;;
+	noautostart|noautosta*)	vmnoautostart "$@"; exit $?;;
+	stat)			vmstat "$@"; exit $?;;
+	blk*|srcfiles)		_vmblklist "$@"; exit $?;;
+	rootdir)		vmrootdir "$@"; exit $?;;
+	homedir)		vmhomedir "$@"; exit $?;;
+	clone)			vmclone "$@"; exit $?;;
+	add.iso)		vmadd_iso "$@"; exit $?;;
+	add.disk)		vmadd_disk "$@"; exit $?;;
+	add.if)			vmadd_if "$@"; exit $?;;
+	add.if.direct)		vmadd_if_direct "$@"; exit $?;;
+	add.if.bridge)		vmadd_if_bridge "$@"; exit $?;;
+	add.if.hostif)		vmadd_if_hostif "$@"; exit $?;;
+	add.if.passthr*)	vmadd_if_passthr "$@"; exit $?;;
+	passthr*)		vmpassthr "$@"; exit $?;;
+	netls)			netls "$@"; exit $?;;
+	net|netcreat*)		netcreate "$@"; exit $?;;
+	netinfo)		netinfo "$@"; exit $?;;
+	netstart)		netstart "$@"; exit $?;;
+	netdel|netdelete)	netdelete "$@"; exit $?;;
+esac
+
 support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 if [[ "$ENABLE_L2VM" = yes ]]; then
 	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
@@ -3050,7 +3100,9 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 				if [[ "$modelname" = host && -n "$cpuHvFlags" ]]; then
 					QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$cpuHvFlags/")
 				else
-					disableVirtinstHypervFeaturesThatHostNotSupport host
+					_cpuHvFlags=$(cpuOpt=$modelname qmp-query-cpu-model-expansion.sh hvflags)
+					QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$_cpuHvFlags/")
+					disableVirtinstHypervFeaturesThatHostNotSupport $modelname,$_cpuHvFlags
 				fi
 				[[ "$DEBUG" = yes ]] &&
 					echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
@@ -3060,6 +3112,7 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 	else
 		[[ -n "cpuHvFlags" ]] && flag+=,$cpuHvFlags
 		QEMU_OPTS+=("--qemu-commandline=-cpu $modelname,$flag")
+		disableVirtinstHypervFeaturesThatHostNotSupport $modelname,$flag
 	fi
 else
 	for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
@@ -3076,7 +3129,9 @@ else
 			if [[ "$modelname" = host && -n "$cpuHvFlags" ]]; then
 				QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$cpuHvFlags/")
 			else
-				disableVirtinstHypervFeaturesThatHostNotSupport host
+				_cpuHvFlags=$(cpuOpt=$modelname qmp-query-cpu-model-expansion.sh hvflags)
+				QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$_cpuHvFlags/")
+				disableVirtinstHypervFeaturesThatHostNotSupport $modelname,$_cpuHvFlags
 			fi
 			[[ "$DEBUG" = yes ]] &&
 				echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
@@ -3092,55 +3147,6 @@ run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 [[ $(id -u) = 0 && -n "$SUDO_USER" ]] && {
 	sshKeyOpts=$(for keyf in {$VMUSERHOME,/root}/.ssh/id_*; do [[ $keyf != *.pub ]] && echo -n "-i $keyf "; done)
 }
-
-subcmd="$1"; shift;
-case "$subcmd" in
-	h|\?|help)		Usage|less; exit;;
-	prepare)		prepare_kiss_vm force; exit $?;;
-	enable-nested-vm)	enable_nested_kvm; exit $?;;
-	create|creat)		Distro=$1;;
-	r|rm|d|de|del*)		vmdelete "$@"; exit $?;;
-	co|con|cons*)		vmconsole "$@"; exit $?;;
-	port|port*)		vmport_available "$@"; exit $?;;
-	l|lo|log*)		vmlogin "$@"; exit $?;;
-	qmp)			vmqmp "$@"; exit $?;;
-	mon|monitor)		vmmonitor "$@"; exit $?;;
-	cpfrom|cpf*)		vmcopyfrom "$@"; exit $?;;
-	cpto|cpt*)		vmcopyto "$@"; exit $?;;
-	e|ex|ex*)		vmexec "$@"; exit $?;;
-	ls|li|lis|list)		vmlist "$@"; exit $?;;
-	if|ifa*|ifaddr)		vmifaddr "$@"; exit $?;;
-	ifl*|iflist)		vmiflist "$@"; exit $?;;
-	if.un*|if.unplug)	vmifunplugin "$@"; exit $?;;
-	if.pl*|if.plug)		vmifplugin "$@"; exit $?;;
-	vi|vie|view*)		vmviewer "$@"; exit $?;;
-	vn|vnc|vncp*)		vmvncproc "$@"; exit $?;;
-	x|xm*)			vmxml "$@"; exit $?;;
-	ed|ed*)			vmedit "$@"; exit $?;;
-	restart|reboot|reb|re*)	vmreboot "$@"; exit $?;;
-	stop|sto*)		vmstop "$@"; exit $?;;
-	start|star*)		vmstart "$@"; exit $?;;
-	autostart|autostar*)	vmautostart "$@"; exit $?;;
-	noautostart|noautosta*)	vmnoautostart "$@"; exit $?;;
-	stat)			vmstat "$@"; exit $?;;
-	blk*|srcfiles)		_vmblklist "$@"; exit $?;;
-	rootdir)		vmrootdir "$@"; exit $?;;
-	homedir)		vmhomedir "$@"; exit $?;;
-	clone)			vmclone "$@"; exit $?;;
-	add.iso)		vmadd_iso "$@"; exit $?;;
-	add.disk)		vmadd_disk "$@"; exit $?;;
-	add.if)			vmadd_if "$@"; exit $?;;
-	add.if.direct)		vmadd_if_direct "$@"; exit $?;;
-	add.if.bridge)		vmadd_if_bridge "$@"; exit $?;;
-	add.if.hostif)		vmadd_if_hostif "$@"; exit $?;;
-	add.if.passthr*)	vmadd_if_passthr "$@"; exit $?;;
-	passthr*)		vmpassthr "$@"; exit $?;;
-	netls)			netls "$@"; exit $?;;
-	net|netcreat*)		netcreate "$@"; exit $?;;
-	netinfo)		netinfo "$@"; exit $?;;
-	netstart)		netstart "$@"; exit $?;;
-	netdel|netdelete)	netdelete "$@"; exit $?;;
-esac
 
 run_with_newgrp() {
 	expect <(cat <<-'EOF'
