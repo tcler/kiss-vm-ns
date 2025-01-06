@@ -2997,6 +2997,8 @@ support_nested_kvm() {
 	return $rc
 }
 
+run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
+
 subcmd="$1"; shift;
 case "$subcmd" in
 	h|\?|help)		Usage|less; exit;;
@@ -3141,8 +3143,6 @@ else
 fi
 
 VCPUN=$(vcpuN "$VCPUS")
-
-run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 
 [[ $(id -u) = 0 && -n "$SUDO_USER" ]] && {
 	sshKeyOpts=$(for keyf in {$VMUSERHOME,/root}/.ssh/id_*; do [[ $keyf != *.pub ]] && echo -n "-i $keyf "; done)
@@ -4846,7 +4846,7 @@ if [[ "$WAIT" = yes ]]; then
 	if [[ "$WIN_AUTO" = yes ]]; then
 		for ((i=0; i<60; i++)); do
 			sleep 5
-			vm vnc $vmname -get|grep -E 'Cii_.*L9.._i_.*\^.*L9.*ie3.*iv_..L3' && {
+			timeout 5 vm vnc $vmname -get 2>/dev/null|grep -E 'Cii_.*L9.._i_.*\^.*L9.*ie3.*iv_..L3' && {
 				echo -e "\n{VM:ERR} your windows image is not Evaluation version, and no ProductKey was found from answerfile"
 				exit 1
 			}
