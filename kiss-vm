@@ -82,9 +82,6 @@ disableVirtinstHypervFeaturesThatHostNotSupport() {
 	local hyvofflist=$(for hyvf in $qemuHyvFalseList; do grep -q ${hyvf} <<<"${virtinstHypervList}" && echo ${hyvf}=off; done | paste -s -d,)
 	VIRT_INSTALL_OPTS+=("--features=$hyvofflist")
 }
-if vercmp "$virtinstVer" ge 5.0; then
-	cpuHvFlags=migratable=on,$(qmp-query-cpu-model-expansion.sh hvflags)
-fi
 
 quote() {
 	local at=$1
@@ -3047,6 +3044,10 @@ case "$subcmd" in
 	netstart)		netstart "$@"; exit $?;;
 	netdel|netdelete)	netdelete "$@"; exit $?;;
 esac
+
+if vercmp "$virtinstVer" ge 5.0; then
+	cpuHvFlags=migratable=on,$(qmp-query-cpu-model-expansion.sh hvflags)
+fi
 
 support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 if [[ "$ENABLE_L2VM" = yes ]]; then
