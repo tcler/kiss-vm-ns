@@ -336,6 +336,7 @@ run "klist"
 krb5CCACHE=$(LANG=C klist | sed -n '/Ticket.cache: /{s///;p}')
 netKrb5Opt=--use-krb5-ccache=${krb5CCACHE#*:}
 
+man net | grep -q .-k.--kerberos && netKrb5Opt=-k   #for rhel-7
 # Join host to an Active Directory (AD), and update the DNS
 for ((i=0; i<16; i++)); do
 	run "net ads join $netKrb5Opt dnshostname=${MY_FQDN}"
@@ -351,8 +352,12 @@ if [ $join_res -ne 0 ]; then
 	exit 1
 fi
 
-#run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS $netKrb5Opt"
-run "net ads dns async ${MY_FQDN} $netKrb5Opt"
+if man net | grep -q .-k.--kerberos; then   #for rhel-7
+	netKrb5Opt=
+	run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS $netKrb5Opt"
+else
+	run "net ads dns async ${MY_FQDN} $netKrb5Opt"
+fi
 if [ $? -ne 0 ]; then
 	errecho "Failed to find dns entry from AD"
 	run "net ads dns register ${MY_FQDN} $netKrb5Opt"
