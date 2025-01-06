@@ -336,7 +336,10 @@ run "klist"
 krb5CCACHE=$(LANG=C klist | sed -n '/Ticket.cache: /{s///;p}')
 netKrb5Opt=--use-krb5-ccache=${krb5CCACHE#*:}
 
-man net | grep -q .-k.--kerberos && netKrb5Opt=-k   #for rhel-7
+if man net | grep -q .-k.--kerberos; then   #for rhel7
+	netKrb5Opt=-k
+	sed -i '/sync machine password to keytab/s/^/#/' $SMB_CONF
+fi
 # Join host to an Active Directory (AD), and update the DNS
 for ((i=0; i<16; i++)); do
 	run "net ads join $netKrb5Opt dnshostname=${MY_FQDN}"
@@ -352,8 +355,7 @@ if [ $join_res -ne 0 ]; then
 	exit 1
 fi
 
-if man net | grep -q .-k.--kerberos; then   #for rhel-7
-	netKrb5Opt=
+if man net | grep -q .-k.--kerberos; then   #for rhel7
 	run "net ads dns gethostbyname $AD_DC_FQDN $HOST_NETBIOS $netKrb5Opt"
 else
 	run "net ads dns async ${MY_FQDN} $netKrb5Opt"
@@ -392,14 +394,10 @@ if [ "$CONFIG_KRB5" == "yes" ]; then
 	# "Administrator@${AD_DS_NAME}" expires, otherwise just skip
 	run "net ads setspn list $netKrb5Opt"
 
-	run "net ads setspn add host/$MY_FQDN $netKrb5Opt"
-	run "net ads setspn add host/$MY_NETBIOS $netKrb5Opt"
-
-	run "net ads setspn add root/$MY_FQDN $netKrb5Opt"
-	run "net ads setspn add root/$MY_NETBIOS $netKrb5Opt"
-
-	run "net ads setspn add nfs/$MY_FQDN $netKrb5Opt"
-	run "net ads setspn add nfs/$MY_NETBIOS $netKrb5Opt"
+	for spntype in host root nfs; do
+		net ads setspn list $netKrb5Opt |& grep -qi $spntype/ ||
+			for _h in $MY_FQDN $MY_NETBIOS; do run "net ads setspn add $spntype/$_h $netKrb5Opy"; done
+	done
 
 	run "net ads keytab create $netKrb5Opt"
 	run "net ads setspn list $netKrb5Opt"
