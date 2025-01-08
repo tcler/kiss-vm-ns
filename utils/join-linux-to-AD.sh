@@ -1,11 +1,12 @@
 #!/bin/bash
-# Integrate a RHEL/CentOS client into an AD DS Domain and config related roles for IDMAP or Secure NFS tests
+# join RHEL/CentOS into an AD DS Domain and config as krb5 client
+# verified on RHEL-7,8,9,10beta
 
 LANG=C
 P=${0##*/}
 
 # Current Supported Extra Functions:
-CONFIG_KRB5="no"   # Config secure NFS client
+CONFIG_KRB5="no"   # Config as krb5 client
 CLEANUP="no"       # Quit current AD Domain, clear entries in AD DS database
 
 infoecho() { echo -e "\n<${P}>""\E[1;34m" "$@" "\E[0m"; }
@@ -382,7 +383,7 @@ hostname ${MY_FQDN}
 hostnamectl hostname ${MY_FQDN}
 
 #
-# PART: [Extra Functions] Config current client as a Secure NFS client
+# PART: [Extra Functions] Config current client as a krb5 client
 #
 
 if [ "${CONFIG_KRB5}" == "yes" ]; then
@@ -393,7 +394,7 @@ if [ "${CONFIG_KRB5}" == "yes" ]; then
 	# "Administrator@${AD_DS_NAME}" expires, otherwise just skip
 	run "net ads setspn list ${netKrb5Opt}"
 
-	for spntype in host root nfs; do
+	for spntype in host root; do
 		net ads setspn list ${netKrb5Opt} |& grep -qi ${spntype}/ ||
 			for _h in ${MY_FQDN} ${MY_NETBIOS}; do run "net ads setspn add ${spntype}/${_h} ${netKrb5Opt}"; done
 	done
