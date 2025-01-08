@@ -201,6 +201,9 @@ vm exec -v  $clientvm -- showmount -e $NETAPP_NAS_HOSTNAME
 vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5 && {
 	vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i
 	vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5p -osec=krb5p
+	vm exec -vx $clientvm -- dd if=/dev/zero of=$nfsmp_krb5/testfile bs=1k count=512
+	vm exec -vx $clientvm -- ls -l $nfsmp_krb5/testfile
+	vm exec -vx $clientvm -- rm -f $nfsmp_krb5/testfile
 } || {
 	vm exec -v  $clientvm -- systemctl status rpc-gssd
 }
