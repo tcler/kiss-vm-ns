@@ -12,7 +12,7 @@ else
 		echo "[win-envf:ERROR] seems vm '$vmname' not ready";
 		exit 1;
 	fi
-	vm exec $vmname -- echo "hello kiss-vm"
+	vm exec -v $vmname -- echo "hello kiss-vm"
 fi
 
 WIN_ENV_FILE=/tmp/$vmname.env
