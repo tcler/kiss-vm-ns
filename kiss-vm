@@ -1023,7 +1023,7 @@ vmcopyfrom() {
 	_vmname=$(vmname_extract -all "${_pat#*@}"|head -1)
 	local src=${1%/}
 	local dstf=${2}
-	[[ -d "$dstf" ]] && dstf=$(readlink -f $dstf)/.
+	[[ -d "$dstf" ]] && dstf=$(readlink -f $dstf)
 
 	read _addr < <(vmifaddr "$_vmname")
 	port_available $_addr 22 || {
