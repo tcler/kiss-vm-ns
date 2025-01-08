@@ -16,7 +16,7 @@ trap_retry() {
 	echo "[Error] got a special issue($SA_SIGINFO) while create VM, try again:";
 	echo '----------------------------------------------------------------'
 	PATH=/usr/libexec:$PATH LANG=C qemu-kvm -cpu ?|grep -q $cpu || cpu=Skylake-Server
-	VM_RETRY=yes exec $PROG "${ARGS[@]}" -f --qemucpu=$cpu;
+	VM_RETRY=yes exec $PROG "${ARGS[@]}" -f --cpu=$cpu;
 }
 trap trap_retry SIGALRM SIGUSR2
 downhostname=download.devel.redhat.com
@@ -64,7 +64,7 @@ QEMU_OPTS=()
 QEMU_ENV=()
 baseUrl=${LOOKASIDE_BASE_URL}/kiss-vm-ns
 bkrClientImprovedUrl=${LOOKASIDE_BASE_URL}/bkr-client-improved
-VCPUS=${VCPUS:-4,sockets=1,cores=4}
+VCPUS=${VCPUS:-8,sockets=1,cores=8}
 DEFAULT_DISK_BUS=virtio
 DEFAULT_IF_MODEL=virtio
 defaultPasswd=redhat
@@ -74,14 +74,6 @@ orig_disable_ipv6=$(/sbin/sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null)
 
 #workaround for creating Windows VM fail with virt-install-5.0
 virtinstVer=$(virt-install --version 2>/dev/null)
-disableVirtinstHypervFeaturesThatHostNotSupport() {
-	local cpuset=$1
-	echo -e "\n{VM:INFO} => disable virt-install hyperv features that host doesn't support, cpuset($cpuset) .."
-	local virtinstHypervList=$(virt-install --features=?|awk '/hyperv/{print $1}')
-	local qemuHyvFalseList=$(cpuOpt=$cpuset qmp-query-cpu-model-expansion.sh | sed -rn '/ *"hv-(.+)": false,/{s//hyperv.\1.state/;p}')
-	local hyvofflist=$(for hyvf in $qemuHyvFalseList; do grep -q ${hyvf} <<<"${virtinstHypervList}" && echo ${hyvf}=off; done | paste -s -d,)
-	VIRT_INSTALL_OPTS+=("--features=$hyvofflist")
-}
 
 quote() {
 	local at=$1
@@ -2187,8 +2179,10 @@ Usage() {
 	                 #more info: https://www.quora.com/What-is-the-difference-between-CPU-core-die-and-package
 	  --arch         #Guest cpu arch. Note: require qemu-system-$arch already installed
 	  --virt-type <T>#pass thru to virt-install's --virt-type option
+	  --cpu <arg>    #pass thru to virt-install's --cpu option
 	  --qemucpu <arg>
-	                 #alias of --qemu-opts="-cpu <arg>", and will cover it if both are specified
+	                 #NOTE: this option is for expert mode, do not use it unless you know what you are doing
+	                 #alias of --qemu-opts="-cpu <arg>"
 	                 #see also: `qemu-system-$arch -machine <$machine> -cpu help`
 	  --nvmeboot, --NB #configure the boot disk as nvme device
 	                 #ref1: https://blog.christophersmart.com/2019/12/18/kvm-guests-with-emulated-ssd-and-nvme-drives/#comment-1060169
@@ -2509,6 +2503,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long vcpus: --long cpus: \
 	--long arch: \
 	--long virt-type: \
+	--long cpu: \
 	--long qemucpu: \
 	--long nvmeboot --long NB \
 	--long boot: \
@@ -2646,6 +2641,7 @@ while true; do
 	--vcpus|--cpus)  SPECIFIED_VCPUS=yes; VCPUS="$2"; shift 2;;
 	--arch)	         GuestARCH="${2/ppc64le/ppc64}"; ARCH_OPT=--arch=$GuestARCH; shift 2;;
 	--virt-type)     VIRT_TYPE=$2; shift 2;;
+	--cpu)           VIRT_CPU=$2; VIRT_CPU_OPT="--cpu=$2"; shift 2;;
 	--qemucpu)       QEMU_CPU=$2; QEMU_CPU_OPT="--qemu-commandline=-cpu $2"; shift 2;;
 	--nvmeboot|--NB) NVME_BOOT=yes; shift 1;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
@@ -2719,7 +2715,16 @@ while true; do
 	--hostdev|--host-device)    HOST_DEV_LIST+=("$2"); shift 2;;
 	--hostif|--hostnic|--host-nic)  HOST_NIC_LIST+=("$2"); shift 2;;
 	--virt-install-opts)    VIRT_INSTALL_OPTS+=("$2"); shift 2;;
-	--qemu-opts)     QEMU_OPTS+=("--qemu-commandline=$2"); shift 2;;
+	--qemu-opts)
+		if [[ "$2" =~ (^| )-cpu\ * ]]; then
+			_cpuopt=$(echo "$2"|sed -r 's/.*((^| )-cpu [^ ]+).*$/\1/')
+			_beside=$(echo "$2"|sed -r 's/.*((^| )-cpu [^ ]+).*$//')
+			QEMU_CPU_OPT="--qemu-commandline=${_cpuopt# }"
+			[[ -n "${_beside// /}" ]] && QEMU_OPTS+=("--qemu-commandline=${_beside}")
+		else
+			QEMU_OPTS+=("--qemu-commandline=$2")
+		fi
+		shift 2;;
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--qmp|--qemu-qmp)         QEMU_QMP="${2:-yes}"; shift 2;;
 	--monitor|--qemu-monitor) QEMU_MONITOR="${2:-yes}"; shift 2;;
@@ -2943,11 +2948,8 @@ else
 fi
 
 if [[ -n "$QEMU_CPU_OPT" ]]; then
-	for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
-		if [[ "${QEMU_OPTS[$i]}" = *-cpu\ * ]]; then
-			QEMU_OPTS[$i]=$(echo "$QEMU_OPTS[$i]"|sed -r 's/-cpu [^,]+//')
-		fi
-	done
+	_cpuHvFlags=$(qmp-query-cpu-model-expansion.sh hvflags machineOpt=${MACHINE_OPT#*=})
+	QEMU_CPU_OPT=$(echo "${QEMU_CPU_OPT}"|sed -r "s/-cpu +[^ ]+/&,$_cpuHvFlags/")
 	QEMU_OPTS+=("$QEMU_CPU_OPT")
 fi
 
@@ -3045,102 +3047,21 @@ case "$subcmd" in
 	netdel|netdelete)	netdelete "$@"; exit $?;;
 esac
 
-if vercmp "$virtinstVer" ge 5.0; then
-	cpuHvFlags=migratable=on,$(qmp-query-cpu-model-expansion.sh hvflags)
-fi
-
 support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
+kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
+cpuvendor=${kmodule#kvm_}
+case $cpuvendor in (intel) flag=+vmx;; (amd) flag=+svm;; (*) flag=+fixme;; esac
 if [[ "$ENABLE_L2VM" = yes ]]; then
-	kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
-	cpuvendor=${kmodule#kvm_}
-	modelname=host
-
-	alreadyHaveCpuOption=no
-	if [[ "${QEMU_OPTS[*]}" = *-cpu\ * ]]; then
-		alreadyHaveCpuOption=yes
-		for qemuopt in "${QEMU_OPTS[@]}"; do
-			[[ "${qemuopt}" = *-cpu\ * ]] && IFS=, read omodelname _ <<<"${qemuopt/*[= ]-cpu /}"
-		done
-		modelname=${omodelname}
-	fi
-
-	#if guest/qemu cpu is not host, fix cpuvendor
-	if [[ "$modelname" != host ]]; then
-		#verify cpu model name. fuzzy match
-		modelname=$(fuzzy_match_cpu_model_name $modelname)
-		if [[ -z "$modelname" ]]; then
-			echo "{VM:ERROR}: can not find cpu model name '$omodelname', please check: $QEMU_KVM -cpu ?" >&2
-			exit 2
-		fi
-
-		if LANG=C $QEMU_KVM -cpu help|grep -q "$modelname .*alias of"; then
-			modelname=$($QEMU_KVM -cpu help|sed -rn "/$modelname/"'{s/.*alias of (.+)\).*/\1/;p}')
-		fi
-		_cpulist=$($QEMU_KVM -cpu help|sed -n "/$modelname/{s/)$//; p}")
-		if echo "$_cpulist"|grep -qw Intel; then
-			cpuvendor=intel
-		elif echo "$_cpulist"|grep -qw AMD; then
-			cpuvendor=amd
-		fi
-	fi
-
-	case $cpuvendor in
-	intel) flag=+vmx;;
-	amd)   flag=+svm;;
-	*)     flag=+fixme;;
-	esac
-
-	if [[ $alreadyHaveCpuOption = yes ]]; then
-		for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
-			qemuopt="${QEMU_OPTS[$i]}"
-			if [[ "${qemuopt}" = *-cpu\ * ]]; then
-				qemuopt+=,${flag}
-				if [[ "$omodelname" != "$modelname" ]]; then
-					QEMU_OPTS[$i]=$(echo "$qemuopt"|sed -r "s/-cpu [^,]+/-cpu $modelname/")
-				else
-					QEMU_OPTS[$i]="$qemuopt"
-				fi
-				if [[ "$modelname" = host && -n "$cpuHvFlags" ]]; then
-					QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$cpuHvFlags/")
-				else
-					_cpuHvFlags=$(cpuOpt=$modelname qmp-query-cpu-model-expansion.sh hvflags)
-					QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$_cpuHvFlags/")
-					disableVirtinstHypervFeaturesThatHostNotSupport $modelname,$_cpuHvFlags
-				fi
-				[[ "$DEBUG" = yes ]] &&
-					echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
-				break
-			fi
-		done
+	#[[ -z ${VIRT_CPU} || ${VIRT_CPU} = host* ]] && { apicflags=$(lscpu | grep -Ewo '(x2)?apic' | sed s/^/+/ | paste -s -d,); }
+	apicflags=$(lscpu | grep -Ewo '(x2)?apic' | sed s/^/+/ | paste -s -d,)
+	[[ -n "${apicflags}" ]] && flag+=,${apicflags}
+	if [[ -z ${VIRT_CPU} ]]; then
+		VIRT_CPU_OPT=--cpu=host-passthrough,$flag
 	else
-		[[ -n "cpuHvFlags" ]] && flag+=,$cpuHvFlags
-		QEMU_OPTS+=("--qemu-commandline=-cpu $modelname,$flag")
-		disableVirtinstHypervFeaturesThatHostNotSupport $modelname,$flag
+		VIRT_CPU_OPT+=,$flag
 	fi
 else
-	for ((i=0; i<${#QEMU_OPTS[@]}; i++)); do
-		qemuopt="${QEMU_OPTS[$i]}"
-		if [[ "${qemuopt}" = *-cpu\ * ]]; then
-			IFS=, read omodelname _ <<<"${qemuopt/*[= ]-cpu /}"
-			modelname=$(fuzzy_match_cpu_model_name $omodelname)
-			if [[ -z "$modelname" ]]; then
-				echo "{VM:ERROR}: can not find cpu model name '$omodelname', please check: $QEMU_KVM -cpu ?" >&2
-				exit 2
-			fi
-			[[ "$omodelname" != "$modelname" ]] &&
-				QEMU_OPTS[$i]=$(echo "$qemuopt"|sed -r "s/-cpu +[^,]+/-cpu $modelname/")
-			if [[ "$modelname" = host && -n "$cpuHvFlags" ]]; then
-				QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$cpuHvFlags/")
-			else
-				_cpuHvFlags=$(cpuOpt=$modelname qmp-query-cpu-model-expansion.sh hvflags)
-				QEMU_OPTS[$i]=$(echo "${QEMU_OPTS[$i]}"|sed -r "s/-cpu +[^ ]+/&,$_cpuHvFlags/")
-				disableVirtinstHypervFeaturesThatHostNotSupport $modelname,$_cpuHvFlags
-			fi
-			[[ "$DEBUG" = yes ]] &&
-				echo "${QEMU_OPTS[$i]/*[= ]-cpu /}"|awk '{print "[vm:debug]", $1}' >&2
-			break
-		fi
-	done
+	VIRT_CPU_OPT=${VIRT_CPU_OPT//,$flag/}
 fi
 
 VCPUN=$(vcpuN "$VCPUS")
@@ -4014,6 +3935,7 @@ if [[ "$InstallType" = location ]]; then
 	  $NOREBOOT \
 	  --noautoconsole \
 	  ${GRAPHICS_OPT:---graphics=${DEFAULT_GRAPHICS_CONF}} \
+	  ${VIRT_CPU_OPT} \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
@@ -4247,6 +4169,7 @@ elif [[ "$InstallType" = import ]]; then
 	  ${SOUND_OPT} \
 	  --noautoconsole \
 	  ${GRAPHICS_OPT:---graphics=${DEFAULT_GRAPHICS_CONF}} \
+	  ${VIRT_CPU_OPT} \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
@@ -4519,6 +4442,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
 	  ${GRAPHICS_OPT:---graphics=${DEFAULT_GRAPHICS_CONF}} \
+	  ${VIRT_CPU_OPT} \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
@@ -4731,6 +4655,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	  ${SOUND_OPT} \
 	  --noautoconsole --wait=-1 \
 	  ${GRAPHICS_OPT:---graphics=${DEFAULT_GRAPHICS_CONF}} \
+	  ${VIRT_CPU_OPT} \
 	  "${VIRT_INSTALL_OPTS[@]}" \
 	  "${QEMU_OPTS[@]}" "${QEMU_ENV[@]}" "${QEMU_QMP_MON_OPT[@]}"
 
@@ -4843,7 +4768,7 @@ if ! virsh desc $vmname &>/dev/null; then
 fi
 
 if [[ "$WAIT" = yes ]]; then
-	echo -e "\n{VM:INFO} wait port($WAIT_PORT) of $vmname available ..."
+	echo -e "\n{VM:INFO} [$(date +%F_%T)] waiting port($WAIT_PORT) of $vmname available ..."
 	if [[ "$WIN_AUTO" = yes ]]; then
 		for ((i=0; i<60; i++)); do
 			sleep 5
@@ -4855,6 +4780,7 @@ if [[ "$WAIT" = yes ]]; then
 	fi
 	vm port-available $vmname $WAIT_PORT -w
 	[[ $? = 0 && "$WIN_AUTO" = yes ]] && {
+		echo -e "{VM:INFO} [$(date +%F_%T)] port($WAIT_PORT) of $vmname now is available"
 		kill_installer_tmux_session ${vmname}
 		win-env-file-gen.sh $vmname
 	}

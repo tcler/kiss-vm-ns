@@ -5,29 +5,26 @@
 HostARCH=$(uname -m)
 QEMU_KVM=$(PATH=/usr/libexec:$PATH command -v qemu-kvm 2>/dev/null)
 availableHypervFlags() {
-	local hvflags=$(virt-install --features=? |
-		awk -F. '/hyperv/{f=$2; print f}')
-	hvflags=$(for _f in $hvflags "$@"; do [[ $_f = spinlocks ]] && _f+==0x1fff || _f+==on; echo hv-$_f; done | sort -u)
-	for _flag in $hvflags; do
-		sname=availableHyperv-$$
-		tmux new -s ${sname} -d ${QEMU_KVM} -M ${machineOpt:-q35,accel=kvm} -cpu ${cpuOpt:-host,migratable=on},$_flag -nographic
-		sleep 0.2
-		if tmux ls 2>/dev/null | grep -q ${sname}; then
-			echo "$_flag"
-			tmux kill-session -t ${sname}
-		fi
-	done | paste -s -d,
+	local M=${1:-q35}
+	local _hvfeatures=$(virsh domcapabilities --machine ${M:-q35} |
+		sed -rn '/<hyperv supported=.yes/,/<\/hyperv>/{/ *<value>(.+)<\/value>/{s//\1/;p}}')
+
+	#add dependent feature. why virsh domcapabilities does not show it/them
+	grep -q 'stimer' <<<"$_hvfeatures" && _hvfeatures+=$'\ntime'
+
+	local _hvflags=$(for _f in $_hvfeatures; do case ${_f} in (spinlocks) _f+==0x1fff;; (*) _f+==on;; esac; echo "hv-${_f}"; done | xargs)
+	echo "${_hvflags// /,}"
 }
 
-althvflags="time relaxed vapic vpindex runtime synic syndbg stimer frequencies tlbflush ipi avic"
 subcmd=$1
+machineType=${2:-${machineOpt%%,*}}
 case $subcmd in
-hvflag*) availableHypervFlags $althvflags; exit;;
+hvflag*) availableHypervFlags ${machineType%%,*}; exit;;
 esac
 
 if [[ -z "$cpuOpt" ]]; then
-	hvflags=$(availableHypervFlags $althvflags)
-	cpuOpt="host,migratable=on,${hvflags}"
+	hvflags=$(availableHypervFlags ${machineOpt%%,*})
+	cpuOpt="host,${hvflags}"
 fi
 machineOpt="${machineOpt:-q35,accel=kvm}"
 sessionName=qmpQueryCpuModel-$$
