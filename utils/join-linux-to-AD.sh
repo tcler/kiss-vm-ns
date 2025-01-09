@@ -102,7 +102,9 @@ done
 }
 
 # length of NetBIOS name should be less than or equal to 15
-HOST_NETBIOS=${HOST_NETBIOS:-${HOSTNAME}}
+read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')
+HostIPSuffix=$(printf %02x%02x $C $D)
+HOST_NETBIOS=${HOST_NETBIOS:-host-${HostIPSuffix}}
 [[ ${#HOST_NETBIOS} -gt 15 ]] && {
 	errecho "[ERROR] the length of hostname($HOST_NETBIOS) should be less than 15, see: --host-netbios="
 	exit 1
