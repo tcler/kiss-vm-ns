@@ -2917,12 +2917,12 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 	(aarch64)
 		virtualizationOption=
 		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
-		if [[ -z "$QEMU_CPU" ]]; then
+		if [[ -z "$QEMU_CPU" && -z "$VIRT_CPU" ]]; then
 			#verified on 'Fedora-38/Ampere(R) Altra(R) Max Processor M128-30 CPU @ 3.0GHz'
-			QEMU_OPTS+=("--qemu-commandline=-cpu host")
+			VIRT_CPU_OPT=--cpu=host
 			if grep -q Asahi /etc/os-release; then
 				#verified on 'Fedora-38 Asahi Remix/M2 MacBook'
-				QEMU_OPTS+=("--qemu-commandline=-cpu cortex-a76")
+				VIRT_CPU_OPT=--cpu=cortex-a76
 			fi
 		fi
 		;;
@@ -2935,9 +2935,9 @@ else
 	(aarch64)
 		#set default qemu cpu type cortex-a72 for aarch64, it works on RHEL aarch64 build
 		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
-		if [[ -z "$QEMU_CPU" ]]; then
+		if [[ -z "$QEMU_CPU" && -z "$VIRT_CPU" ]]; then
 			_cpu=$(LANG=C $_QEMU_KVM -cpu ? |& grep cortex-a | sort -Vru | head -1)
-			QEMU_OPTS+=("--qemu-commandline=-cpu $_cpu")
+			VIRT_CPU_OPT=--cpu=${_cpu// /}
 		fi
 		;;
 	(s390x|ppc*|loongarch*)
@@ -3718,7 +3718,7 @@ if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
 	[[ "$GuestARCH" = x86_64 ]] && {
 		MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35";
 		#see: https://www.kraxel.org/blog/2023/12/qemu-phys-bits
-		lscpu|grep -q Address.sizes:\ *39 && QEMU_OPTS+=("--qemu-commandline=-cpu EPYC-Milan,vendor=AuthenticAMD")
+		lscpu|grep -q Address.sizes:\ *39 && VIRT_CPU_OPT=--cpu=EPYC-Milan,vendor=AuthenticAMD
 	}
 	CONTROLLER_OPTS="--controller=type=pci,index=9,model=pcie-root-port --controller=type=pci,index=10,model=pcie-root-port"
 
