@@ -2140,6 +2140,9 @@ Usage() {
 	                 #append to kickstart '%packages' section
 	  --ks-only-use <sda[,sdb]>
 	                 #forward to kickstart 'ignoredisk --only-use='
+	  --ks-fstype <ext4|xfs|...>
+	                 #Note: only for OS that install from automated kickstart file
+	                 #That is to say, it can only be used with the -L option and for OS like rhel/centos/rocky/alma/fedora.
 	  --kernel-opts <kernel args>
 	                 #apped kernel options/args
 	                 #Note: conflict with '--ks + -L[url]' option
@@ -2481,6 +2484,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long user: \
 	--long enable-nested-vm \
 	--long debug \
+	--long ks-fstype: \
 	--long ks: \
 	--long ks-pkgs: \
 	--long ks-append: --long ks-post: --long ks-pre: \
@@ -2621,7 +2625,8 @@ while true; do
 	--ks-append)      KS_APPEND+=$'\n'"$2"; InstallType=location; shift 2;;
 	--ks-post)        KS_APPEND+=$'\n%post --interpreter=/usr/bin/bash\n'"$2"$'\n%end'; InstallType=location; shift 2;;
 	--ks-pre)         KS_APPEND+=$'\n%pre --interpreter=/usr/bin/bash\n'"$2"$'\n%end'; InstallType=location; shift 2;;
-	--ks-only-use)    KS_OnlyUse="$2"; shift 2;;
+	--ks-only-use)    KS_OnlyUse="$2"; InstallType=location; shift 2;;
+	--ks-fstype)      KS_FSTYPE_OPT="--fstype=$2"; InstallType=location; shift 2;;
 	--kernel-opts)    KOPTS="$2"; shift 2;;
 	--rm)      RM=yes; shift 1;;
 	--xzopt)          XZ="$2"; shift 2;;
@@ -3865,12 +3870,12 @@ if [[ "$InstallType" = location ]]; then
 		if [[ "$NO_SSHKEY" = yes ]]; then
 			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript \
 				--kopts="$KOPTS" --pkgs=$KS_PKGS --only-use=$KS_OnlyUse --append="$KS_APPEND" \
-				--netn ${#NETWORK_OPTS[@]} --default-dns=$defaultDNS >$KSPath
+				--netn ${#NETWORK_OPTS[@]} --default-dns=$defaultDNS $KS_FSTYPE_OPT >$KSPath
 		else
 			ks-generator.sh -d $Distro $URL_OPT $REPO_OPTS $_REPO_OPTS --post $postscript \
 				--kopts="$KOPTS" --pkgs=$KS_PKGS --only-use=$KS_OnlyUse --append="$KS_APPEND" \
 				--sshkeyf ~/.ssh/id_rsa.pub --sshkeyf ~/.ssh/id_ecdsa.pub \
-				--netn ${#NETWORK_OPTS[@]} --default-dns=$defaultDNS >$KSPath
+				--netn ${#NETWORK_OPTS[@]} --default-dns=$defaultDNS $KS_FSTYPE_OPT >$KSPath
 		fi
 	}
 

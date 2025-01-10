@@ -17,7 +17,7 @@ IgnoreDisk=
 Usage() {
 	cat <<-EOF >&2
 	Usage:
-	 $0 <-d distroname> <-url url> [-repo name1:url1 [-repo name2:url2 ...]] [-post <script>] [-sshkeyf <file>] [-kernel-opts=<params>] [-pkgs=<pkg1[ pkg2 ..]>]
+	 $0 <-d distroname> <-url url> [-repo name1:url1 [-repo name2:url2 ...]] [-post <script>] [-sshkeyf <file>] [-kernel-opts=<params>] [-pkgs=<pkg1[ pkg2 ..]>] [--fstype=<ext4|xfs|...>]
 
 	Example:
 	 $0 -d centos-5 -url http://vault.centos.org/5.11/os/x86_64/
@@ -32,6 +32,7 @@ _at=`getopt -o hd: \
 	--long url: \
 	--long repo: \
 	--long post: \
+	--long fstype: \
 	--long sshkeyf: \
 	--long kernel-opts: --long kopts: \
 	--long only-use: \
@@ -48,6 +49,7 @@ while true; do
 	--url)     URL="$2"; shift 2;;
 	--repo)    Repos+=("$2"); shift 2;;
 	--post)    Post="$2"; shift 2;;
+	--fstype)  FSTYPE="$2"; PartConf+=\ --fstype=$FSTYPE; shift 2;;
 	--sshkeyf) sshkeyf+=" $2"; shift 2;;
 	--kernel-opts|--kopts) KernelOpts="$2"; shift 2;;
 	--only-use) [[ -n "${2// /}" ]] && IgnoreDisk="ignoredisk --only-use=$2"; shift 2;;
