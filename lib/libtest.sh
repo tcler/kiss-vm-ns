@@ -121,6 +121,7 @@ run() {
 	local _default_nohuplogf=
 	local _tmuxSession= _tmuxlogf= _tmuxSOpt=
 	local _xrcrange= _chkrc=no
+	local _logf=
 
 	while true; do
 		case "$1" in
@@ -129,6 +130,9 @@ run() {
 		-bash*) _runtype=bash; shift;;
 		-logpath*) _runtype=tmux;
 			[[ $1 = *=* ]] && _logpath=${1#*=}
+			shift;;
+		-logf*) _runtype=tmux;
+			[[ $1 = *=* ]] && _logf=${1#*=}
 			shift;;
 		-tmux*) _runtype=tmux;
 			[[ $1 = *=* ]] && _tmuxSession=${1#*=}
@@ -165,6 +169,7 @@ run() {
 		  trun -nohup=nohup-log-file tail -f /path/to/file
 		  trun -tmux[=sessoin-name] vm create $distro  #will auto generate session-name if ommited, log file name: run-tmux-${session}.log
 		  trun -tmux -logpath=$HOME/log vm create CentOS-9 -I=$HOME/Downloads/cs9.qcow2  #default logpath is /tmp
+		  trun -tmux -logfile=$pathto/logfile vm create CentOS-9 -I=$HOME/Downloads/cs9.qcow2  #overwrite -logpath and default log file name
 		  trun -tmux=- vm create CentOS-9 -I=$HOME/Downloads/cs9.qcow2  #no session name, and do not create session log file
 		EOF
 		return 0
@@ -177,7 +182,7 @@ run() {
 	[[ "$_runtype" = tmux ]] && {
 		_tmuxSession=${_tmuxSession:-kissrun-$$-${USER}-s$((_TMUX_SID++))}
 		_tmuxSOpt="-s $_tmuxSession"
-		_tmuxlogf=${_logpath:-/tmp}/run-tmux-${_tmuxSession}.log
+		_tmuxlogf=${_logf:-${_logpath:-/tmp}/run-tmux-${_tmuxSession}.log}
 		if [[ "$_tmuxSession" = - ]]; then
 			_tmuxSOpt=
 			_tmuxlogf=/dev/null
@@ -195,7 +200,7 @@ run() {
 	if [[ "$_debug" = yes ]]; then
 		_cmdlx="$_cmdl"
 		if [[ "${_runtype}" = tmux ]]; then
-			_cmdlx="tmux new $_tmuxSOpt -d \"$_cmdl\" \\; pipe-pane \"cat >$_tmuxlogf\""
+			_cmdlx="tmux new $_tmuxSOpt -d \"$_cmdl\" \\; pipe-pane \"exec cat >$_tmuxlogf\""
 		elif [[ "$_nohup" = yes ]]; then
 			_cmdlx="nohup $_cmdl &>${_nohuplogf} &"
 		fi
@@ -214,7 +219,7 @@ run() {
 		;;
 	eval)   $_SUDO eval "$_cmdl"; _rc=$?;;
 	bash)   $_SUDO bash -c "$_cmdl"; _rc=$?;;
-	tmux)   $_SUDO tmux new $_tmuxSOpt -d "$_cmdl" \; pipe-pane "cat >$_tmuxlogf"; _rc=$?;;
+	tmux)   $_SUDO tmux new $_tmuxSOpt -d "$_cmdl" \; pipe-pane "exec cat >$_tmuxlogf"; _rc=$?;;
 	esac
 
 	_RC=$_rc
