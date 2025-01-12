@@ -119,7 +119,7 @@ run() {
 	local _nohup= _nohuplogf=
 	local _user= _SUDO=
 	local _default_nohuplogf=
-	local _tmuxSession= _tmuxlogf= _tmuxSOpt=
+	local _tmuxSession= _tmuxlogf= _tmuxSOpt= _ppaneOpt=
 	local _xrcrange= _chkrc=no
 	local _logf=
 
@@ -183,9 +183,11 @@ run() {
 		_tmuxSession=${_tmuxSession:-kissrun-$$-${USER}-s$((_TMUX_SID++))}
 		_tmuxSOpt="-s $_tmuxSession"
 		_tmuxlogf=${_logf:-${_logpath:-/tmp}/run-tmux-${_tmuxSession}.log}
+		_ppaneOpt="-t ${_tmuxSession//[:.]/_}:0.0"
 		if [[ "$_tmuxSession" = - ]]; then
 			_tmuxSOpt=
 			_tmuxlogf=/dev/null
+			_ppaneOpt=
 		fi
 	}
 
@@ -200,7 +202,7 @@ run() {
 	if [[ "$_debug" = yes ]]; then
 		_cmdlx="$_cmdl"
 		if [[ "${_runtype}" = tmux ]]; then
-			_cmdlx="tmux new $_tmuxSOpt -d \"$_cmdl\" \\; pipe-pane \"exec cat >$_tmuxlogf\""
+			_cmdlx="tmux new $_tmuxSOpt -d \"$_cmdl\" \\; pipe-pane $_ppaneOpt \"exec cat >$_tmuxlogf\""
 		elif [[ "$_nohup" = yes ]]; then
 			_cmdlx="nohup $_cmdl &>${_nohuplogf} &"
 		fi
@@ -219,7 +221,7 @@ run() {
 		;;
 	eval)   $_SUDO eval "$_cmdl"; _rc=$?;;
 	bash)   $_SUDO bash -c "$_cmdl"; _rc=$?;;
-	tmux)   $_SUDO tmux new $_tmuxSOpt -d "$_cmdl" \; pipe-pane "exec cat >$_tmuxlogf"; _rc=$?;;
+	tmux)   $_SUDO tmux new $_tmuxSOpt -d "$_cmdl" \; pipe-pane $_ppaneOpt "exec cat >$_tmuxlogf"; _rc=$?;;
 	esac
 
 	_RC=$_rc
