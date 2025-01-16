@@ -44,7 +44,8 @@ else
 fi 2>$stderrf
 stderr=$(< $stderrf); rm $stderrf
 
-if grep -q Error <<<"$stderr"; then
+[[ -n "$DEBUG" ]] && echo "{debug} stderr: $stderr"
+if grep -Eq 'Error|404' <<<"$stderr"; then
 	echo "$stderr" >&2
 	echo -e "\033[31m{error} the repo url is invalid or unaccessable:\n  \033[4m$repoUrl\033[0m" >&2
 	exit 2
