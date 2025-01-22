@@ -41,8 +41,11 @@ vm prepare >/dev/null
 	[[ $# -ge 1 && $1 != -* ]] && { clientvm=${1:-ontap-ad-rhel-client}; shift; }; }
 distro=${distro:-9}
 clientvm=${clientvm:-ontap-ad-rhel-client}
-pkgs=vim,bind-utils,nfs-utils,expect,tcpdump,tmux
-trun -tmux=- vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f "$@"
+pkgs=vim,bind-utils,adcli,samba-common,samba-common-tools,krb5-workstation,cifs-utils,nfs-utils,expect,tcpdump,tmux
+net=ontap2-data
+net2Opt=--netmacvtap=?
+[[ "$PUBIF" = no ]] && net2Opt=--net=$net
+trun -tmux=- vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f --net=$net $net2Opt "$@"
 
 #-------------------------------------------------------------------------------
 read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')
@@ -77,7 +80,8 @@ fi
 
 ADDomain=test${HostIPSuffix}.kissvm.net
 ADPasswd=Sesame~0pen
-timeout 150m vm create Windows-server -n ${winServer} -C $win_img_dir/$win_img_name --osv=$os_variant --dsize 50 \
+timeout 150m vm create Windows-server -n ${winServer} -C $win_img_dir/$win_img_name --osv=$os_variant --dsize 60 \
+	$net2Opt --net=$net \
 	--win-auto=cifs-nfs --win-enable-kdc --win-openssh=$win_img_dir/$openssh_file \
 	--win-domain=${ADDomain} --win-passwd=${ADPasswd} --time-server=$TIME_SERVER --wait --force
 eval $(< /tmp/${winServer}.env)
@@ -158,6 +162,7 @@ AD_PASS=${ADMINPASSWORD}
 optx=(--time-server=$TIME_SERVER --dnsdomains=$DNS_DOMAIN --dnsaddrs=$DNS_ADDR \
 	--ad-hostname=$AD_HOSTNAME --ad-ip=$AD_IP \
 	--ad-admin=$AD_ADMIN --ad-passwd=$AD_PASS --ad-vm "${winServer}")
+[[ "$PUBIF" = no ]] && optx+=(--no-pubif)
 ONTAP_INSTALL_LOG=/tmp/ontap2w-install.log
 ONTAP_IF_INFO=/tmp/ontap2w-if-info.txt
 bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "${optx[@]}" &> >(tee $ONTAP_INSTALL_LOG)
@@ -210,3 +215,12 @@ vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_kr
 vm exec -vx $clientvm -- mount -t nfs4
 vm exec -vx $clientvm -- umount -a -t nfs4,nfs
 vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
+
+#simple cifs mount test
+#NETAPP_CIFS_USER
+#NETAPP_CIFS_PASSWD
+cifsmp=/mnt/cifsmp-ontap
+cifsmp_krb5=/mnt/cifsmp-ontap-krb5
+vm exec -vx $clientvm -- mkdir -p $cifsmp $cifsmp_krb5
+vm exec -vx $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
+vm exec -vx $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5

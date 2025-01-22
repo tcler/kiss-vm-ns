@@ -3562,6 +3562,7 @@ esac
 [[ -n "$EPEL" ]] && PKGS="$EPEL $PKGS"
 
 # prepare network option
+gen_virt_mac() { echo -n 54:52:00$(od -txC -An -N3 /dev/random | tr \  :); }
 if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 	for ((i=0; i < ${#NETWORK_OPTS[@]}; i++)); do
 		netopt=${NETWORK_OPTS[$i]}
@@ -3571,6 +3572,11 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 			cleanup_and_exit 0
 		}
 	done
+	if [[ "$WIN_AUTO" = yes ]]; then
+		WIN_MAC_INT=$(gen_virt_mac); WIN_MAC_EXT=$(gen_virt_mac)
+		NETWORK_OPTS[0]+=,mac=${WIN_MAC_EXT},model=${WIN_IF_MODEL}
+		NETWORK_OPTS[1]+=,mac=${WIN_MAC_INT},model=${WIN_IF_MODEL}
+	fi
 else
 	is_bridge() { local ifname=$1; ip -d a s "$ifname" | grep -qw bridge; }
 	srcif=$(get-default-if.sh)
@@ -3581,7 +3587,6 @@ else
 		NETWORK_OPTS=("--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}")
 		is_bridge $srcif && NETWORK_OPTS=("--network=type=bridge,source=$srcif,model=${DEFAULT_IF_MODEL}")
 	elif [[ "$WIN_AUTO" = yes ]]; then
-		gen_virt_mac() { echo -n 54:52:00$(od -txC -An -N3 /dev/random | tr \  :); }
 		WIN_MAC_INT=$(gen_virt_mac); WIN_MAC_EXT=$(gen_virt_mac)
 		if [[ "$CUSTOM_WIN_IF_MODEL" = yes ]]; then
 			intIfModel=${WIN_IF_MODEL}
