@@ -19,10 +19,10 @@ distro=${distro:-9}
 clientvm=${clientvm:-ontap-rhel-client}
 pkgs=cifs-utils,nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils,tcpdump,tmux
 net=ontap2-data
-net2Opt=--netmacvtap=?
-[[ "$PUBIF" = no ]] && net2Opt=--net=$net
+net1Opt=--netmacvtap=?
+[[ "$PUBIF" = no ]] && net1Opt=--net=$net
 trun -tmux=- "while ! grep -qw $net <(virsh net-list --name); do sleep 5; done;
-    vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f --net=$net $net2Opt ${*}"
+    vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f $net1Opt --net=$net ${*}"
 
 #-------------------------------------------------------------------------------
 g_ontap_img_dir=/usr/share/Netapp-simulator

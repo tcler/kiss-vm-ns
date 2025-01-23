@@ -43,9 +43,9 @@ distro=${distro:-9}
 clientvm=${clientvm:-ontap-ad-rhel-client}
 pkgs=vim,bind-utils,adcli,samba-common,samba-common-tools,krb5-workstation,cifs-utils,nfs-utils,expect,tcpdump,tmux
 net=ontap2-data
-net2Opt=--netmacvtap=?
-[[ "$PUBIF" = no ]] && net2Opt=--net=$net
-trun -tmux=- vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f --net=$net $net2Opt "$@"
+net1Opt=--netmacvtap=?
+[[ "$PUBIF" = no ]] && net1Opt=--net=$net
+trun -tmux=- vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f $net1Opt --net=$net "$@"
 
 #-------------------------------------------------------------------------------
 read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')
@@ -81,7 +81,7 @@ fi
 ADDomain=test${HostIPSuffix}.kissvm.net
 ADPasswd=Sesame~0pen
 timeout 150m vm create Windows-server -n ${winServer} -C $win_img_dir/$win_img_name --osv=$os_variant --dsize 60 \
-	$net2Opt --net=$net \
+	$net1Opt --net=$net \
 	--win-auto=cifs-nfs --win-enable-kdc --win-openssh=$win_img_dir/$openssh_file \
 	--win-domain=${ADDomain} --win-passwd=${ADPasswd} --time-server=$TIME_SERVER --wait --force
 eval $(< /tmp/${winServer}.env)
