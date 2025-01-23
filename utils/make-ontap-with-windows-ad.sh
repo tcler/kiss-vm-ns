@@ -223,4 +223,4 @@ cifsmp=/mnt/cifsmp-ontap
 cifsmp_krb5=/mnt/cifsmp-ontap-krb5
 vm exec -vx $clientvm -- mkdir -p $cifsmp $cifsmp_krb5
 vm exec -vx $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
-vm exec -vx $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
+vm exec -vx1-255 $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
