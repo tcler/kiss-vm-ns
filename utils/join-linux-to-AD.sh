@@ -149,6 +149,7 @@ krbConfTemp="[logging]
   renew_lifetime = 7d
   forwardable = true
   rdns = false
+  default_ccache_name = KEYRING:persistent:%{uid}
 
 [realms]
   EXAMPLE.COM = {
@@ -335,7 +336,7 @@ fi
 run "kinit Administrator <<< ${AD_DS_SUPERPW}"
 run "klist"
 krb5CCACHE=$(LANG=C klist | sed -n '/Ticket.cache: /{s///;p}')
-netKrb5Opt=--use-krb5-ccache=${krb5CCACHE#*:}
+netKrb5Opt=--use-krb5-ccache=${krb5CCACHE}
 
 #backwards compatible: e.g: rhel7 rhel8,rhel9.5
 man net | grep -q .-k.--kerberos && netKrb5Opt=-k
