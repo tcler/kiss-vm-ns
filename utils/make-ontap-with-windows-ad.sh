@@ -221,6 +221,13 @@ vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
 #NETAPP_CIFS_PASSWD
 cifsmp=/mnt/cifsmp-ontap
 cifsmp_krb5=/mnt/cifsmp-ontap-krb5
+krb5CCACHE=$(vm exec $clientvm -- LANG=C klist | sed -n '/Ticket.cache: /{s///;p}')
+netKrb5Opt=--use-krb5-ccache=${krb5CCACHE}
 vm exec -vx $clientvm -- mkdir -p $cifsmp $cifsmp_krb5
 vm exec -vx $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
-vm exec -vx1-255 $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
+if [[ $? = 0 ]]; then
+	vm exec -vx1-255 $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
+else
+	smbclientDebugOpt="-d 11"
+fi
+vm exec -vx $clientvm -- smbclient -L //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $netKrb5Opt -c get $smbclientDebugOpt
