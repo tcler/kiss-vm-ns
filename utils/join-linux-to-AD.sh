@@ -119,6 +119,8 @@ pkgs="adcli krb5-workstation sssd pam_krb5
     samba samba-winbind samba-common samba-client
     samba-winbind samba-winbind-clients
     samba-winbind-krb5-locator"
+infoecho "{INFO} Make sure necessary packages are installed..."
+rpm -q ${pkgs} &>/dev/null || yum --setopt=strict=0 -y install ${pkgs}
 
 # Specify target AD Domain and its Domain Controller/DC information
 AD_DS_NAME=""
@@ -187,8 +189,6 @@ test $? -eq 0 || {
 }
 
 infoecho "Obtain information of the AD Domain and its Domain Controller..."
-rpm -q adcli &>/dev/null || yum -y install adcli &>/dev/null
-
 # Get AD DS/DC information by adcli
 run "adcli info --domain-controller=${AD_DC_IP}"
 
@@ -216,9 +216,6 @@ fi
 #
 # PART: [Basic Function] Config current client as an AD DS Domain Member
 #
-
-infoecho "{INFO} Make sure necessary packages are installed..."
-rpm -q ${pkgs} &>/dev/null || yum --setopt=strict=0 -y install ${pkgs} &>/dev/null
 
 infoecho "{INFO} Clean old principals..."
 kdestroy -A
