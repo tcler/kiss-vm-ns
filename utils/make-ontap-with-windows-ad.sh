@@ -199,6 +199,7 @@ nfsmp_krb5=/mnt/nfsmp-ontap-krb5
 nfsmp_krb5i=/mnt/nfsmp-ontap-krb5i
 nfsmp_krb5p=/mnt/nfsmp-ontap-krb5p
 source "$ONTAP_ENV_FILE"
+
 vm exec -vx $clientvm -- ping -c 4 $NETAPP_NAS_HOSTNAME
 vm exec -vx $clientvm -- systemctl restart nfs-client.target gssproxy.service rpc-statd.service rpc-gssd.service
 vm exec -vx $clientvm -- mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
@@ -221,8 +222,8 @@ vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
 #NETAPP_CIFS_PASSWD
 cifsmp=/mnt/cifsmp-ontap
 cifsmp_krb5=/mnt/cifsmp-ontap-krb5
-krb5CCACHE=$(vm exec $clientvm -- LANG=C klist | sed -n '/Ticket.cache: /{s///;p}')
-netKrb5Opt=--use-krb5-ccache=${krb5CCACHE}
+
+vm exec -vx $clientvm -- "kinit Administrator <<< ${ADMINPASSWORD}"  #workaround on rhel-9.6
 vm exec -vx $clientvm -- mkdir -p $cifsmp $cifsmp_krb5
 vm exec -vx $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
 if [[ $? = 0 ]]; then
@@ -230,4 +231,6 @@ if [[ $? = 0 ]]; then
 else
 	smbclientDebugOpt="-d 11"
 fi
+krb5CCACHE=$(vm exec $clientvm -- LANG=C klist | sed -n '/Ticket.cache: /{s///;p;q}')
+netKrb5Opt=--use-krb5-ccache=${krb5CCACHE}
 vm exec -vx $clientvm -- smbclient -L //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $netKrb5Opt -c get $smbclientDebugOpt
