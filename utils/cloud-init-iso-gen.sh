@@ -135,7 +135,7 @@ done
 )
 
 runcmd:
-  - grep -i CentOS /etc/os-release && [[ \$(rpm -E %rhel) -le 8 ]] && sed -ri -e 's/^mirror/#&/' -e '/^#baseurl/{s/^#//;s/mirrors?/vault/}' /etc/yum.repos.d/*
+  - grep -iq CentOS /etc/*-release && [[ \$(rpm -E %rhel) -le 8 ]] && sed -ri -e 's/^mirror/#&/' -e '/^#baseurl/{s/^#//;s/mirrors?/vault/}' /etc/yum.repos.d/*
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; }
   - ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '/eth1/&&!/inet/{rc=0}END{exit rc}' && { \
      dhclient eth1 2>/dev/null; \

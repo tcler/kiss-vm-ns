@@ -21,9 +21,9 @@ Usage() {
 
 	Example:
 	 $0 -d centos-5 -url http://vault.centos.org/5.11/os/x86_64/
-	 $0 -d centos-6 -url http://mirror.centos.org/centos/6.10/os/x86_64/
-	 $0 -d centos-7 -url http://mirror.centos.org/centos/7/os/x86_64/
-	 $0 -d centos-8 -url http://mirror.centos.org/centos/8/BaseOS/x86_64/os/ --post post.sh --sshkeyf ~/.ssh/id_rsa.pub
+	 $0 -d centos-6 -url http://vault.centos.org/centos/6.10/os/x86_64/
+	 $0 -d centos-7 -url http://vault.centos.org/centos/7/os/x86_64/
+	 $0 -d centos-8 -url http://vault.centos.org/centos/8/BaseOS/x86_64/os/ --post post.sh --sshkeyf ~/.ssh/id_rsa.pub
 	EOF
 }
 
@@ -189,6 +189,7 @@ echo -e "%end\n"
 # post script
 echo -e "%post --interpreter=/bin/bash --log=/root/extra-ks-post.log"
 cat <<'DNFCONF'
+grep -iq CentOS /etc/*-release && [[ $(rpm -E %rhel) -le 8 ]] && sed -ri -e 's/^mirror/#&/' -e '/^#baseurl/{s/^#//;s/mirrors?/vault/}' /etc/yum.repos.d/*
 _dnfconf=$(test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf)
 grep -q ^metadata_expire= $_dnfconf 2>/dev/null || echo metadata_expire=7d >>$_dnfconf
 DNFCONF
