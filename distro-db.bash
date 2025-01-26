@@ -13,10 +13,10 @@ distroInfo[Rocky-8]="https://mirrors.sdu.edu.cn/rocky/8/images/$_GuestARCH/%%Gen
 
 distroInfo[CentOS-10-stream]="https://composes.stream.centos.org/stream-10/production/latest-CentOS-Stream/compose/BaseOS/$_GuestARCH/images/"
 distroInfo[CentOS-9-stream]="https://cloud.centos.org/centos/9-stream/$_GuestARCH/images/ http://mirror.stream.centos.org/9-stream/BaseOS/$_GuestARCH/os/"
-distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/$_GuestARCH/images/ http://mirror.centos.org/centos/8-stream/BaseOS/$_GuestARCH/os/"
-distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/$_GuestARCH/images/ http://mirror.centos.org/centos/8/BaseOS/$_GuestARCH/os/"
-distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/%%GenericCloud-.{4}.qcow2c http://mirror.centos.org/centos/7/os/$_GuestARCH/"
-distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/%%GenericCloud.qcow2c http://mirror.centos.org/centos/6/os/$_GuestARCH/"
+distroInfo[CentOS-8-stream]="https://cloud.centos.org/centos/8-stream/$_GuestARCH/images/ http://vault.centos.org/centos/8-stream/BaseOS/$_GuestARCH/os/"
+distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/$_GuestARCH/images/ http://vault.centos.org/centos/8/BaseOS/$_GuestARCH/os/"
+distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/%%GenericCloud-.{4}.qcow2c http://vault.centos.org/centos/7/os/$_GuestARCH/"
+distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/%%GenericCloud.qcow2c http://vault.centos.org/centos/6/os/$_GuestARCH/"
 
 #### Fedora
 fbaseurl=https://download.fedoraproject.org/pub/fedora/linux
