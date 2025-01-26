@@ -3577,6 +3577,8 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 		NETWORK_OPTS[0]+=,mac=${WIN_MAC_EXT},model=${WIN_IF_MODEL}
 		NETWORK_OPTS[1]+=,mac=${WIN_MAC_INT},model=${WIN_IF_MODEL}
 	fi
+	[[ "$lerhel7" = yes ]] &&  #change NIC order to ensure default ip route works on rhel7-
+		[[ "${NETWORK_OPTS[1]}" =~ =direct, ]] && NETWORK_OPTS=(${NETWORK_OPTS[1]} ${NETWORK_OPTS[0]})
 else
 	is_bridge() { local ifname=$1; ip -d a s "$ifname" | grep -qw bridge; }
 	srcif=$(get-default-if.sh)
@@ -3595,11 +3597,11 @@ else
 			intIfModel=e1000
 		fi
 		NETWORK_OPTS=("$defaultFirstNetOpt,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}" "--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel}")
-		[[ "$lerhel7" = yes ]] &&
+		[[ "$lerhel7" = yes ]] &&  #change NIC order to ensure default ip route works on rhel7-
 			NETWORK_OPTS=("--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel}" "$defaultFirstNetOpt,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}")
 	else
 		NETWORK_OPTS=("${defaultFirstNetOpt},model=${DEFAULT_IF_MODEL}" "--network=network=default,model=${DEFAULT_IF_MODEL}")
-		[[ "$lerhel7" = yes ]] &&
+		[[ "$lerhel7" = yes ]] &&  #change NIC order to ensure default ip route works on rhel7-
 			NETWORK_OPTS=("--network=network=default,model=${DEFAULT_IF_MODEL}" "${defaultFirstNetOpt},model=${DEFAULT_IF_MODEL}")
 	fi
 fi
