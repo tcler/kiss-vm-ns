@@ -120,6 +120,9 @@ pkgs="adcli krb5-workstation sssd pam_krb5
     samba-winbind samba-winbind-clients
     samba-winbind-krb5-locator"
 infoecho "{INFO} Make sure necessary packages are installed..."
+grep ^nameserver /etc/resolv.conf ||  #workaround for rhel7
+	ip r|awk '/^default/{print "nameserver", $3}'|sort -u >>/etc/resolv.conf
+while ! ping -q4c 2 bing.com; do sleep 16; done
 rpm -q ${pkgs} &>/dev/null || yum --setopt=strict=0 -y install ${pkgs}
 
 # Specify target AD Domain and its Domain Controller/DC information
