@@ -3575,10 +3575,11 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 	if [[ "$WIN_AUTO" = yes ]]; then
 		WIN_MAC_INT=$(gen_virt_mac); WIN_MAC_EXT=$(gen_virt_mac)
 		NETWORK_OPTS[0]+=,mac=${WIN_MAC_EXT},model=${WIN_IF_MODEL}
+		[[ -z "${NETWORK_OPTS[1]}" ]] && NETWORK_OPTS[1]=--network=network=default
 		NETWORK_OPTS[1]+=,mac=${WIN_MAC_INT},model=${WIN_IF_MODEL}
 	fi
 	[[ "$lerhel7" = yes ]] &&  #change NIC order to ensure default ip route works on rhel7-
-		[[ "${NETWORK_OPTS[1]}" =~ =direct, ]] && NETWORK_OPTS=(${NETWORK_OPTS[1]} ${NETWORK_OPTS[0]})
+		[[ "${NETWORK_OPTS[1]}" =~ =direct, ]] && read NETWORK_OPTS[0] NETWORK_OPTS[1] <<< "${NETWORK_OPTS[1]} ${NETWORK_OPTS[0]}"
 else
 	is_bridge() { local ifname=$1; ip -d a s "$ifname" | grep -qw bridge; }
 	srcif=$(get-default-if.sh)
