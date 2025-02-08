@@ -2,13 +2,9 @@
 #download apue-3e example,lib code and install apue lib and header files
 #
 
-switchroot() {
-	local P=$0 SH=; [[ $0 = /* ]] && P=${0##*/}; [[ -e $P && ! -x $P ]] && SH=$SHELL
-	[[ $(id -u) != 0 ]] && {
-		echo -e "\E[1;4m{WARN} $P need root permission, switch to:\n  sudo $SH $P $@\E[0m"
-		exec sudo $SH $P "$@"
-	}
-}
+shlib=/usr/lib/bash/libtest.sh; [[ -r $shlib ]] && source $shlib
+needroot() { [[ $EUID != 0 ]] && { echo -e "\E[1;4m{WARN} $0 need run as root.\E[0m"; exit 1; }; }
+[[ function = "$(type -t switchroot)" ]] || switchroot() {  needroot; }
 switchroot "$@"
 
 tarf=src.3e.tar.gz

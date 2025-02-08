@@ -1,5 +1,9 @@
 #!/bin/bash
 
+shlib=/usr/lib/bash/libtest.sh; [[ -r $shlib ]] && source $shlib
+needroot() { [[ $EUID != 0 ]] && { echo -e "\E[1;4m{WARN} $0 need run as root.\E[0m"; exit 1; }; }
+[[ function = "$(type -t switchroot)" ]] || switchroot() {  needroot; }
+
 LANG=C
 sysudir=/sys/devices/system/cpu
 uon=($sysudir/cpu0)
@@ -26,14 +30,6 @@ if [[ $uoncnt -eq ${#uon[@]} ]]; then
 	echo "{info} online cpu-core: ${#uon[@]}/${ucnt}, do nothing"
 	exit 0
 fi
-
-switchroot() {
-	local P=$0 SH=; [[ -e $P && ! -x $P ]] && SH=$SHELL
-	[[ $(id -u) != 0 ]] && {
-		echo -e "\E[1;4m{WARN} $P need root permission, switch to:\n  sudo $SH $P $@\E[0m"
-		exec sudo $SH $P "$@"
-	}
-}
 
 #__main__
 switchroot "$@"

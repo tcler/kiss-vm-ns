@@ -5,18 +5,9 @@
 #ref: https://www.baeldung.com/linux/power-consumption
 #ref: https://www.onitroad.com/jc/faq/how-to-measure-power-consumption-using-powerstat-in-linux.html
 
-switchroot() {
-	local P=$0 SH=; [[ -x $0 && $0 = /* ]] && command -v ${0##*/} &>/dev/null && P=${0##*/}; [[ ! -f $P || ! -x $P ]] && SH=$SHELL
-	[[ $(id -u) != 0 ]] && {
-		if [[ "${SHELL##*/}" = $P ]]; then
-			echo -e "\E[1;31m{WARN} $P need root permission, please add sudo before $P\E[0m" >&2
-			exit
-		else
-			echo -e "\E[1;4m{WARN} $P need root permission, switch to:\n  sudo $SH $P $@\E[0m" >&2
-			exec sudo $SH $P "$@"
-		fi
-	}
-}
+shlib=/usr/lib/bash/libtest.sh; [[ -r $shlib ]] && source $shlib
+needroot() { [[ $EUID != 0 ]] && { echo -e "\E[1;4m{WARN} $0 need run as root.\E[0m"; exit 1; }; }
+[[ function = "$(type -t switchroot)" ]] || switchroot() {  needroot; }
 switchroot "$@"
 
 stime() {
