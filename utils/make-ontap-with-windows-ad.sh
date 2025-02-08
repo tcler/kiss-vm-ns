@@ -229,7 +229,8 @@ vm exec -vx $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp
 if [[ $? = 0 ]]; then
 	vm exec -vx1-255 $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
 else
-	smbclientDebugOpt="-d 11"
+	vm exec -vx $clientvm -- 'klist -c; journalctl -x -e'
+	smbclientDebugOpt="-d 10"
 fi
 krb5CCACHE=$(vm exec $clientvm -- LANG=C klist | sed -n '/Ticket.cache: /{s///;p;q}')
 netKrb5Opt=--use-krb5-ccache=${krb5CCACHE}
