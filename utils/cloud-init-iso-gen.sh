@@ -157,7 +157,7 @@ $(
 if [[ $Intranet = yes ]]; then
 cat <<IntranetCMD
   - (cd /etc/pki/ca-trust/source/anchors && curl -Ls --remote-name-all https://certs.corp.redhat.com/{2022-IT-Root-CA.pem,2015-IT-Root-CA.pem,ipa.crt,mtls-ca-validators.crt,RH-IT-Root-CA.crt} && update-ca-trust)
-  - command -v yum && (cd /usr/bin && curl -L -k -m 30 --remote-name-all $bkrClientImprovedUrl/utils/{brewinstall.sh,taskfetch.sh} && chmod +x brewinstall.sh taskfetch.sh) &&
+  - command -v yum && (cd /usr/bin && curl -L -k -m 30 --remote-name-all $bkrClientImprovedUrl/utils/{brewinstall.sh,taskfetch.sh} $baseUrl/utils/srcrpmbuild.sh && chmod +x brewinstall.sh taskfetch.sh srcrpmbuild.sh) &&
     { brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot; [[ "$TASK_FETCH" = yes ]] && taskfetch.sh --install-deps; }
 
   - _rpath=share/restraint/plugins/task_run.d
