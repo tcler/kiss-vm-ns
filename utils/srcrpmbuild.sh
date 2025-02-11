@@ -1,8 +1,13 @@
 #!/bin/bash
 
-Usage() { echo -e "Usage: ${0} <src.rpm> [p|b]"; }
+shlib=/usr/lib/bash/libtest.sh; [[ -r $shlib ]] && source $shlib
+needroot() { [[ $EUID != 0 ]] && { echo -e "\E[1;4m{WARN} $0 need run as root.\E[0m"; exit 1; }; }
+[[ function = "$(type -t switchroot)" ]] || switchroot() {  needroot; }
+
+Usage() { echo -e "Usage: sudo ${0} <src.rpm> [p|b]"; }
 [[ $# = 0 ]] && { Usage >&2; exit 1; }
 
+switchroot "$@"
 which rpmbuild &>/dev/null || yum install -y /usr/bin/rpmbuild
 
 pkg=$1
@@ -24,9 +29,13 @@ else
 fi
 
 if [[ "$buildtype" = p ]]; then
-	target=.
-	[[ "$EUID" = 0 ]] && target=/usr/src
-	mv -f ~/rpmbuild/BUILD/* $target/
+	srcdir=/usr/src
+	if [[ $pkg = kernel-[0-9].*.src.rpm ]]; then
+		read kdir _ <<<$(ls -d ~/rpmbuild/BUILD/*/linux-[0-9]*)
+		mv -f -T $kdir ${srcdir}/${kdir##*/}
+	else
+		mv -f ~/rpmbuild/BUILD/* ${srcdir}/
+	fi
 elif [[ "$buildtype" = b ]]; then
 	mv -f ~/rpmbuild/RPMS/$(uname -m)/* ./.
 fi
