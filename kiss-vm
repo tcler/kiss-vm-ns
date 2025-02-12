@@ -2144,7 +2144,7 @@ Usage() {
 	                 #Note: only for OS that install from automated kickstart file
 	                 #That is to say, it can only be used with the -L option and for OS like rhel/centos/rocky/alma/fedora.
 	  --kernel-opts <kernel args>
-	                 #apped kernel options/args
+	                 #apped kernel options/args. e.g: --kernel-opts=nfs.localio_enabled=0
 	                 #Note: conflict with '--ks + -L[url]' option
 	  -n, --vmname <name>
 	                 #VM name, will auto generate according distro name if omitting
