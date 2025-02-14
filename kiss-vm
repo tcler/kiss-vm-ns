@@ -187,7 +187,7 @@ create_vmhome() {
 	local vmhome=${1%/}
 	local vmn=${vmhome##*/}
 	if [[ -z "$vmhome" ]]; then
-		echo "{VM:ERROR} create_vmhost <vmhome>: argument vmhome is required"
+		echo "{VM:ERROR} create_vmhost <vmhome>: argument vmhome is required" >&2
 		return 1
 	fi
 	VMtmp=$vmhome/tmp
@@ -350,7 +350,7 @@ _vmdelete() {
 	}
 
 	grep -E -q "^${_vmname//+/.}$" <(virsh list --name --all) || {
-		echo -e "{VM:WARN} VM '$_vmname' does not exist"
+		echo -e "{VM:WARN} VM '$_vmname' does not exist" >&2
 		return 1
 	}
 
@@ -361,8 +361,8 @@ _vmdelete() {
 	[[ -n "$(virsh snapshot-list $_vmname --name)" ]] && delOpts=--snapshots-metadata
 	[[ $(id -u) = 0 && $_vmdir = /root/VM[sS]/* ]] || [[ "$_vmdir" = $userhome/VM[sS]/* ]] && own=yes
 	if [[ $own != yes ]]; then
-		echo -e "{VM:WARN} VM '$_vmname' was not created by current user($VMUSER); try:"
-		cat <<-EOF
+		echo -e "{VM:WARN} VM '$_vmname' was not created by current user($VMUSER); try:" >&2
+		cat <<-EOF >&2
 		  virsh destroy $_vmname
 		  virsh undefine $_vmname $delOpts #--remove-all-storage --nvram
 		EOF
@@ -823,7 +823,7 @@ vmclone() {
 	fi
 	is_invalid_vmname "$dstname" && return 1
 	virsh desc $dstname &>/dev/null && {
-		echo -e "{VM:WARN} Guest $dstname has been there ..."
+		echo -e "{VM:WARN} Guest $dstname has been there ..." >&2
 		return 1
 	}
 
@@ -831,16 +831,16 @@ vmclone() {
 	srcpath=$(vmhomedir $srcname 2>/dev/null|head -n1)
 	[[ ! -r "${srcpath}" ]] && {
 		echo "homedir($srcname): $srcpath"
-		echo -e "{VM:WARN} Guest homedir is not readable for current user($(whoami)) ..."
+		echo -e "{VM:WARN} Guest homedir is not readable for current user($(whoami)) ..." >&2
 		return 1
 	}
 	[[ ! -f ${srcpath}/.kiss-vm || ${srcpath##*/} != ${srcname} ]] && {
-		echo -e "{VM:WARN} seems $srcname was not created by kiss-vm, can not use vm-clone; please use virt-clone instead ..."
+		echo -e "{VM:WARN} seems $srcname was not created by kiss-vm, can not use vm-clone; please use virt-clone instead ..." >&2
 		return 1
 	}
 	[[ ! -r ${srcpath}/.kiss-vm ]] && {
 		vmhomedir $srcname
-		echo -e "{VM:WARN} Guest $srcname is not readable for current user($(whoami)) ..."
+		echo -e "{VM:WARN} Guest $srcname is not readable for current user($(whoami)) ..." >&2
 		return 1
 	}
 
@@ -848,7 +848,7 @@ vmclone() {
 	echo -e "{VM:INFO} stoping source VM '${srcname}' ..."
 	virsh destroy "$srcname" &>/dev/null
 	[[ "$(vmstat $srcname)" = running* ]] && {
-		echo -e "{VM:WARN} Guest $srcname is still running, please stop it before clone ..."
+		echo -e "{VM:WARN} Guest $srcname is still running, please stop it before clone ..." >&2
 		return 1
 	}
 
@@ -1188,7 +1188,7 @@ vmlogin() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 	[[ "$(vmstat $_vmname)" = running* ]] || {
-		echo -e "{VM:WARN} $_vmname has not been running or not exist"
+		echo -e "{VM:WARN} $_vmname has not been running or not exist" >&2
 		return 1
 	}
 	vmhomedir $_vmname 2>/dev/null | grep -q -i windows && {
@@ -1219,10 +1219,10 @@ vmlogin() {
 	addrs=$(vmifaddr "$_vmname")
 	[[ -z "$addrs" ]] && {
 		if [[ "${EXEC}" = yes ]]; then
-			echo -e "{VM:WARN} can not get ip info of $_vmname ..."
+			echo -e "{VM:WARN} can not get ip info of $_vmname ..." >&2
 			return 107
 		else
-			echo -e "{VM:WARN} can not get ip info of $_vmname, try login with console ..."
+			echo -e "{VM:WARN} can not get ip info of $_vmname, try login with console ..." >&2
 			virsh console "$_vmname"
 			return $?
 		fi
@@ -1304,14 +1304,14 @@ vmadd_iso() {
 	local isof=$2
 	local homedir=$(vm homedir $vmname |& head -1)
 	if [[ ! -d "$homedir" ]]; then
-		echo -e "{VM:ERROR} empty or invalide vm-homedir($homedir)"
+		echo -e "{VM:ERROR} empty or invalide vm-homedir($homedir)" >&2
 		return
 	fi
 	if [[ -f "$isof" ]]; then
 		cp "$isof" $homedir/.
 		isof=$homedir/${isof##*/}
 	else
-		echo -e "{VM:WARN} iso file '$isof' not exist ..."
+		echo -e "{VM:WARN} iso file '$isof' not exist ..." >&2
 		return
 	fi
 
@@ -1331,7 +1331,7 @@ vmadd_disk() {
 	local diskf=$2
 	local homedir=$(vm homedir $vmname |& head -1)
 	if [[ ! -d "$homedir" ]]; then
-		echo -e "{VM:ERROR} empty or invalide vm-homedir($homedir)"
+		echo -e "{VM:ERROR} empty or invalide vm-homedir($homedir)" >&2
 		return 1
 	fi
 	local subdrv_opt=
@@ -1353,7 +1353,7 @@ vmadd_disk() {
 	elif [[ ! -e "$diskf" && "$diskf" != */* ]]; then
 		diskf="$homedir/$diskf"
 		if [[ -f "$diskf" ]]; then
-			{ echo -e "{VM:WARN} '$diskf' already exist."; : return; }
+			{ echo -e "{VM:WARN} '$diskf' already exist." >&2; : return; }
 		else
 			qemu-img create -f qcow2 "${diskf}" ${size:-80G}
 		fi
@@ -1361,7 +1361,7 @@ vmadd_disk() {
 	fi
 
 	if [[ ! -e "$diskf" ]]; then
-		echo -e "{VM:ERROR} file '$diskf' not exist"
+		echo -e "{VM:ERROR} file '$diskf' not exist" >&2
 		return 2
 	fi
 
@@ -1501,7 +1501,7 @@ netcreate() {
 	fi
 
 	_netinfo=$(LANG=C virsh net-info -- "$netname" 2>/dev/null) && {
-		echo "{VM:WARN} Virt network $netname has been there."
+		echo "{VM:WARN} Virt network $netname has been there." >&2
 		grep -q ^Active:.*yes <<<"$_netinfo" || {
 			virsh net-start "$netname"
 		}
@@ -1701,7 +1701,7 @@ install_requires() {
 		;;
 	*)
 		: #fixme add more platform
-		echo -e "{VM:WARN} kiss-vm doesn't supported this platform($OS)"
+		echo -e "{VM:WARN} kiss-vm doesn't supported this platform($OS)" >&2
 		return 2
 		;;
 	esac
@@ -2797,19 +2797,19 @@ qemu_kvm_nvr() { echo -n ${QEMU_KVM} $(${QEMU_KVM} --version 2>/dev/null | awk '
 libvirt_nvr() { echo -n "libvirt-$(virsh --version 2>/dev/null)"; }
 if [[ "${#NVDIMM_LIST[@]}" -gt 0 ]]; then
 	if ! grep -q nvdimm < <(LANG=C $QEMU_KVM -device help 2>/dev/null); then
-		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvdimm driver."
+		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvdimm driver." >&2
 		exit 1
 	fi
 fi
 if [[ "${#NVME_DEVS[@]}" -gt 0 || -n "$NVME_BOOT" ]]; then
 	if ! grep -q nvme < <(LANG=C $QEMU_KVM -device help 2>/dev/null); then
-		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvme driver."
+		echo -e "{VM:WARN} $(qemu_kvm_nvr) doesn't support nvme driver." >&2
 		exit 1
 	fi
 fi
 if [[ ${#SHARE_DIRS[@]} -gt 0 ]]; then
 	if vercmp "$(libvirt_nvr)" lt libvirt-6.2; then
-		echo -e "{VM:WARN} $(libvirt_nvr) doesn't support virtiofs driver that's required by --sharedir option."
+		echo -e "{VM:WARN} $(libvirt_nvr) doesn't support virtiofs driver that's required by --sharedir option." >&2
 		exit 1
 	fi
 fi
@@ -2817,7 +2817,7 @@ if [[ ${#HOST_DEV_LIST[@]} -gt 0 ]]; then
 	if [[ -z "$(ls $iommuGrpsRoot)" ]]; then
 		kernelopts="intel_iommu=on iommu=pt"
 		grep -q AuthenticAMD /proc/cpuinfo && kernelopts="amd_iommu=on"
-		cat <<-MSG
+		cat <<-MSG >&2
 			{VM:WARN} iommu has not been enabled on your HOST, please change kernel options and reboot:"
 			  sudo grubby --args="$kernelopts" --update-kernel=DEFAULT; sudo reboot
 		MSG
@@ -2853,7 +2853,7 @@ support_virtualization() {
 	return $rc
 }
 if ! support_virtualization; then
-	echo -e "{VM:WARN} current machine doesn't support Virtualization, show help info with\n  $P -h"
+	echo -e "{VM:WARN} current machine doesn't support Virtualization, show help info with\n  $P -h" >&2
 	exit 1
 fi
 
@@ -2896,7 +2896,7 @@ enable_nested_kvm() {
 
 		if [[ $(< /sys/module/$kmodule/parameters/nested) != [Yy1] ]]; then
 			modprobe -r $kmodule || {
-				echo -e "{VM:WARN} stop tasks are using module $kmodule, and try again"
+				echo -e "{VM:WARN} stop tasks are using module $kmodule, and try again" >&2
 				return 1
 			}
 			modprobe $kmodule
@@ -3161,7 +3161,7 @@ done
 #get distro name in interactive mode if not specified
 #thanks: https://stackoverflow.com/questions/49733211/bash-jump-to-bottom-of-terminal
 # { echo -ne "\E[${LINES};0H"; }  works the same as { tput cup $(tput lines) 0; }
-distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn't select any distro/family, it is necessary!"; }
+distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn't select any distro/family, it is necessary!" >&2; }
 [[ -z "$Distro" ]] && {
 	if [[ -z "$Location" && -z "$Imageurl" && -z "$Isourl" ]]; then
 		distropatternInter=$RuntimeTmp/distroPatternInternet
@@ -3196,7 +3196,7 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 		tput cup $(tput lines) 0
 	else
 		Usage
-		echo -e "\n{VM:WARN} ^^^ a distro name is necessary!\n"
+		echo -e "\n{VM:WARN} ^^^ a distro name is necessary!\n" >&2
 		exit 1
 	fi
 }
@@ -3260,11 +3260,11 @@ if [[ "$VTPM" = yes ]]; then
 	_dependpkgs=swtpm-tools
 	_dependcmd=swtpm_setup
 	if ! grep -q tpm-crb < <(LANG=C $QEMU_KVM -device help); then
-		echo -e "{VM:WARN} $(qemu_kvm_nvr) don't support tpm-crb driver that's required by --vtpm option"
+		echo -e "{VM:WARN} $(qemu_kvm_nvr) don't support tpm-crb driver that's required by --vtpm option" >&2
 		exit 1
 	fi
 	if ! command -v $_dependcmd &>/dev/null; then
-		echo -e "{VM:WARN} pkg $_dependpkgs is/are needed by vTPM function, please install $_dependpkgs first."
+		echo -e "{VM:WARN} pkg $_dependpkgs is/are needed by vTPM function, please install $_dependpkgs first." >&2
 		exit 1
 	fi
 	VTPM_OPT="--tpm emulator,model=tpm-crb,version=2.0"
@@ -3315,7 +3315,7 @@ QXL_available() {
 		if [[ "${OVERWRITE}" = "yes" ]]; then
 			echo "{VM:INFO} VM $vmname has been there, remove it ..."
 			_vmdelete $vmname || {
-				echo "{VM:ERR} delete $vmname fail, exit."
+				echo "{VM:ERR} delete $vmname fail, exit." >&2
 				exit 2
 			}
 		elif [[ "${DOWNLOAD_ONLY}" != "yes" ]]; then
@@ -3501,11 +3501,11 @@ MSIZE=${MSIZE:-$_MSIZE}
 MSIZE=${MSIZE%[Mm]}
 
 [[ "$MSIZE" -gt "$available_msize" ]] && {
-	echo "{VM:ERR} the available mem size is less than that you required(${MSIZE}M)."
+	echo "{VM:ERR} the available mem size is less than that you required(${MSIZE}M)." >&2
 	cleanup_and_exit 132
 }
 [[ "$MSIZE" -lt 256 ]] && {
-	echo -e "\E[41m{VM:WARN} seems the mem size you required(${MSIZE}) is toooo small.\E[0m"
+	echo -e "\E[41m{VM:WARN} seems the mem size you required(${MSIZE}) is toooo small.\E[0m" >&2
 	builtin read -p 'continue?[y/n](y) ' -t 10 ans
 	[[ "$ans" = [Nn]* ]] && cleanup_and_exit 132
 }
@@ -3667,7 +3667,7 @@ done
 for disk in "${DISKS[@]}"; do
 	read img _args <<<"${disk/,/ }"
 	if [[ ! -f "$img" && ! -b "$img" ]]; then
-		echo -e "\n{VM:WARN} '--disk $disk': file '$img' does not exist, ignore it.\n"
+		echo -e "\n{VM:WARN} '--disk $disk': file '$img' does not exist, ignore it.\n" >&2
 		continue
 	fi
 
@@ -4290,7 +4290,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 					timeout 5 vm vnc "$vmname" -get
 				else
 					vm vnc "$vmname" -get
-					echo "{VM:ERR} Both Guest's console and vnc are not available."
+					echo "{VM:ERR} Both Guest's console and vnc are not available." >&2
 					exit 1
 				fi
 			fi
@@ -4775,7 +4775,7 @@ fi
 trap - SIGINT SIGQUIT SIGTERM
 
 if ! virsh desc $vmname &>/dev/null; then
-	echo -e "\n{VM:ERR} virt-install fail"
+	echo -e "\n{VM:ERR} virt-install fail" >&2
 	rm -rf $VMpath $varlib_dir/$vmname && rmdir {$VMpath%/*} 2>/dev/null
 	exit 1
 fi
@@ -4786,7 +4786,7 @@ if [[ "$WAIT" = yes ]]; then
 		for ((i=0; i<60; i++)); do
 			sleep 5
 			timeout 5 vm vnc $vmname -get 2>/dev/null|grep -E 'Cii_.*L9.._i_.*\^.*L9.*ie3.*iv_..L3' && {
-				echo -e "\n{VM:ERR} your windows image is not Evaluation version, and no ProductKey was found from answerfile"
+				echo -e "\n{VM:ERR} your windows image is not Evaluation version, and no ProductKey was found from answerfile" >&2
 				exit 1
 			}
 		done
