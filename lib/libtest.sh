@@ -241,6 +241,7 @@ gen_distro_dir_name() {
 	local vmname=$1
 	local suffix=$2
 	local arch=$(vm exec $vmname -- uname -m)
+	[[ -z "$arch" ]] && arch=$(vm xml $vmname | sed -rn -e "/^.*arch='([^']+)' .*$/{s//\1/;p}" -e '/.*\.([^.]+)\.qcow2.*/{s//\1/;p}' | tail -1)
 	local distro=$(vm homedir $vmname|awk -F/ 'NR==1{print $(NF-1)}')
 	[[ -z "${arch}" || -z "${distro}" ]] && return 1
 	local distrodir=${distro}.${arch}; [[ -n "${suffix}" ]] && distrodir+=+${suffix}
