@@ -147,6 +147,7 @@ runcmd:
   - sed -ri -e '/^#?(PasswordAuthentication|AllowAgentForwarding|PermitRootLogin) (.*)$/{s//\1 yes/}' -e '/^Inc/s@/\*.conf@/*redhat.conf@' /etc/ssh/sshd_config \$(ls /etc/ssh/sshd_config.d/*) && service sshd restart || systemctl restart sshd
   - grep -q '^StrictHostKeyChecking no' /etc/ssh/ssh_config || echo "StrictHostKeyChecking no" >>/etc/ssh/ssh_config
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
+  - grep -q ^nameserver /etc/resolv.conf || ip r|awk '/^default/{print "nameserver", \$3}'|sort -u >>/etc/resolv.conf
   - command -v yum && yum --setopt=strict=0 install -y bash-completion curl wget vim ipcalc expect $PKGS
   -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget vim ipcalc expect network-manager $PKGS; systemctl restart NetworkManager; }
   -   command -v zypper && { zypper in --no-recommends -y bash-completion curl wget vim ipcalc expect NetworkManager $PKGS; systemctl restart NetworkManager; }
@@ -193,7 +194,9 @@ KOPTS
 $(
 cat <<DNS_DOMAIN
   - hostn=\$(hostname); domain=\${hostn#*.}; grep -q "search .* \${domain}" /etc/resolv.conf && sed -i -e "/^search/{s/ \${domain}//;s/search/& \${domain}/}" /etc/resolv.conf
-  - grep ^nameserver /etc/resolv.conf || ip r|awk '/^default/{print "nameserver", \$3}'|sort -u >>/etc/resolv.conf
+  - echo 'while sleep 5; do grep -q ^nameserver /etc/resolv.conf || ip r|awk '"'"'/^default/{print "nameserver", \$3}'"'"'|sort -u >>/etc/resolv.conf; done &' >/usr/local/bin/fix-resolv.conf.sh
+  - echo 'nohup /usr/local/bin/fix-resolv.conf.sh &' >>/etc/rc.d/rc.local
+  - chmod +x /usr/local/bin/fix-resolv.conf.sh /etc/rc.d/rc.local
 DNS_DOMAIN
 [[ -n "$defaultDNS" ]] && cat <<DNS
   - grep -q systemd-resolved /etc/resolv.conf || { sed -i -e "/$defaultDNS/d" -e "0,/nameserver/s//nameserver $defaultDNS\n&/" /etc/resolv.conf; sed -ri '/^\[main]/s//&\ndns=none\nrc-manager=unmanaged/' /etc/NetworkManager/NetworkManager.conf; }

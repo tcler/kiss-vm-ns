@@ -3822,6 +3822,7 @@ if [[ "$InstallType" = location ]]; then
 		test -f /etc/hostname && echo ${vmhostname}.$VM_DOMAIN >/etc/hostname || echo HOSTNAME=${vmhostname}.$VM_DOMAIN >>/etc/sysconfig/network
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install pkgs ${PKGS} ..."
+		grep ^nameserver /etc/resolv.conf || ip r|awk '/^default/{print "nameserver", \$3}' >>/etc/resolv.conf
 		yum --setopt=strict=0 install -y wget tmux ${PKGS} ipcalc 2>/dev/null
 
 		END
@@ -4042,7 +4043,6 @@ if [[ "$InstallType" = location ]]; then
 				expect "Password:" {
 					send "'"$defaultPasswd"'\r"
 					send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '"'"'/eth1/&&!/inet/{rc=0}END{exit rc}'"'"' && dhclient eth1 2>/dev/null;}; send "\r\n"
-					send {grep ^nameserver /etc/resolv.conf || ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"'|sort -u >>/etc/resolv.conf;}; send "\r\n"
 					send "\r\r\r\r\r\r"
 					send "# your are in console, Ctr + ] to exit \r"
 					send "\r\r\r\r\r\r"
@@ -4362,7 +4362,6 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 						}
 
 						send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '"'"'/eth1/&&!/inet/{rc=0}END{exit rc}'"'"' && dhclient eth1 2>/dev/null;}; send "\r\n"
-						send {grep ^nameserver /etc/resolv.conf || ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"' >>/etc/resolv.conf;}; send "\r\n"
 						send {sleep 16; while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
 						send "\r\n"
 						expect {
