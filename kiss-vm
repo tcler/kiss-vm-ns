@@ -1288,7 +1288,7 @@ vmlogin() {
 			fi
 		fi
 
-		faillog() { echo -e "\033[41m{TEST:FAIL} $*\033[0m"; }
+		faillog() { echo -e "\033[41m{TEST:FAIL} $*\033[0m" >&2; }
 		[[ -n "$expectedrc" ]] && {
 			[[ " ${expectedrc[@]} " != *" $rc "* ]] && {
 				faillog "return code: expect $expectedRC, but got $rc"
