@@ -2276,9 +2276,9 @@ Usage() {
 	                 #add -qmp option to qemu. [=arg] is optional
 	  --monitor, --qemu-monitor[=/path/to/unixsocket|host:port]
 	                 #add -monitor option to qemu. [=arg] is optional
-	  --enable-guest-hypv #enable guest hypervisor, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
-	                      #ref: https://www.linux-kvm.org/page/Nested_Guests
-	  --disable-guest-hypv #disable guest hypervisor
+	  --nested-kvm-on #turn on nested kvm in guest, same as --qemu-opts="-cpu host,+vmx" or --qemu-opts="-cpu host,+svm"
+	                   #ref: https://www.linux-kvm.org/page/Nested_Guests
+	  --nested-kvm-off #turn off nested kvm in guest
 	  --pxe          #PXE install
 	                 #`e.g: vm fedora-32 -n f32 -net-macvtap -pxe --noauto -f
 	  --to-disk <>   #install the system to an existing disk(/dev/sdb) or image(/path/to/image) file
@@ -2384,7 +2384,7 @@ Usage() {
 	  $P create RHEL-8.3.0 --nvme "size=32 size=16,format=raw"   # add two nvme device
 	  $P create rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
 	  $P create rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
-	  $P create rhel-8.2% -enable-guest-hypv -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
+	  $P create rhel-8.2% -nested-kvm-on -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
 
 	EOF
 	cat <<-EOF
@@ -2393,7 +2393,7 @@ Usage() {
 	  $P create <FreeBSD-13.0 | Rocky-8 | fedora-35 | debian-10 | openSUSE-leap-15.3>
 	  $P create CentOS-8-stream -b ftp://url/path/x.rpm
 	  $P create Rocky-8 -p "jimtcl vim git make gcc"
-	  $P create Rocky-8 -enable-guest-hypv -msize=8G -dsize=120  # enable hyper-v on guest
+	  $P create Rocky-8 -nested-kvm-on -msize=8G -dsize=120  # enable hyper-v on guest
 	  $P create CentOS-9-stream -n qmptest --qmp --nointeract    # enable qmp server in guest
 	  $P qmp qmptest <<<"query-block"
 
@@ -2422,7 +2422,7 @@ Usage() {
 
 	Examples for other sub-commands:
 	  $P prepare [-u user] #check/install/configure libvirt and other dependent packages
-	  $P enable-nested-vm  #enable nested on host
+	  $P enable-nested-kvm #enable nested on host
 
 	  $P list              #list all VMs       //you can use ls,li,lis* instead list
 	  $P login [VM [U [P]]]#login VM via ssh   //you can use l,lo,log* instead login
@@ -2482,7 +2482,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long help \
 	--long prepare \
 	--long user: \
-	--long enable-nested-vm \
+	--long enable-nested-kvm --long enable-nested-vm \
 	--long debug \
 	--long ks-fstype: \
 	--long ks: \
@@ -2565,8 +2565,8 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long qemu-env: \
 	--long qmp:: --long qemu-qmp:: \
 	--long monitor:: --long qemu-monitor:: \
-	--long enable-guest-hypv \
-	--long disable-guest-hypv \
+	--long nested-kvm-on --long enable-guest-hypv \
+	--long nested-kvm-off --long disable-guest-hypv \
 	--long pxe \
 	--long to-disk: \
 	--long diskless \
@@ -2611,7 +2611,7 @@ while true; do
 	-h|--help) Usage; shift 1; exit 0;;
 	--prepare) ONLY_PREPARE=yes; shift 1;;
 	-u|--user) CM_USER=$2; [[ "$2" = *[:,]* ]] && read CM_USER CM_PASSWD <<<"${2/[:,]/ }"; shift 2;;
-	--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
+	--enable-nested-kvm|--enable-nested-vm) ENABLE_NESTED=yes; shift 1;;
 	-d)        Distro=$2; shift 2;;
 	-C|-F)     InstallType=cdrom_image; Isourl=$2; shift 2;;
 	--usb-cd)  InstallType=cdrom_image; Isourl=$2; CDROM_BUS_TYPE=usb; shift 2;;
@@ -2733,8 +2733,8 @@ while true; do
 	--qemu-env)      QEMU_ENV+=("--qemu-commandline=env=$2"); shift 2;;
 	--qmp|--qemu-qmp)         QEMU_QMP="${2:-yes}"; shift 2;;
 	--monitor|--qemu-monitor) QEMU_MONITOR="${2:-yes}"; shift 2;;
-	--enable-guest-hy*)  ENABLE_L2VM=yes; shift 1;;
-	--disable-guest-hy*) ENABLE_L2VM=no; shift 1;;
+	--nested-kvm-on|--enable-guest-hy*)   ENABLE_L2VM=yes; shift 1;;
+	--nested-kvm-off|--disable-guest-hy*) ENABLE_L2VM=no; shift 1;;
 	-x) expectedRC=${2:-0}; expectedrc=$(expandrc ${expectedRC#=}); shift 2;;
 	-v|--verbose)    let VERBOSE++; shift 1;;
 	-q)              QUIET=yes; shift 1;;
