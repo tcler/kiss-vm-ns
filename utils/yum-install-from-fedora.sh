@@ -49,15 +49,18 @@ mirrorList="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-${FEDORA_VE
 echo "{INFO} fedora-version: $FEDORA_VER, mirror-url: $mirrorList"
 
 Country=$(timeout 2 curl -s ipinfo.io/country)
+fedora_repo=$(curl -L -s "$mirrorList"|sed -n 2p)
 case "$Country" in
 CN|HK)
-	fedora_repo='http://ftp.iij.ad.jp/pub/linux/Fedora/archive/fedora/linux/releases/'"$FEDORA_VER"'/Everything/$basearch/os'
-	;;
-*)
-	fedora_repo=$(curl -L -s "$mirrorList"|sed -n 2p)
+	fedora_repo="http://mirrors.aliyun.com/fedora/releases/${FEDORA_VER}/Everything/$arch/os/"
 	;;
 esac
-echo "{INFO} fedora-version: $FEDORA_VER, repo-url: $fedora_repo"
+grep -q redhat.com /etc/resolv.conf && {
+	fedora_repo=$(curl -Ls -o /dev/null -w %{url_effective} http://download.devel.redhat.com/released/fedora/F-${FEDORA_VER}/GOLD/Everything/${arch}/os)
+	curl -Ls $fedora_repo | grep -q 404 && fedora_repo=${fedora_repo/GOLD/Gold}
+}
+echo -e "{INFO} fedora-version: $FEDORA_VER, repo-url: $fedora_repo\npkgs: ${pkgs}"
+
 
 frepon=fedora-${FEDORA_VER}
 if [[ "$OSV" -le 7 ]]; then
