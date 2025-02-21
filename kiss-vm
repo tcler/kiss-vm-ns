@@ -2065,7 +2065,7 @@ if [[ $Intranet = yes ]]; then
 					print($i, d); break }
 				}
 			}' <<<"$url")
-			read prefix ver time <<< ${distro//-/ }
+			read prefix ver time <<< ${distro//-/ }; [[ "$distro" =~ ^[0-9]+\. ]] && ver=$distro
 			[[ "$rtype" =~ rel-eng|nightly ]] || rtype=nightly
 			read verx _ <<<${ver//./ }
 			Repos+=(
