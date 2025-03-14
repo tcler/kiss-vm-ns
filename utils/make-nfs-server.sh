@@ -5,7 +5,7 @@
 export LANG=C
 
 ## global var
-PREFIX=/nfsshare
+PREFIX=/var/nfsshare
 
 
 ## argparse
