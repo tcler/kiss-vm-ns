@@ -2098,10 +2098,12 @@ if [[ $Intranet = yes ]]; then
 			;;
 		esac
 		shopt -u nocasematch
+		: <<-\COMM
 		[[ "$RESTRAINT" = yes ]] && {
 			_latest=$(curl -sk https://beaker.engineering.redhat.com/repos/ | tac | sed -rn '/.*>([0-9]+\/)<.*/{s//\1/;p;q}')
 			Repos+=(beaker-task:https://beaker.engineering.redhat.com/repos/$_latest)
 		}
+		COMM
 
 		for repo in "${Repos[@]}"; do
 			read _name _url <<<"${repo/:/ }"
