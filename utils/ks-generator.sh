@@ -192,6 +192,7 @@ cat <<'DNFCONF'
 grep -iq CentOS /etc/*-release && [[ $(rpm -E %rhel) -le 8 ]] && sed -ri -e 's/^mirror/#&/' -e '/^#baseurl/{s/^#//;s/mirrors?/vault/}' /etc/yum.repos.d/*
 _dnfconf=$(test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf)
 grep -q ^metadata_expire= $_dnfconf 2>/dev/null || echo metadata_expire=7d >>$_dnfconf
+echo skip_if_unavailable=True >>/etc/dnf/dnf.conf
 DNFCONF
 
 cat <<'KSF'
