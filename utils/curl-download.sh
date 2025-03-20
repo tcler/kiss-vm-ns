@@ -20,7 +20,8 @@ curl_download() {
 
 	if [[ -d "$filename" ]]; then
 		read uri urlparam <<<"${url/\?/ }"
-		ofname=${uri##*/}
+		ofname=${uri%%#*}
+		ofname=${ofname##*/}
 		filename=${filename%/}/${ofname}
 	fi
 
