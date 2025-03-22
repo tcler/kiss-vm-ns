@@ -2094,6 +2094,7 @@ if [[ $Intranet = yes ]]; then
 			)
 			[[ "$verx" = 10 ]] && Repos+=(
 				Buildroot-10b:http://$downhostname/rhel-$verx/nightly/BUILDROOT-10-Public-Beta/latest-BUILDROOT-10-RHEL-10/compose/Buildroot/$arch/os/
+				bh-centos-s10:http://$downhostname/beakerrepos/harness/CentOSStream10
 			)
 			;;
 		esac
