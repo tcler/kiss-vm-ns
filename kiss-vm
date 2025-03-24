@@ -4344,11 +4344,6 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 							puts $expect_out(buffer)
 							exit 1
 						}
-						"Entering emergency mode." {
-							send "\r"
-							puts $expect_out(buffer)
-							exit 11
-						}
 						"* login:" { send "root\r" }
 					}
 					expect "Password:" {
@@ -4381,6 +4376,16 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 						expect {
 							"or cloud-init done ~~~~~~~~d" {send "\r\r# Now you can take over the keyboard\r\r"}
 							"Cloud-init*finished" {send "\r\r# Now you can take over the keyboard\r\r"}
+							"dracut:/#" {
+								send "\r"
+								puts $expect_out(buffer)
+								exit 11
+							}
+							"Entering emergency mode." {
+								send "\r"
+								puts $expect_out(buffer)
+								exit 11
+							}
 							"System Reboot" {
 								send "\r\r"
 								expect "* login:" {
