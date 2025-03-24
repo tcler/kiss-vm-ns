@@ -11,14 +11,20 @@ PATH=~/bin:$PATH
 CPID=$$
 PROG=$0
 ARGS=("$@")
-trap_retry() {
+trap_try_again() {
+	echo "[Error] got a special issue($SA_SIGINFO) while create VM, try again:";
+	echo '----------------------------------------------------------------'
+	VM_RETRY=yes exec $PROG "${ARGS[@]}" -f;
+}
+trap_try_newcpu() {
 	local cpu=Icelake-Server
 	echo "[Error] got a special issue($SA_SIGINFO) while create VM, try again:";
 	echo '----------------------------------------------------------------'
 	PATH=/usr/libexec:$PATH LANG=C qemu-kvm -cpu ?|grep -q $cpu || cpu=Skylake-Server
 	VM_RETRY=yes exec $PROG "${ARGS[@]}" -f --cpu=$cpu;
 }
-trap trap_retry SIGALRM SIGUSR2
+trap trap_try_again SIGUSR2
+trap trap_try_newcpu SIGALRM
 downhostname=download.devel.redhat.com
 LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 #<================ for recall self if something happen ================
@@ -4338,6 +4344,11 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 							puts $expect_out(buffer)
 							exit 1
 						}
+						"Entering emergency mode." {
+							send "\r"
+							puts $expect_out(buffer)
+							exit 11
+						}
 						"* login:" { send "root\r" }
 					}
 					expect "Password:" {
@@ -4398,6 +4409,10 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 				ReturnCode=$?
 				[[ $ReturnCode = 0 || $ReturnCode = 255 ]] && break
 				[[ $ReturnCode = 127 ]] && { virsh start $vmname 2>&1 | sed 's/error: //'; continue; }
+				[[ $ReturnCode = 11 ]] && {
+					[[ "$VM_RETRY" != yes ]] && env kill -q 127 -s SIGUSR2 $CPID
+					break
+				}
 				sleep 2
 			done
 
