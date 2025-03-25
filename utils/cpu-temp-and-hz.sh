@@ -12,8 +12,8 @@ watch -t -n 1 '
 		echo "}"
 	elif command -v sensors &>/dev/null; then
 		sensors coretemp-isa-0000 2>/dev/null ||
-			sensors k10temp-pci-00c3 | awk '\''$2~/^+/{print "cpu-core:", $2}'\''
-			sensors amdgpu-pci-0400 | awk '\''$2~/^+/{print "amdgpu-core:", $2}'\''
+			sensors -A | awk -v RS= '\''/k10temp/ {if (match($0, /\+[^ ]+/,m)) {print "cpu:", m[0]}}'\''
+			sensors -A | awk -v RS= '\''/amdgpu/{if (match($0, /\+[^ ]+/,m)) {print "amdgpu:", m[0]}}'\''
 	else
 		echo "{warn} There is neither '/sys/class/thermal/*/temp' file nor command 'sensors'" >&2
 	fi
