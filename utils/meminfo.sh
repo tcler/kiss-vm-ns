@@ -17,7 +17,7 @@ meminfo_by_dmidecode() {
 meminfo_by_lshw() {
 	local cmd=lshw
 	if command -v $cmd; then
-		echo '/\*-memory$/,/*-cache/-1 p'|ed -s <(sudo $cmd);
+		sed -rne '/\*-memory/ { :loop /\*-.*\*-/! {N; b loop}; s/\n *\*.*/\n/; p }' <(sudo $cmd)
 	else
 		return 2;
 	fi
