@@ -13,7 +13,7 @@ KISS_PASS_CNT=0
 _RC=
 
 switchroot() {
-	local P=$0 SH=; [[ -x $0 && $0 = /* ]] && command -v ${0##*/} &>/dev/null && P=${0##*/}; [[ ! -f $P || ! -x $P ]] && SH=$SHELL
+	local P=$0 SH=; [[ -x $0 && $PATH =~ (^|:)${0%/*}(:|$) ]] && command -v ${0##*/} &>/dev/null && P=${0##*/}; [[ ! -f $P || ! -x $P ]] && SH=$SHELL
 	#[[ $# -eq 0 ]] && set -- "${BASH_ARGV[@]}" #need enable extdebug: shopt -s extdebug
 	[[ $(id -u) != 0 ]] && {
 		if [[ "${SHELL##*/}" = $P ]]; then
