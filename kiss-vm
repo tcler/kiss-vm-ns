@@ -64,7 +64,7 @@ baudrate=115200
 DEFAULT_GRAPHICS_CONF="vnc,listen=0.0.0.0"
 HostARCH=$(uname -m)
 GuestARCH=$HostARCH
-VIDEO_OPT="--video=qxl"
+#VIDEO_OPT="--video=qxl"
 SOUND_OPT=""
 QEMU_OPTS=()
 QEMU_ENV=()
