@@ -58,7 +58,7 @@ RuntimeTmp=/tmp/vm-$$
 INTERACT=yes
 Intranet=yes
 VIRT_READY=unkown
-_MSIZE=1536M
+_MSIZE=2048M
 DSIZE=64
 baudrate=115200
 DEFAULT_GRAPHICS_CONF="vnc,listen=0.0.0.0"
