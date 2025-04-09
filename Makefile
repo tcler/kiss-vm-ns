@@ -10,7 +10,7 @@ _sharedir=/usr/share/kiss-vm
 _libdir=/usr/lib/bash
 _dnfconf=$(shell test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf)
 completion_path=/usr/share/bash-completion/completions
-required_pkgs=curl iproute tmux expect bind-utils bash-completion nmap ipcalc sudo
+required_pkgs=curl iproute tmux expect bind-utils bash-completion nmap ipcalc sudo skopeo jq
 required_pkgs_debian=curl iproute2 tmux expect bind9-utils bash-completion nmap ipcalc-ng sudo
 required_pkgs_arch=curl iproute2 tmux expect bind bash-completion nmap ipcalc sudo
 ifeq ("$(wildcard $(completion_path))", "")
