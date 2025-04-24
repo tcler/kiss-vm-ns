@@ -68,6 +68,9 @@ mkdir -p $PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}
 chgrp nobody -R $PREFIX
 chmod g+ws -R $PREFIX
 touch $PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}/testfile
+for dir in $PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}; do
+	cp /etc/*.conf $dir/.
+done
 semanage fcontext -a -t nfs_t "$PREFIX(/.*)?"
 restorecon -Rv $PREFIX
 chmod 775 -R $PREFIX/{rw,async,labelled-nfs,qe,devel,tls,mtls}
