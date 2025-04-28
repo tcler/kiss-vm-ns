@@ -17,7 +17,8 @@ meminfo_by_dmidecode() {
 meminfo_by_lshw() {
 	local cmd=lshw
 	if command -v $cmd; then
-		sed -rne '/\*-memory/ { :loop /\*-.*\*-/! {N; b loop}; s/\n *\*.*/\n/; p }' <(sudo $cmd)
+		#sed -rne '/\*-memory/ { :loop /\*-.*\*-/! {N; b loop}; s/\n *\*.*/\n/; p }' <(sudo $cmd)
+		sed -rne '/^ {5}\*-memory/ { :loop /^ {5}\*-.*\n {5}\*-/! {N; b loop}; s/\n {5}\*-.*/\n/; p }' <(sudo $cmd)
 	else
 		return 2;
 	fi
