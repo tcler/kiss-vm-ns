@@ -65,7 +65,7 @@ DEFAULT_GRAPHICS_CONF="vnc,listen=0.0.0.0"
 HostARCH=$(uname -m)
 GuestARCH=$HostARCH
 #VIDEO_OPT="--video=qxl"
-SOUND_OPT=""
+SOUND_OPT="--sound=default"
 QEMU_OPTS=()
 QEMU_ENV=()
 baseUrl=${LOOKASIDE_BASE_URL}/kiss-vm-ns
@@ -2211,9 +2211,11 @@ Usage() {
 	                 # sudo firewall-cmd --permanent --zone=public --add-port=5900-5999/tcp; sudo firewall-cmd reload
 	  --video <type> #video device model, Possible value for recent kvm are: cirrus, vga, qxl, virtio
 	                 #see also: `virt-install --video=?`
+	                 #Note: now Linux Guest does not support qxl well. use qxl in Windows Guest will help improve resolution
 	  --sound <type> #sound MODEL, Possible values are ich6, ich9, ac97, es1370, sb16, pcspk, or default
 	                 #see also: `virt-install --sound=?`
 	                 #Note: vnc server doesn't support audio well, please enable RDP(Remote Desktop Protocol) in your Guest for sound
+			 #`and set audio to local in RDP client(recommended 'remmina' on Linux)
 	  --ms, --msize, -m <size[GgMm]> #memory size, default is 1024M~4096M that depend on distro type
 	                 #if the unit Gg|Mm is omitted, will infer a unit
 	  --ds, --dsize    <size> #disk size, default 16
