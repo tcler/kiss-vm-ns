@@ -3851,7 +3851,7 @@ if [[ "$InstallType" = location ]]; then
 		test -f /etc/hostname && echo ${vmhostname}.$VM_DOMAIN >/etc/hostname || echo HOSTNAME=${vmhostname}.$VM_DOMAIN >>/etc/sysconfig/network
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install pkgs ${PKGS} ..."
-		grep ^nameserver /etc/resolv.conf || ip r|awk '/^default/{print "nameserver", \$3}' >>/etc/resolv.conf
+		grep -q ^nameserver /etc/resolv.conf || { if=\$(ip -br a|tail -1|cut -d" " -f1); cn=\$(nmcli -g GENERAL.CONNECTION device show \$if); nmcli connection modify "\${cn}" ipv4.ignore-auto-dns yes; nmcli connection up "\${cn}"; systemctl restart NetworkManager; }
 		yum --setopt=strict=0 install -y wget tmux ${PKGS} ipcalc 2>/dev/null
 
 		END
@@ -4071,9 +4071,12 @@ if [[ "$InstallType" = location ]]; then
 				}
 				expect "Password:" {
 					send "'"$defaultPasswd"'\r"
+					send {if ! grep -q ^nameserver /etc/resolv.conf; then ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"' >>/etc/resolv.conf; }
+					send {if=$(ip -br a|tail -1|cut -d" " -f1); cn=$(nmcli -g GENERAL.CONNECTION device show $if); nmcli connection modify "${cn}" ipv4.ignore-auto-dns yes; nmcli connection up "${cn}"; systemctl restart NetworkManager; fi;}; send "\r\n"
 					send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '"'"'/eth1/&&!/inet/{rc=0}END{exit rc}'"'"' && dhclient eth1 2>/dev/null;}; send "\r\n"
 					send "\r\r\r\r\r\r"
-					send "# your are in console, Ctr + ] to exit \r"
+					send "# you are in console, Ctr + ] to exit \r"
+					expect -re {[>$#:] *$} { send "read -N 10000000 -t 0.001  #clear input buffer\r"; after 2 }
 					send "\r\r\r\r\r\r"
 				}
 
@@ -4394,8 +4397,11 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 						send {sleep 16; while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
 						send "\r\n"
 						expect {
-							"or cloud-init done ~~~~~~~~d" {send "\r\r# Now you can take over the keyboard\r\r"}
-							"Cloud-init*finished" {send "\r\r# Now you can take over the keyboard\r\r"}
+							-re "or cloud-init done ~~~~~~~~d" {
+								send {if ! grep -q ^nameserver /etc/resolv.conf; then ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"' >>/etc/resolv.conf; }
+								send {if=$(ip -br a|tail -1|cut -d" " -f1); cn=$(nmcli -g GENERAL.CONNECTION device show $if); nmcli connection modify "${cn}" ipv4.ignore-auto-dns yes; nmcli connection up "${cn}"; systemctl restart NetworkManager; fi;}; send "\r\n"
+								#expect -re {[>$#:] *$} { send "\r# Now you can take over the keyboard\r\n" }
+							}
 							"dracut:/#" {
 								send "\r"
 								puts $expect_out(buffer)
@@ -4412,7 +4418,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 									send "root\r"
 									expect "Password:" {
 										send "'"$defaultPasswd"'\r"
-										send "\r\r# Now you can take over the keyboard\r\r"
+										expect -re {[>$#:] *$} { send "\r" }
 									}
 								}
 							}
@@ -4420,11 +4426,13 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 								send "root\r"
 								expect "Password:" {
 									send "'"$defaultPasswd"'\r"
-									send "\r\r# Now you can take over the keyboard\r\r"
+									expect -re {[>$#:] *$} { send "\r" }
 								}
 							}
 						}
-						send "# and your are in console, Ctr + ] to exit \r"
+						send "\r\r# Now you can take over the keyboard\r\r"
+						send "# and you are in console, Ctr + ] to exit \r"
+						expect -re {[>$#:] *$} { send "read -N 10000000 -t 0.001  #clear input buffer\r"; after 2 }
 						send "\r\r"
 					}
 
