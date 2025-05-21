@@ -229,7 +229,7 @@ KSF
 
 cat <<'DNS_DOMAIN'
 hostn=$(hostname); domain=${hostn#*.}; grep -q "search .* ${domain}" /etc/resolv.conf && sed -i -e "/^search/{s/ ${domain}//;s/search/& ${domain}/}" /etc/resolv.conf
-grep -q ^nameserver /etc/resolv.conf || { if=$(ip -br a|tail -1|cut -d" " -f1); cn=$(nmcli -g GENERAL.CONNECTION device show $if); nmcli connection modify "${cn}" ipv4.ignore-auto-dns yes; nmcli connection up "${cn}"; systemctl restart NetworkManager; }
+grep -q ^nameserver /etc/resolv.conf || { if=$(ip -br a|tail -1|cut -d" " -f1); cn=$(nmcli -g GENERAL.CONNECTION device show $if); nmcli connection down "${cn}"; systemctl restart NetworkManager; }
 DNS_DOMAIN
 [[ -n "$defaultDNS" ]] && cat <<DNS
 grep -q systemd-resolved /etc/resolv.conf || { sed -i -e "/$defaultDNS/d" -e "0,/nameserver/s//nameserver $defaultDNS\n&/" /etc/resolv.conf; sed -ri '/^\[main]/s//&\ndns=none\nrc-manager=unmanaged/' /etc/NetworkManager/NetworkManager.conf; }
