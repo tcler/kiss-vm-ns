@@ -23,7 +23,7 @@ yOpt="-q --nobest"
 echo "{INFO} installing ipa-server ..."
 #fedora
 if [[ "$OSV" =~ %rhel ]]; then
-	dnf install -y $yOpt freeipa-server freeipa-server-dns  #IdM server with an integrated DNS
+	dnf install -y $yOpt ipa-client-common freeipa-server freeipa-server-dns  #IdM server with an integrated DNS
 #rhel/centos/rocky/alma/...
 else
 	case $OSV in
