@@ -3077,11 +3077,11 @@ if [[ "$ENABLE_L2VM" = yes ]]; then
 	[[ -n "${apicflags}" ]] && flag+=,${apicflags}
 	if [[ -z ${VIRT_CPU} ]]; then
 		VIRT_CPU_OPT=--cpu=host-passthrough,$flag
-	else
-		VIRT_CPU_OPT+=,$flag
 	fi
 else
-	VIRT_CPU_OPT=${VIRT_CPU_OPT//,$flag/}
+	if [[ -z ${VIRT_CPU} ]]; then
+		VIRT_CPU_OPT=${VIRT_CPU_OPT//,$flag/}
+	fi
 fi
 
 VCPUN=$(vcpuN "$VCPUS")
