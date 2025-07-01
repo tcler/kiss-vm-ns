@@ -5052,4 +5052,5 @@ for vncaddr in $(vmvncproc $vmname); do
 		echo -e "  $ vncviewer $vncaddr    #from localhost or remote"
 	fi
 done
+read -N 10000000 -t 0.001  #clear input buffer
 exit 0
