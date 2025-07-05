@@ -996,7 +996,11 @@ vmcopyto() {
 		[[ $rc = 0 ]] && {
 			flist=()
 			for f in "${srcarray[@]}"; do f=${f%/}; flist+=("$dstdir/${f##*/}"); done
-			/usr/bin/ssh $sshOpts $U@${_addr} ls -ld "${flist[@]}"
+			if [[ "$U" = Administrator ]]; then
+				/usr/bin/ssh $sshOpts $U@${_addr} dir "${flist[@]}"
+			else
+				/usr/bin/ssh $sshOpts $U@${_addr} ls -ld "${flist[@]}"
+			fi
 		}
 	elif [[ $sshstat = passwd ]]; then
 		expect <(cat <<-EOF
