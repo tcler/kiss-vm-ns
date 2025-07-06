@@ -4135,7 +4135,11 @@ elif [[ "$InstallType" = import ]]; then
 		[[ -f ${imagefile} ]] || cleanup_and_exit 1
 	}
 
-	[[ "$NO_CLOUD_INIT" != yes ]] && {
+	if [[ "${Distro,,}" = windows* ]]; then
+		NOAUTO=yes
+		BOOT_OPTS+=(--boot=uefi)
+		[[ "$GuestARCH" = x86_64 ]] && { MACHINE_OPT="--machine=q35"; }
+	elif [[ "$NO_CLOUD_INIT" != yes ]]; then
 		echo -e "{VM:INFO} creating cloud-init iso"
 		cloudinitiso=$VMpath/$vmname-cloud-init.iso
 		iso_bus_type=
@@ -4159,7 +4163,7 @@ elif [[ "$InstallType" = import ]]; then
 				--default-dns=$defaultDNS
 		fi
 		CLOUD_INIT_OPT="--disk $cloudinitiso,device=cdrom$iso_bus_type"
-	}
+	fi
 
 	echo -e "{VM:INFO} creating VM by import $imagefile"
 	run -as=$VMUSER bash -c "touch $VMpath/.kiss-vm"
