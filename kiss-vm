@@ -706,7 +706,7 @@ vmedit() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 
-	grep -q export.EDITOR= ~/.bashrc /etc/bashrc || export EDITOR=$(command -v vim)
+	grep -q export.EDITOR= ~/.bashrc /etc/bashrc || export EDITOR=$(command -v vim||command -v vi)
 	virsh edit "$_vmname"
 }
 
