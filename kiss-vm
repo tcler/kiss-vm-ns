@@ -2226,6 +2226,7 @@ Usage() {
 	  --if-model <>  #change default model(virtio) of virtual NICs: e1000,rtl8139 
 	  --net <$name[,model=$model[,mac=...]]>
 	                 #attach tun dev(vnetN) and connect to net $name, optional $model: virtio,e1000,...
+	                 #Note: please add 'firewall-cmd --zone=libvirt --add-service={http,...}' if want access host port from Guest
 	  --net-br <$brname[,model=$model[,mac=...]]>
 	                 #attach tun dev(vnetN) and connect to bridge $brname, optional $model: virtio,e1000,...
 	  --net-macvtap, --netmacvtap [$sourceNIC[,model=$model[,source_mode=...[,mac=...]]]]
