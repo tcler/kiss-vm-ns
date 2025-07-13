@@ -1465,7 +1465,7 @@ netcreate() {
 		U
 	}
 	[[ $# = 0 ]] && { virsh net-list; Usage >&2; return; }
-	for opt; do [[ "$opt" =~ ^(netname|brname|subnet|forward|tftproot|bootpfile|domain|dhcphosts)=.* ]] || continue; eval "$opt"; done
+	for opt; do [[ "$opt" =~ ^(netname|brname|zone|subnet|forward|tftproot|bootpfile|domain|dhcphosts)=.* ]] || continue; eval "$opt"; done
 	[[ -z "$netname" || -z "$brname" ]] && { Usage >&2; return 1; }
 	domainname="${domain:-${netname}.kissvm.net}"
 
@@ -1481,6 +1481,9 @@ netcreate() {
 	[[ -n "$tftproot" ]] && tftpNode="<tftp root='$tftproot'/>"
 	[[ -n "$bootpfile" ]] && bootpNode="<bootp file='$bootpfile'/>"
 	[[ -n "$domainname" ]] && domainNode="<domain name='$domainname' localOnly='yes'/>"
+	if [[ -n "$subnet" ]] && systemctl is-active --quiet firewalld; then
+		zoneAttr="zone=\"${zone}\""
+	fi
 	if [[ -n "$subnet" ]]; then
 		netmask=255.255.255.0
 		rx='([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
@@ -1524,7 +1527,7 @@ netcreate() {
 		cat <<-NET
 		<network>
 		  <name>$netname</name>
-		  <bridge name="$brname" $stpAttr $macTableManagerAttr/>
+		  <bridge name="$brname" $zoneAttr $stpAttr $macTableManagerAttr/>
 		  $forwardNode
 		  $domainNode
 		  $ipNode
@@ -1850,6 +1853,9 @@ COMM
 		echo -e "{*INFO*} re-create Network default ..."
 		default_xml=$(virsh net-dumpxml default|sed 's/\.122/.123/g')
 		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
+		if systemctl is-active --quiet firewalld && ! grep -q zone=.trusted <<<"$default_xml"; then
+			default_xml=$(echo "$default_xml"|sed '/<bridge/s//& zone="trusted"/')
+		fi
 		virsh net-define --file <(echo "$default_xml")
 		virsh net-start default
 		virsh net-autostart default
@@ -1859,6 +1865,9 @@ COMM
 	virsh net-dumpxml default | grep '<domain name' || {
 		default_xml=$(virsh net-dumpxml default|sed "s;<mac .*;&\n  <domain name='$VM_DOMAIN' localOnly='yes'/>;g")
 		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
+		if systemctl is-active --quiet firewalld && ! grep -q zone=.trusted <<<"$default_xml"; then
+			default_xml=$(echo "$default_xml"|sed '/<bridge/s//& zone="trusted"/')
+		fi
 		virsh net-define --file <(echo "$default_xml")
 		virsh net-start default
 		virsh net-autostart default
