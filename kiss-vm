@@ -977,7 +977,7 @@ vmcopyto() {
 
 	local sshstat=unavailable
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR $sshKeyOpts"
-	vmhomedir $_vmname | grep -E -q -i -e windows && {
+	vmhomedir $_vmname | grep -E -q -i -e ansf-usb.image && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
 	[[ "$_pat" = *@* ]] && read U _pat <<<"${_pat/@/ }"
@@ -1043,7 +1043,7 @@ vmcopyfrom() {
 
 	local sshstat=unavailable
 	local sshOpts="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o LogLevel=ERROR $sshKeyOpts"
-	vmhomedir $_vmname | grep -q -i windows && {
+	vmhomedir $_vmname | grep -q -i ansf-usb.image && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
 	[[ "$_pat" = *@* ]] && read U _pat <<<"${_pat/@/ }"
@@ -1201,7 +1201,7 @@ vmlogin() {
 		echo -e "{VM:WARN} $_vmname has not been running or not exist" >&2
 		return 1
 	}
-	vmhomedir $_vmname 2>/dev/null | grep -q -i windows && {
+	vmhomedir $_vmname 2>/dev/null | grep -q -i ansf-usb.image && {
 		U=Administrator; defaultPasswd=$defaultWindowsPasswd;
 	}
 
