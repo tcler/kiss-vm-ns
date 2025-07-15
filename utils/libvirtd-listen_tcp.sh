@@ -1,4 +1,41 @@
 
+: <<COMM  #tls certificates setup
+yum install -y gnutls-utils openssl-perl
+
+mkdir /etc/pki/libvirt
+cp -r /etc/pki/CA/* /etc/pki/libvirt/
+cd /etc/pki/libvirt/
+
+cat <<EOF >ca.info
+cn = Name of your organization
+ca
+cert_signing_key
+EOF
+
+cat <<EOF >server.info
+organization = Name of your organization
+cn = oirase
+tls_www_server
+encryption_key
+signing_key
+EOF
+
+certtool --generate-privkey > cakey.pem
+certtool --generate-self-signed --load-privkey \
+     cakey.pem --template ca.info --outfile \
+     cacert.pem
+cp cacert.pem /etc/pki/CA/
+
+certtool --generate-privkey > private/serverkey.pem
+certtool --generate-certificate --load-privkey \
+     private/serverkey.pem --load-ca-certificate \
+     cacert.pem --load-ca-privkey cakey.pem \
+     --template server.info --outfile \
+     private/servercert.pem
+cp /etc/pki/libvirt/private/servercert.pem /etc/pki/libvirt/
+COMM
+
+# enable libvirtd --listen
 echo 'LIBVIRTD_ARGS="-l"' >/etc/sysconfig/libvirtd
 grep -q ^listen_tls.-.0 || cat <<EOF >>/etc/libvirt/libvirtd.conf
 listen_tls = 0
@@ -58,4 +95,17 @@ jiyin@x99i:~$ LANG=C virsh -c qemu+tcp://dell-per750-49.rhts.eng.pek2.redhat.com
  8    rdma-lab0-vm-49-7   running
  9    rdma-lab0-vm-49-8   running
  10   rdma-lab0-vm-49-9   running
+
+#use qemu+ssh without listen_tcp
+jiyin@x99i:~$ LANG=C virsh -c qemu+ssh://jiyin@x99j.usersys.redhat.com/system list
+jiyin@x99j.usersys.redhat.com's password:
+ Id   Name                    State
+---------------------------------------
+ 36   nfs-o-soft-iwarp-serv   running
+COMM
+
+: <<COMM  #how to create NIC/bridge
+# virsh iface-bridge eno1 br0 --no-stp 120 --no-start
+# virsh iface-edit br0  #check or edit the br0 setup
+# Note: after RHEL-6 we can use MACVTAP as replacement of NIC/bridge way
 COMM
