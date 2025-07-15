@@ -22,6 +22,16 @@ timeServer=clock.corp.redhat.com
 host $timeServer|grep -q not.found: && timeServer=2.fedora.pool.ntp.org
 TIME_SERVER=$timeServer
 
+create-ontap-simulator-net() {
+	local netcluster=ontap2-ci  #e0a e0b
+	vm netcreate netname=$netcluster brname=br-ontap2-ci forward=
+	vm netls | grep -w $netcluster >/dev/null || vm netstart $netcluster
+
+	local netdata=ontap2-data  #e0d #e0e
+	vm netcreate netname=$netdata brname=br-ontap2-data subnet=20
+	vm netls | grep -w $netdata >/dev/null || vm netstart $netdata
+}
+
 #-------------------------------------------------------------------------------
 g_win_img_dir=/usr/share/windows-images
 g_ontap_img_dir=/usr/share/Netapp-simulator
@@ -42,7 +52,7 @@ vm prepare >/dev/null
 distro=${distro:-9}
 clientvm=${clientvm:-ontap-ad-rhel-client}
 pkgs=vim,bind-utils,adcli,samba-common,samba-common-tools,krb5-workstation,cifs-utils,nfs-utils,expect,tcpdump,tmux
-net=ontap2-data
+net=ontap2-data; vm netls | grep -qw $net || { create-ontap-simulator-net; }
 net1Opt=--netmacvtap=?
 [[ "$PUBIF" = no ]] && net1Opt=--net=$net
 trun -tmux=- vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f $net1Opt --net=$net "$@"

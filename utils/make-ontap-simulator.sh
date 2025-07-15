@@ -8,6 +8,16 @@ TIME_SERVER=$timeServer
 downhostname=download.devel.redhat.com
 LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 
+create-ontap-simulator-net() {
+	local netcluster=ontap2-ci  #e0a e0b
+	vm netcreate netname=$netcluster brname=br-ontap2-ci forward=
+	vm netls | grep -w $netcluster >/dev/null || vm netstart $netcluster
+
+	local netdata=ontap2-data  #e0d #e0e
+	vm netcreate netname=$netdata brname=br-ontap2-data subnet=20
+	vm netls | grep -w $netdata >/dev/null || vm netstart $netdata
+}
+
 #-------------------------------------------------------------------------------
 #kiss-vm should have been installed and initialized
 vm prepare >/dev/null
@@ -18,7 +28,7 @@ vm prepare >/dev/null
 distro=${distro:-9}
 clientvm=${clientvm:-ontap-rhel-client}
 pkgs=cifs-utils,nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils,tcpdump,tmux
-net=ontap2-data
+net=ontap2-data; vm netls | grep -qw $net || { create-ontap-simulator-net; }
 net1Opt=--netmacvtap=?
 [[ "$PUBIF" = no ]] && net1Opt=--net=$net
 trun -tmux=- "while ! grep -qw $net <(virsh net-list --name); do sleep 5; done;
