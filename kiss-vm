@@ -1113,21 +1113,23 @@ vmport_available() {
 
 vmconsole() {
 	local _vmname=$(vmname_extract -all "$1")
+	local _rc=1
 	shift
 	[[ -z "$_vmname" ]] && {
 		resf=$RuntimeTmp/vmlist
 		vmdialogradiolist vm-console $resf && _vmname=$(sed 's/"//g' $resf)
-		[[ -z "$_vmname" ]] && { return; }
+		[[ -z "$_vmname" ]] && { return $_rc; }
 	}
 	local serialxml=$(virsh dumpxml "$_vmname"|sed -n '/<serial type=/,/<.serial/p')
-	if grep serial.type=.pty <<<"$serialxml"; then
-		virsh console ${FORCE:+--force} "$_vmname"
-	elif grep serial.type=.tcp <<<"$serialxml"; then
+	if grep -q serial.type=.pty <<<"$serialxml"; then
+		virsh console ${FORCE:+--force} "$_vmname"; _rc=$?
+	elif grep -q serial.type=.tcp <<<"$serialxml"; then
 		read _mode _host _port _ < <(sed -rn '/ *<source.mode=.([^ ]+). host=.([^ ]+). service=.([^ ]+). .*/{s//\1 \2 \3/;p}' <<<"$serialxml")
 		[[ "${_host}" = 0.0.0.0 ]] && _host=localhost
-		socat -,rawer,escape=0x1d tcp:${_host}:${_port}
+		socat -,rawer,escape=0x1d tcp:${_host}:${_port}; _rc=$?
+		echo
 	fi
-	return $?
+	return $_rc
 }
 
 vmqmp() {
