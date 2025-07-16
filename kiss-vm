@@ -2682,6 +2682,7 @@ while true; do
 	--qemucpu)       QEMU_CPU=$2; QEMU_CPU_OPT="--qemu-commandline=-cpu $2"; shift 2;;
 	--nvmeboot|--NB) NVME_BOOT=yes; shift 1;;
 	--boot)          BOOT_OPTS+=("--boot=$2"); shift 2;;
+	--serial)        SERIAL_OPTS+=("--serial=$2"); shift 2;;
 	--graphics)      GRAPHICS_OPT="--graphics=$2"; shift 2;;
 	--vncport)       VNC_PORT="$2"; DEFAULT_GRAPHICS_CONF+=,port=$VNC_PORT; shift 2;;
 	--video)         SPECIFIED_VIDEO=yes; [[ -z "$2" || "$2" = auto ]] && VIDEO_OPT= || VIDEO_OPT="--video=$2"; shift 2;;
@@ -3983,6 +3984,7 @@ if [[ "$InstallType" = location ]]; then
 	  --location $Location \
 	  $BOOT_DISK_OPT \
 	  "${BOOT_OPTS[@]}" \
+	  "${SERIAL_OPTS[@]}" \
 	  $DISK_OPTS \
 	  "${NETWORK_OPTS[@]}" \
 	  $CONTROLLER_OPTS \
@@ -4225,6 +4227,7 @@ elif [[ "$InstallType" = import ]]; then
 	  --import \
 	  $BOOT_DISK_OPT \
 	  "${BOOT_OPTS[@]}" \
+	  "${SERIAL_OPTS[@]}" \
 	  $DISK_OPTS \
 	  $CLOUD_INIT_OPT \
 	  "${NETWORK_OPTS[@]}" \
@@ -4519,6 +4522,7 @@ elif [[ "$InstallType" = pxe ]]; then
 	  --pxe \
 	  $BOOT_DISK_OPT \
 	  "${BOOT_OPTS[@]}" \
+	  "${SERIAL_OPTS[@]}" \
 	  "${NETWORK_OPTS[@]}" \
 	  "${HOST_DEV_OPTS[@]}" \
 	  $VTPM_OPT \
@@ -4730,6 +4734,7 @@ elif [[ "$InstallType" = cdrom_image ]]; then
 	  $BOOT_DISK_OPT \
 	  $ANSF_DISK_OPT \
 	  "${BOOT_OPTS[@]}" \
+	  "${SERIAL_OPTS[@]}" \
 	  $DISK_OPTS \
 	  "${NETWORK_OPTS[@]}" \
 	  $CONTROLLER_OPTS \
