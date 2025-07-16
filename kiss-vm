@@ -2222,6 +2222,8 @@ Usage() {
 	                 #see also: `virt-install --graphics=?`
 	  --vncport <port> #vncport. maybe you need follow command to enable vnc access from remote:
 	                 # sudo firewall-cmd --permanent --zone=public --add-port=5900-5999/tcp; sudo firewall-cmd reload
+	  --serial <arg> #pass thru to virt-install's --serail options
+	                 #see also: `virt-install --serial=?` or `man virt-install 2>/dev/null | sed -n '/^ *--serial/,/https:/p'`
 	  --video <type> #video device model, Possible value for recent kvm are: cirrus, vga, qxl, virtio
 	                 #see also: `virt-install --video=?`
 	                 #Note: now Linux Guest does not support qxl well. use qxl in Windows Guest will help improve resolution
@@ -2539,6 +2541,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long qemucpu: \
 	--long nvmeboot --long NB \
 	--long boot: \
+	--long serial: \
 	--long vncport: \
 	--long video: \
 	--long sound: \
