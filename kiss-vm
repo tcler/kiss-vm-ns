@@ -1119,7 +1119,14 @@ vmconsole() {
 		vmdialogradiolist vm-console $resf && _vmname=$(sed 's/"//g' $resf)
 		[[ -z "$_vmname" ]] && { return; }
 	}
-	virsh console ${FORCE:+--force} "$_vmname"
+	local serialxml=$(virsh dumpxml "$_vmname"|sed -n '/<serial type=/,/<.serial/p')
+	if grep serial.type=.pty <<<"$serialxml"; then
+		virsh console ${FORCE:+--force} "$_vmname"
+	elif grep serial.type=.tcp <<<"$serialxml"; then
+		read _mode _host _port _ < <(sed -rn '/ *<source.mode=.([^ ]+). host=.([^ ]+). service=.([^ ]+). .*/{s//\1 \2 \3/;p}' <<<"$serialxml")
+		[[ "${_host}" = 0.0.0.0 ]] && _host=localhost
+		socat -,rawer,escape=0x1d tcp:${_host}:${_port}
+	fi
 	return $?
 }
 
@@ -1642,7 +1649,7 @@ install_requires() {
 	echo -e "{VM:INFO} checking libvirtd service and related packages ..."
 	case ${OS,,} in
 	slackware*)
-		pkglist="python3 udisks2"
+		pkglist="python3 udisks2 socat"
 		for pkg in $pkglist; do
 			sudo /usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install $pkg
 		done
@@ -1658,7 +1665,7 @@ install_requires() {
 		done
 		;;
 	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
-		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img udisks2 genisoimage iptables-nft ipcalc"
+		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect nmap-ncat tmux libguestfs-tools-c libvirt-nss dialog qemu-img udisks2 genisoimage iptables-nft ipcalc socat"
 		recommend_pkglist="swtpm-tools edk2-ovmf virtio-win python3-qemu-qmp"
 
 		OSV=$(rpm -E %rhel)
@@ -1684,7 +1691,7 @@ install_requires() {
 		}
 		;;
 	debian*|ubuntu*)
-		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect nmap tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc-ng"
+		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst expect nmap tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc-ng socat"
 		recommend_pkglist="swtpm-tools ovmf"
 
 		read -d . verx 2>/dev/null </etc/debian_version
@@ -1697,7 +1704,7 @@ install_requires() {
 		sudo tmux new -s virtio-win-iso-install -d virtio-win-iso-install.sh
 		;;
 	opensuse*|sles*)
-		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs guestfs-tools libvirt-nss dialog qemu-tools udisks2 mkisofs iptables-nft ipcalc"
+		pkglist="bash-completion libvirt libvirt-client virt-install virt-viewer qemu-kvm expect netcat tmux libguestfs guestfs-tools libvirt-nss dialog qemu-tools udisks2 mkisofs iptables-nft ipcalc socat"
 		recommend_pkglist="swtpm ovmf"
 
 		sudo zypper in --no-recommends -y $pkglist
@@ -1705,7 +1712,7 @@ install_requires() {
 		sudo tmux new -s virtio-win-iso-install -d virtio-win-iso-install.sh
 		;;
 	arch?linux)
-		pkglist="bash-completion libvirt dnsmasq virt-install virt-viewer qemu-full qemu-tools guestfs-tools inetutils expect gnu-netcat tmux dialog udisks2 cdrtools ipcalc swtpm edk2-ovmf"
+		pkglist="bash-completion libvirt dnsmasq virt-install virt-viewer qemu-full qemu-tools guestfs-tools inetutils expect gnu-netcat tmux dialog udisks2 cdrtools ipcalc swtpm edk2-ovmf socat"
 		recommend_pkglist="iptables-nft"
 
 		sudo pacman -Sy --noconfirm $pkglist
@@ -4022,7 +4029,7 @@ if [[ "$InstallType" = location ]]; then
 	if [[ "$NOAUTO" = yes ]]; then
 		expect -c '
 			set timeout 10
-			spawn virsh console '"$vmname"'
+			spawn vm console '"$vmname"'
 			expect {
 				timeout {
 					send_user "\n\n{VM:INFO} exiting from console...\n"
@@ -4039,7 +4046,7 @@ if [[ "$InstallType" = location ]]; then
 			INTERACT=$INTERACT LANG=C expect -c '
 				set intc 0
 				set timeout -1
-				spawn virsh console '"$vmname"'
+				spawn vm console '"$vmname"'
 				trap {
 					send_user "You pressed Ctrl+C [incr intc]/8\n"
 					if {$intc >= 8} {
@@ -4107,7 +4114,7 @@ if [[ "$InstallType" = location ]]; then
 			[[ $ReturnCode = 127 ]] && { virsh start $vmname 2>&1 | sed 's/error: //'; continue; }
 			sleep 2
 		done
-		echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
+		echo -e "\n{VM:INFO} Quit from expect -c 'spawn vm console $vmname'"
 
 		[[ $ReturnCode = 255 ]] && {
 			echo -e "\n{VM:INFO} something is wrong(please check screen log), will clean all tmp files ..."
@@ -4263,7 +4270,7 @@ elif [[ "$InstallType" = import ]]; then
 	if [[ "$NOAUTO" = yes ]]; then
 		expect -c '
 			set timeout 10
-			spawn virsh console '"$vmname"'
+			spawn vm console '"$vmname"'
 			expect {
 				timeout {
 					send_user "\n\n{VM:INFO} exiting from console...\n"
@@ -4286,7 +4293,7 @@ elif [[ "$InstallType" = import ]]; then
 			SHUTDOWN=$GenerateImage LANG=C expect -c '
 				set intc 0
 				set timeout 32
-				spawn virsh console '"$vmname"'
+				spawn vm console '"$vmname"'
 				trap {
 					send_user "You pressed Ctrl+C [incr intc]/8\n"
 					if {$intc >= 8} {
@@ -4368,7 +4375,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 				INTERACT=$INTERACT SHUTDOWN=$GenerateImage LANG=C expect -c '
 					set intc 0
 					set timeout -1
-					spawn virsh console '"$vmname"'
+					spawn vm console '"$vmname"'
 					trap {
 						send_user "You pressed Ctrl+C [incr intc]/8\n"
 						if {$intc >= 8} {
@@ -4473,7 +4480,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 				sleep 2
 			done
 
-			echo -e "\n{VM:INFO} Quit from expect -c 'spawn virsh console $vmname'"
+			echo -e "\n{VM:INFO} Quit from expect -c 'spawn vm console $vmname'"
 			[[ "$(vmstat $vmname)" = running* ]] || { vm start $vmname; }
 
 			[[ -f "$cloudinitiso" && "$iso_bus_type" != *=usb ]] && {
