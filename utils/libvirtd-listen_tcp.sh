@@ -36,8 +36,10 @@ cp /etc/pki/libvirt/private/servercert.pem /etc/pki/libvirt/
 COMM
 
 # enable libvirtd --listen
-echo 'LIBVIRTD_ARGS="-l"' >/etc/sysconfig/libvirtd
-grep -q ^listen_tls.-.0 || cat <<EOF >>/etc/libvirt/libvirtd.conf
+libvirtdsysconf=/etc/sysconfig/libvirtd
+libvirtdconf=/etc/libvirt/libvirtd.conf
+echo 'LIBVIRTD_ARGS="-l"' >$libvirtdsysconf
+grep -q ^listen_tls.-.0 $libvirtdconf || cat <<EOF >>$libvirtdconf
 listen_tls = 0
 listen_tcp = 1
 #listen_addr = ""
