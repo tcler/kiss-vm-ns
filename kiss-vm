@@ -1435,6 +1435,7 @@ vmadd_if_passthr() {
 	fi
 	shift 2
 
+	run -debug virsh nodedev-detach ${pci_addr}
 	run -debug virsh attach-interface --type hostdev --domain $vmname --source ${pci_addr#pci_} \
 		--config --live "$@"
 }
