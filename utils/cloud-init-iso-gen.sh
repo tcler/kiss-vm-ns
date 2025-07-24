@@ -135,6 +135,7 @@ done
 )
 
 runcmd:
+  - rm -f /etc/udev/rules.d/*net.rules /etc/sysconfig/network-scripts/ifcfg-*
   - grep -iq CentOS /etc/*-release && [[ \$(rpm -E %rhel) -le 8 ]] && sed -ri -e 's/^mirror/#&/' -e '/^#baseurl/{s/^#//;s/mirrors?/vault/}' /etc/yum.repos.d/*
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; echo skip_if_unavailable=True >>/etc/dnf/dnf.conf; }
   - ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '/eth1/&&!/inet/{rc=0}END{exit rc}' && { \
