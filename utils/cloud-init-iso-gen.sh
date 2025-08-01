@@ -135,12 +135,10 @@ done
 )
 
 runcmd:
+  - for dev in \$(nmcli dev|awk '\$3 ~ /discon/{print \$1}'); do nmcli dev con \$dev; done
   - rm -f /etc/udev/rules.d/*net.rules /etc/sysconfig/network-scripts/ifcfg-*
   - grep -iq CentOS /etc/*-release && [[ \$(rpm -E %rhel) -le 8 ]] && sed -ri -e 's/^mirror/#&/' -e '/^#baseurl/{s/^#//;s/mirrors?/vault/}' /etc/yum.repos.d/*
   - test -f /etc/dnf/dnf.conf && { ln -s /usr/bin/{dnf,yum}; echo skip_if_unavailable=True >>/etc/dnf/dnf.conf; }
-  - ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '/eth1/&&!/inet/{rc=0}END{exit rc}' && { \
-     dhclient eth1 2>/dev/null; \
-  }
   - command -v yum && { \
      _dnfconf=\$(test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf); \
      grep -q ^metadata_expire= \$_dnfconf 2>/dev/null || echo metadata_expire=7d >>\$_dnfconf; \
@@ -189,7 +187,7 @@ KDUMP
 )
 $(
 [[ -n "$KernelOpts" ]] && cat <<KOPTS
-  - grubby --args="$KernelOpts" --update-kernel=DEFAULT
+  - grubby --args="$KernelOpts" --update-kernel=ALL
 KOPTS
 )
 $(

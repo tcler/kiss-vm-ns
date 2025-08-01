@@ -4107,7 +4107,7 @@ if [[ "$InstallType" = location ]]; then
 					send "'"$defaultPasswd"'\r"
 					send {if ! grep -q ^nameserver /etc/resolv.conf; then ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"' >>/etc/resolv.conf; }
 					send {if=$(ip -br a|tail -1|cut -d" " -f1); cn=$(nmcli -g GENERAL.CONNECTION device show $if); nmcli connection down "${cn}"; systemctl restart NetworkManager; fi;}; send "\r\n"
-					send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '"'"'/eth1/&&!/inet/{rc=0}END{exit rc}'"'"' && dhclient eth1 2>/dev/null;}; send "\r\n"
+					send {for dev in $(nmcli dev|awk '"'"'$3 ~ /discon/{print $1}'"'"'); do nmcli dev con $dev; done;}; send "\r\n"
 					send "\r\r\r\r\r\r"
 					send "# you are in console, Ctr + ] to exit \r"
 					expect -re {[>$#:] *$} { send "read -N 10000000 -t 0.001  #clear input buffer\r"; after 2 }
@@ -4432,7 +4432,6 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 							expect "Restarting system" { exit 0 }
 						}
 
-						send {ip a s eth1 2>/dev/null | awk -v rc=1 -v RS= '"'"'/eth1/&&!/inet/{rc=0}END{exit rc}'"'"' && dhclient eth1 2>/dev/null;}; send "\r\n"
 						send {sleep 16; while ps axf|grep -A1 "/var/lib/cloud/instance/scripts/runcm[d]"; do echo "{VM:INFO}: cloud-init scirpt is still running .."; sleep 10; done; echo "~~~~~~~~ no cloud-init or cloud-init done ~~~~~~~~"\d}
 						send "\r\n"
 						expect {
@@ -4469,6 +4468,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 								}
 							}
 						}
+						expect -re {[>$#:] *$} { send {for dev in $(nmcli dev|awk '"'"'$3 ~ /discon/{print $1}'"'"'); do nmcli dev con $dev; done;}; send "\r\n"; }
 						send "\r\r# Now you can take over the keyboard\r\r"
 						send "# and you are in console, Ctr + ] to exit \r"
 						expect -re {[>$#:] *$} { send "read -N 10000000 -t 0.001  #clear input buffer\r"; after 2 }
