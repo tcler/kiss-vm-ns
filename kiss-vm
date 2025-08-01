@@ -280,6 +280,9 @@ vmname_extract() {
 
 	local i=0
 	for vm; do
+		if [[ "$vm" =~ ^[1-9]+[0-9]*$ ]]; then
+			vm=$(virsh list | awk -v id=$vm '$1 == id {print $2}')
+		fi
 		let i=0
 		for _vm in $(virsh list --name ${allopt}); do
 			[[ "$_vm" = $vm ]] && { echo $_vm; let i++; }
