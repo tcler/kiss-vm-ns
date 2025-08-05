@@ -1131,6 +1131,10 @@ vmconsole() {
 		[[ "${_host}" = 0.0.0.0 ]] && _host=localhost
 		socat -,rawer,escape=0x1d tcp:${_host}:${_port}; _rc=$?
 		echo
+	elif grep -q serial.type=.unix <<<"$serialxml"; then
+		read _mode _path _ < <(sed -rn '/ *<source.mode=.([^ ]+). path=.([^ '\'']+)..*/{s//\1 \2/;p}' <<<"$serialxml")
+		socat -,rawer,escape=0x1d UNIX-CONNECT:${_path}; _rc=$?
+		echo
 	fi
 	return $_rc
 }
