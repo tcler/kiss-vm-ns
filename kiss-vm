@@ -3888,7 +3888,6 @@ if [[ "$InstallType" = location ]]; then
 		test -f /etc/hostname && echo ${vmhostname}.$VM_DOMAIN >/etc/hostname || echo HOSTNAME=${vmhostname}.$VM_DOMAIN >>/etc/sysconfig/network
 
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] yum install pkgs ${PKGS} ..."
-		grep -q ^nameserver /etc/resolv.conf || { if=\$(ip -br a|tail -1|cut -d" " -f1); cn=\$(nmcli -g GENERAL.CONNECTION device show \$if); nmcli connection down "\${cn}"; systemctl restart NetworkManager; }
 		yum --setopt=strict=0 install -y wget tmux ${PKGS} ipcalc 2>/dev/null
 
 		END
@@ -4109,8 +4108,7 @@ if [[ "$InstallType" = location ]]; then
 				}
 				expect "Password:" {
 					send "'"$defaultPasswd"'\r"
-					send {if ! grep -q ^nameserver /etc/resolv.conf; then ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"' >>/etc/resolv.conf; }
-					send {if=$(ip -br a|tail -1|cut -d" " -f1); cn=$(nmcli -g GENERAL.CONNECTION device show $if); nmcli connection down "${cn}"; systemctl restart NetworkManager; fi;}; send "\r\n"
+					send {if ! grep -q ^nameserver /etc/resolv.conf; then ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"' >>/etc/resolv.conf; fi;}; send "\r\n"
 					send {for dev in $(nmcli dev|awk '"'"'$3 ~ /discon/{print $1}'"'"'); do nmcli dev con $dev; done;}; send "\r\n"
 					send "\r\r\r\r\r\r"
 					send "# you are in console, Ctr + ] to exit \r"
@@ -4440,8 +4438,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 						send "\r\n"
 						expect {
 							-re "or cloud-init done ~~~~~~~~d" {
-								send {if ! grep -q ^nameserver /etc/resolv.conf; then ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"' >>/etc/resolv.conf; }
-								send {if=$(ip -br a|tail -1|cut -d" " -f1); cn=$(nmcli -g GENERAL.CONNECTION device show $if); nmcli connection down "${cn}"; systemctl restart NetworkManager; fi;}; send "\r\n"
+								send {if ! grep -q ^nameserver /etc/resolv.conf; then ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"' >>/etc/resolv.conf; fi;}; send "\r\n"
 								#expect -re {[>$#:] *$} { send "\r# Now you can take over the keyboard\r\n" }
 							}
 							"dracut:/#" {
