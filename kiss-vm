@@ -698,7 +698,7 @@ vmxml() {
 		[[ -z "$_vmname" ]] && { return; }
 	}
 
-	virsh dumpxml "$_vmname"
+	virsh dumpxml --inactive "$_vmname"
 }
 
 vmedit() {
