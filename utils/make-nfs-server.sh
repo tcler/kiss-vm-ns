@@ -50,7 +50,7 @@ while true; do
 	case "$1" in
 	-h|--help)    Usage; shift 1; exit 0;;
 	-t|--test)    eTEST=yes; shift 1;;
-	--prefix)     PREFIX=$2; shift 2;;
+	--prefix)     PREFIX=${2:-/nfsshare}; shift 2;;
 	--no-tlshd)   TLSHD=no; shift 1;;
 	--) shift; break;;
 	esac
