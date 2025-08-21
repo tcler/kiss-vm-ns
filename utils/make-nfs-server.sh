@@ -5,8 +5,8 @@
 export LANG=C
 
 ## global var
-PREFIX=/var/nfsshare
-
+PREFIX=/nfsshare
+NFSROOT=
 
 ## argparse
 P=${0##*/}
@@ -18,6 +18,7 @@ Usage:
 Options:
   -h, -help              ; show this help
   -prefix <path>         ; root directory of nfs share(default: /nfsshare/)
+  -nfsroot <path>        ; optional exports dir with fsid=0
   -t                     ; run extra tests after nfs start
   -no-tlshd              ; don't configure tlshd
 EOF
@@ -43,6 +44,7 @@ _at=$(getopt -a -o ht \
 	--long help \
 	--long test \
 	--long prefix: \
+	--long nfsroot: \
 	--long no-tlshd \
 	-n "$P" -- "$@")
 eval set -- "$_at"
@@ -50,11 +52,17 @@ while true; do
 	case "$1" in
 	-h|--help)    Usage; shift 1; exit 0;;
 	-t|--test)    eTEST=yes; shift 1;;
-	--prefix)     PREFIX=${2:-/nfsshare}; shift 2;;
+	--prefix)     PREFIX=${2:-${PREFIX}}; shift 2;;
+	--nfsroot)    NFSROOT=${2}; shift 2;;
 	--no-tlshd)   TLSHD=no; shift 1;;
 	--) shift; break;;
 	esac
 done
+
+if [[ -n "${NFSROOT}" && "${NFSROOT}" != /* ]]; then
+	echo "{ERROE} nfsroot must be a absolute path(start with '/')" >&2
+	exit 1
+fi
 
 
 ## install related packages
@@ -64,27 +72,32 @@ rpm -q ktls-utils || yum install -y ktls-utils &>/dev/null
 
 
 ## create nfs export directorys
-mkdir -p $PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}
-chgrp nobody -R $PREFIX
-chmod g+ws -R $PREFIX
-touch $PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}/testfile
-for dir in $PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}; do
+mkdir -p $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}
+chgrp nobody -R $NFSROOT/$PREFIX
+chmod g+ws -R $NFSROOT/$PREFIX
+touch $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}/testfile
+for dir in $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}; do
 	cp /etc/*.conf $dir/.
 done
-semanage fcontext -a -t nfs_t "$PREFIX(/.*)?"
-restorecon -Rv $PREFIX
-chmod 775 -R $PREFIX/{rw,async,labelled-nfs,qe,devel,tls,mtls}
+semanage fcontext -a -t nfs_t "$NFSROOT/$PREFIX(/.*)?"
+restorecon -Rv $NFSROOT/$PREFIX
+chmod 775 -R $NFSROOT/$PREFIX/{rw,async,labelled-nfs,qe,devel,tls,mtls}
 
 
 ## generate exports config file
 defaultOpts=${defaultOpts:-insecure}
-cat <<EOF >/etc/exports
-$PREFIX/ro *(${defaultOpts},ro)
-$PREFIX/rw *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
-$PREFIX/async *(${defaultOpts},rw,root_squash,async,sec=sys:krb5:krb5i:krb5p)
-$PREFIX/labelled-nfs *(${defaultOpts},rw,root_squash,security_label,sec=sys:krb5:krb5i:krb5p)
-$PREFIX/qe *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
-$PREFIX/devel *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+if [[ -d "${NFSROOT}" ]]; then
+	echo "${NFSROOT} *(${defaultOpts},rw,sync,root_squash,crossmnt,fsid=0,no_subtree_check)" >/etc/exports
+else
+	: >/etc/exports
+fi
+cat <<EOF >>/etc/exports
+$NFSROOT/$PREFIX/ro *(${defaultOpts},ro)
+$NFSROOT/$PREFIX/rw *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+$NFSROOT/$PREFIX/async *(${defaultOpts},rw,root_squash,async,sec=sys:krb5:krb5i:krb5p)
+$NFSROOT/$PREFIX/labelled-nfs *(${defaultOpts},rw,root_squash,security_label,sec=sys:krb5:krb5i:krb5p)
+$NFSROOT/$PREFIX/qe *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+$NFSROOT/$PREFIX/devel *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
 EOF
 srun "cat /etc/exports"
 
@@ -110,8 +123,8 @@ if [[ "$OSV" = 9 ]] && ! grep -wq mtls <(man exports); then
 fi
 if [[ "$TLSHD" != no ]] && rpm -q ktls-utils --quiet && grep -wq mtls <(man exports) && [[ $(uname -r) > 5.14.0-4 ]]; then
 	cat <<-EOF >>/etc/exports
-	$PREFIX/tls *(${defaultOpts},xprtsec=tls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
-	$PREFIX/mtls *(${defaultOpts},xprtsec=mtls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+	$NFSROOT/$PREFIX/tls *(${defaultOpts},xprtsec=tls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+	$NFSROOT/$PREFIX/mtls *(${defaultOpts},xprtsec=mtls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
 	EOF
 
 	# Create a private key and obtain a certificate containing the Server's DNS name...
@@ -151,9 +164,9 @@ if [[ "$TLSHD" != no ]] && rpm -q ktls-utils --quiet && grep -wq mtls <(man expo
 
 	nfsmp=/mnt/nfsmp-$$
 	srun "mkdir -p $nfsmp"
-	srun "mount $HOSTNAME:$PREFIX/tls $nfsmp -o xprtsec=tls"
+	srun "mount $HOSTNAME:${PREFIX}/tls $nfsmp -o xprtsec=tls"
 	srun "umount $nfsmp"
-	srun "mount $HOSTNAME:$PREFIX/tls $nfsmp -o xprtsec=mtls"
+	srun "mount $HOSTNAME:${PREFIX}/tls $nfsmp -o xprtsec=mtls"
 	srun "umount $nfsmp"
 fi
 
@@ -161,43 +174,45 @@ srun "showmount -e $HOSTNAME"
 
 [[ "$eTEST" != yes ]] && exit
 
-## one more test about nfsv4 pseudo-filesystem
-cat <<EOF >/etc/systemd/system/home2.automount
-[Unit]
-Description=EFI System Partition Automount
-Documentation=TBD
-[Automount]
-Where=/home2
-TimeoutIdleSec=120
-EOF
+if [[ -z "$NFSROOT" ]]; then
+	## one more test about nfsv4 pseudo-filesystem
+	cat <<-EOF >/etc/systemd/system/home2.automount
+	[Unit]
+	Description=EFI System Partition Automount
+	Documentation=TBD
+	[Automount]
+	Where=/home2
+	TimeoutIdleSec=120
+	EOF
 
-cat <<EOF >/etc/systemd/system/home2.mount
-[Unit]
-Description=EFI System Partition Automount
-Documentation=TBD
-[Mount]
-What=/home
-Where=/home2
-Type=$(stat -f -c %T /home)
-Options=ro,bind
-EOF
+	cat <<-EOF >/etc/systemd/system/home2.mount
+	[Unit]
+	Description=EFI System Partition Automount
+	Documentation=TBD
+	[Mount]
+	What=/home
+	Where=/home2
+	Type=$(stat -f -c %T /home)
+	Options=ro,bind
+	EOF
 
-srun "systemctl daemon-reload"
-srun "systemctl start home2.automount"
-srun "systemctl status home2.mount | grep Active:" -
+	srun "systemctl daemon-reload"
+	srun "systemctl start home2.automount"
+	srun "systemctl status home2.mount | grep Active:" -
 
-nfsmp=/mnt/nfsmp-$$
-srun "mkdir -p $nfsmp"
-srun "mount localhost:/ $nfsmp"
+	nfsmp=/mnt/nfsmp-$$
+	srun "mkdir -p $nfsmp"
+	srun "mount localhost:/ $nfsmp"
 
-srun "touch $nfsmp/nfsshare/rw/file"
-srun "ls -l $nfsmp $nfsmp/nfsshare/rw"
-srun "mount -t nfs,nfs4 | grep $nfsmp"
-srun "ls -l $nfsmp"
+	srun "touch $nfsmp/${PREFIX}/rw/file"
+	srun "ls -l $nfsmp $nfsmp/${PREFIX}/rw"
+	srun "mount -t nfs,nfs4 | grep $nfsmp"
+	srun "ls -l $nfsmp"
 
-srun "{ umount $nfsmp || umount -fl $nfsmp; } && rm -rf $nfsmp"
+	srun "{ umount $nfsmp || umount -fl $nfsmp; } && rm -rf $nfsmp"
 
-srun "systemctl status home2.mount | grep Active:"
-srun "systemctl status home2.mount | grep mounted"
-srun "systemctl stop home2.automount"
-srun "mountpoint /home2" 32,1
+	srun "systemctl status home2.mount | grep Active:"
+	srun "systemctl status home2.mount | grep mounted"
+	srun "systemctl stop home2.automount"
+	srun "mountpoint /home2" 32,1
+fi
