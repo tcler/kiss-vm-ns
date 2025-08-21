@@ -9,6 +9,7 @@ switchroot "$@"
 
 for arg; do [[ "$arg" = *=* ]] && eval "$arg"; done
 
+(mkdir -p /usr/src; cd /usr/src
 # download xfstests in background
 command -v git || _deps=git; command -v tmux || _deps+=" tmux"
 [[ -n "$_deps" ]] && yum install -y $_deps
@@ -36,6 +37,7 @@ while tmux ls | grep $downloadSession; do sleep 8; done
 #Install form src
 dir=xfstests-dev-master; test -d $dir || dir=xfstests-master
 cd $dir && make && make install
+)
 
 # Check install result
 ls -lF /var/lib/xfstests/
