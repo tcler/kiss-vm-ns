@@ -33,8 +33,7 @@ mount -vvv $mntds1 || exit 1
 cat <<EOF >/etc/exports
 #$expdir -maproot=root -sec=sys
 #V4: $expdir -sec=sys
-$expdir0 -maproot=root -sec=sys
-$expdir1 -maproot=root -sec=sys
+$expdir0 $expdir1 -maproot=root -sec=sys
 V4: / -sec=sys
 EOF
 
