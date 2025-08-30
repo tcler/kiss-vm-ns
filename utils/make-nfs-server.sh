@@ -87,7 +87,7 @@ chmod 775 -R $NFSROOT/$PREFIX/{rw,async,labelled-nfs,qe,devel,tls,mtls}
 ## generate exports config file
 defaultOpts=${defaultOpts:-insecure}
 if [[ -d "${NFSROOT}" ]]; then
-	echo "${NFSROOT} *(${defaultOpts},rw,sync,root_squash,crossmnt,fsid=0,no_subtree_check)" >/etc/exports
+	echo "${NFSROOT} *(${defaultOpts},rw,sync,root_squash,crossmnt,fsid=0,no_subtree_check,sec=sys:krb5:krb5i:krb5p)" >/etc/exports
 else
 	: >/etc/exports
 fi
