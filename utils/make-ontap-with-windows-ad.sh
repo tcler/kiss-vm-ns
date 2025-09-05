@@ -48,14 +48,18 @@ run -debug mkdir -p $win_img_dir $ontap_img_dir
 vm prepare >/dev/null
 
 [[ $# -ge 1 && $1 != -* ]] && { distro=${1:-9}; shift;
-	[[ $# -ge 1 && $1 != -* ]] && { clientvm=${1:-ontap-ad-rhel-client}; shift; }; }
+	[[ $# -ge 1 && $1 != -* ]] && { clientvms=${1:-ontap-ad-rhel-client}; shift; }; }
 distro=${distro:-9}
-clientvm=${clientvm:-ontap-ad-rhel-client}
+clientvms=${clientvms:-ontap-ad-rhel-client}
+clientvms=${clientvms//,/ }
 pkgs=vim,bind-utils,adcli,samba-common,samba-common-tools,krb5-workstation,cifs-utils,nfs-utils,expect,tcpdump,tmux
 net=ontap2-data; vm netls | grep -qw $net || { create-ontap-simulator-net; }
 net1Opt=--netmacvtap=?
 [[ "$PUBIF" = no ]] && net1Opt=--net=$net
-trun -tmux=- vm create $distro -n $clientvm -p $pkgs --nointeract --saveimage -f $net1Opt --net=$net "$@"
+for clientvm in $clientvms; do
+	trun -tmux=- vm create $distro -n $clientvm -p $pkgs \
+		--nointeract --saveimage -f $net1Opt --net=$net "$@"
+done
 
 #-------------------------------------------------------------------------------
 read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')
@@ -179,69 +183,71 @@ bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file
 
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee $ONTAP_IF_INFO
 
-################################# Assert ################################
-if [[ -n "$VM_EXT_IP" && "$VM_EXT_IP" != 169.254.* ]]; then
-	echo -e "Assert 1: ping windows ad server: $VM_EXT_IP ..." >/dev/tty
-	vm exec -v $clientvm -- ping -c 4 $VM_EXT_IP || {
-		[[ -n "$VM_INT_IP" ]] && {
-			vm exec $winServer -- ipconfig
+for clientvm in $clientvms; do
+	################################# Assert ################################
+	if [[ -n "$VM_EXT_IP" && "$VM_EXT_IP" != 169.254.* ]]; then
+		echo -e "Assert 1: ping windows ad server: $VM_EXT_IP ..." >/dev/tty
+		vm exec -v $clientvm -- ping -c 4 $VM_EXT_IP || {
+			[[ -n "$VM_INT_IP" ]] && {
+				vm exec $winServer -- ipconfig
+			}
+			echo -e "Alert 1: ping windows ad server($VM_EXT_IP) from client fail"
+			exit 1
 		}
-		echo -e "Alert 1: ping windows ad server($VM_EXT_IP) from client fail"
-		exit 1
+	fi
+	################################# Assert ################################
+
+	#join $clientvm to ad domain(krb5 realm)
+	echo -e "join $clientvm to $AD_DOMAIN($AD_HOSTNAME) ..."
+	netbiosname=host-${HostIPSuffix}
+	vm cpto -v $clientvm /usr/bin/join-linux-to-AD.sh /usr/bin
+	vm exec -v $clientvm -- "echo \"$netbiosname \$HOSTNAME\" >/etc/host.aliases"
+	vm exec -v $clientvm -- "echo 'export HOSTALIASES=/etc/host.aliases' >>/etc/profile"
+	vm exec -v $clientvm -- "source /etc/profile;
+		join-linux-to-AD.sh --addc-ip=$VM_INT_IP --addc-ip-ext=$VM_EXT_IP -p $AD_PASS --config-krb --enctypes AES --host-netbios=$netbiosname"
+	vm exec -vx $clientvm -- hostname -A
+	vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
+
+	#simple nfs krb5 mount test
+	ONTAP_ENV_FILE=/tmp/ontap2info.env
+	nfsmp_krb5=/mnt/nfsmp-ontap-krb5
+	nfsmp_krb5i=/mnt/nfsmp-ontap-krb5i
+	nfsmp_krb5p=/mnt/nfsmp-ontap-krb5p
+	source "$ONTAP_ENV_FILE"
+
+	vm exec -vx $clientvm -- ping -c 4 $NETAPP_NAS_HOSTNAME
+	vm exec -vx $clientvm -- systemctl restart nfs-client.target gssproxy.service rpc-statd.service rpc-gssd.service
+	vm exec -vx $clientvm -- mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
+	vm exec -v  $clientvm -- showmount -e $NETAPP_NAS_HOSTNAME
+	vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5 && {
+		vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i
+		vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5p -osec=krb5p
+		vm exec -vx $clientvm -- dd if=/dev/zero of=$nfsmp_krb5/testfile bs=1k count=512
+		vm exec -vx $clientvm -- ls -l $nfsmp_krb5/testfile
+		vm exec -vx $clientvm -- rm -f $nfsmp_krb5/testfile
+	} || {
+		vm exec -v  $clientvm -- systemctl status rpc-gssd
 	}
-fi
-################################# Assert ################################
+	vm exec -vx $clientvm -- mount -t nfs4
+	vm exec -vx $clientvm -- umount -a -t nfs4,nfs
+	vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
 
-#join $clientvm to ad domain(krb5 realm)
-echo -e "join $clientvm to $AD_DOMAIN($AD_HOSTNAME) ..."
-netbiosname=host-${HostIPSuffix}
-vm cpto -v $clientvm /usr/bin/join-linux-to-AD.sh /usr/bin
-vm exec -v $clientvm -- "echo \"$netbiosname \$HOSTNAME\" >/etc/host.aliases"
-vm exec -v $clientvm -- "echo 'export HOSTALIASES=/etc/host.aliases' >>/etc/profile"
-vm exec -v $clientvm -- "source /etc/profile;
-	join-linux-to-AD.sh --addc-ip=$VM_INT_IP --addc-ip-ext=$VM_EXT_IP -p $AD_PASS --config-krb --enctypes AES --host-netbios=$netbiosname"
-vm exec -vx $clientvm -- hostname -A
-vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
+	#simple cifs mount test
+	#NETAPP_CIFS_USER
+	#NETAPP_CIFS_PASSWD
+	cifsmp=/mnt/cifsmp-ontap
+	cifsmp_krb5=/mnt/cifsmp-ontap-krb5
 
-#simple nfs krb5 mount test
-ONTAP_ENV_FILE=/tmp/ontap2info.env
-nfsmp_krb5=/mnt/nfsmp-ontap-krb5
-nfsmp_krb5i=/mnt/nfsmp-ontap-krb5i
-nfsmp_krb5p=/mnt/nfsmp-ontap-krb5p
-source "$ONTAP_ENV_FILE"
-
-vm exec -vx $clientvm -- ping -c 4 $NETAPP_NAS_HOSTNAME
-vm exec -vx $clientvm -- systemctl restart nfs-client.target gssproxy.service rpc-statd.service rpc-gssd.service
-vm exec -vx $clientvm -- mkdir -p $nfsmp_krb5 $nfsmp_krb5i $nfsmp_krb5p
-vm exec -v  $clientvm -- showmount -e $NETAPP_NAS_HOSTNAME
-vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5 -osec=krb5 && {
-	vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5i -osec=krb5i
-	vm exec -vx $clientvm -- mount $NETAPP_NAS_HOSTNAME:$NETAPP_NFS_SHARE2 $nfsmp_krb5p -osec=krb5p
-	vm exec -vx $clientvm -- dd if=/dev/zero of=$nfsmp_krb5/testfile bs=1k count=512
-	vm exec -vx $clientvm -- ls -l $nfsmp_krb5/testfile
-	vm exec -vx $clientvm -- rm -f $nfsmp_krb5/testfile
-} || {
-	vm exec -v  $clientvm -- systemctl status rpc-gssd
-}
-vm exec -vx $clientvm -- mount -t nfs4
-vm exec -vx $clientvm -- umount -a -t nfs4,nfs
-vm exec -vx $clientvm -- "hostname -A | grep -w $netbiosname"
-
-#simple cifs mount test
-#NETAPP_CIFS_USER
-#NETAPP_CIFS_PASSWD
-cifsmp=/mnt/cifsmp-ontap
-cifsmp_krb5=/mnt/cifsmp-ontap-krb5
-
-vm exec -vx $clientvm -- "kinit Administrator <<< ${ADMINPASSWORD}"  #workaround on rhel-9.6
-vm exec -vx $clientvm -- mkdir -p $cifsmp $cifsmp_krb5
-vm exec -vx $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
-if [[ $? = 0 ]]; then
-	vm exec -vx1-255 $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
-else
-	vm exec -vx $clientvm -- 'klist -c; journalctl -x -e'
-	smbclientDebugOpt="-d 10"
-fi
-krb5CCACHE=$(vm exec $clientvm -- LANG=C klist | sed -n '/Ticket.cache: /{s///;p;q}')
-netKrb5Opt=--use-krb5-ccache=${krb5CCACHE}
-vm exec -vx $clientvm -- smbclient -L //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $netKrb5Opt -c get $smbclientDebugOpt
+	vm exec -vx $clientvm -- "kinit Administrator <<< ${ADMINPASSWORD}"  #workaround on rhel-9.6
+	vm exec -vx $clientvm -- mkdir -p $cifsmp $cifsmp_krb5
+	vm exec -vx $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
+	if [[ $? = 0 ]]; then
+		vm exec -vx1-255 $clientvm -- mount //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $cifsmp -ouser=$NETAPP_CIFS_USER,password=$NETAPP_CIFS_PASSWD,sec=krb5
+	else
+		vm exec -vx $clientvm -- 'klist -c; journalctl -x -e'
+		smbclientDebugOpt="-d 10"
+	fi
+	krb5CCACHE=$(vm exec $clientvm -- LANG=C klist | sed -n '/Ticket.cache: /{s///;p;q}')
+	netKrb5Opt=--use-krb5-ccache=${krb5CCACHE}
+	vm exec -vx $clientvm -- smbclient -L //$NETAPP_NAS_HOSTNAME/$NETAPP_CIFS_SHARE $netKrb5Opt -c get $smbclientDebugOpt
+done
