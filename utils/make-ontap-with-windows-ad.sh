@@ -94,7 +94,7 @@ fi
 
 ADDomain=test${HostIPSuffix}.kissvm.net
 ADPasswd=Sesame~0pen
-timeout 150m vm create Windows-server -n ${winServer} -C $win_img_dir/$win_img_name --osv=$os_variant --dsize 60 \
+timeout --foreground 150m vm create Windows-server -n ${winServer} -C $win_img_dir/$win_img_name --osv=$os_variant --dsize 60 \
 	$net1Opt --net=$net \
 	--win-auto=cifs-nfs --win-enable-kdc --win-openssh=$win_img_dir/$openssh_file \
 	--win-domain=${ADDomain} --win-passwd=${ADPasswd} --time-server=$TIME_SERVER --wait --force
