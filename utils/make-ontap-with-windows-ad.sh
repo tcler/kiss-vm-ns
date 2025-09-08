@@ -6,18 +6,6 @@ downhostname=download.devel.redhat.com
 LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 
 export LANG=C
-getDefaultNic() { ip route | awk '/default/{match($0,"dev ([^ ]+)",M); print M[1]; exit}'; }
-getDefaultIp4() {
-	local nic=$1 nics=
-	[[ -z "$nic" ]] && nics=$(getDefaultNic)
-	for nic in $nics; do
-		[[ -z "$(ip -d link show  dev $nic|sed -n 3p)" ]] && { break; }
-	done
-	local ipaddr=$(ip addr show $nic)
-	local ret=$(echo "$ipaddr" |
-		awk '/inet .* (global|host lo)/{match($0,"inet ([0-9.]+)",M); print M[1]}')
-	echo "$ret"
-}
 timeServer=clock.corp.redhat.com
 host $timeServer|grep -q not.found: && timeServer=2.fedora.pool.ntp.org
 TIME_SERVER=$timeServer
@@ -62,7 +50,7 @@ for clientvm in $clientvms; do
 done
 
 #-------------------------------------------------------------------------------
-read A B C D N < <(getDefaultIp4|sed 's;[./]; ;g')
+read A B C D N < <(get-default-ip.sh|sed 's;[./]; ;g')
 HostIPSuffix=$(printf %02x%02x $C $D)
 HostIPSuffixL=$(printf %02x%02x%02x%02x $A $B $C $D)
 winServer=win2022-${HostIPSuffix}
