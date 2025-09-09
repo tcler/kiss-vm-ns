@@ -3053,6 +3053,118 @@ support_nested_kvm() {
 	return $rc
 }
 
+vm_snapshot_help()
+{
+	cat <<- 'EOF'
+vm snpashot <vm_name> create <snapshot_name>
+vm snpashot <vm_name> ls
+vm snpashot <vm_name> revert <snapshot_name>
+vm snpashot <vm_name> delete <snapshot_name>
+
+EOF
+
+
+}
+
+vm_snapshot_ls(){
+	local vm_name="$1"
+
+	echo "#############################################"
+	echo "#### Snapshot info of: $vm_name"
+	echo "#############################################"
+	echo
+	echo "Listing snapshots for VM '$vm_name':"
+	echo
+	virsh snapshot-list --parent "$vm_name"
+	echo "---------------------------------------------"
+	echo "Listing snapshots tree for VM '$vm_name':"
+	echo
+	virsh snapshot-list --tree "$vm_name"
+	echo "---------------------------------------------"
+	echo "Listing current snapshots points for VM '$vm_name':"
+	echo
+	virsh snapshot-info --current "$vm_name"
+	echo
+	echo "#############################################"
+	echo "#############################################"
+
+}
+
+
+vm_snapshot(){
+# Desc: deal with vm snapshots
+# Para:  <vm_name> [subcmd] [snapshot_name]
+	local vm_name="$1"
+	local subcmd="$2"
+	local snapshot_name="$3"
+
+	# Confirm that vm is there
+	if [[ -z "$vm_name" ]]; then
+		echo  "Error: missing VM name for snapshot operation"
+		return 1
+	fi
+
+	# Need to add a check that all the disks are qcow2 and sata 
+	case "$subcmd" in
+		create)
+			# Make sure the VM is shutdown before take snapshot
+			if virsh list --state-running --name | grep -q "^${vm_name}$"; then
+				read -p "VM $vm_name is running. Shutdown for consistent snapshot? (y/N) " -n 1 -r
+				echo
+				if [[ $REPLY =~ ^[Yy]$ ]]; then
+					echo "Shutting down VM $vm_name..."
+					virsh shutdown "$vm_name"
+					sleep 5
+					# If it still running then use destroy to force shutdown
+					if virsh list --state-running --name | grep -q "^${vm_name}$"; then
+						virsh destroy "$vm_name"
+					fi
+				fi
+			fi
+
+			echo "Creating snapshot '$snapshot_name' for VM '$vm_name'..."
+			#virsh snapshot-create-as "$vm_name" "$snapshot_name" --disk-only --atomic
+			virsh snapshot-create-as "$vm_name" "$snapshot_name"  --atomic
+
+			virsh start $vm_name
+			vm_snapshot_ls $vm_name
+			;;
+		revert)
+			# Stop the VM before revert
+			if virsh list --state-running --name | grep -q "^${vm_name}$"; then
+				echo "Shutting down VM $vm_name to revert snapshot..."
+				virsh destroy "$vm_name"
+			fi
+			echo "Reverting VM '$vm_name' to snapshot '$snapshot_name'..."
+			virsh snapshot-revert "$vm_name" "$snapshot_name"
+
+			vm_snapshot_ls $vm_name
+			;;
+		ls)
+			vm_snapshot_ls $vm_name
+			;;
+		delete)
+			echo "Deleting snapshot '$snapshot_name' for VM '$vm_name'..."
+			virsh snapshot-delete "$vm_name" "$snapshot_name"
+
+			vm_snapshot_ls $vm_name
+			;;
+		*)
+			vm_snapshot_help
+			echo "Error: internal error - invalid snapshot subcommand '$subcmd'"
+			return 1
+			;;
+	esac
+
+	# Check the command result
+	local result=$?
+	if [[ $result -ne 0 ]]; then
+		echo "Error: snapshot operation '$subcmd' failed for VM '$vm_name'" >&2
+		return $result
+	fi
+
+}
+
 run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 
 subcmd="$1"; shift;
@@ -3102,6 +3214,7 @@ case "$subcmd" in
 	netinfo)		netinfo "$@"; exit $?;;
 	netstart)		netstart "$@"; exit $?;;
 	netdel|netdelete)	netdelete "$@"; exit $?;;
+	snapshot)	vm_snapshot "$@"; exit $?;;
 esac
 
 support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
