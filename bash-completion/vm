@@ -220,7 +220,7 @@ _vm()
                 vmlist=$(virsh list --all --name 2>/dev/null)
                 COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
             elif [[ $narg -le 4 ]]; then
-                subcmds="help create ls revert delete"
+                subcmds="help create ls info revert delete"
                 COMPREPLY=( $( compgen -W "$subcmds" -- "${cur}" ) )
             elif [[ $narg -le 5 ]] && [[ "$prev" = del* || "$prev" = rev* ]]; then
                 snaplist=$(virsh snapshot-list --parent "${word[3]}")

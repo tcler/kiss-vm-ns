@@ -3053,8 +3053,7 @@ support_nested_kvm() {
 	return $rc
 }
 
-vm_snapshot_help()
-{
+vm_snapshot_help() {
 	cat <<- 'EOF'
 vm snpashot <vm_name> create <snapshot_name>
 vm snpashot <vm_name> ls
@@ -3062,41 +3061,32 @@ vm snpashot <vm_name> revert <snapshot_name>
 vm snpashot <vm_name> delete <snapshot_name>
 
 EOF
-
-
 }
 
-vm_snapshot_ls(){
+vm_snapshot_ls() {
 	local vm_name="$1"
-
-	echo "#############################################"
-	echo "#### Snapshot info of: $vm_name"
-	echo "#############################################"
-	echo
-	echo "Listing snapshots for VM '$vm_name':"
-	echo
+	echo "{VM:DEBUG} Listing snapshots for VM '$vm_name':" >&2
 	virsh snapshot-list --parent "$vm_name"
-	echo "---------------------------------------------"
-	echo "Listing snapshots tree for VM '$vm_name':"
-	echo
-	virsh snapshot-list --tree "$vm_name"
-	echo "---------------------------------------------"
-	echo "Listing current snapshots points for VM '$vm_name':"
-	echo
-	virsh snapshot-info --current "$vm_name"
-	echo
-	echo "#############################################"
-	echo "#############################################"
 
+	echo "{VM:DEBUG} Listing snapshots tree for VM '$vm_name':" >&2
+	virsh snapshot-list --tree "$vm_name"
 }
 
+vm_snapshot_info() {
+	local vm_name="$1"
+	vm_snapshot_ls "$vm_name"
 
-vm_snapshot(){
+	echo "{VM:DEBUG} Listing current snapshots points for VM '$vm_name':" >&2
+	virsh snapshot-info --current "$vm_name"
+}
+
+vm_snapshot() {
 # Desc: deal with vm snapshots
 # Para:  <vm_name> [subcmd] [snapshot_name]
 	local vm_name="$1"
 	local subcmd="$2"
 	local snapshot_name="$3"
+	local rc=0
 
 	# Confirm that vm is there
 	if [[ -z "$vm_name" ]]; then
@@ -3142,6 +3132,9 @@ vm_snapshot(){
 	ls)
 		vm_snapshot_ls $vm_name
 		;;
+	info)
+		vm_snapshot_info $vm_name
+		;;
 	delete)
 		echo "{VM:INFO} Deleting snapshot '$snapshot_name' for VM '$vm_name'..."
 		virsh snapshot-delete "$vm_name" "$snapshot_name"
@@ -3157,12 +3150,7 @@ vm_snapshot(){
 		;;
 	esac
 
-	# Check the command result
-	local result=$?
-	if [[ $result -ne 0 ]]; then
-		echo "{VM:ERROR} snapshot operation '$subcmd' failed for VM '$vm_name'" >&2
-		return $result
-	fi
+	return $rc
 }
 
 run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
