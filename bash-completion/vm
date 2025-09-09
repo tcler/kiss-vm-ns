@@ -222,8 +222,8 @@ _vm()
             elif [[ $narg -le 4 ]]; then
                 subcmds="help create ls lstree tree info revert goto delete"
                 COMPREPLY=( $( compgen -W "$subcmds" -- "${cur}" ) )
-            elif [[ $narg -le 5 ]] && [[ "$prev" = del* || "$prev" = rev* ]]; then
-                snaplist=$(virsh snapshot-list --parent "${word[3]}")
+            elif [[ $narg -le 5 ]] && [[ "$prev" = del* || "$prev" = rev* || "$prev" = go* ]]; then
+                snaplist=$(virsh snapshot-list --parent "${words[2]}" --name | awk -F'\t' '$1!=""{print gensub(/ /,"^","g",$1)}')
                 COMPREPLY=( $( compgen -W "$snaplist" -- "${cur}" ) )
             fi
             ;;

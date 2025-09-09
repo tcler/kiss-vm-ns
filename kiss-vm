@@ -3107,6 +3107,10 @@ vm_snapshot() {
 	# Need to add a check that all the disks are qcow2 and sata 
 	case "$subcmd" in
 	create|c*)
+		if [[ "$snapshot_name" = *[?^]* ]]; then
+			echo "{VM:ERROR} invalid charactor '[?^]' in snapshot name" >&2
+			return 1
+		fi
 		# Make sure the VM is shutdown before take snapshot
 		if virsh list --state-running --name | grep -q "^${vm_name}$"; then
 			read -p "VM $vm_name is running. Shutdown for consistent snapshot? (y/N) " -n 1 -r
@@ -3135,8 +3139,17 @@ vm_snapshot() {
 			echo "{VM:INFO} Shutting down VM $vm_name to revert snapshot..."
 			virsh destroy "$vm_name"
 		fi
-		echo "{VM:INFO} Reverting VM '$vm_name' to snapshot '$snapshot_name'..."
-		virsh snapshot-revert "$vm_name" "$snapshot_name"
+		local snapshot=${snapshot_name//^/ }
+		echo "{VM:INFO} Reverting VM '$vm_name' to snapshot '$snapshot'..."
+		virsh snapshot-revert "$vm_name" "$snapshot"
+		vm_snapshot_ls $vm_name
+		;;
+	delete|de*|d)
+		shift 2
+		for snapshot; do
+			echo "{VM:INFO} Deleting snapshot '$snapshot' for VM '$vm_name'..."
+			virsh snapshot-delete "$vm_name" "${snapshot//^/ }"
+		done
 		vm_snapshot_ls $vm_name
 		;;
 	info|in*|i)
@@ -3147,11 +3160,6 @@ vm_snapshot() {
 		;;
 	tree|tr*|t|lstree)
 		vm_snapshot_lstree $vm_name
-		;;
-	delete|de*|d)
-		echo "{VM:INFO} Deleting snapshot '$snapshot_name' for VM '$vm_name'..."
-		virsh snapshot-delete "$vm_name" "$snapshot_name"
-		vm_snapshot_ls $vm_name
 		;;
 	help|h*)
 		vm_snapshot_help
