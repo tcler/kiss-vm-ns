@@ -3063,21 +3063,24 @@ vm snpashot <vm_name> delete <snapshot_name>
 EOF
 }
 
-vm_snapshot_ls() {
-	local vm_name="$1"
-	echo "{VM:DEBUG} Listing snapshots for VM '$vm_name':" >&2
-	virsh snapshot-list --parent "$vm_name"
-
-	echo "{VM:DEBUG} Listing snapshots tree for VM '$vm_name':" >&2
-	virsh snapshot-list --tree "$vm_name"
-}
-
 vm_snapshot_info() {
 	local vm_name="$1"
-	vm_snapshot_ls "$vm_name"
-
-	echo "{VM:DEBUG} Listing current snapshots points for VM '$vm_name':" >&2
+	#echo "{VM:DEBUG} Listing current snapshots points for VM '$vm_name':" >&2
 	virsh snapshot-info --current "$vm_name"
+}
+
+vm_snapshot_ls() {
+	local vm_name="$1"
+	#echo "{VM:DEBUG} Listing snapshots for VM '$vm_name':" >&2
+	local cur=$(vm_snapshot_info $vm_name|awk '/^Name:/{print $2}')
+	virsh snapshot-list --parent "$vm_name"|grep --color -E "^|\\<${cur}\\>"
+}
+
+vm_snapshot_lstree() {
+	local vm_name="$1"
+	#echo "{VM:DEBUG} Listing snapshots tree for VM '$vm_name':" >&2
+	local cur=$(vm_snapshot_info $vm_name|awk '/^Name:/{print $2}')
+	virsh snapshot-list --tree "$vm_name"|grep --color -E "^|\\<${cur}\\>"
 }
 
 vm_snapshot() {
@@ -3096,7 +3099,7 @@ vm_snapshot() {
 
 	# Need to add a check that all the disks are qcow2 and sata 
 	case "$subcmd" in
-	create)
+	create|c*)
 		# Make sure the VM is shutdown before take snapshot
 		if virsh list --state-running --name | grep -q "^${vm_name}$"; then
 			read -p "VM $vm_name is running. Shutdown for consistent snapshot? (y/N) " -n 1 -r
@@ -3119,7 +3122,7 @@ vm_snapshot() {
 		virsh start $vm_name
 		vm_snapshot_ls $vm_name
 		;;
-	revert)
+	goto|go|g|revert|rev*|re|r)
 		# Stop the VM before revert
 		if virsh list --state-running --name | grep -q "^${vm_name}$"; then
 			echo "{VM:INFO} Shutting down VM $vm_name to revert snapshot..."
@@ -3129,21 +3132,24 @@ vm_snapshot() {
 		virsh snapshot-revert "$vm_name" "$snapshot_name"
 		vm_snapshot_ls $vm_name
 		;;
-	ls)
-		vm_snapshot_ls $vm_name
-		;;
-	info)
+	info|in*|i)
 		vm_snapshot_info $vm_name
 		;;
-	delete)
+	ls|l)
+		vm_snapshot_ls $vm_name
+		;;
+	tree|tr*|t|lstree)
+		vm_snapshot_lstree $vm_name
+		;;
+	delete|de*|d)
 		echo "{VM:INFO} Deleting snapshot '$snapshot_name' for VM '$vm_name'..."
 		virsh snapshot-delete "$vm_name" "$snapshot_name"
 		vm_snapshot_ls $vm_name
 		;;
-	help)
+	help|h*)
 		vm_snapshot_help
 		;;
-	help|*)
+	*)
 		vm_snapshot_help
 		echo "{VM:ERROR} Invalid snapshot subcommand '$subcmd'" >&2
 		return 1
