@@ -3063,24 +3063,31 @@ vm snpashot <vm_name> delete <snapshot_name>
 EOF
 }
 
-vm_snapshot_info() {
-	local vm_name="$1"
-	#echo "{VM:DEBUG} Listing current snapshots points for VM '$vm_name':" >&2
-	virsh snapshot-info --current "$vm_name"
+_vm_snapshot_info() {
+	local vmname="$1"
+	[[ -n $DBG ]] && echo "{VM:DEBUG} Listing current snapshots points for VM '$vmname':" >&2
+	virsh snapshot-info --current "$vmname"
 }
 
 vm_snapshot_ls() {
-	local vm_name="$1"
-	#echo "{VM:DEBUG} Listing snapshots for VM '$vm_name':" >&2
-	local cur=$(vm_snapshot_info $vm_name|awk '/^Name:/{print $2}')
-	virsh snapshot-list --parent "$vm_name"|grep --color -E "^|\\<${cur}\\>"
+	local vmname="$1"
+	[[ -n $DBG ]] && echo "{VM:DEBUG} Listing snapshots for VM '$vmname':" >&2
+	local cur=$(_vm_snapshot_info "$vmname" 2>/dev/null|sed 's/^Name: *//')
+	virsh snapshot-list --parent "$vmname"|grep --color -E "^|\\<${cur}\\>"
 }
 
 vm_snapshot_lstree() {
-	local vm_name="$1"
-	#echo "{VM:DEBUG} Listing snapshots tree for VM '$vm_name':" >&2
-	local cur=$(vm_snapshot_info $vm_name|awk '/^Name:/{print $2}')
-	virsh snapshot-list --tree "$vm_name"|grep --color -E "^|\\<${cur}\\>"
+	local vmname="$1"
+	[[ -n $DBG ]] && echo "{VM:DEBUG} Listing snapshots tree for VM '$vmname':" >&2
+	local cur=$(_vm_snapshot_info "$vmname" 2>/dev/null|sed 's/^Name: *//')
+	virsh snapshot-list --tree "$vmname"|grep --color -E "^|\\<${cur}\\>"
+}
+
+vm_snapshot_info() {
+	local vmname="$1"
+	DBG=y vm_snapshot_ls "$vmname"
+	DBG=y vm_snapshot_lstree "$vmname"
+	DBG=y _vm_snapshot_info "$vmname"
 }
 
 vm_snapshot() {
