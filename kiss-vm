@@ -3068,25 +3068,29 @@ EOF
 
 vm_snapshot_ls(){
 	local vm_name="$1"
-
-	echo "#############################################"
-	echo "#### Snapshot info of: $vm_name"
-	echo "#############################################"
-	echo
-	echo "Listing snapshots for VM '$vm_name':"
-	echo
-	virsh snapshot-list --parent "$vm_name"
-	echo "---------------------------------------------"
-	echo "Listing snapshots tree for VM '$vm_name':"
-	echo
-	virsh snapshot-list --tree "$vm_name"
-	echo "---------------------------------------------"
-	echo "Listing current snapshots points for VM '$vm_name':"
-	echo
-	virsh snapshot-info --current "$vm_name"
-	echo
-	echo "#############################################"
-	echo "#############################################"
+	if (  virsh snapshot-list --parent "$vm_name" &> /dev/null );then
+		echo "#############################################"
+		echo "#### Snapshot info of: $vm_name"
+		echo "#############################################"
+		echo
+		echo "Listing snapshots for VM '$vm_name':"
+		echo
+		virsh snapshot-list --parent "$vm_name"
+		echo "---------------------------------------------"
+		echo "Listing snapshots tree for VM '$vm_name':"
+		echo
+		virsh snapshot-list --tree "$vm_name"
+		echo "---------------------------------------------"
+		echo "Listing current snapshots points for VM '$vm_name':"
+		echo
+		virsh snapshot-info --current "$vm_name"
+		echo
+		echo "#############################################"
+		echo "#############################################"
+	else
+		echo "$vm_name don't have any snapshots"
+		return 1
+	fi
 
 }
 
