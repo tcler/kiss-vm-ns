@@ -86,7 +86,7 @@ _vm()
     local netparams= netlist=
     _init_completion || return
 
-    subcommandList=(prepare enable-nested-vm help h create ls list clone port-available login console qmp monitor rm delete ifaddr iflist if.unplugin if.plugin viewer vncproc xml edit exec restart reboot stop start autostart noautostart stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthru)
+    subcommandList=(prepare enable-nested-vm help h create ls list clone port-available login console qmp monitor rm delete ifaddr iflist if.unplugin if.plugin viewer vncproc xml edit exec restart reboot stop start autostart noautostart stat blklist netls netcreate netinfo netdel netstart cpfrom cpto rootdir homedir add.iso add.disk add.if add.if.bridge add.if.direct add.if.passthru snapshot)
 
     for ((i=0; i<${#words[@]}; i++)); do
         w=${words[$i]}
@@ -213,6 +213,18 @@ _vm()
             elif [[ $narg -le 4 ]]; then
                 hostifs=$(for if in /sys/class/net/*; do [[ -f $if/device/uevent ]] && echo ${if##*/} ; done)
                 COMPREPLY=( $( compgen -W "#<Enter> $hostifs" -- "${cur}" ) )
+            fi
+            ;;
+        sna|snap*)
+            if [[ $narg -le 3 ]]; then
+                vmlist=$(virsh list --all --name 2>/dev/null)
+                COMPREPLY=( $( compgen -W "$vmlist" -- "$cur" ) )
+            elif [[ $narg -le 4 ]]; then
+                subcmds="help create ls revert delete"
+                COMPREPLY=( $( compgen -W "$subcmds" -- "${cur}" ) )
+            elif [[ $narg -le 5 ]] && [[ "$prev" = del* || "$prev" = rev* ]]; then
+                snaplist=$(virsh snapshot-list --parent "${word[3]}")
+                COMPREPLY=( $( compgen -W "$snaplist" -- "${cur}" ) )
             fi
             ;;
         vi|vie|view*|qmp|mon|moni*|if|ifaddr|port*)
