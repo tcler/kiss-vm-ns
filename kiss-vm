@@ -3098,7 +3098,7 @@ vm_snapshot_info() {
 vm_snapshot() {
 # Desc: deal with vm snapshots
 # Para:  <vm_name> [subcmd] [snapshot_name]
-	local vm_name="$1"
+	local vm_name=$(vmname_extract -all "$1")
 	local subcmd="$2"
 	local snapshot_name="$3"
 	local rc=0
@@ -3108,6 +3108,10 @@ vm_snapshot() {
 		echo "{VM:WARN} missing VM name for snapshot operation" >&2
 		vm_snapshot_help >&2
 		return 1
+	elif ! virsh desc "$vm_name" &>/dev/null; then
+		echo "{VM:WARN} VM '$vm_name' not exist!" >&2
+		vm_snapshot_help >&2
+		return 2
 	fi
 
 	# Need to add a check that all the disks are qcow2 and sata 
