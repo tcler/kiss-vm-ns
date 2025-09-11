@@ -3121,6 +3121,8 @@ vm_snapshot() {
 			echo "{VM:ERROR} invalid charactor '[?^]' in snapshot name" >&2
 			return 1
 		fi
+		# Get current VM statue:running| shut off, make sure it move back to this status after taking snapshot
+		vm_cur_state=$(LANG=C virsh domstate $vm_name)
 		# Make sure the VM is shutdown before take snapshot
 		if virsh list --state-running --name | grep -q "^${vm_name}$"; then
 			read -p "VM $vm_name is running. Shutdown for consistent snapshot? (y/N) " -n 1 -r
@@ -3140,7 +3142,9 @@ vm_snapshot() {
 		#virsh snapshot-create-as "$vm_name" "$snapshot_name" --disk-only --atomic
 		virsh snapshot-create-as "$vm_name" "$snapshot_name"  --atomic
 
-		virsh start $vm_name
+		if [ "$vm_cur_state" == "running" ]; then
+			virsh start $vm_name
+		fi
 		vm_snapshot_ls $vm_name
 		;;
 	goto|go|g|revert|rev*|re|r)
