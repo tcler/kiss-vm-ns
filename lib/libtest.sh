@@ -236,6 +236,11 @@ is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null -k --sile
 is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
 is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 
+_gen_distro_dir_name() {
+	local distro=$1 arch=$2 suffix=$3
+	local distrodir=${distro}.${arch}; [[ -n "${suffix}" ]] && distrodir+=+${suffix}
+	echo $distrodir
+}
 gen_distro_dir_name() {
 	#generate the distro-dir-name that will be used to making test-result-dir
 	local vmname=$1
@@ -244,8 +249,7 @@ gen_distro_dir_name() {
 	[[ -z "$arch" ]] && arch=$(vm xml $vmname | sed -rn -e "/^.*arch='([^']+)' .*$/{s//\1/;p}" -e '/.*\.([^.]+)\.qcow2.*/{s//\1/;p}' | tail -1)
 	local distro=$(vm homedir $vmname|awk -F/ 'NR==1{print $(NF-1)}')
 	[[ -z "${arch}" || -z "${distro}" ]] && return 1
-	local distrodir=${distro}.${arch}; [[ -n "${suffix}" ]] && distrodir+=+${suffix}
-	echo "${distrodir}"
+	_gen_distro_dir_name $distro $arch $suffix
 }
 
 vmrunx() {
