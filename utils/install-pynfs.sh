@@ -33,6 +33,7 @@ mkdir -p ${targetdir}; rm -rf ${targetdir}/$_xdir
 which git 2>/dev/null || sudo yum install -y git
 pushd $targetdir
 	PynfsUrl=git://git.linux-nfs.org/projects/bfields/pynfs.git
+	PynfsUrl=git://git.linux-nfs.org/projects/cdmackay/pynfs.git
 	git clone $PynfsUrl $_xdir
 	(cd $_xdir; python3 ./setup.py install)
 popd
