@@ -8,23 +8,20 @@ sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${
 if [[ $OSVER != %rhel && $OSVER -lt 9 ]]; then
 	case $OSVER in
 	8) sudo yum install -y python39 python39-pip python39-devel;;
-	7) sudo yum install -y python36 python36-pip python36-devel;;
-	6) sudo yum install -y python34 python34-pip python34-devel;;
-	5) echo "[WARN] does not support rhel-5 and before.";;
+	*) echo "[WARN] does not support rhel-7 and before."; exit 1;;
 	esac
 else
 	sudo yum install -y python3-pip python3-devel
 fi
 
 #install dependency
-sudo yum install -y gcc krb5-devel swig
+sudo yum install -y gcc krb5-devel swig python3-devel python3-gssapi python3-ply
 
-#install module ply
+#install module xdrlib3
 if pip3 install -h|grep .--break-system-packages; then
 	pipOpt=--break-system-packages
 fi
-yes | sudo pip3 install $pipOpt ply
-yes | sudo pip3 install $pipOpt gssapi
+yes | sudo pip3 install $pipOpt xdrlib3
 
 #git clone pynfs
 _xdir=pynfs
