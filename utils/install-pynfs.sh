@@ -32,7 +32,6 @@ pushd $targetdir
 	PynfsUrl=git://git.linux-nfs.org/projects/bfields/pynfs.git
 	PynfsUrl=git://git.linux-nfs.org/projects/cdmackay/pynfs.git
 	git clone $PynfsUrl $_xdir
-	sed -ri '/path.split.b/{s/b//}' $_xdir/nfs4.1/nfs4lib.py
 	(cd $_xdir; python3 ./setup.py install)
 popd
 
