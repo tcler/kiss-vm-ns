@@ -86,18 +86,19 @@ chmod 775 -R $NFSROOT/$PREFIX/{rw,async,labelled-nfs,qe,devel,tls,mtls}
 
 ## generate exports config file
 defaultOpts=${defaultOpts:-insecure}
+Squash=${Squash:-root_squash}
 if [[ -d "${NFSROOT}" ]]; then
-	echo "${NFSROOT} *(${defaultOpts},rw,sync,root_squash,crossmnt,fsid=0,no_subtree_check,sec=sys:krb5:krb5i:krb5p)" >/etc/exports
+	echo "${NFSROOT} *(${defaultOpts},rw,sync,${Squash},crossmnt,fsid=0,no_subtree_check,sec=sys:krb5:krb5i:krb5p)" >/etc/exports
 else
 	: >/etc/exports
 fi
 cat <<EOF >>/etc/exports
 $NFSROOT/$PREFIX/ro *(${defaultOpts},ro)
-$NFSROOT/$PREFIX/rw *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
-$NFSROOT/$PREFIX/async *(${defaultOpts},rw,root_squash,async,sec=sys:krb5:krb5i:krb5p)
-$NFSROOT/$PREFIX/labelled-nfs *(${defaultOpts},rw,root_squash,security_label,sec=sys:krb5:krb5i:krb5p)
-$NFSROOT/$PREFIX/qe *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
-$NFSROOT/$PREFIX/devel *(${defaultOpts},rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+$NFSROOT/$PREFIX/rw *(${defaultOpts},rw,${Squash},sec=sys:krb5:krb5i:krb5p)
+$NFSROOT/$PREFIX/async *(${defaultOpts},rw,${Squash},async,sec=sys:krb5:krb5i:krb5p)
+$NFSROOT/$PREFIX/labelled-nfs *(${defaultOpts},rw,${Squash},security_label,sec=sys:krb5:krb5i:krb5p)
+$NFSROOT/$PREFIX/qe *(${defaultOpts},rw,${Squash},sec=sys:krb5:krb5i:krb5p)
+$NFSROOT/$PREFIX/devel *(${defaultOpts},rw,${Squash},sec=sys:krb5:krb5i:krb5p)
 EOF
 srun "cat /etc/exports"
 
@@ -123,8 +124,8 @@ if [[ "$OSV" = 9 ]] && ! grep -wq mtls <(man exports); then
 fi
 if [[ "$TLSHD" != no ]] && rpm -q ktls-utils --quiet && grep -wq mtls <(man exports) && [[ $(uname -r) > 5.14.0-4 ]]; then
 	cat <<-EOF >>/etc/exports
-	$NFSROOT/$PREFIX/tls *(${defaultOpts},xprtsec=tls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
-	$NFSROOT/$PREFIX/mtls *(${defaultOpts},xprtsec=mtls,rw,root_squash,sec=sys:krb5:krb5i:krb5p)
+	$NFSROOT/$PREFIX/tls *(${defaultOpts},xprtsec=tls,rw,${Squash},sec=sys:krb5:krb5i:krb5p)
+	$NFSROOT/$PREFIX/mtls *(${defaultOpts},xprtsec=mtls,rw,${Squash},sec=sys:krb5:krb5i:krb5p)
 	EOF
 
 	# Create a private key and obtain a certificate containing the Server's DNS name...
