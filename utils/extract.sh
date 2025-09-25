@@ -54,7 +54,7 @@ filetype=$(file -b ${compressedFile})
 _targetdir=$targetdir
 if [[ "$filetype" = Zip* ]]; then
 	dirlist=$(unzip -Z1 "$compressedFile"|grep /$)
-	otopdir=($(unzip -Z1 "$compressedFile" | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
+	otopdir=($(unzip -Z1 "$compressedFile" | sed -r 's;^\.?/;;' | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
 	[[ -z "$otopdir" ]] && { echo "{error} extract $compressedFile fail" >&2; exit 3; }
 	if [[ "${#otopdir[@]}" -gt 1 ]]; then
 		otopdir=; [[ -n "$topdir" ]] && _targetdir+=/$topdir; topdir=
@@ -77,7 +77,7 @@ else
 		(*) xtype=a;;
 	esac
 	#dirlist=$(tar taf ${compressedFile}|grep /$)
-	otopdir=($(tar taf ${compressedFile} | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
+	otopdir=($(tar taf ${compressedFile} | sed -r 's;^\.?/;;' | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
 	[[ -z "$otopdir" ]] && { echo "{error} extract $compressedFile fail" >&2; exit 3; }
 	if [[ "${#otopdir[@]}" -gt 1 ]]; then
 		otopdir=; [[ -n "$topdir" ]] && _targetdir+=/$topdir; topdir=
