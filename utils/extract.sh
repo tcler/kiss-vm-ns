@@ -78,11 +78,29 @@ else
 	esac
 	#dirlist=$(tar taf ${compressedFile}|grep /$)
 	otopdir=($(tar taf ${compressedFile} | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
-	[[ -z "$otopdir" ]] && { echo "{error} extract $compressedFile fail" >&2; exit 3; }
-	if [[ "${#otopdir[@]}" -gt 1 ]]; then
+	# Handle the case where otopdir is . or empty
+	if [[ "${#otopdir[@]}" -eq 0 || "${otopdir[0]}" == "." ]]; then
+		# If there is no explicit top-level directory, use the specified topdir or generate one.
+		if [[ -n "$topdir" ]]; then
+			# Use the specified topdir
+			_targetdir="$targetdir/$topdir"
+			mkdir -p "$_targetdir"
+			# Set otopdir to empty to avoid subsequent renaming operations
+			otopdir=("")
+		else
+			# enerate directory names based on file names
+			local default_dir="${compressedFile##*/}" # Get the full file name
+			_targetdir="$targetdir/$default_dir" # Build the target directory
+			mkdir -p "$_targetdir" # Create a directory
+			otopdir=("") # Clear the original directory name
+			topdir="$default_dir" # Set the new directory name
+		fi
+	elif [[ "${#otopdir[@]}" -gt 1 ]]; then
+		# Multiple top-level directories
 		otopdir=; [[ -n "$topdir" ]] && _targetdir+=/$topdir; topdir=
 		[[ "$_targetdir" != $targetdir ]] && { mkdir -p $_targetdir; }
 	else
+		# The case of a single top-level directory
 		for ((i=0; i<${#folders[@]}; i++)); do folders[$i]=$otopdir/${folders[$i]}; done
 	fi
 	[[ "$list" = yes ]] && { tar taf ${compressedFile} "${folders[@]}"; exit; }
@@ -102,11 +120,15 @@ fi
 	echo "{Error} extract to '$_targetdir' fail, please theck permission" >&2
 	exit 1
 }
-[[ -n "$topdir" && "${topdir}" != "$otopdir" ]] && {
+[[ -n "$topdir" && -n "${otopdir[0]}" && "$topdir" != "${otopdir[0]}" ]] && {
 	if test -d "$_targetdir/$topdir"; then
-		_cmd="(cd '$_targetdir/$otopdir' && tar c .) | (cd '$_targetdir/$topdir' && tar xf -); rm -rf '$_targetdir/$otopdir'"
+		_cmd="(cd '$_targetdir/${otopdir[0]}' && tar c .) | (cd '$_targetdir/$topdir' && tar xf -); rm -rf '$_targetdir/${otopdir[0]}'"
 	else
-		_cmd="mv -T $_targetdir/${otopdir} $_targetdir/$topdir"
+		if [[ -e "$_targetdir/$topdir" ]]; then
+			echo "{warn} target '$topdir' already exists, skipping rename" >&2
+		else
+			_cmd="mv -T $_targetdir/${otopdir} $_targetdir/$topdir"
+		fi
 	fi
 	echo "{run} $_cmd" >&2
 	eval $_cmd
