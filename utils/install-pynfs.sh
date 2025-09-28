@@ -25,12 +25,13 @@ yes | sudo pip3 install $pipOpt xdrlib3
 
 #git clone pynfs
 _xdir=pynfs
+PynfsUrl=git://git.linux-nfs.org/projects/bfields/pynfs.git
+PynfsUrl=git://git.linux-nfs.org/projects/cdmackay/pynfs.git
+[[ -n "$1" ]] && PynfsUrl="$1"
 targetdir=/usr/src; [[ $(id -u) != 0 ]] && { targetdir=${HOME}/src; }
 mkdir -p ${targetdir}; rm -rf ${targetdir}/$_xdir
 which git 2>/dev/null || sudo yum install -y git
 pushd $targetdir
-	PynfsUrl=git://git.linux-nfs.org/projects/bfields/pynfs.git
-	PynfsUrl=git://git.linux-nfs.org/projects/cdmackay/pynfs.git
 	git clone $PynfsUrl $_xdir
 	(cd $_xdir; python3 ./setup.py install)
 popd
