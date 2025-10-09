@@ -44,6 +44,8 @@ MacvtapMode=bridge
 VMName=
 InstallType=import
 VirtInstallTimeOut=600
+DEFAULT_VM_DOMAIN=lab.kissvm.net
+KISSALT_VM_DOMAIN=alt.kissvm.net
 
 VMUSER=$(whoami)
 [[ $(id -u) = 0 && -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
@@ -53,7 +55,7 @@ ImagePath=${VMUSERHOME}/myimages
 perConfDir=${VMUSERHOME}/.config/${_repon}
 oldperConfDir=${VMUSERHOME}/.config/kiss-vm
 
-VM_DOMAIN=lab.kissvm.net
+VM_DOMAIN=$DEFAULT_VM_DOMAIN
 RuntimeTmp=/tmp/vm-$$
 INTERACT=yes
 Intranet=yes
@@ -1880,7 +1882,7 @@ COMM
 
 	#add domain setup in default network
 	virsh net-dumpxml default | grep '<domain name' || {
-		default_xml=$(virsh net-dumpxml default|sed "s;<mac .*;&\n  <domain name='$VM_DOMAIN' localOnly='yes'/>;g")
+		default_xml=$(virsh net-dumpxml default|sed "s;<mac .*;&\n  <domain name='$DEFAULT_VM_DOMAIN' localOnly='yes'/>;g")
 		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
 		if systemctl is-active --quiet firewalld && ! grep -q zone=.trusted <<<"$default_xml"; then
 			default_xml=$(echo "$default_xml"|sed '/<bridge/s//& zone="trusted"/')
@@ -3810,19 +3812,25 @@ else
 fi
 
 get_ip_of_virt_network() { virsh net-dumpxml "$1" | sed -rn '/ *<ip.address=.([0-9.]+)..*/{s//\1/;p}'; }
-if grep -q network=default <<<"${NETWORK_OPTS[*]}"; then
+netlist=$(grep -Eo 'network=network=[^ ,]+' <<<"${NETWORK_OPTS[*]}"|sed 's/.*=//')
+case ${netlist} in
+default*)
 	defaultDNS=$(get_ip_of_virt_network default)
-elif grep -q network=kissaltnet <<<"${NETWORK_OPTS[*]}"; then
+	VM_DOMAIN=$DEFAULT_VM_DOMAIN
+	;;
+kissaltnet*)
 	defaultDNS=$(get_ip_of_virt_network kissaltnet)
-else
-	netlist=$(grep -Eo 'network=network=[^ ,]+' <<<"${NETWORK_OPTS[*]}"|sed 's/.*=//')
+	VM_DOMAIN=$KISSALT_VM_DOMAIN
+	;;
+*)
 	for net in $netlist; do
 		if vm netinfo $net | xargs | grep -q =nat.*/dhcp; then
 			defaultDNS=$(get_ip_of_virt_network $net)
 			break
 		fi
 	done
-fi
+	;;
+esac
 
 ### hostdev option
 HOST_DEV_OPTS=()
