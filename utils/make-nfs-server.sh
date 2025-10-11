@@ -205,7 +205,9 @@ if [[ -z "$NFSROOT" ]]; then
 	srun "mkdir -p $nfsmp"
 	srun "mount localhost:/ $nfsmp"
 
+	srun "uname -r"
 	srun "touch $nfsmp/${PREFIX}/rw/file"
+	srun "stat $nfsmp/${PREFIX}/rw/file"
 	srun "ls -l $nfsmp $nfsmp/${PREFIX}/rw"
 	srun "mount -t nfs,nfs4 | grep $nfsmp"
 	srun "ls -l $nfsmp"
