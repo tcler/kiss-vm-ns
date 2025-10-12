@@ -4299,7 +4299,11 @@ elif [[ "$InstallType" = import ]]; then
 			curl_download_x $imagefile $Imageurl
 		fi
 	else
-		cp -vf ${Imageurl#file://} $imagefile
+		if [[ "$DOWNLOAD_ONLY" = yes ]]; then
+			cp -vf ${Imageurl#file://} $dlimagefile
+		else
+			cp -vf ${Imageurl#file://} $imagefile
+		fi
 	fi
 	[[ -f "${imagefile}" || -b "$imagefile" ]] || cleanup_and_exit 1
 
