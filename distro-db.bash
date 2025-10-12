@@ -48,8 +48,9 @@ distroInfo[openSUSE-leap-15.3]="https://download.opensuse.org/repositories/Cloud
 distroInfo[openSUSE-leap-15.2]="https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/openSUSE-Leap-15.2-OpenStack.$GuestARCH.qcow2"
 
 #### FreeBSD
+distroInfo[FreeBSD-15.0b]="https://download.freebsd.org/ftp/releases/VM-IMAGES/15.0-BETA1/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}-zfs.qcow2.xz"
+distroInfo[FreeBSD-14.3]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.3-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-14.2]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.2-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
-distroInfo[FreeBSD-14.1]="https://download.freebsd.org/ftp/releases/VM-IMAGES/14.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-13.5]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.5-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 distroInfo[FreeBSD-13.4]="https://download.freebsd.org/ftp/releases/VM-IMAGES/13.4-RELEASE/${GuestARCH/x86_64/amd64}/Latest/%%${GuestARCH/x86_64/amd64}.qcow2.xz"
 
@@ -80,8 +81,8 @@ CN|HK)
 	#distroInfo[openSUSE-leap-15.5]=""
 
 	#### FreeBSD
+	distroInfo[FreeBSD-14.3]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/14.3-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-14.3-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	distroInfo[FreeBSD-14.2]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/14.2-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-14.2-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
-	distroInfo[FreeBSD-14.1]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/14.1-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-14.1-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	distroInfo[FreeBSD-13.5]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/13.5-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-13.5-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	distroInfo[FreeBSD-13.4]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/13.4-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-13.4-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	;;
