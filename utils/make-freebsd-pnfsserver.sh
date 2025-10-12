@@ -58,14 +58,13 @@ vm del freebsd-pnfs-ds1 freebsd-pnfs-ds2 freebsd-pnfs-mds freebsd-pnfs-client
 
 echo -e "\n{INFO} creating VMs ..."
 #the option --if-model=e1000 is a workaround for FreeBSD VM issue on Fedora-41 host
-trun -tmux /usr/bin/vm create $distro -n $clientvm -p $pkgs --saveimage -f --nointeract "${@}"
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds1 -dsize 80 -i $imagef -f --nointeract --if-model=e1000
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds2 -dsize 80 -i $imagef -f --nointeract --if-model=e1000
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_mds -dsize 40 -i $imagef -f --nointeract --if-model=e1000
-trun       /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000
+trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000
+trun       /usr/bin/vm create $distro -n $clientvm -p $pkgs --saveimage -f --nointeract "${@}"
 
 echo -e "\n{INFO} waiting VMs install finish ..."
-
 #config freebsd pnfs ds server
 for dsserver in $vm_ds1 $vm_ds2; do
 	vm port-available -w ${dsserver}
@@ -125,14 +124,14 @@ vm exec -v ${vm_mds} -- pnfsdsfile $expdir1/testfile
 #mount test from linux Guest
 nfsver=4.1
 nfsver=4.2
+
 echo
 vm port-available -w ${clientvm}
-echo -e "{INFO} waiting vm ${clientvm} create process finished ..."
-while ps axf|grep -q tmux.new.*$$-$USER.*-d./usr/bin/vm.creat[e].*-n.${clientvm}; do sleep 16; done
 echo -e "{INFO} test from ${clientvm}:"
 vm exec -vx $clientvm -- showmount -e $mdsaddr
 vm exec -vx $clientvm -- mkdir -p $nfsmp
-vm exec -vx $clientvm -- mount -t nfs -o nfsvers=$nfsver $mdsaddr:$expdir0 $nfsmp
+vm exec -vx $clientvm -- modprobe nfs
+vm exec -vx $clientvm -- mount -vvv -onfsvers=$nfsver $mdsaddr:$expdir0 $nfsmp
 vm exec -vx $clientvm -- mount -t nfs4
 vm exec -vx $clientvm -- bash -c "echo 'hello pnfs' >$nfsmp/hello-pnfs.txt"
 vm exec -vx $clientvm -- ls -l $nfsmp
