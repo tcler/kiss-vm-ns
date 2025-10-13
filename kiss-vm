@@ -4309,7 +4309,7 @@ elif [[ "$InstallType" = import ]]; then
 
 	[[ -f "${imagefile}" && $imagefile = *.xz ]] && {
 		echo "{VM:INFO} decompress $imagefile ..."
-		xz -d $imagefile
+		xz -d --keep $imagefile
 		rm -f $imagefile
 		imagefile=${imagefile%.xz}
 		[[ -f ${imagefile} ]] || cleanup_and_exit 1
