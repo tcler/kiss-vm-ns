@@ -334,7 +334,13 @@ vmhomedir() {
 		if test -z "$_vmdir"; then
 			_vmdir=$(ls -d $VMSHOME/*/$vmn 2>/dev/null|head -1)
 			if test -z "$_vmdir"; then
-				echo "{VM:ERR} [$vmn] get home dir fail, something is wrong" >&2
+				_vmdir=$(vm xml $vmn|grep -Eo "$VMSHOME/[^/]+/$vmn"|head -1)
+				if [[ -n "$_vmdir" ]]; then
+					echo "$_vmdir"
+					echo "{VM:WARN} but the homedir has been removed. see: virsh dumpxml $vmn" >&2
+				else
+					echo "{VM:ERR} [$vmn] get home dir fail, maybe it's not made by kiss-vm. see: virsh dumpxml $vmm" >&2
+				fi
 				continue
 			fi
 		fi
