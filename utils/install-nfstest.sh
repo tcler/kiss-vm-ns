@@ -26,7 +26,7 @@ mkdir -p ${targetdir}/$_xdir
 #install and extract
 echo "{info} install-nfstest from '$_url'"
 while ! test -f $targetdir/$_tarf; do
-	curl -k -Ls "$_url" -o ${targetdir}/$_tarf
+	while ! curl -fkLs "$_url" -o ${targetdir}/$_tarf; do sleep 5; done
 done
 pushd $targetdir &>/dev/null
 	echo "{info} extract $_tarf to $targetdir/$_xdir  "
