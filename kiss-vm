@@ -4477,6 +4477,10 @@ elif [[ "$InstallType" = import ]]; then
 				set timeout -1
 				expect "*login:" {
 					send "root\n"
+					expect {
+						"*assword:" {send "root\n"}
+						"*:~ #" {send "uname -a\n"}
+					}
 				}
 				expect "*:~ #" {
 					send {hostname '"${vmname}"';
@@ -4501,6 +4505,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 				if [[ -n "$Scrn" && "$Scrn" != "Guest has not initialized the display"* ]]; then
 					vm vnc "$vmname" -get
 					while ! grep "^login:" < <(vm vnc "$vmname" -get); do sleep 10; done
+					vm vnc "$vmname" -putln root
 					vm vnc "$vmname" -putln root
 					vm vnc "$vmname" -putln "hostname ${vmname}" \
 						-putln "echo 'hostname=\"${vmname}\"' >>/etc/rc.conf" \
