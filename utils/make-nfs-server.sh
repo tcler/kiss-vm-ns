@@ -64,10 +64,12 @@ if [[ -n "${NFSROOT}" && "${NFSROOT}" != /* ]]; then
 	exit 1
 fi
 
-
 ## install related packages
 rpm -q nfs-utils || yum install -y nfs-utils &>/dev/null
-rpm -q ktls-utils || yum install -y ktls-utils &>/dev/null
+if [[ "$TLSHD" != no ]] && rpm -q ktls-utils --quiet &&
+    grep -wq mtls <(man exports) && [[ $(uname -r) > 5.14.0-4 ]]; then
+	yum install -y ktls-utils &>/dev/null
+fi
 #yum install -y krb5-workstation &>/dev/null
 
 
