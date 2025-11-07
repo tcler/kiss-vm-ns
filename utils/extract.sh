@@ -50,7 +50,7 @@ topdir=$3
 	exit 3
 }
 
-filetype=$(file -b ${compressedFile})
+filetype=$(file -b "${compressedFile}")
 _targetdir=$targetdir
 if [[ "$filetype" = Zip* ]]; then
 	dirlist=$(unzip -Z1 "$compressedFile"|grep /$)
