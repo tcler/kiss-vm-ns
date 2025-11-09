@@ -8,16 +8,25 @@ askuser() {
 	local u=$(nmcli -g vpn.user-name c s "${nmc}")
 	local iuser=
 	while [[ -z "$iuser" ]]; do
-		read -p "Enter username([$u]): " iuser
+		read -p "Enter username([${u}]): " iuser
 		if [[ -n "$iuser" ]]; then
 			[[ "$iuser" != "$u" ]] &&
 				nmcli c modify "${nmc}" vpn.user-name $iuser
 		elif [[ -n "$u" ]]; then
 			iuser=$u
 		else
-			echo "{warn} vpn.user-name is empty" >&2
+			echo "{warn} the vpn.user you input is empty, ignore it" >&2
+			break
 		fi
 	done
+}
+vpn_connect() {
+	local vpn=$1
+	askuser "${vpn}"
+	echo "{info} up/connect the vpn(${vpn}) you selected ..."
+	echo "{exec} nmcli connection --ask up '${vpn}'"
+	nmcli connection --ask up "${vpn}" &&
+		nmcli c s | awk -v vpnp=^${vpn// /.} '$0 ~ vpnp && $NF != "--"'
 }
 
 downvpns=()
@@ -33,29 +42,22 @@ done < <(nmcli connection show | awk '
 
 if [[ $1 != d* ]]; then
 	if [[ ${#upvpns} -ne 0 ]]; then
-		echo "{warn} there is vpn already connected" >&2
+		echo "{warn} there is vpn already connected:" >&2
 		nmcli connection show | awk '$(NF-1) == "vpn" && $NF != "--"'
+		echo
 	fi
 
 	if [[ ${#downvpns[@]} -eq 0 ]]; then
 		echo "{warn} did not find vpn connection by using: nmcli c s" >&2
 		exit 1
 	elif [[ ${#downvpns[@]} -eq 1 ]]; then
-		echo "{exec} nmcli connection --ask up '${downvpns}'"
-		askuser "${downvpns}"
-		nmcli connection --ask up "${downvpns}"
+		vpn_connect "${downvpns}"
 		exit
 	fi
 
 	select vpn in "${downvpns[@]}"; do
 		[[ -z "${vpn}" || ${vpn} = /q* ]] && break
-		echo "{info} up/connect the vpn(${vpn}) you selected ..."
-		echo "{exec} nmcli connection --ask up '${vpn}'"
-		askuser "${vpn}"
-		nmcli connection --ask up "${vpn}" && {
-			nmcli c s | grep -F "${vpn}"
-			break
-		}
+		vpn_connect "${vpn}" && { break; }
 	done
 else
 	if [[ ${#upvpns[@]} -eq 0 ]]; then
