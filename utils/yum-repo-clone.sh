@@ -33,7 +33,7 @@ _curl_download() {
 batch_download() {
 	if command -v wget2 &>/dev/null; then
 		cat | xargs wget2
-		exit $?
+		return $?
 	fi
 
 	while read url; do
