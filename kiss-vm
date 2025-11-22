@@ -1900,7 +1900,7 @@ COMM
 
 	su $vmuser -s /bin/bash -c "mkdir -p $perConfDir; touch $perConfDir/kiss-vm"
 	vm netls | grep -qw kissaltnet ||
-		vm netcreate netname=kissaltnet brname=virbr-kissalt subnet=10.172.192.0 domain=alt.kissvm.net
+		vm netcreate netname=kissaltnet brname=virbr-kissalt subnet=172.22.22.0 domain=alt.kissvm.net
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && tput cup $(tput lines) 0
 }
