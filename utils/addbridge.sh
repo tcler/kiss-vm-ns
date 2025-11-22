@@ -65,10 +65,12 @@ if is_bridge $ifname && [[ "$force" != yes ]]; then
 fi
 
 echo "{info} will create bridge '$brname' and add '$ifname' in it as bridge-slave."
-read -p "Add it might cause network connection break. Are you sure?(Y/N): " answer
-if [[ "$answer" != [Yy]* ]]; then
-    echo "OK, let's quit"
-    exit 0
+if [[ $interactive = yes ]]; then
+	read -p "Add it might cause network connection break. Are you sure?(Y/N): " answer
+	if [[ "$answer" != [Yy]* ]]; then
+	    echo "OK, let's quit"
+	    exit 0
+	fi
 fi
 
 coname=$(nmcli -g GENERAL.CONNECTION device show $ifname)
