@@ -17,14 +17,14 @@ bridge="$1"
 brconn=""
 brif=""
 
-is_bridge_conn() { local conn=$1; test bridge = $(nmcli -g connection.type c s "$conn" 2>/dev/null); }
+is_bridge_conn() { local conn=$1; test bridge = "$(nmcli -g connection.type c s "$conn" 2>/dev/null)"; }
 is_bridge_dev() { local ifname=$1; ip -d a s "$ifname" 2>/dev/null | grep -qw bridge; }
 
 # check if $bridge is connection or ifterface name
 if is_bridge_conn "$bridge"; then
 	brconn="$bridge"
 	brif=$(nmcli -g connection.interface-name c s "$brconn")
-elif is_bridge_dev $bridge
+elif is_bridge_dev $bridge; then
 	brif="$bridge"
 	brconn=$(nmcli -g GENERAL.CONNECTION device show ${brif})
 else
