@@ -3797,6 +3797,14 @@ else
 	defaultFirstNetOpt="--network=type=direct,source=$srcif,source_mode=$MacvtapMode"
 	is_bridge $srcif && defaultFirstNetOpt="--network=type=bridge,source=$srcif"
 	is_wireless $srcif && defaultFirstNetOpt="--network=network=kissaltnet"
+	if [[ $Intranet = yes && $defaultFirstNetOpt = *=${srcif}* ]]; then
+		[[ "$lerhel7" = yes ]] && changeOrder=yes
+		ping -c 2 ipa.corp.redhat.com -I $srcif || {
+			changeOrder=yes
+			echo "{debug} changeOrder NIC"
+		}
+	fi
+
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS=("--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}")
 		is_bridge $srcif && NETWORK_OPTS=("--network=type=bridge,source=$srcif,model=${DEFAULT_IF_MODEL}")
@@ -3808,13 +3816,15 @@ else
 			case "$WIN_TEMPLATE" in (base) WIN_IF_MODEL=virtio;; esac
 			intIfModel=e1000
 		fi
-		NETWORK_OPTS=("$defaultFirstNetOpt,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}" "--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel}")
-		[[ "$lerhel7" = yes ]] &&  #change NIC order to ensure default ip route works on rhel7-
-			NETWORK_OPTS=("--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel}" "$defaultFirstNetOpt,mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}")
+		NETWORK_OPTS=("${defaultFirstNetOpt},mac=$WIN_MAC_EXT,model=${WIN_IF_MODEL}" "--network=network=default,mac=$WIN_MAC_INT,model=${intIfModel}")
+		if [[ $changeOrder = yes ]]; then
+			NETWORK_OPTS=("${NETWORK_OPTS[1]}" "${NETWORK_OPTS[0]}")
+		fi
 	else
 		NETWORK_OPTS=("${defaultFirstNetOpt},model=${DEFAULT_IF_MODEL}" "--network=network=default,model=${DEFAULT_IF_MODEL}")
-		[[ "$lerhel7" = yes ]] &&  #change NIC order to ensure default ip route works on rhel7-
-			NETWORK_OPTS=("--network=network=default,model=${DEFAULT_IF_MODEL}" "${defaultFirstNetOpt},model=${DEFAULT_IF_MODEL}")
+		if [[ $changeOrder = yes ]]; then
+			NETWORK_OPTS=("${NETWORK_OPTS[1]}" "${NETWORK_OPTS[0]}")
+		fi
 	fi
 fi
 
