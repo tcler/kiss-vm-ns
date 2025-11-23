@@ -176,6 +176,8 @@ run() {
 }
 
 cvirsh() { LANG=C virsh "$@"; }
+is_bridge() { local ifname=$1; ip -d a s "$ifname" | grep -qw bridge; }
+is_wireless() { local ifname=$1; test -d /sys/class/net/$ifname/wireless; }
 
 is_ssh() {
 	local p=${1:-$PPID}
@@ -2732,7 +2734,7 @@ while true; do
 		[[ "$_srcif" = - || "$_srcif" = default || "$_srcif" = ? ]] && srcif=
 		srcif=${srcif:-$(get-default-if.sh)}
 		_arg=$(_netarg $_arg)
-		if [[ -d /sys/class/net/$srcif/wireless && "$_srcif" = ? ]]; then
+		if is_wireless $srcif && [[ "$_srcif" = ? ]]; then
 			NETWORK_OPTS+=("--network=network=kissaltnet,$_arg")
 		else
 			[[ "$_arg" != *source_mode=* ]] && _arg=source_mode=$MacvtapMode,$_arg
@@ -3777,7 +3779,7 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 	for ((i=0; i < ${#NETWORK_OPTS[@]}; i++)); do
 		netopt=${NETWORK_OPTS[$i]}
 		sif=$(sed -rn '/.*\<source=([^,]+)(,.*|$)/{s//\1/;p}' <<<"${netopt}")
-		[[ -d /sys/class/net/$sif/wireless ]] && {
+		is_wireless $sif && {
 			echo -e "{VM:ERROR} '$sif': macvlan/macvtap does not work on wireless interface" >&2
 			cleanup_and_exit 0
 		}
@@ -3791,11 +3793,10 @@ if [[ "${#NETWORK_OPTS[@]}" -gt 0 ]]; then
 	[[ "$lerhel7" = yes ]] &&  #change NIC order to ensure default ip route works on rhel7-
 		[[ "${NETWORK_OPTS[1]}" =~ =direct, ]] && read NETWORK_OPTS[0] NETWORK_OPTS[1] <<< "${NETWORK_OPTS[1]} ${NETWORK_OPTS[0]}"
 else
-	is_bridge() { local ifname=$1; ip -d a s "$ifname" | grep -qw bridge; }
 	srcif=$(get-default-if.sh)
 	defaultFirstNetOpt="--network=type=direct,source=$srcif,source_mode=$MacvtapMode"
 	is_bridge $srcif && defaultFirstNetOpt="--network=type=bridge,source=$srcif"
-	[[ -d /sys/class/net/$srcif/wireless ]] && defaultFirstNetOpt="--network=network=kissaltnet"
+	is_wireless $srcif && defaultFirstNetOpt="--network=network=kissaltnet"
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS=("--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}")
 		is_bridge $srcif && NETWORK_OPTS=("--network=type=bridge,source=$srcif,model=${DEFAULT_IF_MODEL}")
