@@ -21,6 +21,7 @@ Options:
   -nfsroot <path>        ; optional exports dir with fsid=0
   -t                     ; run extra tests after nfs start
   -no-tlshd              ; don't configure tlshd
+  -owner <owner>         ; owner of the export dirs
 EOF
 }
 test `id -u` = 0 || { echo "{Warn} This command has to be run under the root user"|grep --color=always . >&2; Usage >&2; exit 1; }
@@ -46,6 +47,7 @@ _at=$(getopt -a -o ht \
 	--long prefix: \
 	--long nfsroot: \
 	--long no-tlshd \
+	--long owner: \
 	-n "$P" -- "$@")
 eval set -- "$_at"
 while true; do
@@ -55,6 +57,7 @@ while true; do
 	--prefix)     PREFIX=${2:-${PREFIX}}; shift 2;;
 	--nfsroot)    NFSROOT=${2}; shift 2;;
 	--no-tlshd)   TLSHD=no; shift 1;;
+	--owner)      OWNER=${2}; shift 2;;
 	--) shift; break;;
 	esac
 done
@@ -84,7 +87,9 @@ done
 semanage fcontext -a -t nfs_t "$NFSROOT/$PREFIX(/.*)?"
 restorecon -Rv $NFSROOT/$PREFIX
 chmod 775 -R $NFSROOT/$PREFIX/{rw,async,labelled-nfs,qe,devel,tls,mtls}
-
+if [[ -n "${OWNER}" ]]; then
+	chown ${OWNER} -R $NFSROOT
+fi
 
 ## generate exports config file
 defaultOpts=${defaultOpts:-insecure}
