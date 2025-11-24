@@ -66,6 +66,9 @@ if [[ -n "${NFSROOT}" && "${NFSROOT}" != /* ]]; then
 	echo "{ERROE} nfsroot must be a absolute path(start with '/')" >&2
 	exit 1
 fi
+if [[ -z "${NFSROOT}" ]] && stat /run/ostree-booted &>/dev/null; then
+	NFSROOT=/var
+fi
 
 ## install related packages
 rpm -q nfs-utils || yum install -y nfs-utils &>/dev/null
@@ -88,7 +91,7 @@ semanage fcontext -a -t nfs_t "$NFSROOT/$PREFIX(/.*)?"
 restorecon -Rv $NFSROOT/$PREFIX
 chmod 775 -R $NFSROOT/$PREFIX/{rw,async,labelled-nfs,qe,devel,tls,mtls}
 if [[ -n "${OWNER}" ]]; then
-	chown ${OWNER} -R $NFSROOT
+	chown ${OWNER} -R $NFSROOT/$PREFIX
 fi
 
 ## generate exports config file
