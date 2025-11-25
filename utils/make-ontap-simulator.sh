@@ -103,7 +103,7 @@ ONTAP_IF_INFO=/tmp/ontap2-if-info.txt
 bash $targetdir/$dirname/$script --image $ontap_img_dir/$ovaImage --license-file $ontap_img_dir/$licenseFile "${optx[@]}" &> >(tee $ONTAP_INSTALL_LOG)
 tac $ONTAP_INSTALL_LOG | sed -nr '/^[ \t]+lif/ {:loop /\nfsqe-[s2]nc1/!{N; b loop}; p;q}' | tac | tee  $ONTAP_IF_INFO
 
-source "$ONTAP_ENV_FILE"
+source "$ONTAP_ENV_FILE" || exit 1
 trun host $NETAPP_NAS_HOSTNAME
 command -v showmount && { trun -x0 showmount -e "$NETAPP_NAS_IP_LOC"; }
 vm exec -vx $clientvm -- showmount -e $NETAPP_NAS_IP_LOC
