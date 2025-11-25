@@ -1748,6 +1748,10 @@ install_requires() {
 }
 
 prepare_kiss_vm() {
+	if stat /run/ostree-booted &>/dev/null; then
+		echo "{warn} you are in redhat bootc mode! vm-prepare can not run in bootc mode" >&2
+		return 0
+	fi
 	local force=$1
 	local vmuser=${VMUSER}
 	eval vmuserhome=~$vmuser
