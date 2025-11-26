@@ -49,15 +49,16 @@ KISSALT_VM_DOMAIN=alt.kissvm.net
 
 VMUSER=$(whoami)
 [[ $(id -u) = 0 && -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
-if [[ $VMUSER = root ]]; then
-	VMUSERHOME=/home/root; mkdir -p ${VMUSERHOME}
-else
-	eval VMUSERHOME=~$VMUSER
-fi
+eval VMUSERHOME=~$VMUSER
 VMSHOME=${VMUSERHOME}/VMs
 ImagePath=${VMUSERHOME}/myimages
 perConfDir=${VMUSERHOME}/.config/${_repon}
 oldperConfDir=${VMUSERHOME}/.config/kiss-vm
+if [[ $VMUSER = root ]]; then
+	mkdir -p /home/root
+	VMSHOME=/home/root/VMs
+	ImagePath=/home/root/myimages
+fi
 
 VM_DOMAIN=$DEFAULT_VM_DOMAIN
 RuntimeTmp=/tmp/vm-$$
