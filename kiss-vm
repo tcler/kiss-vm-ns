@@ -1752,10 +1752,6 @@ install_requires() {
 }
 
 prepare_kiss_vm() {
-	if test -f /run/ostree-booted; then
-		echo "{warn} you are in redhat bootc mode! vm-prepare can not run in bootc mode" >&2
-		return 0
-	fi
 	local force=$1
 	local vmuser=${VMUSER}
 	eval vmuserhome=~$vmuser
@@ -1783,18 +1779,23 @@ prepare_kiss_vm() {
 	#try disable ipv6
 	try_disable_ipv6
 
-	#install packages required by kiss-vm
-	install_requires; [[ $? = 2 ]] && return 1
+	if test -f /run/ostree-booted; then
+		echo "{warn} you are in redhat bootc mode! please do install-pkgs in Containerfile" >&2
+	else
+		#install packages required by kiss-vm
+		install_requires; [[ $? = 2 ]] && return 1
+
+		#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
+		echo -e "{VM:INFO} install gm gocr and vncdo ..."
+		ggv-install.sh
+
+		#install packages qemu-system-*
+		qemu-system-archs-install.sh aarch64 s390x ppc riscv
+	fi
+
 	{ QEMU_USER=qemu; { ! id ${QEMU_USER} &>/dev/null || id libvirt-qemu &>/dev/null; } && QEMU_USER=libvirt-qemu; }
 	chown root:libvirt $varlib_dir
 	chmod g+ws $varlib_dir
-
-	#install packages(gm,gocr,vncdo) required by vnc -get -put --putln options
-	echo -e "{VM:INFO} install gm gocr and vncdo ..."
-	ggv-install.sh
-
-	#install packages qemu-system-*
-	qemu-system-archs-install.sh aarch64 s390x ppc riscv
 
 	echo -e "{VM:INFO} configure libvirt-nss ..."
 	grep -q '^hosts:.*libvirt libvirt_guest' /etc/nsswitch.conf || {
