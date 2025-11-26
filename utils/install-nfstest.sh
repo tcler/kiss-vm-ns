@@ -20,7 +20,7 @@ command -v python3 || {
 _url='http://git.linux-nfs.org/?p=mora/nfstest.git;a=snapshot;h=HEAD;sf=tgz'
 _tarf=nfstest.tgz
 _xdir=nfstest
-targetdir=/usr/src; stat /run/ostree-booted &>/dev/null && targetdir=/var/src
+targetdir=/usr/src; test -f /run/ostree-booted && targetdir=/var/src
 [[ $(id -u) != 0 ]] && { targetdir=${HOME}/src; }
 mkdir -p ${targetdir}/$_xdir
 

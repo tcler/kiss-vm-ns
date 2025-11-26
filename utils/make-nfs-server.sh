@@ -66,7 +66,7 @@ if [[ -n "${NFSROOT}" && "${NFSROOT}" != /* ]]; then
 	echo "{ERROE} nfsroot must be a absolute path(start with '/')" >&2
 	exit 1
 fi
-if [[ -z "${NFSROOT}" ]] && stat /run/ostree-booted &>/dev/null; then
+if [[ -z "${NFSROOT}" && -f /run/ostree-booted ]]; then
 	NFSROOT=/var
 fi
 

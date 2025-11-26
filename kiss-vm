@@ -49,7 +49,11 @@ KISSALT_VM_DOMAIN=alt.kissvm.net
 
 VMUSER=$(whoami)
 [[ $(id -u) = 0 && -n "$SUDO_USER" ]] && VMUSER=$SUDO_USER
-eval VMUSERHOME=~$VMUSER
+if [[ $VMUSER = root ]]; then
+	VMUSERHOME=/home/root; mkdir -p ${VMUSERHOME}
+else
+	eval VMUSERHOME=~$VMUSER
+fi
 VMSHOME=${VMUSERHOME}/VMs
 ImagePath=${VMUSERHOME}/myimages
 perConfDir=${VMUSERHOME}/.config/${_repon}
@@ -1748,7 +1752,7 @@ install_requires() {
 }
 
 prepare_kiss_vm() {
-	if stat /run/ostree-booted &>/dev/null; then
+	if test -f /run/ostree-booted; then
 		echo "{warn} you are in redhat bootc mode! vm-prepare can not run in bootc mode" >&2
 		return 0
 	fi
