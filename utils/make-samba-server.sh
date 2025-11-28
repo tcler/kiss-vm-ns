@@ -7,9 +7,9 @@ export LANG=C
 ## global var
 GROUP=RHTS
 PREFIX=/smbshare
+[[ -f /run/ostree-booted ]] && PREFIX=/var$PREFIX
 USERLIST=smbuser1,smbuser2
 PASSWORD=redhat
-
 
 ## argparse
 P=${0##*/}

@@ -36,8 +36,9 @@ trun -tmux=- "while ! grep -qw $net <(virsh net-list --name); do sleep 5; done;
 
 #-------------------------------------------------------------------------------
 g_ontap_img_dir=/usr/share/Netapp-simulator
+[[ -f /run/ostree-booted ]] && g_ontap_img_dir=/var$g_ontap_img_dir
 ontap_img_dir=$g_ontap_img_dir
-[[ $(id -u) != 0 ]] && { ontap_img_dir=${ontap_img_dir//?usr?share/$HOME/Downloads}; }
+[[ $(id -u) != 0 ]] && { ontap_img_dir=${ontap_img_dir//*?usr?share/$HOME/Downloads}; }
 mkdir -p $ontap_img_dir
 
 #-------------------------------------------------------------------------------

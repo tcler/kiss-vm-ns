@@ -23,11 +23,15 @@ create-ontap-simulator-net() {
 #-------------------------------------------------------------------------------
 g_win_img_dir=/usr/share/windows-images
 g_ontap_img_dir=/usr/share/Netapp-simulator
+[[ -f /run/ostree-booted ]] && {
+	g_win_img_dir=/var$g_win_img_dir
+	g_ontap_img_dir=/var$g_ontap_img_dir
+}
 win_img_dir=$g_win_img_dir
 ontap_img_dir=$g_ontap_img_dir
 [[ $(id -u) != 0 ]] && {
-	win_img_dir=${win_img_dir//?usr?share/$HOME/Downloads}
-	ontap_img_dir=${ontap_img_dir//?usr?share/$HOME/Downloads}
+	win_img_dir=${win_img_dir//*?usr?share/$HOME/Downloads}
+	ontap_img_dir=${ontap_img_dir//*?usr?share/$HOME/Downloads}
 }
 run -debug mkdir -p $win_img_dir $ontap_img_dir
 
