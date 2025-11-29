@@ -58,6 +58,8 @@ if [[ $VMUSER = root ]]; then
 	mkdir -p /home/root
 	VMSHOME=/home/root/VMs
 	ImagePath=/home/root/myimages
+	#in case /root is a symlink and the target not exist. it happens in bootc image
+	mkdir -p /$(readlink /root)
 fi
 
 VM_DOMAIN=$DEFAULT_VM_DOMAIN
