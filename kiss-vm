@@ -1754,6 +1754,45 @@ install_requires() {
 	esac
 }
 
+prepare_kiss_net() {
+	virsh list &>/dev/null || return 1  #quit if libvirtd does not work
+
+	#delete virbr0 if net-start default fail
+	grep -q 'virbr0: File exists' < <(cvirsh net-start default 2>&1 >/dev/null) && {
+		echo -e "{*INFO*} remove virbr0 ..."
+		ip link delete virbr0
+		virsh net-start default
+	}
+
+	#re-define default network, if 192.168.122.0 has been used by other ifs
+	grep -q 'Network is already in use' < <(cvirsh net-start default 2>&1 >/dev/null) && {
+		echo -e "{*INFO*} re-create Network default ..."
+		default_xml=$(virsh net-dumpxml default|sed 's/\.122/.123/g')
+		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
+		if systemctl is-active --quiet firewalld && ! grep -q zone=.trusted <<<"$default_xml"; then
+			default_xml=$(echo "$default_xml"|sed '/<bridge/s//& zone="trusted"/')
+		fi
+		virsh net-define --file <(echo "$default_xml")
+		virsh net-start default
+		virsh net-autostart default
+	}
+
+	#add domain setup in default network
+	virsh net-dumpxml default | grep '<domain name' || {
+		default_xml=$(virsh net-dumpxml default|sed "s;<mac .*;&\n  <domain name='$DEFAULT_VM_DOMAIN' localOnly='yes'/>;g")
+		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
+		if systemctl is-active --quiet firewalld && ! grep -q zone=.trusted <<<"$default_xml"; then
+			default_xml=$(echo "$default_xml"|sed '/<bridge/s//& zone="trusted"/')
+		fi
+		virsh net-define --file <(echo "$default_xml")
+		virsh net-start default
+		virsh net-autostart default
+	}
+
+	vm netls | grep -qw kissaltnet ||
+		vm netcreate netname=kissaltnet brname=virbr-kissalt subnet=172.22.22.0 domain=alt.kissvm.net
+}
+
 prepare_kiss_vm() {
 	local force=$1
 	local vmuser=${VMUSER}
@@ -1880,41 +1919,8 @@ COMM
 		fi
 	}
 
-	#delete virbr0 if net-start default fail
-	grep -q 'virbr0: File exists' < <(cvirsh net-start default 2>&1 >/dev/null) && {
-		echo -e "{*INFO*} remove virbr0 ..."
-		ip link delete virbr0
-		virsh net-start default
-	}
-
-	#re-define default network, if 192.168.122.0 has been used by other ifs
-	grep -q 'Network is already in use' < <(cvirsh net-start default 2>&1 >/dev/null) && {
-		echo -e "{*INFO*} re-create Network default ..."
-		default_xml=$(virsh net-dumpxml default|sed 's/\.122/.123/g')
-		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
-		if systemctl is-active --quiet firewalld && ! grep -q zone=.trusted <<<"$default_xml"; then
-			default_xml=$(echo "$default_xml"|sed '/<bridge/s//& zone="trusted"/')
-		fi
-		virsh net-define --file <(echo "$default_xml")
-		virsh net-start default
-		virsh net-autostart default
-	}
-
-	#add domain setup in default network
-	virsh net-dumpxml default | grep '<domain name' || {
-		default_xml=$(virsh net-dumpxml default|sed "s;<mac .*;&\n  <domain name='$DEFAULT_VM_DOMAIN' localOnly='yes'/>;g")
-		{ virsh net-destroy -- default; virsh net-undefine -- default; } &>/dev/null
-		if systemctl is-active --quiet firewalld && ! grep -q zone=.trusted <<<"$default_xml"; then
-			default_xml=$(echo "$default_xml"|sed '/<bridge/s//& zone="trusted"/')
-		fi
-		virsh net-define --file <(echo "$default_xml")
-		virsh net-start default
-		virsh net-autostart default
-	}
-
+	prepare_kiss_net
 	su $vmuser -s /bin/bash -c "mkdir -p $perConfDir; touch $perConfDir/kiss-vm"
-	vm netls | grep -qw kissaltnet ||
-		vm netcreate netname=kissaltnet brname=virbr-kissalt subnet=172.22.22.0 domain=alt.kissvm.net
 	echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~ prepare libvirt done! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	[[ -z "$force" ]] && tput cup $(tput lines) 0
 }
@@ -3261,6 +3267,8 @@ case "$subcmd" in
 	netdel|netdelete)	netdelete "$@"; exit $?;;
 	snapshot)	vm_snapshot "$@"; exit $?;;
 esac
+
+virsh net-info default &>/dev/null || prepare_kiss_net
 
 support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
