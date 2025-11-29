@@ -201,6 +201,7 @@ if $PIP install -h|grep .--break-system-packages; then
 	pipInstallOpts+=" --break-system-packages"
 fi
 
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
 if ! command -v vncdo; then
 	echo -e "{ggv-install} pip Opts: $pipOpts $pipInstallOpts ..."
 	echo -e "\n{ggv-install} install vncdotool ..."
