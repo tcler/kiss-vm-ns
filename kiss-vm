@@ -3270,7 +3270,7 @@ case "$subcmd" in
 	snapshot)	vm_snapshot "$@"; exit $?;;
 esac
 
-virsh net-info default &>/dev/null || prepare_kiss_net
+virsh net-list --name |& grep -wq default || prepare_kiss_net
 
 support_nested_kvm && ENABLE_L2VM=${ENABLE_L2VM:-yes}
 kmodule=$(lsmod|awk '$1 == "kvm" {print $NF}')
