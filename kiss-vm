@@ -5160,6 +5160,7 @@ if [[ "$GenerateImage" = yes ]]; then
 
 	echo -e "\n{VM:INFO} remove temporary VM $vmname ..."
 	_vmdelete $vmname
+	ls ${newimage}.xz
 	exit 0
 fi
 
