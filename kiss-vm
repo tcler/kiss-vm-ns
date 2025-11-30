@@ -456,8 +456,13 @@ vmdelete() {
 		[[ -z "$rmList" ]] && { return; }
 		eval set $rmList
 	}
-	set -- $(vmname_extract -all "$@")
-	for vm; do _vmdelete $vm; done
+	local vms=($(vmname_extract -all "$@"))
+	if [[ ${#vms[@]} -lt 5 ]]; then
+		for vm in "${vms[@]}"; do _vmdelete "$vm"; done
+	else
+		for vm in "${vms[@]}"; do _vmdelete "$vm" & done
+		wait
+	fi
 }
 
 vmiflist() {
