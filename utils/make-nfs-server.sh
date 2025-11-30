@@ -78,10 +78,10 @@ if [[ "$TLSHD" != no ]] && rpm -q ktls-utils --quiet &&
 fi
 #yum install -y krb5-workstation &>/dev/null
 
-
 ## create nfs export directorys
+nfsnobody=nfsnobody; id nfsnobody &>/dev/null || nfsnobody=nobody
 mkdir -p $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}
-chgrp nfsnobody -R $NFSROOT/$PREFIX
+chgrp ${nfsnobody} -R $NFSROOT/$PREFIX
 chmod g+ws -R $NFSROOT/$PREFIX
 touch $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}/testfile
 for dir in $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}; do
