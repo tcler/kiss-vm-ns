@@ -385,7 +385,8 @@ _vmdelete() {
 	local own=no
 	local delOpts=
 	[[ -n "$(virsh snapshot-list $_vmname --name)" ]] && delOpts=--snapshots-metadata
-	[[ $(id -u) = 0 && $_vmdir = /root/VM[sS]/* ]] || [[ "$_vmdir" = $userhome/VM[sS]/* ]] && own=yes
+	[[ $(id -u) = 0 && $_vmdir = /home/root/VM[sS]/* ]] || [[ "$_vmdir" = $userhome/VM[sS]/* ]] &&
+		own=yes
 	if [[ $own != yes ]]; then
 		echo -e "{VM:WARN} VM '$_vmname' was not created by current user($VMUSER); try:" >&2
 		cat <<-EOF >&2
