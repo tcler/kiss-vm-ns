@@ -81,7 +81,7 @@ fi
 
 ## create nfs export directorys
 mkdir -p $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}
-chgrp nobody -R $NFSROOT/$PREFIX
+chgrp nfsnobody -R $NFSROOT/$PREFIX
 chmod g+ws -R $NFSROOT/$PREFIX
 touch $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}/testfile
 for dir in $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}; do
