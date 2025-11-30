@@ -4346,6 +4346,8 @@ elif [[ "$InstallType" = import ]]; then
 	else
 		if [[ "$DOWNLOAD_ONLY" = yes ]]; then
 			cp -vf ${Imageurl#file://} $dlimagefile
+			ls -l ${dlimagefile}
+			cleanup_and_exit 0
 		else
 			cp -vf ${Imageurl#file://} $imagefile
 		fi
