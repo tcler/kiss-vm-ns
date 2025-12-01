@@ -5134,6 +5134,7 @@ fedora*|rhel*|centos*|rocky*|alma*|anolis*)
 esac
 
 if [[ "$GenerateImage" = yes ]]; then
+	vm exec -v $vmname -- cloud-init clean --logs --reboot
 	run -as=$VMUSER mkdir -p $ImagePath/$Distro
 	read _type _dev _target image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
@@ -5162,7 +5163,8 @@ if [[ "$GenerateImage" = yes ]]; then
 
 	echo -e "\n{VM:INFO} virt-sysprep ..."
 	ls -lh ${newimage}
-	LIBGUESTFS_BACKEND=direct virt-sysprep -a ${newimage} --operations defaults,-ssh-hostkeys
+	LIBGUESTFS_BACKEND=direct virt-sysprep -a ${newimage} \
+	    --operations defaults,-ssh-hostkeys,-cloud-init
 	ls -lh ${newimage}
 
 	echo -e "\n{VM:INFO} xz compress image ..."
