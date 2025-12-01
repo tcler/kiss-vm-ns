@@ -2563,7 +2563,7 @@ expandrc() {
 
 # command line parse
 orig_at=("$@")
-_at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
+_at=`getopt -o hu:d:m:L::l:C:F:fn:g::b:p:I::i:rvdx::Pqw:: \
 	--long help \
 	--long prepare \
 	--long user: \
@@ -2582,7 +2582,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:gb:p:I::i:rvdx::Pqw:: \
 	--long os-variant: \
 	--long force \
 	--long vmname: \
-	--long genimage \
+	--long genimage:: \
 	--long xzopt: \
 	--long brewinstall: \
 	--long pkginstall: \
@@ -2720,7 +2720,7 @@ while true; do
 	--xzopt)          XZ="$2"; shift 2;;
 	-f|--force)       OVERWRITE="yes"; FORCE=yes; shift 1;;
 	-n|--vmname)      VMName="$2"; shift 2;;
-	-g|--genimage)    GenerateImage=yes; shift 1;;
+	-g|--genimage)    GenerateImage=yes; GenImageSuffix=$2; shift 2;;
 	--geturl)         OnlyGetUrl=yes; shift 1;;
 	--getvmname)      OnlyGetVMName=yes; shift 1;;
 	-b|--brewinstall) BPKGS+=" ${2//,/ }"; shift 2;;
@@ -5135,12 +5135,15 @@ esac
 
 if [[ "$GenerateImage" = yes ]]; then
 	vm exec -v $vmname -- cloud-init clean --logs --reboot
-	run -as=$VMUSER mkdir -p $ImagePath/$Distro
 	read _type _dev _target image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
 	imgfilename=${imgfilename#${VMUSER}-}
-	[[ "$imgfilename" != *${GuestARCH}* ]] && imgfilename=$(echo $imgfilename|sed -r "s/\\.[^.]+$/.${GuestARCH}&/")
-	newimage=$ImagePath/$Distro/${imgfilename}
+	[[ -n "$GenImageSuffix" ]] &&
+		imgfilename=$(echo $imgfilename|sed -r "s/\\.[^.]+$/.${GenImageSuffix}&/")
+	[[ "$imgfilename" != *${GuestARCH}* ]] &&
+		imgfilename=$(echo $imgfilename|sed -r "s/\\.[^.]+$/.${GuestARCH}&/")
+	newimage=$ImagePath/$Distro+${GenImageSuffix}/${imgfilename}
+	run -as=$VMUSER mkdir -p ${newimage%/*}
 
 	echo -e "\n{VM:INFO} force shutdown $vmname ..."
 	virsh destroy $vmname 2>/dev/null
