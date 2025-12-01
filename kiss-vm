@@ -5134,15 +5134,19 @@ fedora*|rhel*|centos*|rocky*|alma*|anolis*)
 esac
 
 if [[ "$GenerateImage" = yes ]]; then
-	vm exec -v $vmname -- cloud-init clean --logs --reboot
+	vm start $vmname &>/dev/null
+	vm port-available $vmname 22 -w
+	vm exec -v $vmname -- cloud-init clean --logs
 	read _type _dev _target image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
 	imgfilename=${imgfilename#${VMUSER}-}
-	[[ -n "$GenImageSuffix" ]] &&
-		imgfilename=$(echo $imgfilename|sed -r "s/\\.[^.]+$/.${GenImageSuffix}&/")
-	[[ "$imgfilename" != *${GuestARCH}* ]] &&
-		imgfilename=$(echo $imgfilename|sed -r "s/\\.[^.]+$/.${GuestARCH}&/")
-	newimage=$ImagePath/$Distro+${GenImageSuffix}/${imgfilename}
+	[[ -n "$GenImageSuffix" ]] && GenImageSuffix=.$GenImageSuffix
+	if [[ "$imgfilename" = *.${GuestARCH}* ]]; then
+		imgfilename=$(echo $imgfilename|sed -r "s/\\.${GuestARCH}/${GenImageSuffix}&/")
+	else
+		imgfilename=$(echo $imgfilename|sed -r "s/\\.[^.]+$/${GenImageSuffix}.${GuestARCH}&/")
+	fi
+	newimage=$ImagePath/$Distro+${GenImageSuffix#.}/${imgfilename}
 	run -as=$VMUSER mkdir -p ${newimage%/*}
 
 	echo -e "\n{VM:INFO} force shutdown $vmname ..."
@@ -5167,7 +5171,7 @@ if [[ "$GenerateImage" = yes ]]; then
 	echo -e "\n{VM:INFO} virt-sysprep ..."
 	ls -lh ${newimage}
 	LIBGUESTFS_BACKEND=direct virt-sysprep -a ${newimage} \
-	    --operations defaults,-ssh-hostkeys,-cloud-init
+	    --operations machine-id,ssh-hostkeys,bash-history
 	ls -lh ${newimage}
 
 	echo -e "\n{VM:INFO} xz compress image ..."
@@ -5177,6 +5181,7 @@ if [[ "$GenerateImage" = yes ]]; then
 	echo -e "\n{VM:INFO} remove temporary VM $vmname ..."
 	_vmdelete $vmname
 	ls ${newimage}.xz
+	read -N 10000000 -t 0.001  #clear input buffer
 	exit 0
 fi
 
