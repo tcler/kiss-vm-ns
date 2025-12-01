@@ -3736,8 +3736,10 @@ available_msize=$(LANG=C free -m | awk '/^Mem:/{print $NF}')
 [[ "${_MSIZE%[Mm]}" -gt "$available_msize" ]] && _MSIZE=$((available_msize-8))M
 
 MSIZE=${MSIZE:-$_MSIZE}
-[[ "$MSIZE" = *[Gg] ]] || [[ ${MSIZE} =~ ^[0-9]+$ && ${MSIZE} -lt $available_gsize ]] &&
+if [[ "$MSIZE" = *[Gg] ]] ||
+   [[ ${MSIZE} =~ ^[0-9]+$ && ${MSIZE} -lt $available_gsize ]]; then
 	MSIZE=$((${MSIZE%[Gg]} * 1024))
+fi
 MSIZE=${MSIZE%[Mm]}
 
 [[ "$MSIZE" -gt "$available_msize" ]] && {
@@ -3749,6 +3751,13 @@ MSIZE=${MSIZE%[Mm]}
 	builtin read -p 'continue?[y/n](y) ' -t 10 ans
 	[[ "$ans" = [Nn]* ]] && cleanup_and_exit 132
 }
+
+#fixme: if nvmeboot and ram-size >= 4096 will boot fail
+if [[ "$NVME_BOOT" = yes && $MSIZE -ge 4096 ]] &&
+   [[ "${BOOT_OPTS[*]}" != *--boot=*efi* ]]; then
+	BOOT_OPTS+=(--boot=uefi)
+	[[ "$GuestARCH" = x86_64 ]] && { MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"; }
+fi
 
 echo "{VM:INFO} guess/verify os-variant ..."
 if [[ -z "$VM_OS_VARIANT" ]]; then
