@@ -3755,8 +3755,12 @@ MSIZE=${MSIZE%[Mm]}
 #fixme: if nvmeboot and ram-size >= 4096 will boot fail
 if [[ "$NVME_BOOT" = yes && $MSIZE -ge 4096 ]] &&
    [[ "${BOOT_OPTS[*]}" != *--boot=*efi* ]]; then
-	BOOT_OPTS+=(--boot=uefi)
-	[[ "$GuestARCH" = x86_64 ]] && { MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"; }
+	case "$GuestARCH" in
+	x86_64)
+		BOOT_OPTS+=(--boot=uefi)
+		MACHINE_OPT="--machine=q35"; MACHINE_QEMUOPT="-machine q35"
+		;;
+	esac
 fi
 
 echo "{VM:INFO} guess/verify os-variant ..."
@@ -5136,7 +5140,10 @@ esac
 if [[ "$GenerateImage" = yes ]]; then
 	vm start $vmname &>/dev/null
 	vm port-available $vmname 22 -w
-	vm exec -v $vmname -- cloud-init clean --logs
+	if vm exec -v $vmname -- command -v cloud-init; then
+		vm exec -v $vmname -- "cloud-init clean --logs"
+		vm exec -v $vmname -- "rm -rf /run/cloud-init/*; poweroff"
+	fi
 	read _type _dev _target image < <(_vmblklist $vmname '\.(qcow2|qcow|raw)')
 	imgfilename=${image##*/}
 	imgfilename=${imgfilename#${VMUSER}-}
@@ -5149,8 +5156,11 @@ if [[ "$GenerateImage" = yes ]]; then
 	newimage=$ImagePath/$Distro+${GenImageSuffix#.}/${imgfilename}
 	run -as=$VMUSER mkdir -p ${newimage%/*}
 
-	echo -e "\n{VM:INFO} force shutdown $vmname ..."
-	virsh destroy $vmname 2>/dev/null
+	echo -e "\n{VM:INFO} waiting $vmname poweroff ..."
+	for ((i=0;i<16;i++)); do
+		[[ "$(vm stat $vmname)" = run* ]] && sleep 1 || break
+	done
+	[[ "$(vm stat $vmname)" = run* ]] && virsh destroy $vmname &>/dev/null
 	ls -lh ${image}
 
 	if ! true; then
@@ -5171,7 +5181,7 @@ if [[ "$GenerateImage" = yes ]]; then
 	echo -e "\n{VM:INFO} virt-sysprep ..."
 	ls -lh ${newimage}
 	LIBGUESTFS_BACKEND=direct virt-sysprep -a ${newimage} \
-	    --operations machine-id,ssh-hostkeys,bash-history
+	    --operations defaults,-ssh-hostkeys
 	ls -lh ${newimage}
 
 	echo -e "\n{VM:INFO} xz compress image ..."
