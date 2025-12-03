@@ -5140,6 +5140,7 @@ esac
 if [[ "$GenerateImage" = yes ]]; then
 	vm start $vmname &>/dev/null
 	vm port-available $vmname 22 -w
+	vm exec -v $vmname -- "cp -v /etc/NetworkManager/NetworkManager.conf{.orig,} 2>/dev/null"
 	if vm exec -v $vmname -- command -v cloud-init; then
 		vm exec -v $vmname -- "cloud-init clean --logs"
 		vm exec -v $vmname -- "rm -rf /run/cloud-init/*; poweroff"
