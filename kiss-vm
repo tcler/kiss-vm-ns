@@ -5181,7 +5181,7 @@ if [[ "$GenerateImage" = yes ]]; then
 	echo -e "\n{VM:INFO} virt-sysprep ..."
 	ls -lh ${newimage}
 	LIBGUESTFS_BACKEND=direct virt-sysprep -a ${newimage} \
-	    --operations defaults,-ssh-hostkeys
+	    --operations defaults #,-ssh-hostkeys
 	ls -lh ${newimage}
 
 	echo -e "\n{VM:INFO} xz compress image ..."
