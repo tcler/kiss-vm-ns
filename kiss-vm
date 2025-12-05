@@ -3753,7 +3753,7 @@ MSIZE=${MSIZE%[Mm]}
 }
 
 #fixme: if nvmeboot and ram-size >= 4096 will boot fail
-if [[ "$NVME_BOOT" = yes && $MSIZE -ge 4096 ]] &&
+if [[ "$NVME_BOOT" = yes && $MSIZE -ge 3584 ]] &&
    [[ "${BOOT_OPTS[*]}" != *--boot=*efi* ]]; then
 	case "$GuestARCH" in
 	x86_64)
