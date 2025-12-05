@@ -3752,7 +3752,9 @@ MSIZE=${MSIZE%[Mm]}
 	[[ "$ans" = [Nn]* ]] && cleanup_and_exit 132
 }
 
-#fixme: if nvmeboot and ram-size >= 4096 will boot fail
+#workaround: if nvmeboot and ram-size >= 3584m will boot fail, thanks chdong@ provide debug option:
+#-chardev file,id=firmware,path=/tmp/seabios.log -device isa-debugcon,iobase=0x402,chardev=firmware
+#seabios Can not map memory bar over 4Gig
 if [[ "$NVME_BOOT" = yes && $MSIZE -ge 3584 ]] &&
    [[ "${BOOT_OPTS[*]}" != *--boot=*efi* ]]; then
 	case "$GuestARCH" in
