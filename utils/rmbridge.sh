@@ -34,7 +34,7 @@ else
 fi
 
 get_br_slaves_by_ip() { local if=$1; ip -br link show master "$if" | awk '{print $1}'; }
-get_br_slaves_by_nmcli() { local if=$1; nmcli -f BRIDGE.SLAVES device show "$if" | awk '{print $2}'; }
+get_br_slaves_by_nmcli() { local if=$1; nmcli -g BRIDGE.SLAVES device show "$if" | sed 's/ /\n/g'; }
 detach_slave() { local slave=$1; ip link set $slave nomaster; }
 
 if [[ -n "$brif" ]]; then
