@@ -50,10 +50,10 @@ brname=${brname:-br0}
 	exit 1
 }
 
+brop=create
 if ip addr show dev $brname &>/dev/null; then
-	echo "{warn} bridge dev '$brname' has been there" >&2
-	Usage >&2
-	exit 1
+	echo "{warn} bridge dev '$brname' has been there, keep it" >&2
+	brop=keep
 fi
 if br=$(is_slave $ifname); then
 	echo "{warn} network interface '$ifname' has been a bridge-slave of '$br'" >&2
@@ -69,7 +69,7 @@ if is_wireless $ifname && [[ "$force" != yes ]]; then
 	exit 1
 fi
 
-echo "{info} will create bridge '$brname' and add '$ifname' in it as bridge-slave."
+echo "{info} will $brop bridge '$brname' and add '$ifname' in it as bridge-slave."
 if [[ $interactive = yes ]]; then
 	read -p "Add it might cause network connection break. Are you sure?(Y/N): " answer
 	if [[ "$answer" != [Yy]* ]]; then
@@ -78,13 +78,19 @@ if [[ $interactive = yes ]]; then
 	fi
 fi
 
-#remove orig br and if connection
+#remove if connection
 ifconname=$(nmcli -g GENERAL.CONNECTION device show $ifname)
-brconname=$(nmcli -g GENERAL.CONNECTION device show $brname)
 nmcli c delete "$ifconname" &>/dev/null
-nmcli c delete "$brconname" &>/dev/null
 
-nmcli c add type bridge ifname $brname stp off autoconnect yes
+#create br connection
+if [[ $brop = create ]]; then
+	nmcli c add type bridge ifname $brname stp off autoconnect yes
+else
+	brconname=$(nmcli -g GENERAL.CONNECTION device show $brname)
+	[[ -z "$brconname" ]] &&
+		nmcli c add type bridge ifname $brname stp off autoconnect yes
+fi
+
 brconname=$(nmcli -g GENERAL.CONNECTION device show $brname)
 if is_wireless $ifname; then
 	echo "{info} enable proxy_arp, because '$ifname' is a wireless dev" >&2
@@ -94,15 +100,23 @@ if is_wireless $ifname; then
 	done | tee $sysctlf
 	sysctl -p $sysctlf
 
-	ip link set dev $brname up
-	ip link set dev $ifname up
-	ip link set $ifname master $brname   #most wireless can not be added to bridge
-else
-	slave_conname=bridge-slave-$ifname
-	nmcli c delete "$slave_conname"
-	nmcli c add type bridge-slave ifname "$ifname" master "$brname" autoconnect yes con-name "$slave_conname"
-	nmcli con up $brconname
+	#ip link set dev $brname up
+	#ip link set dev $ifname up
+	#ip link set $ifname master $brname   #most wireless can not be added to bridge
+	cat <<-EOF >&2
+	{warn} trying add wireless into bridge, it might be fail, and it's expected, you can try:
+	  sudo ip link set $ifname master $brname
+	to get the warn/error message show why it does not work.
+	EOF
 fi
+
+#create slave if connection and add to bridge
+slave_conname=bridge-slave-$ifname
+nmcli c delete "$slave_conname" 2>/dev/null
+nmcli c add type bridge-slave ifname "$ifname" master "$brname" autoconnect yes con-name "$slave_conname"
+nmcli con up $brconname
+
+#show slaves in br
 ip -br link show master "$brname"
 
 systemctl restart NetworkManager
