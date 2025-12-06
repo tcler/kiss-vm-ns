@@ -2,7 +2,7 @@
 
 run() {
 	[[ $# -eq 0 ]] && return 0
-	[[ "$DEBUG" = yes ]] && echo "[sys]" "$@"
+	[[ "$DEBUG" != no ]] && echo "[sys]" "$@"
 	"$@"
 }
 
@@ -21,3 +21,5 @@ addif2br-vrf-and-so-on() {
 	run ip link set dev $if up
 }
 addif2br-vrf-and-so-on "$@"
+
+echo -e "{remind} the change we did will lost after reboot.\n{remind} please use nmcli or something else instead, if your want permanently." >&2
