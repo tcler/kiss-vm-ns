@@ -17,7 +17,7 @@ is_slave() {
 switchroot "$@"
 
 Usage() {
-	cat <<-USAGE
+	cat <<-USAGE | GREP_COLORS='ms=01;35' grep --color .
 	Usage: $0 [bridge name] [bridge-slave ifname] [-f] [-ni]
 	Comment:
 	  if [bridge-slave ifname] is omitted, use the default route's interface as the default.
@@ -53,6 +53,7 @@ brname=${brname:-br0}
 brop=create
 if ip addr show dev $brname &>/dev/null; then
 	echo "{warn} bridge dev '$brname' has been there, keep it" >&2
+	ip -br link show master "$brname" >&2
 	brop=keep
 fi
 if br=$(is_slave $ifname); then
@@ -60,10 +61,17 @@ if br=$(is_slave $ifname); then
 	Usage >&2
 	exit 1
 fi
+
+if [[ $ifname = $brname ]]; then
+	echo "{warn} now the default route interface is just $brname, see the usage:" >&2
+	Usage >&2
+	exit 1
+fi
 if is_bridge $ifname && [[ "$force" != yes ]]; then
 	echo "{warn} network interface '$ifname' is bridge device, add -f option if you really want nested bridge device!" >&2
 	exit 1
 fi
+
 if is_wireless $ifname && [[ "$force" != yes ]]; then
 	echo "{warn} network interface '$ifname' is wifi, add -f option if you really want try to add wireless dev to bridge!" >&2
 	exit 1
@@ -116,7 +124,7 @@ nmcli c delete "$slave_conname" 2>/dev/null
 nmcli c add type bridge-slave ifname "$ifname" master "$brname" autoconnect yes con-name "$slave_conname"
 nmcli con up $brconname
 
+systemctl restart NetworkManager
+sleep 0.5
 #show slaves in br
 ip -br link show master "$brname"
-
-systemctl restart NetworkManager
