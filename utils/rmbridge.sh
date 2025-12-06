@@ -38,14 +38,26 @@ get_br_slaves_by_nmcli() { local if=$1; nmcli -g BRIDGE.SLAVES device show "$if"
 detach_slave() { local slave=$1; ip link set $slave nomaster; }
 
 if [[ -n "$brif" ]]; then
-	for slave in $(get_br_slaves_by_ip $brif); do
-		echo "{info} detaching slave: $slave from $brif"
-		detach_slave $slave
-	done
+	slaves=$(get_br_slaves_by_ip $brif)
 fi
+for slave in $slaves; do
+	echo "{info} detaching slave: $slave from $brif"
+	detach_slave $slave
+	ifconn=$(nmcli -g GENERAL.CONNECTION device show ${slave})
+	[[ ${ifconn} = *slave* ]] && nmcli con delete ${ifconn}
+done
 
 if [[ -n "$brconn" ]]; then
 	echo "{info} down and remove '$brconn'"
 	nmcli connection down "$brconn"
 	nmcli connection delete "$brconn"
 fi
+
+for ifname in $slaves; do
+	ifconn=$(nmcli -g GENERAL.CONNECTION device show ${ifname})
+	if [[ -z "${ifconn}" ]]; then
+		nmcli con add type ethernet ifname ${slave} con-name ${slave}-conn
+	else
+		nmcli con up ${ifconn}
+	fi
+done
