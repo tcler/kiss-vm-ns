@@ -30,11 +30,14 @@ Usage() {
 
 force=no
 interactive=yes
+stp=on
+fdelay=2
 _at=()
 for arg; do
 	case $arg in
 	-f) force=yes;;
 	-ni) interactive=no;;
+	-stp) stp=off;;
 	*) _at+=("$arg");;
 	esac
 done
@@ -92,11 +95,14 @@ nmcli c delete "$ifconname" &>/dev/null
 
 #create br connection
 if [[ $brop = create ]]; then
-	nmcli c add type bridge ifname $brname stp on forward-delay 2 autoconnect yes
+	nmcli c add type bridge ifname $brname stp $stp forward-delay $fdelay autoconnect yes
 else
 	brconname=$(nmcli -g GENERAL.CONNECTION device show $brname)
-	[[ -z "$brconname" ]] &&
-		nmcli c add type bridge ifname $brname stp on forward-delay 2 autoconnect yes
+	if [[ -n "$brconname" ]]; then
+		nmcli c modify $brconname stp $stp forward-delay $fdelay autoconnect yes
+	else
+		nmcli c add type bridge ifname $brname stp $stp forward-delay $fdelay autoconnect yes
+	fi
 fi
 
 brconname=$(nmcli -g GENERAL.CONNECTION device show $brname)
