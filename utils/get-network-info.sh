@@ -126,10 +126,26 @@ get_if_by_ip() {
 	ip -br a sh | awk -v pat=${ipaddr}/ '$0 ~ pat {print $1}'
 }
 
+get_br_slaves() {
+	[[ $# = 0 ]] && { echo "Usage: $0 <brname>" >&2; return 1; }
+	local if=$1;
+	echo "{run} ip -br link show master $if | awk '{print \$1}'" >&2
+	ip -br link show master $if | awk '{print $1}';
+}
+
+get_br_slaves_by_nmcli() {
+	[[ $# = 0 ]] && { echo "Usage: $0 <brname>" >&2; return 1; }
+	local if=$1;
+	echo "{run} nmcli -g BRIDGE.SLAVES device show $if | sed 's/ /\\n/g'" >&2
+	nmcli -g BRIDGE.SLAVES device show $if | sed 's/ /\n/g';
+}
+
+detach_slave() { local slave=$1; ip link set $slave nomaster; }
+
 _P=${P%.sh}
 funname=${_P//-/_}
 case ${funname} in
-get_ip|get_default_nic|get_default_if|get_default_ip|get_default_netaddr|get_default_gateway|get_net_mask|get_net_addr|get_if_by_ip)
+get_ip|get_default_nic|get_default_if|get_default_ip|get_default_netaddr|get_default_gateway|get_net_mask|get_net_addr|get_if_by_ip|get_br_slaves|get_br_slaves_by_nmcli)
 	${funname} "$@"
 	;;
 *)
