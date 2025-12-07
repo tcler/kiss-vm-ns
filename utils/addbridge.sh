@@ -92,11 +92,11 @@ nmcli c delete "$ifconname" &>/dev/null
 
 #create br connection
 if [[ $brop = create ]]; then
-	nmcli c add type bridge ifname $brname stp off autoconnect yes
+	nmcli c add type bridge ifname $brname stp on forward-delay 2 autoconnect yes
 else
 	brconname=$(nmcli -g GENERAL.CONNECTION device show $brname)
 	[[ -z "$brconname" ]] &&
-		nmcli c add type bridge ifname $brname stp off autoconnect yes
+		nmcli c add type bridge ifname $brname stp on forward-delay 2 autoconnect yes
 fi
 
 brconname=$(nmcli -g GENERAL.CONNECTION device show $brname)
