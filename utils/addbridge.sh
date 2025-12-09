@@ -53,6 +53,18 @@ brname=${brname:-br0}
 	exit 1
 }
 
+driver=$(ethtool -i $ifname | awk '/driver:/{print $2}')
+case $driver in
+r8152)
+	echo "{warn} the driver of '$ifname' is '$driver', it does not works well with linux bridge." >&2
+	read -p "{warn} still want a try?(Y/N): " answer
+	if [[ "$answer" != [Yy]* ]]; then
+	    echo "OK, let's quit"
+	    exit 0
+	fi
+	;;
+esac
+
 brop=create
 if ip addr show dev $brname &>/dev/null; then
 	echo "{warn} bridge dev '$brname' has been there, keep it" >&2
