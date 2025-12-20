@@ -48,7 +48,7 @@ red?hat*|centos*|rocky*|alma*|anolis*)
 		if [[ "$FORCE" = yes ]]; then
 			yum-install-from-fedora.sh -rpm $pkglist qemu-device-display-virtio-gpu-ccw
 		else
-			yum-install-from-fedora.sh $pkglist qemu-device-display-virtio-gpu-ccw
+			: yum-install-from-fedora.sh $pkglist qemu-device-display-virtio-gpu-ccw
 		fi
 		;;
 	7)
