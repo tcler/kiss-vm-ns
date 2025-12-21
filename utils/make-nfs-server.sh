@@ -81,6 +81,19 @@ fi
 ## create nfs export directorys
 nfsnobody=nfsnobody; id nfsnobody &>/dev/null || nfsnobody=nobody
 mkdir -p $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}
+## mount free part to $NFSROOT/$PREFIX/{qe,devel}
+parts=($(lsblk -lb|awk '$6=="part"&&$7==""&&$4>(1073741824*5){print $1}'))
+for ((i=0;i<${#parts[@]};i++)); do
+	pd=/dev/${parts[$i]}
+	if [[ $i -eq 0 ]]; then
+		mount $pd $NFSROOT/$PREFIX/qe
+	elif [[ $i -eq 1 ]]; then
+		mount $pd $NFSROOT/$PREFIX/devel
+	else
+		break
+	fi
+done
+
 chgrp ${nfsnobody} -R $NFSROOT/$PREFIX
 chmod g+ws -R $NFSROOT/$PREFIX
 touch $NFSROOT/$PREFIX/{ro,rw,async,labelled-nfs,qe,devel,tls,mtls}/testfile
