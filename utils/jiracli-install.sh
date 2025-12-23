@@ -20,3 +20,4 @@ rm -rf $tmpdir
 
 echo
 command -v jira
+jira version
