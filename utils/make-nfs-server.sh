@@ -86,6 +86,7 @@ parts=($(lsblk -lb|awk '$6=="part"&&$7==""&&$4>(1073741824*5){print $1}'))
 for ((i=0;i<${#parts[@]};i++)); do
 	pd=/dev/${parts[$i]}
 	if [[ $i -eq 0 ]]; then
+		mkfs.xfs -f $pd
 		mount $pd $NFSROOT/$PREFIX/qe
 	elif [[ $i -eq 1 ]]; then
 		mount $pd $NFSROOT/$PREFIX/devel
