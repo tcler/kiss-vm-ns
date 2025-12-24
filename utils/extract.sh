@@ -52,7 +52,7 @@ topdir=$3
 
 filetype=$(file -b "${compressedFile}")
 _targetdir=$targetdir
-if [[ "$filetype" = Zip* ]]; then
+if [[ "$filetype" = Zip* ]] || [[ "$filetype" = data && "${compressedFile,,}" = *.zip ]]; then
 	dirlist=$(unzip -Z1 "$compressedFile"|grep /$)
 	otopdir=($(unzip -Z1 "$compressedFile" | sed -r 's;^\.?/;;' | awk -F/ '{a[$1]++} END { for(key in a) { print(key) } }'))
 	[[ -z "$otopdir" ]] && { echo "{error} extract $compressedFile fail" >&2; exit 3; }
