@@ -255,6 +255,10 @@ gen_distro_dir_name() {
 	[[ -z "${arch}" || -z "${distro}" ]] && return 1
 	_gen_distro_dir_name $distro $arch $suffix
 }
+console_check() {
+	local pat='RI[P]:|={16}'
+	trun -x1-255 grep -aE "$pat" -r "$@"
+}
 
 vmrunx() {
 	local comment=
