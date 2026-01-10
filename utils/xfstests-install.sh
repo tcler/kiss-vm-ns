@@ -20,6 +20,7 @@ tmux new -s $downloadSession -d "{ curl -LO $tgzUrl && tar axf ${tgzUrl##*/} || 
 
 #Prepare: install deps
 yum clean packages
+yum remove libperf-devel -y 2>/dev/null
 yum install -y --setopt=strict=0 --nogpgcheck acl attr automake \
 	bc dbench dump e2fsprogs fio gawk gcc gdbm-devel git indent \
 	kernel-devel libacl-devel libcap-devel libtool libuuid-devel lvm2 \
