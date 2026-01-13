@@ -2958,6 +2958,8 @@ is_slackware && export PATH=/usr/local/sbin:/usr/sbin:/sbin:$PATH
 		eval oldperConfDir=~$VMUSER/.config/kiss-vm
 	}
 }
+
+[[ "$1" = net* ]] && KISS_VM_READY=yes
 [[ "$KISS_VM_READY" != yes ]] && {
 	if [[ -t 1 ]]; then
 		prepare_kiss_vm $FORCE_PREPARE &>/dev/tty

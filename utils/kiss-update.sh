@@ -55,8 +55,8 @@ install_kiss_tools() {
 	curl -k -Ls $url | tar zxf - -C $tmpdir && gmake -C $tmpdir/${_repon}-master
 	rm -rf $tmpdir
 	test -f $VMUSERHOME/.config/kiss-vm/kiss-vm -o -f $VMUSERHOME/.config/kiss-vm-ns/kiss-vm || vm prepare -f
-	vm netls | grep -qw kissaltnet ||
-		vm netcreate netname=kissaltnet brname=virbr-kissalt subnet=10.172.192.0 domain=alt.kissvm.net
+	vm -r netls | grep -qw kissaltnet ||
+		vm -r netcreate netname=kissaltnet brname=virbr-kissalt subnet=10.172.192.0 domain=alt.kissvm.net
 	command -v tesseract &>/dev/null ||
 		ggv-install.sh
 }
