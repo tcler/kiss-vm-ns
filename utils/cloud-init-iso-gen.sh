@@ -157,6 +157,7 @@ DNS_DOMAIN
 DNS
 )
   - ping -c 4 ipa.corp.redhat.com
+  - command -v yum && yum --setopt=strict=0 update -y
   - command -v yum && yum --setopt=strict=0 install -y bash-completion curl wget vim ipcalc expect $PKGS
   -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget vim ipcalc expect network-manager $PKGS; systemctl restart NetworkManager; }
   -   command -v zypper && { zypper in --no-recommends -y bash-completion curl wget vim ipcalc expect NetworkManager $PKGS; systemctl restart NetworkManager; }

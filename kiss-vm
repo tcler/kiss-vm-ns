@@ -1970,6 +1970,7 @@ getimageurls() {
 			[[ "${image}" = *Atomic* ]] && continue
 			[[ "${image}" = *-ec2* ]] && continue
 			[[ "${image}" = *-nocloud* ]] && continue
+			[[ "${image}" = *-UKI-* ]] && continue
 			echo ${parenturl%/}/${image}
 			rc=0
 		fi
