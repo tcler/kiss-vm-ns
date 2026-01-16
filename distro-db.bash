@@ -20,9 +20,10 @@ distroInfo[CentOS-6]="https://cloud.centos.org/centos/6/images/%%GenericCloud.qc
 
 #### Fedora
 fbaseurl=https://download.fedoraproject.org/pub/fedora/linux
-lstv=41
+lstv=43
 for fv in rawhide $((lstv+1)); do distroInfo[f$fv]=$fbaseurl/development/$fv/Cloud/$GuestARCH/images/; done
 eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/releases/$fv/Cloud/$GuestARCH/images/; done'
+distroInfo[frawhide]="https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Cloud/${GuestARCH}/images/%%Generic.*.qcow2"
 
 #### Debian/Ubuntu
 # https://cloud.debian.org/images/openstack/testing/
@@ -67,7 +68,7 @@ CN|HK)
 	distroInfo[Rocky-8]="https://mirrors.sdu.edu.cn/rocky/8/images/$_GuestARCH/%%GenericCloud.*.qcow2"
 
 	#### Fedora
-	lstv=41
+	lstv=43
 	fbaseurl=https://mirrors.ustc.edu.cn/fedora/releases
 	fbaseurl=https://mirrors.aliyun.com/fedora/releases
 	eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/$fv/Cloud/$GuestARCH/images/; done'
