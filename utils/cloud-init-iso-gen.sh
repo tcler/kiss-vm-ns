@@ -205,6 +205,9 @@ $(
 [[ "$kdump" = yes || "$fips" = yes || -n "$BPKGS" || -n "$KernelOpts" ]] && cat <<REBOOT
   - reboot
 REBOOT
+[[ -z "$BPKGS" ]] && cat <<\REBOOT
+  - command -v rpm && { rpm -q kernel-core | tail -1 | grep "$(uname -r)" || reboot; }
+REBOOT
 )
 EOF
 
