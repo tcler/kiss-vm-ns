@@ -143,7 +143,7 @@ runcmd:
      _dnfconf=\$(test -f /etc/yum.conf && echo /etc/yum.conf || echo /etc/dnf/dnf.conf); \
      grep -q ^metadata_expire= \$_dnfconf 2>/dev/null || echo metadata_expire=7d >>\$_dnfconf; \
   }
-  - sed -ri -e '/^#?(PasswordAuthentication|AllowAgentForwarding|PermitRootLogin) (.*)$/{s//\1 yes/}' -e '/^Inc/s@/\*.conf@/*redhat.conf@' /etc/ssh/sshd_config \$(ls /etc/ssh/sshd_config.d/*) && service sshd restart || systemctl restart sshd
+  - sed -ri -e '/^#?(PasswordAuthentication|AllowAgentForwarding|PermitRootLogin) (.*)$/{s//\1 yes/}' -e '/^Inc/s@/\*.conf@/*redhat.conf@' /etc/ssh/sshd_config \$(ls /etc/ssh/sshd_config.d/*) && service sshd stop || systemctl stop sshd
   - grep -q '^StrictHostKeyChecking no' /etc/ssh/ssh_config || echo "StrictHostKeyChecking no" >>/etc/ssh/ssh_config
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
 $(
@@ -164,6 +164,7 @@ DNS
   -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; pacman-key --init; pacman-key --populate; }
   -   command -v pacman && { pacman -S --needed --noconfirm bash-completion curl wget vim ipcalc expect networkmanager $PKGS; systemctl restart NetworkManager; }
   - echo "export DISTRO=$Distro DISTRO_BUILD=$Distro RSTRNT_OSDISTRO=$Distro" >>/etc/bashrc
+  - service sshd start || systemctl start sshd
 $(
 if [[ $Intranet = yes ]]; then
 cat <<IntranetCMD
