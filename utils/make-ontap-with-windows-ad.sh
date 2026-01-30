@@ -51,6 +51,7 @@ net1Opt=--netmacvtap=?
 for clientvm in $clientvms; do
 	trun -tmux=- vm create $distro -n $clientvm -p $pkgs \
 		--nointeract --saveimage -f $net1Opt --net=$net "$@"
+	sleep 8
 done
 
 #-------------------------------------------------------------------------------
