@@ -1938,6 +1938,17 @@ is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
 is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 is_rh_intranet2 || Intranet=no
 
+archpat() {
+	local _arch=$1 pat=
+	case $_arch in
+	(x86_64|amd64)  pat="(x86_64|amd64)";;
+	(aarch64|arm64) pat="(aarch64|arm64)";;
+	(ppc64|ppc64le) pat="(ppc64|ppc64le)";;
+	(*) pat=$_arch;;
+	esac
+	echo $pat
+}
+
 getimageurls() {
 	local parenturl=$1
 	local suffix_pattern=$2
@@ -1947,10 +1958,7 @@ getimageurls() {
 	local qcow2Imgs= rawImgs= otherImgs=
 
 	local arch=$GuestARCH
-	[[ $arch = aarch64 || $arch = arm64 ]] && arch="(aarch64|arm64)"
-	[[ $arch = x86_64 || $arch = amd64 ]] && arch="(x86_64|amd64)"
-	[[ $arch = ppc64 || $arch = ppc64le ]] && arch="(ppc64|ppc64le)"
-	imgs=$(grep -E "$arch" <<< "$imagenames")
+	imgs=$(grep -E "$(archpat $arch)" <<< "$imagenames")
 	if [[ -n "$imgs" ]]; then imagenames="$imgs"; else return 1; fi
 
 	for imagename in $imagenames; do
@@ -2570,7 +2578,7 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:g::b:p:I::i:rvdx::Pqw:: \
 	--long user: \
 	--long enable-nested-kvm --long enable-nested-vm \
 	--long debug \
-	--long bootc: \
+	--long bootc:: \
 	--long ks-fstype: \
 	--long ks: \
 	--long ks-pkgs: \
@@ -2705,7 +2713,7 @@ while true; do
 	--usb-cd)  InstallType=cdrom_image; Isourl=$2; CDROM_BUS_TYPE=usb; shift 2;;
 	-L|-l)     InstallType=location; _url=${2#=}; read Location BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
 	-I|-i)     InstallType=import; _url=${2#=}; read Imageurl BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
-	--bootc)   bootc=yes; bootcArg=${2}; shift 2;;
+	--bootc)   BOOTC=yes; INTERACT=no; bootcArg=${2}; shift 2;;
 	-P|--pxe)  InstallType=pxe; shift 1;;
 	--to-disk) TO_DISK="$(readlink -f "$2")"; shift 2;;
 	--diskless) DISKLESS=yes; shift 1;;
@@ -2869,6 +2877,10 @@ done
 
 DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 
+[[ "$BOOTC" = yes && $Intranet = no ]] && {
+	echo -e "{VM:ERROR} Now bootc option only support in redhat-intranet" >&2
+	exit 1
+}
 [[ ${#WIN_HOSTNAME} -gt 15 ]] && {
 	echo -e "{VM:ERROR} length of windows hostname($WIN_HOSTNAME) should < 16" >&2
 	exit 1
@@ -3325,11 +3337,12 @@ shopt -s extglob
 decodeDistro() {
 	local d="$1"
 	if [[ "$Intranet" = yes ]]; then
-		if [[ "$bootc" == yes ]]; then
+		if [[ "$BOOTC" == yes ]]; then
 			if [[ "$d" =~ ^[0-9.]+n?$ ]]; then
+				local tagpat=RHEL-${d%n}.*-$(archpat $GuestARCH)
 				echo "{debug} expanding DISTRO pattern: $d (bootc mode) ..." >&2
 				bootcTo=$(skopeo list-tags --retry-times 16 docker://images.paas.redhat.com/bootc/rhel-bootc |
-					jq -r '.Tags[]' | grep RHEL-${d%n} | tail -1)
+					jq -r '.Tags[]' | grep -E "$tagpat" | tail -1)
 				Distro=$(skopeo inspect --retry-times 16 docker://images.paas.redhat.com/bootc/rhel-bootc:$bootcTo |
 					jq -r '.Labels["redhat.compose-id"]')
 				if [[ -z "$Distro" ]]; then
@@ -3798,6 +3811,16 @@ fi
 [[ -f ~/.ssh/id_ecdsa && -f ~/.ssh/id_ecdsa.pub ]] || {
 	echo -e 'y\n' | ssh-keygen -q -t ecdsa -f ~/.ssh/id_ecdsa -N ''
 }
+
+distro2bootcTag() {
+	local _distro=$1
+	local archpat=$(archpat $GuestARCH)
+	skopeo list-tags --retry-times 16 docker://images.paas.redhat.com/bootc/rhel-bootc |
+		jq -r '.Tags[]' | grep -E "${_distro}-${archpat}" | tail -1
+}
+if [[ "$BOOTC" = yes && -z "$bootcTo" ]]; then
+	bootcTo=$(distro2bootcTag $Distro)
+fi
 
 kskey=inst.ks
 case ${Distro,,} in
@@ -5107,6 +5130,16 @@ if [[ "$WAIT" = yes ]]; then
 		kill_installer_tmux_session ${vmname}
 		win-env-file-gen.sh $vmname
 	}
+fi
+
+if [[ "$BOOTC" = yes ]]; then
+	vm cpto $vmname /usr/share/kiss-vm/switch2image.sh .
+	vm port-available $vmname 22 -w
+	vm exec -v $vmname -- "
+		export BOOTC_TO=$bootcTo PKGS='$PKGS' BPKGS='$BPKGS';
+		./switch2image.sh; reboot;"
+	vm port-available $vmname 22 -w
+	vm exec -v $vmname -- ostree admin status -v
 fi
 
 #only for Fedora/RHEL/CentOS/RockyLinux/AlmaLinux
