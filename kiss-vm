@@ -1295,15 +1295,19 @@ vmlogin() {
 		sshOpts=$(sshtest $U@$addr "$sshOpts")
 		case $? in 0) sshstat=yes;; 1) sshstat=passwd;; esac
 		[[ "${EXEC}" = yes ]] && sshOpts+=" -n"
+		case $vmsubcmd in
+			(*tty) sshOpts+=" -t";;
+			(*ttyf) sshOpts+=" -tt";;
+		esac
 		if [[ $sshstat = yes ]]; then
-			/usr/bin/ssh -tt $sshOpts $U@$addr "${sshCommand}"
+			/usr/bin/ssh $sshOpts $U@$addr "${sshCommand}"
 			rc=$?
 		elif [[ $sshstat = passwd ]]; then
 			expect <(cat <<-EOF
 			set timeout 120
 			set sshcmd [exec cat $RuntimeTmp/sshcmd]
 			log_user 0
-			spawn /usr/bin/ssh -tt $sshOpts $U@$addr \$sshcmd
+			spawn /usr/bin/ssh $sshOpts $U@$addr \$sshcmd
 			log_user 1
 			if {\$argc == 0 || \$sshcmd == ""} {
 				expect {
@@ -1328,10 +1332,10 @@ vmlogin() {
 			rc=$?
 		else
 			if [[ "${EXEC}" = yes ]]; then
-				echo -e "{VM:ERR} /usr/bin/ssh -tt $sshOpts $U@$addr fail, exit." >&2
+				echo -e "{VM:ERR} /usr/bin/ssh $sshOpts $U@$addr fail, exit." >&2
 				return 1
 			else
-				echo -e "{VM:WARN} /usr/bin/ssh -tt $sshOpts $U@$addr fail, try login with console ..." >&2
+				echo -e "{VM:WARN} /usr/bin/ssh $sshOpts $U@$addr fail, try login with console ..." >&2
 				virsh console "$_vmname"
 				rc=$?
 			fi
@@ -3241,8 +3245,8 @@ vm_snapshot() {
 
 run -as=$VMUSER mkdir -p $RuntimeTmp ${DownloadImagePath}
 
-subcmd="$1"; shift;
-case "$subcmd" in
+vmsubcmd="$1"; shift;
+case "$vmsubcmd" in
 	h|\?|help)		Usage|less; exit;;
 	prepare)		prepare_kiss_vm force; exit $?;;
 	enable-nested-vm)	enable_nested_kvm; exit $?;;
