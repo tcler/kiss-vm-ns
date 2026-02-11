@@ -5152,7 +5152,7 @@ if [[ "$BOOTC" = yes ]]; then
 	vm cpto $vmname /usr/share/kiss-vm/switch2image.sh /usr/bin/kiss-update.sh /bin/
 	vm port-available $vmname 22 -w
 	vm exec -v $vmname -- "
-		export BOOTC_TO=$bootcTo PKGS='$PKGS' BPKGS='$BPKGS' ScriptUrl='${ScriptUrl}' CMDL=${bootcCmd@Q};
+		export BOOTC_TO=$bootcTo KOPTS='$KOPTS' PKGS='$PKGS' BPKGS='$BPKGS' ScriptUrl='${ScriptUrl}' CMDL=${bootcCmd@Q};
 		switch2image.sh; reboot;"
 	vm port-available $vmname 22 -w
 	vm exec -v $vmname -- ostree admin status -v
