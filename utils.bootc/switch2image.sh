@@ -6,12 +6,12 @@ PKGS=${PKGS}   # default package must exist on container so yum won't raise erro
 BPKGS=${BPKGS} # use for brewinstall.sh
 KOPTS=${KOPTS} # Only receive parameter with space "pci=realloc intel_iommu=on iommu=pt"
 ScriptUrl=${ScriptUrl} # use for self define script
+CMDL=${CMDL}
 PART_MPS=${PART_MPS}
 
 [[ -z "${BOOTC_TO}" ]] && { source /etc/os-release; BOOTC_TO=latest-${VERSION_ID}; }
 MYIMAGE=mybootc:${BOOTC_TO}
 
-# ARCH using for repo.sh
 arch_translate() {
 	local arch=$1 narch=x86_64
 	case $arch in (amd64) narch=x86_64;; (arm64) narch=aarch64;; esac
@@ -26,6 +26,7 @@ ARG BOOTC_TO
 ARG PKGS
 ARG BPKGS
 ARG ScriptUrl
+ARG CMDL
 ARG PWD_HASH
 ARG REPOS
 ARG KOPTS
@@ -72,7 +73,7 @@ useradd -m -s /bin/bash test
 passwd -l test
 EORUN
 
-COPY ./brewinstall.sh /usr/bin
+COPY ./brewinstall.sh kiss-update.sh /usr/bin
 
 RUN <<KARG
 mkdir -p /usr/lib/bootc/kargs.d
@@ -99,7 +100,7 @@ fi
 KARG
 
 RUN <<EORUN
-#process env PKGS,BPKGS,ScriptUrl,REPOS
+#process env REPOS,PKGS,BPKGS,ScriptUrl,CMDL
 set -xeuo pipefail
 MAJOR=$(echo "$BOOTC_TO" | cut -d '-' -f 2 | cut -d '.' -f 1)
 if curl -k -Ls --retry 64 --retry-delay 2 --remote-name-all https://dl.fedoraproject.org/pub/epel/epel-release-latest-"$MAJOR".noarch.rpm; then
@@ -112,6 +113,19 @@ if curl -k -Ls --retry 64 --retry-delay 2 --remote-name-all https://dl.fedorapro
 			"$repo"
 	done
 fi
+
+i=1
+for url in ${REPOS//,/ }; do
+	cat <<-EOF >/etc/yum.repos.d/my-repo$i.repo
+	[my-repo$i]
+	name=my-repo$i
+	baseurl=$url
+	enabled=1
+	gpgcheck=0
+	skip_if_unavailable=1
+	EOF
+	let i++
+done
 
 #install package from PKGS
 test -n "${PKGS}" && PKGS=$(rpm -q ${PKGS//,/ } | awk '/not.installed/{print $2}') || :
@@ -129,18 +143,10 @@ if test -n "${ScriptUrl}"; then
 	curl -ksfL ${url} | bash -s -- ${params:-} || :
 fi
 
-i=1
-for url in ${REPOS//,/ }; do
-	cat <<-EOF >/etc/yum.repos.d/my-repo$i.repo
-	[my-repo$i]
-	name=my-repo$i
-	baseurl=$url
-	enabled=1
-	gpgcheck=0
-	skip_if_unavailable=1
-	EOF
-	let i++
-done
+#running command from CMDL
+if test -n "${CMDL}"; then
+	bash -c "${CMDL}" || :
+fi
 EORUN
 
 RUN touch /var/tmp/switch-from-pkg-to-image
@@ -153,7 +159,8 @@ LABEL containers.bootc="1" \
 		redhat.version-id="${BOOTC_TO}" \
 		redhat.pkgs="${PKGS}" \
 		redhat.bpkgs="${BPKGS}" \
-		redhat.scripturl="${ScriptUrl}"
+		redhat.scripturl="${ScriptUrl}" \
+		redhat.cmdline="${CMDL}"
 # https://pagure.io/fedora-kiwi-descriptions/pull-request/52 effect for quay.io/fedora/fedora:rawhide
 # ENV container=oci
 ENV container=oci
@@ -196,7 +203,7 @@ gen_repos() {
 	local downhostname=download.devel.redhat.com
 	local LOOKASIDE_BASE_URL=http://${downhostname}/qa/rhts/lookaside
 
-	is_available_url() { local _url=$1; curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null; }
+	is_available_url() { local _url=$1; curl -L --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null; }
 
 	DISTRO=$(echo "$DISTRO" | sed -r 's/-(arm64|amd64|ppc64|ppc64le|s390x?)$//')
 	COMPOSE="http://$downhostname/rhel-$verx/composes/RHEL-$verx/$DISTRO/compose"
@@ -234,21 +241,21 @@ gen_repos() {
 	mkdir -p $repodir
 	for repo in "${Repos[@]}"; do
 		read _name _url <<<"${repo/:/ }"
-		if ! is_available_url $_url && { sleep 1; ! is_available_url $_url; }; then
+		if is_available_url $_url || { sleep 1; is_available_url $_url; }; then
+			cat <<-REPO >$repodir/$_name.repo
+			[$_name]
+			name=$_name
+			baseurl=$_url
+			enabled=1
+			gpgcheck=0
+			skip_if_unavailable=1
+			sslverify=0
+			metadata_expire=7d
+			REPO
+		else
 			echo -e "\033[31m[VM:WARN] this url not available: $_url\033[0m" >&2
 			continue
 		fi
-
-		cat <<-REPO >$repodir/$_name.repo
-		[$_name]
-		name=$_name
-		baseurl=$_url
-		enabled=1
-		gpgcheck=0
-		skip_if_unavailable=1
-		sslverify=0
-		metadata_expire=7d
-		REPO
 	done
 }
 
@@ -303,7 +310,7 @@ hwclock --systohc
 #current system root passwd
 PWD_HASH=$(sudo grep ^root: /etc/shadow | cut -d: -f2)
 echo "got hash from host：$PWD_HASH"
-/usr/bin/cp -rf /etc/{fstab,resolv.conf} /usr/bin/brewinstall.sh ./
+/usr/bin/cp -rf /etc/{fstab,resolv.conf} /usr/bin/brewinstall.sh /bin/kiss-update.sh ./
 
 # Error: creating build container: initializing source docker://images.paas.redhat.com/bootc/rhel-bootc:RHEL-10.0-20250320.8-amd64:
 # pinging container registry images.paas.redhat.com: Get "https://images.paas.redhat.com/v2/": net/http: TLS handshake timeout
@@ -313,6 +320,7 @@ podman build \
 	--build-arg PKGS="$PKGS" \
 	--build-arg BPKGS="$BPKGS" \
 	--build-arg ScriptUrl="$ScriptUrl" \
+	--build-arg CMDL="$CMDL" \
 	--build-arg PWD_HASH="$PWD_HASH" \
 	--build-arg REPOS="$REPOS" \
 	--build-arg KOPTS="$KOPTS" \
