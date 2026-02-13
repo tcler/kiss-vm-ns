@@ -1,7 +1,9 @@
 #!/bin/bash
 
+arch=$(uname -m)
+case $arch in (aarch64) arch=arm64;; (amd64) arch=x86_64;; esac
 durl=$(curl -sL https://api.github.com/repos/ankitpokhrel/jira-cli/releases/latest |
-	jq -r '.assets[] | select(.name? | match("linux.*x86_64")) | .browser_download_url')
+	jq -r '.assets[] | select(.name? | match("linux.*'"$arch"'")) | .browser_download_url')
 fname=${durl##*/}
 
 tmpdir=$(mktemp -d)
