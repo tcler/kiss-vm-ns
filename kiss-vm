@@ -3039,7 +3039,7 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
 		if [[ -z "$QEMU_CPU" && -z "$VIRT_CPU" ]]; then
 			#verified on 'Fedora-38/Ampere(R) Altra(R) Max Processor M128-30 CPU @ 3.0GHz'
-			VIRT_CPU_OPT=--cpu=host
+			VIRT_CPU_OPT=--cpu=host-passthrough
 			if grep -q Asahi /etc/os-release; then
 				#verified on 'Fedora-38 Asahi Remix/M2 MacBook'
 				VIRT_CPU_OPT=--cpu=cortex-a76
@@ -3079,6 +3079,9 @@ if [[ -n "$QEMU_CPU_OPT" ]]; then
 fi
 
 case "$GuestARCH" in
+(aarch64)
+	BOOT_OPTS+=(--boot=uefi,firmware.feature0.name=secure-boot,firmware.feature0.enabled=no)
+	;;
 (s390*)
 	_MSIZE=2048M
 	;;
