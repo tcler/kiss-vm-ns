@@ -1768,6 +1768,9 @@ install_requires() {
 
 prepare_kiss_net() {
 	virsh list &>/dev/null || return 1  #quit if libvirtd does not work
+	. /etc/os-release
+	OS=$NAME
+	case $OS in (debian*|ubuntu*) systemctl stop dnsmasq; systemctl disable dnsmasq;; esac
 
 	#delete virbr0 if net-start default fail
 	grep -q 'virbr0: File exists' < <(cvirsh net-start default 2>&1 >/dev/null) && {
