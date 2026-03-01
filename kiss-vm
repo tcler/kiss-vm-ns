@@ -3032,6 +3032,21 @@ enable_nested_kvm() {
 	exit $?
 }
 
+cpuset() {
+	awk -v RS= -v FS=: '
+	{
+		cpu=$2
+		imp=""; part=""; freq=""
+		for(i=2;i<=NF;i++) {
+			if($i ~ /CPU implementer/) imp=$(i+1)
+			if($i ~ /CPU part/) part=$(i+1)
+		}
+		if(imp!="" && part!="") cpus[part]=cpu","cpus[part]
+	}
+	END {for (p in cpus) {print cpus[p]}
+	}' /proc/cpuinfo | sed -n '1{s/ //g;s/,$//;p}'
+}
+
 GuestARCH=${GuestARCH:-$HostARCH}
 if [[ "$GuestARCH" = "$HostARCH" ]]; then
 	virtualizationOption=--hvm
@@ -3039,6 +3054,7 @@ if [[ "$GuestARCH" = "$HostARCH" ]]; then
 	case "$HostARCH" in
 	(aarch64)
 		virtualizationOption=
+		[[ -z "$SPECIFIED_VCPUS" ]] && VCPUS=4,cpuset=$(cpuset)
 		[[ -z "$MACHINE_OPT" ]] && { MACHINE_OPT="--machine=virt"; MACHINE_QEMUOPT="-machine virt"; }
 		if [[ -z "$QEMU_CPU" && -z "$VIRT_CPU" ]]; then
 			#verified on 'Fedora-38/Ampere(R) Altra(R) Max Processor M128-30 CPU @ 3.0GHz'
