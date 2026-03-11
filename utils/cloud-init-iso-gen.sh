@@ -80,7 +80,7 @@ pushd $tmpdir &>/dev/null
 
 echo "local-hostname: ${HostName}" >meta-data
 
-cat >user-data <<-EOF
+cat >user-data <<EOF
 #cloud-config
 users:
   - default
@@ -147,15 +147,18 @@ runcmd:
   - grep -q '^StrictHostKeyChecking no' /etc/ssh/ssh_config || echo "StrictHostKeyChecking no" >>/etc/ssh/ssh_config
   - echo net.ipv4.conf.all.rp_filter=2 >>/etc/sysctl.conf && sysctl -p
 $(
-cat <<DNS_DOMAIN
-  - hostn=\$(hostname); domain=\${hostn#*.}; grep -q "search .* \${domain}" /etc/resolv.conf && sed -i -e "/^search/{s/ \${domain}//;s/search/& \${domain}/}" /etc/resolv.conf
+cat <<\DNS_DOMAIN
+  - cat /etc/resolv.conf
+  - hostn=$(hostname); domain=${hostn#*.}; grep -q "search .* ${domain}" /etc/resolv.conf && sed -i -e "/^search/{s/ ${domain}//;s/search/& \${domain}/}" /etc/resolv.conf
 DNS_DOMAIN
 [[ -n "$defaultDNS" ]] && cat <<DNS
   - cp -v /etc/NetworkManager/NetworkManager.conf{,.orig}
   - cp -v /etc/resolv.conf{,.orig}
   - grep -q systemd-resolved /etc/resolv.conf || { sed -i -e "/$defaultDNS/d" -e "0,/nameserver/s//nameserver $defaultDNS\n&/" /etc/resolv.conf; sed -ri '/^\[main]/s//&\ndns=none\nrc-manager=unmanaged/' /etc/NetworkManager/NetworkManager.conf; }
+  - if ! grep -q ^nameserver /etc/resolv.conf; then ip r|awk '/^default/{print "nameserver", \$3}' >>/etc/resolv.conf; fi
 DNS
 )
+  - cat /etc/resolv.conf
   - ping -c 4 ipa.corp.redhat.com
   - command -v yum && yum --setopt=strict=0 update -y
   - command -v yum && yum --setopt=strict=0 install -y bash-completion curl wget vim ipcalc expect $PKGS
