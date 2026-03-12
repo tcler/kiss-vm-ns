@@ -1,6 +1,6 @@
 #!/bin/bash
 # author: Jianhong Yin <yin-jianhong@163.com>
-# setup simple pacemaker cluster in libvirt/KVM
+# build a simple pacemaker ha nfs server env in libvirt/KVM
 #
 # REF:
 # - https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_and_managing_high_availability_clusters/assembly_configuring-active-passive-nfs-server-in-a-cluster-configuring-and-managing-high-availability-clusters
