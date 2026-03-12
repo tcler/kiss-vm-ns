@@ -174,6 +174,7 @@ VIP=10.172.192.63
 netmasklen=24
 netaddr=10.172.192.0/$netmasklen
 vm exec -v $node1 -- pcs resource create nfs-lvm ocf:heartbeat:LVM-activate vgname=nfs_vg vg_access_mode=system_id --group nfsgroup
+#the directory=/path will be created by pcs resource create nfs-fs, on rhel-9 and later; but not on rhel-8
 vm exec -v $node1 -- pcs resource create nfs-fs ocf:heartbeat:Filesystem device=/dev/nfs_vg/nfs_lv directory=/mnt/nfsshare fstype=xfs --group nfsgroup
 vm exec -v $node1 -- pcs resource create nfs-vip ocf:heartbeat:IPaddr2 ip=$VIP cidr_netmask=$netmasklen --group nfsgroup
 vm exec -v $node1 -- pcs resource create nfs-daemon ocf:heartbeat:nfsserver nfs_shared_infodir=/mnt/nfsshare/nfsinfo --group nfsgroup
