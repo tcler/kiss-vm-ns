@@ -191,10 +191,15 @@ vm exec -v $node1 -- pcs resource status nfsgroup
 #client base test
 vm exec -v $haclnt -- showmount -e $VIP
 
-#vm exec -v $node1 -- pcs node standby $node1
-vm exec -v $node1 -- pcs resource move nfsgroup $node2
-vm exec -v $node1 -- sleep 8
-vm exec -v $node2 -- pcs status
+activeNode=$node1; passiveNode=$node2
+if ! grep -q $activeNode < <(vm exec -v $node1 -- pcs resource status nfsgroup); then
+	activeNode=$node2; passiveNode=$node1
+fi
+
+#vm exec -v $activeNode -- pcs node standby $activeNode
+vm exec -v $activeNode -- pcs resource move nfsgroup $passiveNode
+vm exec -v $activeNode -- sleep 8
+vm exec -v $passiveNode -- pcs status
 
 vm exec -v $haclnt -- showmount -e $VIP
 vm exec -v $haclnt -- mkdir -p /mnt/nfsmp
