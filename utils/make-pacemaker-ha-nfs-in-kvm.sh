@@ -7,7 +7,8 @@
 # - https://atl.kr/dokuwiki/doku.php/rhel8_cluster_%EA%B5%AC%EC%84%B1
 # - deepseek
 #
-# Verified: [rhel-9, rhel-10]
+# Verified: [RHEL-8, RHEL-9, RHEL-10, Fedira-43, Fedora-44]
+# `- don't support RHEL-7 and before
 
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
@@ -174,11 +175,12 @@ VIP=10.172.192.63
 netmasklen=24
 netaddr=10.172.192.0/$netmasklen
 vm exec -v $node1 -- pcs resource create nfs-lvm ocf:heartbeat:LVM-activate vgname=nfs_vg vg_access_mode=system_id --group nfsgroup
-#the directory=/path will be created by pcs resource create nfs-fs, on rhel-9 and later; but not on rhel-8
+#the directory=/path will be created by `pcs resource create nfs-fs ...`
 vm exec -v $node1 -- pcs resource create nfs-fs ocf:heartbeat:Filesystem device=/dev/nfs_vg/nfs_lv directory=/mnt/nfsshare fstype=xfs --group nfsgroup
 vm exec -v $node1 -- pcs resource create nfs-vip ocf:heartbeat:IPaddr2 ip=$VIP cidr_netmask=$netmasklen --group nfsgroup
 vm exec -v $node1 -- pcs resource create nfs-daemon ocf:heartbeat:nfsserver nfs_shared_infodir=/mnt/nfsshare/nfsinfo --group nfsgroup
 vm exec -v $node1 -- 'ls -l /mnt/nfsshare; mkdir -m 755 -p /mnt/nfsshare/exports; ls -l /mnt/nfsshare'
+vm exec -v $node2 -- mkdir -p /mnt/nfsshare/exports #only for rhel-8, because the default active node is node2
 vm exec -v $node1 -- pcs resource create nfs-export exportfs clientspec="$netaddr" options=rw,sync,no_root_squash directory=/mnt/nfsshare/exports --group nfsgroup
 
 vm exec -v $node1 -- sleep 8
