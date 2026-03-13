@@ -195,3 +195,7 @@ vm exec -v $node1 -- sleep 8
 vm exec -v $node2 -- pcs status
 
 vm exec -v $haclnt -- showmount -e $VIP
+vm exec -v $haclnt -- mkdir -p /mnt/nfsmp
+vm exec -v $haclnt -- mount $VIP:/mnt/nfsshare/exports /mnt/nfsmp
+vm exec -v $haclnt -- mkdir /mnt/nfsmp/testdir
+vm exec -v $haclnt -- touch /mnt/nfsmp/testfile
