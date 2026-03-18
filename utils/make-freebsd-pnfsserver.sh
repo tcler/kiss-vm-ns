@@ -1,4 +1,7 @@
 #!/bin/bash
+#ref:
+# - https://people.freebsd.org/~rmacklem/pnfs-planb-setup.txt
+# - FreeBSD pnfsserver(4) man-page
 
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
