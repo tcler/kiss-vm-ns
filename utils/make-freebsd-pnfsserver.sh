@@ -29,12 +29,14 @@ freebsd_nvr=FreeBSD-13.5
 nfs4minver=1
 freebsd_nvr=FreeBSD-${FREEBSD_VERS:-14.3}
 nfs4minver=2
+vm_ds0=freebsd-pnfs-ds0
 vm_ds1=freebsd-pnfs-ds1
 vm_ds2=freebsd-pnfs-ds2
+vm_ds3=freebsd-pnfs-ds3
 vm_mds=freebsd-pnfs-mds
 vm_fbclient=freebsd-pnfs-client
 
-pkgs=nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils,tcpdump
+pkgs=nfs-utils,expect,iproute-tc,kernel-modules-extra,vim,bind-utils,tcpdump,tmux,fio
 
 stdlogf=/tmp/std-$$.log
 vm create --downloadonly $freebsd_nvr --saveimage 2>&1 | tee $stdlogf
@@ -54,19 +56,21 @@ if [[ $imagef = *.xz ]]; then
 fi
 
 echo -e "\n{INFO} remove existed VMs ..."
-vm del freebsd-pnfs-ds1 freebsd-pnfs-ds2 freebsd-pnfs-mds freebsd-pnfs-client
+vm del freebsd-pnfs-ds{0..3} freebsd-pnfs-mds freebsd-pnfs-client
 
 echo -e "\n{INFO} creating VMs ..."
 #the option --if-model=e1000 is a workaround for FreeBSD VM issue on Fedora-41 host
+trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds0 -dsize 80 -i $imagef -f --nointeract --if-model=e1000
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds1 -dsize 80 -i $imagef -f --nointeract --if-model=e1000
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds2 -dsize 80 -i $imagef -f --nointeract --if-model=e1000
+trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds3 -dsize 80 -i $imagef -f --nointeract --if-model=e1000
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_mds -dsize 40 -i $imagef -f --nointeract --if-model=e1000
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000
 trun       /usr/bin/vm create $distro -n $clientvm -p $pkgs --saveimage -f --nointeract "${@}"
 
 echo -e "\n{INFO} waiting VMs install finish ..."
 #config freebsd pnfs ds server
-for dsserver in $vm_ds1 $vm_ds2; do
+for dsserver in $vm_ds0 $vm_ds1 $vm_ds2 $vm_ds3; do
 	vm port-available -w ${dsserver}
 	echo -e "\n{INFO} setup ${dsserver}:"
 	cpfile=freebsd-pnfs-ds.sh; [[ -f "$cpfile" ]] || cpfile=/usr/bin/$cpfile
@@ -77,12 +81,14 @@ done
 
 #config freebsd pnfs mds server
 echo -e "\n{INFO} setup ${vm_mds}:"
+ds0addr=$(vm ifaddr $vm_ds0|head -1)
 ds1addr=$(vm ifaddr $vm_ds1|head -1)
 ds2addr=$(vm ifaddr $vm_ds2|head -1)
+ds3addr=$(vm ifaddr $vm_ds3|head -1)
 vm port-available -w ${vm_mds}
 cpfile=freebsd-pnfs-mds.sh; [[ -f "$cpfile" ]] || cpfile=/usr/bin/$cpfile
 vm cpto    ${vm_mds} $cpfile /usr/bin
-vm exec -v ${vm_mds} $cpfile $ds1addr $ds2addr
+vm exec -v ${vm_mds} $cpfile $ds0addr $ds1addr $ds2addr $ds3addr
 vm exec -v ${vm_mds} -- mount -t nfs
 vm exec -v ${vm_mds} -- showmount -e localhost
 
@@ -105,7 +111,10 @@ vm exec -v ${vm_fbclient} -- mount -t nfs -o nfsv4,minorversion=$nfs4minver,pnfs
 vm exec -v ${vm_fbclient} -- mount -t nfs -o nfsv4,minorversion=$nfs4minver,pnfs $mdsaddr:$expdir1 $nfsmp2
 vm exec -v ${vm_fbclient} -- mount -t nfs
 vm exec -v ${vm_fbclient} -- sh -c "echo 0123456789abcdef >$nfsmp/testfile"
-vm exec -v ${vm_fbclient} -- sh -c "echo 0123456789abcdef >$nfsmp2/testfile"
+vm exec -v ${vm_fbclient} -- sh -c "echo abcdef0123456789 >$nfsmp2/testfile"
+
+vm exec -v ${vm_fbclient} -- sh -c "echo 0123456789abcdef >$nfsmp/testfile"
+vm exec -v ${vm_fbclient} -- sh -c "echo abcdef0123456789 >$nfsmp2/testfile"
 
 vm exec -v ${vm_fbclient} -- ls -l $nfsmp/testfile
 vm exec -v ${vm_fbclient} -- cat $nfsmp/testfile
@@ -137,4 +146,10 @@ vm exec -vx $clientvm -- bash -c "echo 'hello pnfs' >$nfsmp/hello-pnfs.txt"
 vm exec -vx $clientvm -- ls -l $nfsmp
 vm exec -vx $clientvm -- cat $nfsmp/hello-pnfs.txt
 vm exec -vx $clientvm -- cat $nfsmp/testfile
-vm exec -vx $clientvm -- umount $nfsmp
+vm exec -vx $clientvm -- tmux new -d "while :; do dd if=/dev/zero of=$nfsmp/ddtestfile bs=10M count=1024 oflag=direct status=progress; done"
+vm exec -vx $clientvm -- tmux new -d "while :; do dd if=/dev/zero of=$nfsmp/ddtestfile2 bs=10M count=1024 oflag=direct status=progress; done"
+vm exec -vx $clientvm -- 'ps auxw | grep -w dd'
+vm exec -vx $clientvm -- uname -r
+vm exec -vx ${vm_mds} -- "pnfsdsfile $expdir0/ddtestfile; pnfsdsfile $expdir0/ddtestfile2"
+
+#for ((i=0; i<64; i++)); do vm stop freebsd-pnfs-ds*; sleep 10; vm start freebsd-pnfs-ds*; sleep 60; done
