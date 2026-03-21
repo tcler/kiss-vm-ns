@@ -65,15 +65,15 @@ vm delete ${vm_ds0%0}* ${vm_mds} ${vm_fbclient}
 
 echo -e "\n{INFO} creating VMs ..."
 #the option --if-model=e1000 is a workaround for FreeBSD VM issue on Fedora-41 host
-trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds0 -dsize 80 -i $imagef -f --nointeract --if-model=e1000 "${@}"
-trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds1 -dsize 80 -i $imagef -f --nointeract --if-model=e1000 "${@}"
-trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds2 -dsize 80 -i $imagef -f --nointeract --if-model=e1000 "${@}"
-trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds3 -dsize 80 -i $imagef -f --nointeract --if-model=e1000 "${@}"
-trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_mds -dsize 40 -i $imagef -f --nointeract --if-model=e1000 "${@}"
+trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds0 -dsize 80 -f --nointeract --if-model=e1000 "${@}" -i $imagef
+trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds1 -dsize 80 -f --nointeract --if-model=e1000 "${@}" -i $imagef
+trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds2 -dsize 80 -f --nointeract --if-model=e1000 "${@}" -i $imagef
+trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds3 -dsize 80 -f --nointeract --if-model=e1000 "${@}" -i $imagef
+trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_mds -dsize 40 -f --nointeract --if-model=e1000 "${@}" -i $imagef
 if [[ -z "$distro" ]]; then
-	trun       /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000 "${@}"
+	trun       /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -f --nointeract --if-model=e1000 "${@}" -i $imagef
 else
-	trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000 "${@}"
+	trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -f --nointeract --if-model=e1000 "${@}" -i $imagef
 	clientvm=${clientvm:-fbpnfs-linux-client}
 	trun       /usr/bin/vm create $distro -n $clientvm -p $pkgs --saveimage -f --nointeract "${@}"
 fi
