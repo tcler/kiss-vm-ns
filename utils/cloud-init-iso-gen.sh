@@ -149,7 +149,7 @@ runcmd:
 $(
 cat <<\DNS_DOMAIN
   - cat /etc/resolv.conf
-  - hostn=$(hostname); domain=${hostn#*.}; grep -q "search .* ${domain}" /etc/resolv.conf && sed -i -e "/^search/{s/ ${domain}//;s/search/& \${domain}/}" /etc/resolv.conf
+  - hostn=$(hostname); domain=${hostn#*.}; grep -q "search .* ${domain}" /etc/resolv.conf && sed -i -e "/^search/{s/ ${domain}//;s/search/& ${domain}/}" /etc/resolv.conf
 DNS_DOMAIN
 [[ -n "$defaultDNS" ]] && cat <<DNS
   - cp -v /etc/NetworkManager/NetworkManager.conf{,.orig}
