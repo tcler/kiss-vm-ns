@@ -13,9 +13,7 @@ if [ -z "$ds_server2" ] || [ -z "$ds_server3" ]; then
 	exit 1
 fi
 
-nfs4minver=1
 nfs4minver=2
-
 mntds0=/data0
 mntds1=/data1
 mntds2=/data2

@@ -4,32 +4,34 @@
 # - FreeBSD pnfsserver(4) man-page
 
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
+PROG=$0; ARGS=("$@")
 
-timeServer=clock.corp.redhat.com
-host $timeServer|grep -q not.found: && timeServer=2.fedora.pool.ntp.org
-TIME_SERVER=$timeServer
-downhostname=download.devel.redhat.com
-LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
-
-#-------------------------------------------------------------------------------
-#kiss-vm should have been installed and initialized
-vm prepare >/dev/null
-
-Cleanup() {
-	rm -f $stdlogf
-	exit
+Usage() {
+	cat <<-EOF
+	Usage:
+	  $PROG [9|10|CentOS-10-stream|RHEL-10.2-20251217.0 [--clientvm=<vmname>]] [-- vm-create-options]
+	EOF
 }
-trap Cleanup EXIT #SIGINT SIGQUIT SIGTERM
+_at=$(getopt -a -o h \
+	--long help \
+	--long clientvm: \
+	-n "$PROG" -- "$@")
+[[ $? != 0 ]] && { Usage >&2; exit 1; }
+eval set -- "$_at"
+while true; do
+	case "$1" in
+	-h|--help) Usage; shift 1; exit 0;;
+	--clientvm) clientvm=$2; shift 2;;
+	--) shift; break;;
+	esac
+done
+[[ $# -gt 0 ]] && { distro=$1; shift; }
+case $distro in (h|he|hel|help|\?) Usage; exit 1;; esac
 
-[[ $# -ge 1 && $1 != -* ]] && { distro=${1:-9}; shift;
-	[[ $# -ge 1 && $1 != -* ]] && { clientvm=${1:-ontap-rhel-client}; shift; }; }
-distro=${distro:-9}
-clientvm=${clientvm:-fbpnfs-linux-client}
+[[ -z "$distro" && -n "$clientvm" ]] && { Usage >&2; exit 1; }
 
 #create freebsd VMs
 #-------------------------------------------------------------------------------
-freebsd_nvr=FreeBSD-13.5
-nfs4minver=1
 freebsd_nvr=FreeBSD-${FREEBSD_VERS:-14.3}
 nfs4minver=2
 vm_ds0=freebsd-pnfs-ds0
@@ -68,8 +70,13 @@ trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds1 -dsize 80 -i $imagef -f --
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds2 -dsize 80 -i $imagef -f --nointeract --if-model=e1000
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds3 -dsize 80 -i $imagef -f --nointeract --if-model=e1000
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_mds -dsize 40 -i $imagef -f --nointeract --if-model=e1000
-trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000
-trun       /usr/bin/vm create $distro -n $clientvm -p $pkgs --saveimage -f --nointeract "${@}"
+if [[ -z "$distro" ]]; then
+	trun       /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000
+else
+	trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000
+	clientvm=${clientvm:-fbpnfs-linux-client}
+	trun       /usr/bin/vm create $distro -n $clientvm -p $pkgs --saveimage -f --nointeract "${@}"
+fi
 
 echo -e "\n{INFO} waiting VMs install finish ..."
 #config freebsd pnfs ds server
@@ -91,9 +98,10 @@ ds3addr=$(vm ifaddr $vm_ds3|head -1)
 vm port-available -w ${vm_mds}
 cpfile=freebsd-pnfs-mds.sh; [[ -f "$cpfile" ]] || cpfile=/usr/bin/$cpfile
 vm cpto    ${vm_mds} $cpfile /usr/bin
-vm exec -v ${vm_mds} $cpfile $ds0addr $ds1addr $ds2addr $ds3addr
-vm exec -v ${vm_mds} -- mount -t nfs
-vm exec -v ${vm_mds} -- showmount -e localhost
+vm exec -vx ${vm_mds} $cpfile $ds0addr $ds1addr $ds2addr $ds3addr
+vm exec -vx ${vm_mds} -- mount -t nfs
+vm exec -vx ${vm_mds} -- showmount -e localhost
+vm exec -v  ${vm_mds} -- grep Added.uid /var/log/messages
 
 #config freebsd pnfs client
 echo -e "\n{INFO} setup ${vm_fbclient}:"
@@ -116,9 +124,6 @@ vm exec -v ${vm_fbclient} -- mount -t nfs
 vm exec -v ${vm_fbclient} -- sh -c "echo 0123456789abcdef >$nfsmp/testfile"
 vm exec -v ${vm_fbclient} -- sh -c "echo abcdef0123456789 >$nfsmp2/testfile"
 
-vm exec -v ${vm_fbclient} -- sh -c "echo 0123456789abcdef >$nfsmp/testfile"
-vm exec -v ${vm_fbclient} -- sh -c "echo abcdef0123456789 >$nfsmp2/testfile"
-
 vm exec -v ${vm_fbclient} -- ls -l $nfsmp/testfile
 vm exec -v ${vm_fbclient} -- cat $nfsmp/testfile
 
@@ -127,16 +132,18 @@ vm exec -v ${vm_fbclient} -- cat $nfsmp2/testfile
 
 vm exec -v ${vm_mds} -- ls -l $expdir0/testfile
 vm exec -v ${vm_mds} -- cat $expdir0/testfile
-vm exec -v ${vm_mds} -- pnfsdsfile $expdir0/testfile
+vm exec -vx ${vm_mds} -- pnfsdsfile $expdir0/testfile
 
 vm exec -v ${vm_mds} -- ls -l $expdir1/testfile
 vm exec -v ${vm_mds} -- cat $expdir1/testfile
-vm exec -v ${vm_mds} -- pnfsdsfile $expdir1/testfile
+vm exec -vx ${vm_mds} -- pnfsdsfile $expdir1/testfile
+
+[[ -z "$distro" ]] && {
+	exit
+}
 
 #mount test from linux Guest
-nfsver=4.1
 nfsver=4.2
-
 echo
 vm port-available -w ${clientvm}
 echo -e "{INFO} test from ${clientvm}:"
@@ -150,9 +157,23 @@ vm exec -vx $clientvm -- ls -l $nfsmp
 vm exec -vx $clientvm -- cat $nfsmp/hello-pnfs.txt
 vm exec -vx $clientvm -- cat $nfsmp/testfile
 vm exec -vx $clientvm -- tmux new -d "while :; do dd if=/dev/zero of=$nfsmp/ddtestfile bs=10M count=1024 oflag=direct status=progress; done"
+vm exec -vx $clientvm -- tmux new -d "while :; do dd if=/dev/zero of=$nfsmp/ddtestfile1 bs=10M count=1024 oflag=direct status=progress; done"
 vm exec -vx $clientvm -- tmux new -d "while :; do dd if=/dev/zero of=$nfsmp/ddtestfile2 bs=10M count=1024 oflag=direct status=progress; done"
-vm exec -vx $clientvm -- 'ps auxw | grep -w dd'
+vm exec -vx $clientvm -- 'ps auxw | grep -w d[d]'
 vm exec -vx $clientvm -- uname -r
-vm exec -vx ${vm_mds} -- "pnfsdsfile $expdir0/ddtestfile; pnfsdsfile $expdir0/ddtestfile2"
+vm exec -vx ${vm_mds} -- "pnfsdsfile $expdir0/ddtestfile; pnfsdsfile $expdir0/ddtestfile1; pnfsdsfile $expdir0/ddtestfile2" || exit 2
 
-#for ((i=0; i<64; i++)); do vm stop freebsd-pnfs-ds*; sleep 10; vm start freebsd-pnfs-ds*; sleep 60; done
+trun -tmux=console-${clientvm} -logf=/tmp/console-${clientvm}.log vm console ${clientvm}
+show-console() {
+	trun sed '/\[    0.000000] [^LC]/,$d' /tmp/console-${clientvm}.log;
+	tmux kill-session -t console-${clientvm};
+}
+loop=${loop:-8}
+for ((i=0; i<loop; i++)); do
+	trun "sleep 32 #$i"
+	vm stop freebsd-pnfs-ds*;
+	vm port-available ${clientvm} || { echo "{Error} ${clientvm} broken?"; show-console; exit 2; }
+	vm start freebsd-pnfs-ds*;
+	vm exec -vx ${clientvm} -- 'ps axf | grep -w d[d]' || { echo "{Error} ${clientvm} restarted" >&2; show-console; exit 2; }
+done
+tmux kill-session -t console-${clientvm}
