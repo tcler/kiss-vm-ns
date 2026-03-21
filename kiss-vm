@@ -4600,8 +4600,9 @@ elif [[ "$InstallType" = import ]]; then
 					}
 				}
 				expect "*:~ #" {
-					send {hostname '"${vmname}"';
-echo hostname='"${vmname}"' >>/etc/rc.conf;
+					send {awk '"'"'/^search/{print $2}'"'"' /etc/resolv.conf >/tmp/domain.txt;
+hostname '"${vmname}"'.$(cat /tmp/domain.txt);
+sed -i "" /hostname=/s/=.*/='"${vmname}"'/ /etc/rc.conf;
 service syslogd reload;
 echo sshd_enable=\"YES\" >>/etc/rc.conf;
 printf "PermitRootLogin yes\nPasswordAuthentication yes\n" >>/etc/ssh/sshd_config;
@@ -4624,8 +4625,9 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 					while ! grep "^login:" < <(vm vnc "$vmname" -get); do sleep 10; done
 					vm vnc "$vmname" -putln root
 					vm vnc "$vmname" -putln root
-					vm vnc "$vmname" -putln "hostname ${vmname}" \
-						-putln "echo 'hostname=\"${vmname}\"' >>/etc/rc.conf" \
+					vm vnc "$vmname" -putln 'awk '"'"'/^search/{print $2}'"'"' /etc/resolv.conf >/tmp/domain.txt' \
+						-putln "hostname ${vmname}".'$(cat /tmp/domain.txt)' \
+						-putln "sed -i '' /hostname=/s/=.*/=${vmname}"'.$(cat /tmp/domain.txt)'"/ /etc/rc.conf" \
 						-putln "service syslogd reload" \
 						-putln "echo 'sshd_enable=\"YES\"' >>/etc/rc.conf" \
 						-putln "printf 'PermitRootLogin yes\\nPasswordAuthentication yes\\n' >>/etc/ssh/sshd_config" \
