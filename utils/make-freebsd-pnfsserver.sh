@@ -61,7 +61,7 @@ if [[ $imagef = *.xz ]]; then
 fi
 
 echo -e "\n{INFO} remove existed VMs ..."
-vm del freebsd-pnfs-ds{0..3} freebsd-pnfs-mds freebsd-pnfs-client
+vm delete ${vm_ds0%0}* ${vm_mds} ${vm_fbclient}
 
 echo -e "\n{INFO} creating VMs ..."
 #the option --if-model=e1000 is a workaround for FreeBSD VM issue on Fedora-41 host
@@ -71,9 +71,9 @@ trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds2 -dsize 80 -i $imagef -f --
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_ds3 -dsize 80 -i $imagef -f --nointeract --if-model=e1000 "${@}"
 trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_mds -dsize 40 -i $imagef -f --nointeract --if-model=e1000 "${@}"
 if [[ -z "$distro" ]]; then
-	trun       /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000
+	trun       /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000 "${@}"
 else
-	trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000
+	trun -tmux /usr/bin/vm create $freebsd_nvr -n $vm_fbclient -i $imagef -f --nointeract --if-model=e1000 "${@}"
 	clientvm=${clientvm:-fbpnfs-linux-client}
 	trun       /usr/bin/vm create $distro -n $clientvm -p $pkgs --saveimage -f --nointeract "${@}"
 fi
@@ -96,12 +96,18 @@ ds1addr=$(vm ifaddr $vm_ds1|head -1)
 ds2addr=$(vm ifaddr $vm_ds2|head -1)
 ds3addr=$(vm ifaddr $vm_ds3|head -1)
 vm port-available -w ${vm_mds}
+vm exec -vx ${vm_mds} -- sh -c "cat <<HOST >>/etc/hosts
+$ds0addr $vm_ds0
+$ds1addr $vm_ds1
+$ds2addr $vm_ds2
+$ds3addr $vm_ds3
+"
 cpfile=freebsd-pnfs-mds.sh; [[ -f "$cpfile" ]] || cpfile=/usr/bin/$cpfile
 vm cpto    ${vm_mds} $cpfile /usr/bin
 vm exec -vx ${vm_mds} $cpfile $ds0addr $ds1addr $ds2addr $ds3addr
 vm exec -vx ${vm_mds} -- mount -t nfs
 vm exec -vx ${vm_mds} -- showmount -e localhost
-vm exec -v  ${vm_mds} -- grep Added.uid /var/log/messages
+vm exec -v  ${vm_mds} -- grep No.name.and/or.group.mapping.for /var/log/messages
 
 #config freebsd pnfs client
 echo -e "\n{INFO} setup ${vm_fbclient}:"
