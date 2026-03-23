@@ -15,6 +15,7 @@ Usage() {
 _at=$(getopt -a -o h \
 	--long help \
 	--long clientvm: \
+	--long selftest \
 	-n "$PROG" -- "$@")
 [[ $? != 0 ]] && { Usage >&2; exit 1; }
 eval set -- "$_at"
@@ -22,6 +23,7 @@ while true; do
 	case "$1" in
 	-h|--help) Usage; shift 1; exit 0;;
 	--clientvm) clientvm=$2; shift 2;;
+	--selftest) selftest=yes; shift 1;;
 	--) shift; break;;
 	esac
 done
@@ -167,19 +169,28 @@ vm exec -vx $clientvm -- tmux new -d "while :; do dd if=/dev/zero of=$nfsmp/ddte
 vm exec -vx $clientvm -- tmux new -d "while :; do dd if=/dev/zero of=$nfsmp/ddtestfile2 bs=10M count=1024 oflag=direct status=progress; done"
 vm exec -vx $clientvm -- 'ps auxw | grep -w d[d]'
 vm exec -vx $clientvm -- uname -r
-vm exec -vx ${vm_mds} -- "pnfsdsfile $expdir0/ddtestfile; pnfsdsfile $expdir0/ddtestfile1; pnfsdsfile $expdir0/ddtestfile2" || exit 2
-
-trun -tmux=console-${clientvm} -logf=/tmp/console-${clientvm}.log vm console ${clientvm}
-show-console() {
-	trun sed '/\[    0.000000] [^LC]/,$d' /tmp/console-${clientvm}.log;
-	tmux kill-session -t console-${clientvm};
+vm exec -vx ${vm_mds} -- "pnfsdsfile $expdir0/ddtestfile; pnfsdsfile $expdir0/ddtestfile1; pnfsdsfile $expdir0/ddtestfile2" || {
+	echo "{Error} pnfs layout get fail"
+	exit 2
 }
-loop=${loop:-8}
-for ((i=0; i<loop; i++)); do
-	trun "sleep 32 #$i"
-	vm stop freebsd-pnfs-ds*;
-	vm port-available ${clientvm} || { echo "{Error} ${clientvm} broken?"; show-console; exit 2; }
-	vm start freebsd-pnfs-ds*;
-	vm exec -vx ${clientvm} -- 'ps axf | grep -w d[d]' || { echo "{Error} ${clientvm} restarted" >&2; show-console; exit 2; }
-done
-tmux kill-session -t console-${clientvm}
+
+[[ $selftest = yes ]] && {
+	#- ds fail test:
+	trun -tmux=console-${clientvm} -logf=/tmp/console-${clientvm}.log vm console ${clientvm}
+	show-console() {
+		trun sed '/\[    0.000000] [^LC]/,$d' /tmp/console-${clientvm}.log;
+		tmux kill-session -t console-${clientvm};
+	}
+	loop=${loop:-8}
+	for ((i=0; i<loop; i++)); do
+		trun "sleep 32 #$i"
+		vm stop freebsd-pnfs-ds*;
+		vm port-available ${clientvm} || { echo "{Error} ${clientvm} broken?"; show-console; exit 2; }
+		vm start freebsd-pnfs-ds*;
+		vm exec -vx ${clientvm} -- 'ps axf | grep -w d[d]' || { echo "{Error} ${clientvm} restarted" >&2; show-console; exit 2; }
+	done
+	tmux kill-session -t console-${clientvm}
+}
+
+vm exec -vx $clientvm -- "tmux kill-server; rm -f $nfsmp/ddtestfile*"
+vm exec -vx $clientvm -- umount -a -t nfs4,nfs
