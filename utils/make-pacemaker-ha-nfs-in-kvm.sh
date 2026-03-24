@@ -11,6 +11,7 @@
 # `- don't support RHEL-7 and before
 
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
+export LANG=C
 
 Usage() {
 	cat <<-EOF
@@ -34,8 +35,6 @@ while true; do
 done
 [[ $# = 0 ]] && { Usage >&2; exit 1; }
 distro=$1; shift
-
-export LANG=C
 
 #-------------------------------------------------------------------------------
 #kiss-vm should have been installed and initialized
@@ -92,13 +91,12 @@ vm exec -v $iscsiServ -- targetcli ls
 ## discovery/login at nodes
 read iscsiServIp _ < <(vm ifaddr $iscsiServ)
 for node in $node1 $node2; do
+	#system_id_source is neccessary for `pcs resource create nfs-lvm `
 	vm exec -v $node -- sed -ir '/.*system_id_source.=.*/s//system_id_source = "uname"/' /etc/lvm/lvm.conf
 	vm exec -v $node -- iscsiadm -m discovery -t st -p $iscsiServIp
 	vm exec -v $node -- iscsiadm -m node -T $targetIQN -p $iscsiServIp -l
 	vm exec -v $node -- iscsiadm -m node -T $targetIQN -p $iscsiServIp --op update -n node.startup -v automatic
 	vm exec -v $node -- lsblk
-	: vm exec -v $node -- systemctl enable dlm --now
-	: vm exec -v $node -- systemctl enable lvmlockd --now
 done
 
 #-------------------------------------------------------------------------------
@@ -201,8 +199,18 @@ vm exec -v $activeNode -- pcs resource move nfsgroup $passiveNode
 vm exec -v $activeNode -- sleep 8
 vm exec -v $passiveNode -- pcs status
 
-vm exec -v $haclnt -- showmount -e $VIP
-vm exec -v $haclnt -- mkdir -p /mnt/nfsmp
-vm exec -v $haclnt -- mount $VIP:/mnt/nfsshare/exports /mnt/nfsmp
-vm exec -v $haclnt -- mkdir /mnt/nfsmp/testdir
-vm exec -v $haclnt -- touch /mnt/nfsmp/testfile
+read activeNode passiveNode <<<"$passiveNode $activeNode"
+vm exec -vx $activeNode -- "pcs resource status nfsgroup | grep -q $activeNode"
+
+vm exec -vx $haclnt -- showmount -e $VIP
+vm exec -vx $haclnt -- mkdir -p /mnt/nfsmp
+vm exec -vx $haclnt -- mount $VIP:/mnt/nfsshare/exports /mnt/nfsmp
+vm exec -vx $haclnt -- mkdir -p /mnt/nfsmp/testdir
+vm exec -vx $haclnt -- touch /mnt/nfsmp/testfile
+
+#stop nfs-serve on activeNode, nfs-server should be autostart
+vm exec -vx $activeNode -- 'for ((i=0; i<8; i++)); do systemctl stop nfs-server; sleep 30; done'
+vm exec -vx $activeNode -- "pcs resource status nfsgroup | grep $activeNode"
+vm exec -vx $haclnt -- showmount -e $VIP
+vm exec -vx $haclnt -- mkdir -p /mnt/nfsmp/testdir
+vm exec -vx $haclnt -- touch /mnt/nfsmp/testfile
