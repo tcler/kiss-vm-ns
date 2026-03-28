@@ -2,7 +2,11 @@
 OSVER=$(rpm -E %rhel)
 
 #enable epel
-sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSVER}.noarch.rpm
+if [[ $OSVER = %rhel ]]; then
+	sudo dnf install -y python3-setuptools
+else
+       	sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${OSVER}.noarch.rpm
+fi
 
 #install python3 and pip3
 if [[ $OSVER != %rhel && $OSVER -lt 9 ]]; then
