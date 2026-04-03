@@ -13,10 +13,11 @@
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 export LANG=C
 
+P=${0##*/}
 Usage() {
 	cat <<-EOF
 	Usage:
-	  sudo $P [options] <distro-(name|pattern)> [-- vm-create-options]
+	  $P [options] <distro-(name|pattern)> [-- vm-create-options]
 
 	Options:
 	  -h, -help              ; show this help
