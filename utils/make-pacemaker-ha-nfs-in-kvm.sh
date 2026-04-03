@@ -170,9 +170,9 @@ vm exec -v $node1 -- mkfs.xfs /dev/nfs_vg/nfs_lv
 #-------------------------------------------------------------------------------
 #Setup NFS HA
 ## create resource group
-VIP=10.172.192.63
+VIP=172.22.22.63
 netmasklen=24
-netaddr=10.172.192.0/$netmasklen
+netaddr=172.22.22.0/$netmasklen
 vm exec -v $node1 -- pcs resource create nfs-lvm ocf:heartbeat:LVM-activate vgname=nfs_vg vg_access_mode=system_id --group nfsgroup
 #the directory=/path will be created by `pcs resource create nfs-fs ...`
 vm exec -v $node1 -- pcs resource create nfs-fs ocf:heartbeat:Filesystem device=/dev/nfs_vg/nfs_lv directory=/mnt/nfsshare fstype=xfs --group nfsgroup
