@@ -51,10 +51,10 @@ nodepkgs=vim,tmux,iscsi-initiator-utils,pacemaker,fence-agents-scsi,watchdog,pcs
 servpkgs=vim,tmux,targetcli
 clntpkgs=vim,tmux,nfs-utils
 
-trun -tmux=$haclnt-$$    vm create -f -n $haclnt $distro --nointeract -p $clntpkgs --net=kissaltnet $@
-trun -tmux=$iscsiServ-$$ vm create -f -n $iscsiServ $distro --nointeract -p $servpkgs --net=kissaltnet --xdisk=40 $@
-trun -tmux=$node1-$$     vm create -f -n $node1 $distro --nointeract -p $nodepkgs --net=kissaltnet $@
-trun                     vm create -f -n $node2 $distro --nointeract -p $nodepkgs --net=kissaltnet $@
+trun -tmux=$haclnt-$$    vm create -f -n $haclnt $distro --nointeract -p $clntpkgs --net=kissaltnet "$@"
+trun -tmux=$iscsiServ-$$ vm create -f -n $iscsiServ $distro --nointeract -p $servpkgs --net=kissaltnet --xdisk=40 "$@"
+trun -tmux=$node1-$$     vm create -f -n $node1 $distro --nointeract -p $nodepkgs --net=kissaltnet "$@"
+trun                     vm create -f -n $node2 $distro --nointeract -p $nodepkgs --net=kissaltnet "$@"
 while tmux ls | grep -E "($iscsiServ|$node1|$haclnt)"-$$; do sleep 5; done
 
 #-------------------------------------------------------------------------------
