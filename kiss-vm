@@ -4591,15 +4591,28 @@ elif [[ "$InstallType" = import ]]; then
 					}
 				}
 
-				set timeout -1
+				set timeout 300
 				expect "*login:" {
-					send "root\n"
+					send "root\r"
 					expect {
-						"*assword:" {send "root\n"}
-						"*:~ #" {send "uname -a\n"}
+						"*assword:" {send "root\r"}
+						"*:~ #" {send "uname -a\r"}
+						"*Rresizewin: timeout reading*" {send "\r";}
 					}
 				}
-				expect "*:~ #" {
+
+				set timeout 10
+				expect_after {
+					timeout {
+						send_user "\n\n{VM:INFO} waiting active console timeout ...\n"
+						exit 128
+					}
+				}
+				expect {
+					"*Rresizewin: timeout reading*" {send "\r"; exp_continue}
+					"*:~ # " {send "\r"}
+				}
+				expect "*:~ # " {
 					send {awk '"'"'/^search/{print $2}'"'"' /etc/resolv.conf >/tmp/domain.txt;
 hostname '"${vmname}"'.$(cat /tmp/domain.txt);
 sed -i "" /hostname=/s/=.*/='"${vmname}"'/ /etc/rc.conf;
@@ -4610,6 +4623,7 @@ grep "^[^#]" /etc/rc.conf /etc/ssh/sshd_config;
 pw useradd foo -G wheel;
 echo '"$defaultPasswd"' | pw usermod foo -h 0;
 echo '"$defaultPasswd"' | pw usermod root -h 0;
+/usr/bin/ssh-keygen -t rsa -b 2048 -f /etc/ssh/ssh_host_rsa_key -N '' -q;
 /etc/rc.d/sshd start;}
 					send "\r"
 					send "echo _END_\r"
@@ -4622,7 +4636,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 				Scrn=$(vm vnc "$vmname" -get)
 				if [[ -n "$Scrn" && "$Scrn" != "Guest has not initialized the display"* ]]; then
 					vm vnc "$vmname" -get
-					while ! grep "^login:" < <(vm vnc "$vmname" -get); do sleep 10; done
+					while ! grep -E "^lo[g9]in[:_]" < <(vm vnc "$vmname" -get); do sleep 10; done
 					vm vnc "$vmname" -putln root
 					vm vnc "$vmname" -putln root
 					vm vnc "$vmname" -putln 'awk '"'"'/^search/{print $2}'"'"' /etc/resolv.conf >/tmp/domain.txt' \
@@ -4637,6 +4651,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 					vm vnc "$vmname" -putln "pw useradd foo -G wheel" \
 						-putln "passwd foo" -put "" -putln "$defaultPasswd" -put "" -putln "$defaultPasswd" \
 						-putln "passwd root" -put "" -putln "$defaultPasswd" -put "" -putln "$defaultPasswd" \
+						-putln "/usr/bin/ssh-keygen -t rsa -b 2048 -f /etc/ssh/ssh_host_rsa_key -N '' -q" \
 						-putln "/etc/rc.d/sshd start"
 					timeout 5 vm vnc "$vmname" -get
 				else
