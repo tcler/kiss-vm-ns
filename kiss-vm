@@ -4669,6 +4669,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 					expect eof
 				"
 			fi
+			read -N 10000000 -t 0.001
 			[[ "$INTERACT" != no ]] && {
 				vmlogin $vmname
 			}
