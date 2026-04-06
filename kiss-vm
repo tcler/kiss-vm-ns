@@ -4662,6 +4662,10 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 			fi
 
 			read _vmaddr < <(vmifaddr "$vmname")
+			#rarely, both console and VNC become unresponsive, and the network connection fails; in such cases, retry the installation.
+			if ! port-available.sh $_vmaddr -w=12 -v; then
+				exec $PROG "${ARGS[@]}" -f
+			fi
 			if port_available "$_vmaddr" 22; then
 				expect -c "
 					spawn ssh-copy-id -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@$_vmaddr
