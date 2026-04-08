@@ -1,4 +1,5 @@
 #!/bin/bash
+#ref: https://docs.kernel.org/filesystems/caching/fscache.html
 
 procf=/proc/fs/fscache/stats
 if [[ ! -f $procf ]]; then
