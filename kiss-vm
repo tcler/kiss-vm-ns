@@ -12,15 +12,17 @@ CPID=$$
 PROG=$0
 ARGS=("$@")
 trap_try_again() {
-	echo "[Error] got a special issue($SA_SIGINFO) while create VM, try again:";
+	local signum=$?
+	echo "[Error] got a special issue($(kill -l $signum)) while create VM, try again:";
 	echo '----------------------------------------------------------------'
 	VM_RETRY=yes exec $PROG "${ARGS[@]}" -f;
 }
 trap_try_newcpu() {
+	local signum=$?
 	local cpu=Icelake-Server
-	echo "[Error] got a special issue($SA_SIGINFO) while create VM, try again:";
+	echo "[Error] got a special issue($(kill -l $signum)) while create VM, try again:";
 	echo '----------------------------------------------------------------'
-	PATH=/usr/libexec:$PATH LANG=C qemu-kvm -cpu ?|grep -q $cpu || cpu=Skylake-Server
+	PATH=/usr/libexec:$PATH LANG=C qemu-kvm -cpu ?|grep -q "$cpu" || cpu=Skylake-Server
 	VM_RETRY=yes exec $PROG "${ARGS[@]}" -f --cpu=$cpu;
 }
 trap trap_try_again SIGUSR2
@@ -348,7 +350,7 @@ vmhomedir() {
 					echo "$_vmdir"
 					echo "{VM:WARN} but the homedir has been removed. see: virsh dumpxml $vmn" >&2
 				else
-					echo "{VM:ERR} [$vmn] get home dir fail, maybe it's not made by kiss-vm. see: virsh dumpxml $vmm" >&2
+					echo "{VM:ERR} [$vmn] get home dir fail, maybe it's not made by kiss-vm. see: virsh dumpxml $vmn" >&2
 				fi
 				continue
 			fi
@@ -1124,11 +1126,11 @@ vmport_available() {
 		vmdialogradiolist vm-console $resf && _vmname=$(sed 's/"//g' $resf)
 		[[ -z "$_vmname" ]] && { return; }
 	}
-	local _addr=$(vm ifaddr "$_vmname"|head -1)
+	local _addr=$(vmifaddr "$_vmname"|head -1)
 	if [[ "$WAIT" = yes ]]; then
 		while [[ -z "$_addr" ]]; do
 			sleep 8
-			_addr=$(vm ifaddr "$_vmname"|head -1)
+			_addr=$(vmifaddr "$_vmname"|head -1)
 		done
 		port-available.sh "$_addr" $_port -w
 	else
