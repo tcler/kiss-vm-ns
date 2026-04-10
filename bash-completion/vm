@@ -10,8 +10,6 @@ is_available_url() {
 	local _url=$1
 	curl --connect-timeout 4 -m 4 --output /dev/null -k --silent --head --fail $_url &>/dev/null
 }
-is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
-is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 
 option_arg_complete() {
     local hasarg=$1

@@ -233,8 +233,6 @@ xrc() { chkrc "$@"; }
 tcnt() { echo -e "\n{KISS.TEST COUNT} $KISS_FAIL_CNT test fail, $KISS_PASS_CNT test pass."; }
 
 is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail "$1" &>/dev/null; }
-is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
-is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 
 _gen_distro_dir_name() {
 	local distro=$1 arch=$2 suffix=$3

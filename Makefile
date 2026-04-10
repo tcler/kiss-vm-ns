@@ -21,8 +21,6 @@ ifeq (, $(shell which sudo))
 	SUDO=
 endif
 
-HTTP_PROXY := $(shell grep -q redhat.com /etc/resolv.conf && echo "squid.redhat.com:8080")
-
 i in ins inst install: _isroot kiss_utils
 	@-test -f $(_dnfconf) && { grep -q ^metadata_expire= $(_dnfconf) 2>/dev/null || echo metadata_expire=7d >>$(_dnfconf); }
 	@$(SUDO) rm -f $(_bin)/install-sbopkg.sh /usr/local/bin/port-available.sh
@@ -50,10 +48,10 @@ i in ins inst install: _isroot kiss_utils
 	@rm -f /etc/profile.d/nano-default-editor.*
 
 u up update:
-	https_proxy=$(HTTP_PROXY) git pull --rebase || :
+	git pull --rebase || :
 	@echo
 p pu push:
-	https_proxy=$(HTTP_PROXY) git push origin master || :
+	git push origin master || :
 	@echo
 
 kiss_utils:
