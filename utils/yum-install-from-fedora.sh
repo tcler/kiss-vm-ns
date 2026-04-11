@@ -55,12 +55,7 @@ CN|HK)
 	fedora_repo="http://mirrors.aliyun.com/fedora/releases/${FEDORA_VER}/Everything/$arch/os/"
 	;;
 esac
-grep -q redhat.com /etc/resolv.conf && {
-	fedora_repo=$(curl -Ls -o /dev/null -w %{url_effective} http://download.devel.redhat.com/released/fedora/F-${FEDORA_VER}/GOLD/Everything/${arch}/os)
-	curl -Ls $fedora_repo | grep -q 404 && fedora_repo=${fedora_repo/GOLD/Gold}
-}
 echo -e "{INFO} fedora-version: $FEDORA_VER, repo-url: $fedora_repo\npkgs: ${pkgs}"
-
 
 frepon=fedora-${FEDORA_VER}
 if [[ "$OSV" -le 7 ]]; then

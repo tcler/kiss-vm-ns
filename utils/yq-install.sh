@@ -5,9 +5,6 @@ if yq -h |& grep -q mikefarah; then
 	exit 0
 fi
 
-downhostname=download.devel.redhat.com
-LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
-
 arch=$(uname -m)
 case $arch in
 x86_64)  arch=amd64;;

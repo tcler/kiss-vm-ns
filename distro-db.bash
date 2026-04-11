@@ -5,9 +5,11 @@ _GuestARCH=${GuestARCH}; [[ "$GuestARCH" = ppc64 ]] && _GuestARCH=ppc64le;
 Country=$(timeout 2 curl -s ipinfo.io/country)
 
 #### CentOS stream and CentOS
+distroInfo[Alma-10]="https://repo.almalinux.org/almalinux/10/cloud/$_GuestARCH/images/AlmaLinux-10-GenericCloud-latest.$_GuestARCH.qcow2 https://repo.almalinux.org/almalinux/10/BaseOS/$_GuestARCH/os/"
 distroInfo[Alma-9]="https://repo.almalinux.org/almalinux/9/cloud/$_GuestARCH/images/AlmaLinux-9-GenericCloud-latest.$_GuestARCH.qcow2 https://repo.almalinux.org/almalinux/9/BaseOS/$_GuestARCH/os/"
 distroInfo[Alma-8]="https://repo.almalinux.org/almalinux/8/cloud/$_GuestARCH/images/AlmaLinux-8-GenericCloud-latest.$_GuestARCH.qcow2 https://repo.almalinux.org/almalinux/8/BaseOS/$_GuestARCH/os/"
 
+distroInfo[Rocky-10]="https://mirrors.sdu.edu.cn/rocky/10/images/$_GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/10/BaseOS/$_GuestARCH/os"
 distroInfo[Rocky-9]="https://mirrors.sdu.edu.cn/rocky/9/images/$_GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/9/BaseOS/$_GuestARCH/os"
 distroInfo[Rocky-8]="https://mirrors.sdu.edu.cn/rocky/8/images/$_GuestARCH/%%GenericCloud.*.qcow2 https://mirrors.sdu.edu.cn/rocky/8/BaseOS/$_GuestARCH/os"
 
@@ -88,36 +90,3 @@ CN|HK)
 	distroInfo[FreeBSD-13.4]="https://mirrors.aliyun.com/freebsd/releases/VM-IMAGES/13.4-RELEASE/${GuestARCH/x86_64/amd64}/Latest/FreeBSD-13.4-RELEASE-${GuestARCH/x86_64/amd64}.qcow2.xz"
 	;;
 esac
-
-#### only available in intranet
-is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf; }
-[[ -z "$Intranet" ]] && is_rh_intranet2 && Intranet=yes
-if [[ "$Intranet" = yes ]]; then
-	guestARCH=$(case $GuestARCH in
-		(x86_64) echo amd64;;
-		(aarch64) echo arm64-aarch64;;
-		(riscv64|riscv) echo riscv-riscv64;;
-		esac
-	)
-	distroInfo[FreeBSD-14.1-zfs]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.1/FreeBSD-14.1-RELEASE-${guestARCH}-zfs.qcow2.xz"
-	distroInfo[FreeBSD-14.1]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.1/FreeBSD-14.1-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-14.0-zfs]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}-zfs.qcow2.xz"
-	distroInfo[FreeBSD-14.0]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-14.0/FreeBSD-14.0-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-13.4]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.4/FreeBSD-13.4-RELEASE-${guestARCH}.qcow2.xz"
-	distroInfo[FreeBSD-13.3]="$LOOKASIDE_BASE_URL/vm-images/FreeBSD-13.3/FreeBSD-13.3-RELEASE-${guestARCH}.qcow2.xz"
-
-	if [[ "$GuestARCH" = x86_64 ]]; then
-		for _d in RHEL-7.{1..2} RHEL-6.{0..10} RHEL5-Server-U{10..11}; do
-			distroInfo[$_d]="$LOOKASIDE_BASE_URL/vm-images/$_d/"
-		done
-		distroInfo[Windows-server-2022]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win2022-Evaluation.iso"
-		distroInfo[Windows-server-2019]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win2019-Evaluation.iso"
-		distroInfo[Windows-server-2016]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win2016-Evaluation.iso"
-		distroInfo[Windows-server-2012r2]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win2012r2-Evaluation.iso"
-		distroInfo[Windows-11]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win11-Evaluation.iso"
-		distroInfo[Windows-10]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win10-Evaluation.iso"
-		distroInfo[Windows-7]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win7-cn.iso"
-		distroInfo[Windows-7cn]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win7-cn.iso"
-		distroInfo[Windows-7en]="cdrom:$LOOKASIDE_BASE_URL/windows-images/Win7-en.iso"
-	fi
-fi

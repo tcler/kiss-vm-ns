@@ -27,8 +27,6 @@ trap_try_newcpu() {
 }
 trap trap_try_again SIGUSR2
 trap trap_try_newcpu SIGALRM
-downhostname=download.devel.redhat.com
-LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 #<================ for recall self if something happen ================
 
 P=$0; [[ $0 = /* ]] && P=${0##*/}
@@ -60,14 +58,13 @@ if [[ $VMUSER = root ]]; then
 	mkdir -p /home/root
 	VMSHOME=/home/root/VMs
 	ImagePath=/home/root/myimages
-	#in case /root is a symlink and the target not exist. it happens in bootc image
+	#in case /root is a symlink and the target not exist. //bootc image
 	mkdir -p /$(readlink /root)
 fi
 
 VM_DOMAIN=$DEFAULT_VM_DOMAIN
 RuntimeTmp=/tmp/vm-$$
 INTERACT=yes
-Intranet=yes
 VIRT_READY=unkown
 _MSIZE=2048M
 DSIZE=64
@@ -1943,9 +1940,6 @@ COMM
 }
 
 is_available_url() { local _url=$1; curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null; }
-is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
-is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
-is_rh_intranet2 || Intranet=no
 
 archpat() {
 	local _arch=$1 pat=
@@ -1995,218 +1989,6 @@ getimageurls() {
 	return $rc
 }
 
-# env and functions that work in Intranet
-if [[ $Intranet = yes ]]; then
-	export RESTRAINT=yes
-	install_distro_compose() {
-		local _file=distro-compose
-		command -v $_file >/dev/null || {
-			_url=$bkrClientImprovedUrl/utils/$_file
-			mkdir -p ~/bin && curl_download ~/bin/$_file $_url && chmod +x ~/bin/$_file
-		}
-	}
-	fetch_distro_list() {
-		install_distro_compose
-		distro-compose --distrolist
-	}
-	fetch_distro_trees() {
-		local distro=$1
-		local arch=$2
-		local dtrees=
-
-		#dtrees=$(bkr distro-trees-list --name "$distro" --arch "$arch"|grep -E '(released|compose)')
-		install_distro_compose
-		dtrees=$(distro-compose -d "$distro" --distrotrees|grep -E "(released|compose).*${arch}")
-
-		[[ -z "$dtrees" ]] &&
-			dtrees=$(distro-compose -d "$distro" --distrotrees|grep -E "(Everything).*${arch}")
-		echo "$dtrees"
-	}
-	distro2location() {
-		local distro=$1
-		local variant=${2:-Server}
-		local arch=$GuestARCH
-
-		distrotrees=$(fetch_distro_trees $distro $arch)
-		[[ -z "$distrotrees" ]] && return 1
-
-		urls=$(echo "$distrotrees" | awk '$NF ~ /https?:.*'"(${variant}|BaseOS|Everything)"'/{print $NF}' | sort -u)
-		echo -e "\n====\n$urls\n====\n" >&2
-
-		fastesturl.sh $urls
-	}
-
-	distro2repos() {
-		local distro=$1
-		local url=$2
-		local Repos=()
-		local _cdnhost="cdn.stage.fedorahat.com"
-
-		if ! is_available_url $url; then
-			return 1
-		fi
-
-		shopt -s nocasematch
-		case ${distro,,} in
-		fedora*)
-			Repos+=(
-				beaker-harness:http://download.devel.redhat.com/beakerrepos/harness/Fedora\$releasever/
-				nbeaker-harness:${LOOKASIDE_BASE_URL}/beaker-harness-active/fedora\$releasever
-			)
-			;;
-		rhel-5*|rhel5*)
-			{ read; read os arch verytag verxosv _; } < <(tac -s ' ' <<<"${url//\// }")
-			debug_url=${url/\/os/\/debug}
-			osv=${verxosv#RHEL-5-}
-			Repos+=(
-				Server:${url}/Server
-				Cluster:${url}/Cluster
-				ClusterStorage:${url}/ClusterStorage
-				Client:${url}/Client
-				Workstation:${url}/Workstation
-
-				${osv}-debuginfo:${debug_url}
-			)
-			;;
-
-		rhel-6*|rhel6*|centos6*|centos-6*)
-			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
-			debug_url=${url/\/os/\/debug}
-			Repos+=(
-				${osv}:${url}
-				${osv}-SAP:${url/$osv/${osv}-SAP}
-				${osv}-SAPHAHA:${url/$osv/${osv}-SAPHAHA}
-
-				${osv}-debuginfo:${debug_url}
-				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
-				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-				extras:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/6/6Server/$GuestARCH/extras/os
-				cdn_os:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/6/6Server/$GuestARCH/os
-			)
-			;;
-		rhel-7*|rhel7*|centos7*|centos-7*)
-			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
-			debug_url=${url/\/os/\/debug\/tree}
-			Repos+=(
-				${osv}:${url}
-				${osv}-optional:${url/$osv/${osv}-optional}
-				${osv}-NFV:${url/$osv/${osv}-NFV}
-				${osv}-RT:${url/$osv/${osv}-RT}
-				${osv}-SAP:${url/$osv/${osv}-SAP}
-				${osv}-SAPHAHA:${url/$osv/${osv}-SAPHAHA}
-
-				${osv}-debuginfo:${debug_url}
-				${osv}-optional-debuginfo:${debug_url/$osv/${osv}-optional}
-				${osv}-NFV-debuginfo:${debug_url/$osv/${osv}-NFV}
-				${osv}-RT-debuginfo:${debug_url/$osv/${osv}-RT}
-				${osv}-SAP-debuginfo:${debug_url/$osv/${osv}-SAP}
-				${osv}-SAPHAHA-debuginfo:${debug_url/$osv/${osv}-SAPHAHA}
-				extras:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/7Server/$GuestARCH/extras/os
-				cdn_os:https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/7Server/$GuestARCH/os
-				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux7
-				nbeaker-harness:${LOOKASIDE_BASE_URL}/beaker-harness-active/rhel-7
-			)
-			;;
-		rhel-8*|rhel8*)
-			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
-			debug_url=${url/\/os/\/debug\/tree}
-			read rtype distro <<< $(awk -F/+ '{
-				for (i=3;i<NF;i++) { if ($(i+1) ~ /RHEL-/) {
-					d=$(i+1)
-					if (d ~ /RHEL-[0-9]$/) d=$(i+2)
-					print($i, d); break }
-				}
-			}' <<<"$url")
-			read prefix ver time <<< ${distro//-/ }
-			[[ "$rtype" =~ rel-eng|nightly ]] || rtype=nightly
-			verx=8
-			Repos+=(
-				BaseOS:${url}
-				AppStream:${url/BaseOS/AppStream}
-				CRB:${url/BaseOS/CRB}
-				HighAvailability:${url/BaseOS/HighAvailability}
-				NFV:${url/BaseOS/NFV}
-				ResilientStorage:${url/BaseOS/ResilientStorage}
-				RT:${url/BaseOS/RT}
-				SAP:${url/BaseOS/SAP}
-				SAPHANA:${url/BaseOS/SAPHANA}
-
-				BaseOS-debuginfo:${debug_url}
-				AppStream-debuginfo:${debug_url/BaseOS/AppStream}
-				CRB-debuginfo:${debug_url/BaseOS/CRB}
-				HighAvailability-debuginfo:${debug_url/BaseOS/HighAvailability}
-				NFV-debuginfo:${debug_url/BaseOS/NFV}
-				ResilientStorage-debuginfo:${debug_url/BaseOS/ResilientStorage}
-				RT-debuginfo:${debug_url/BaseOS/RT}
-				SAP-debuginfo:${debug_url/BaseOS/SAP}
-				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
-				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
-				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux8
-				nbeaker-harness:${LOOKASIDE_BASE_URL}/beaker-harness-active/rhel-8
-			)
-			;;
-		rhel-9*|rhel9*|rhel-1[0-9]*|rhel1[0-9]*)
-			{ read; read os arch osv ver _; } < <(tac -s ' ' <<<"${url//\// }")
-			debug_url=${url/\/os/\/debug\/tree}
-			read rtype distro <<< $(awk -F/+ '{
-				for (i=3;i<NF;i++) { if ($(i+1) ~ /RHEL-/) {
-					d=$(i+1)
-					if (d ~ /RHEL-[0-9]+$/) d=$(i+2)
-					print($i, d); break }
-				}
-			}' <<<"$url")
-			read prefix ver time <<< ${distro//-/ }; [[ "$distro" =~ ^[0-9]+\. ]] && ver=$distro
-			[[ "$rtype" =~ rel-eng|nightly ]] || rtype=nightly
-			read verx _ <<<${ver//./ }
-			Repos+=(
-				BaseOS:${url}
-				AppStream:${url/BaseOS/AppStream}
-				CRB:${url/BaseOS/CRB}
-				HighAvailability:${url/BaseOS/HighAvailability}
-				NFV:${url/BaseOS/NFV}
-				ResilientStorage:${url/BaseOS/ResilientStorage}
-				RT:${url/BaseOS/RT}
-				SAP:${url/BaseOS/SAP}
-				SAPHANA:${url/BaseOS/SAPHANA}
-
-				BaseOS-debuginfo:${debug_url}
-				AppStream-debuginfo:${debug_url/BaseOS/AppStream}
-				CRB-debuginfo:${debug_url/BaseOS/CRB}
-				HighAvailability-debuginfo:${debug_url/BaseOS/HighAvailability}
-				NFV-debuginfo:${debug_url/BaseOS/NFV}
-				ResilientStorage-debuginfo:${debug_url/BaseOS/ResilientStorage}
-				RT-debuginfo:${debug_url/BaseOS/RT}
-				SAP-debuginfo:${debug_url/BaseOS/SAP}
-				SAPHANA-debuginfo:${debug_url/BaseOS/SAPHANA}
-				Buildroot:http://$downhostname/rhel-$verx/$rtype/BUILDROOT-$verx/latest-BUILDROOT-$verx-RHEL-$verx/compose/Buildroot/$arch/os/
-				beaker-harness:http://$downhostname/beakerrepos/harness/RedHatEnterpriseLinux${verx}
-				nbeaker-harness:${LOOKASIDE_BASE_URL}/beaker-harness-active/rhel-${verx}
-			)
-			[[ "$verx" = 10 ]] && Repos+=(
-				Buildroot-10b:http://$downhostname/rhel-$verx/nightly/BUILDROOT-10-Public-Beta/latest-BUILDROOT-10-RHEL-10/compose/Buildroot/$arch/os/
-				bh-centos-s10:http://$downhostname/beakerrepos/harness/CentOSStream10
-			)
-			;;
-		esac
-		shopt -u nocasematch
-		: <<-\COMM
-		[[ "$RESTRAINT" = yes ]] && {
-			_latest=$(curl -sk https://beaker.engineering.redhat.com/repos/ | tac | sed -rn '/.*>([0-9]+\/)<.*/{s//\1/;p;q}')
-			Repos+=(beaker-task:https://beaker.engineering.redhat.com/repos/$_latest)
-		}
-		COMM
-
-		for repo in "${Repos[@]}"; do
-			read _name _url <<<"${repo/:/ }"
-			if is_available_url $_url || { sleep 1; is_available_url $_url; }; then
-				echo "$repo"
-			else
-				echo -e "\033[31m[VM:WARN] this url not available: $_url\033[0m" >&2
-			fi
-		done
-	}
-fi
-
 Usage() {
 	cat <<-'EOF'
 	Usage:
@@ -2225,9 +2007,6 @@ Usage() {
 	                 #will auto search url according distro name, if url omitted
 	  -C, -F, --usb-cd <iso/image path>
 	                 #create VM by using ISO or image file
-	  --bootc=[to=|cmdlurl=]
-	                 #to=boot-image-tag, cmdurl='a url of script that will run in Containerfile'
-	  --bootc-cmd='command inline that will run in Containerfile'
 	  --ks <file>    #kickstart file, will auto generate according distro name if omitting
 	  --ks-append <kickstart file fragment>
 	                 #append to default kickstart file that auto generated by kiss-vm
@@ -2251,9 +2030,6 @@ Usage() {
 	                 #for sub-cmd vm console: force to connect console
 	  -p, --pkginstall <pkgs>
 	                 #pkgs in default system repo, install by yum/apt/zypper/pacman
-	  -b, --brewinstall <args>
-	                 #pkgs in brew system or specified by url, install by internal brewinstall.sh
-	                  `-> just could be used in Intranet
 	  --time-server, --clock-server <clock/time/ntp server>
 	                 #see also: https://gist.github.com/mutin-sa/eea1c396b1e610a2da1e5550d94b0453
 	                  `-> now only for Windows Guest
@@ -2472,24 +2248,7 @@ Usage() {
 	  --win-if-model <> #change default windows if model(e1000): virtio,rtl8139
 
 	EOF
-	[[ "$Intranet" = yes ]] && cat <<-EOF
-	Examples for create vm from distro-db (Intranet):
-	  $P create # will enter a TUI show you all available distros that could auto generate source url
-	  $P create RHEL-7.7                           # install RHEL-7.7 from cloud-image(by default)
-	  $P create RHEL-6.10 -L                       # install RHEL-6.10 from Location(by -L option)
 
-	  $P create RHEL-8.1.0 -f -p "vim wget git"    # -f force install VM and ship pkgs: vim wget git
-	  $P create RHEL-8.1.0 -brewinstall 23822847   # ship brew scratch build pkg (by task id)
-	  $P create RHEL-8.1.0 -brewinstall kernel-4.18.0-147.8.el8  # ship brew build pkg (by build name)
-	  $P create RHEL-8.1.0 -brewinstall "lstk -debug"            # ship latest brew build release debug kernel
-	  $P create RHEL-8.1.0 -brewinstall "upk -debug"             # ship latest brew build upstream debug kernel
-	  $P create RHEL-8.1.0 --nvdimm "511 1022+2"                 # add two nvdimm device
-	  $P create RHEL-8.3.0 --nvme "size=32 size=16,format=raw"   # add two nvme device
-	  $P create rhel-8.2.0%                        # nightly 8.2 # fuzzy search distro: ignore-case
-	  $P create rhel-8.2*-????????.?               # rtt 8.2     # - and only support glob * ? syntax, and SQL %(same as *)
-	  $P create rhel-8.2% -nested-kvm-on -msize=\$((8*1024)) -dsize=120  # enable hyper-v on guest
-
-	EOF
 	cat <<-EOF
 	Examples for create vm from distro-db (Internet):
 	  $P create # will enter a TUI show you all available distros that could auto generate source url
@@ -2588,8 +2347,6 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:g::b:p:I::i:rvdx::Pqw:: \
 	--long user: \
 	--long enable-nested-kvm --long enable-nested-vm \
 	--long debug \
-	--long bootc:: \
-	--long bootc-cmd: \
 	--long ks-fstype: \
 	--long ks: \
 	--long ks-pkgs: \
@@ -2604,7 +2361,6 @@ _at=`getopt -o hu:d:m:L::l:C:F:fn:g::b:p:I::i:rvdx::Pqw:: \
 	--long vmname: \
 	--long genimage:: \
 	--long xzopt: \
-	--long brewinstall: \
 	--long pkginstall: \
 	--long time-server: --long clock-server: \
 	--long geturl \
@@ -2713,14 +2469,6 @@ _netarg() {
 	if [[ -z "$arg" ]]; then arg=model=$DEFAULT_IF_MODEL; elif [[ "$arg" != *=* ]]; then arg=model=$arg; fi;
 	echo -n "$arg"
 }
-parseBootcArg() {
-	for arg in ${1//,/ }; do
-		case $arg in
-		(to=*) bootcTo=${arg#*=};;
-		(cmdurl=*) ScriptUrl=${arg#*=};;
-		esac
-	done
-}
 
 while true; do
 	case "$1" in
@@ -2733,8 +2481,6 @@ while true; do
 	--usb-cd)  InstallType=cdrom_image; Isourl=$2; CDROM_BUS_TYPE=usb; shift 2;;
 	-L|-l)     InstallType=location; _url=${2#=}; read Location BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
 	-I|-i)     InstallType=import; _url=${2#=}; read Imageurl BOOT_DISK_ATTRS <<<"${_url/,/ }"; shift 2;;
-	--bootc)   BOOTC=yes; INTERACT=no; parseBootcArg "${2}"; shift 2;;
-	--bootc-cmd) BOOTC=yes; INTERACT=no; bootcCmd=${2}; shift 2;;
 	-P|--pxe)  InstallType=pxe; shift 1;;
 	--to-disk) TO_DISK="$(readlink -f "$2")"; shift 2;;
 	--diskless) DISKLESS=yes; shift 1;;
@@ -2753,7 +2499,6 @@ while true; do
 	-g|--genimage)    GenerateImage=yes; GenImageSuffix=$2; shift 2;;
 	--geturl)         OnlyGetUrl=yes; shift 1;;
 	--getvmname)      OnlyGetVMName=yes; shift 1;;
-	-b|--brewinstall) BPKGS+=" ${2//,/ }"; shift 2;;
 	-p|--pkginstall)  PKGS+=" ${2//,/ }"; shift 2;;
 	--time-server|--clock-server) TIME_SERVER="${2}"; shift 2;;
 	--osv|--os-variant) VM_OS_VARIANT="$2"; shift 2;;
@@ -2898,10 +2643,6 @@ done
 
 DownloadImagePath=${DownloadImagePath:-$ImagePath/download}
 
-[[ "$BOOTC" = yes && $Intranet = no ]] && {
-	echo -e "{VM:ERROR} Now bootc option only support in redhat-intranet" >&2
-	exit 1
-}
 [[ ${#WIN_HOSTNAME} -gt 15 ]] && {
 	echo -e "{VM:ERROR} length of windows hostname($WIN_HOSTNAME) should < 16" >&2
 	exit 1
@@ -3376,40 +3117,11 @@ owndbfile=$perConfDir/distro-db.bash
 shopt -s extglob
 decodeDistro() {
 	local d="$1"
-	if [[ "$Intranet" = yes ]]; then
-		if [[ "$BOOTC" == yes ]]; then
-			if [[ "$d" =~ ^[0-9.]+n?$ ]]; then
-				local tagpat=RHEL-${d%n}.*-$(archpat $GuestARCH)
-				echo "{debug} expanding DISTRO pattern: $d (bootc mode) ..." >&2
-				bootcTo=$(skopeo list-tags --retry-times 16 docker://images.paas.redhat.com/bootc/rhel-bootc |
-					jq -r '.Tags[]' | grep -E "$tagpat" | tail -1)
-				Distro=$(skopeo inspect --retry-times 16 docker://images.paas.redhat.com/bootc/rhel-bootc:$bootcTo |
-					jq -r '.Labels["redhat.compose-id"]')
-				if [[ -z "$Distro" ]]; then
-					echo "{warn} expanding DISTRO pattern: $d fail" >&2
-				fi
-			fi
-		else
-			echo "{debug} expanding DISTRO pattern: $d ..." >&2
-			case ${d%[rn]} in
-			(5) Distro=RHEL5-Server-U11;; (6) Distro=RHEL-6.10;;
-			(7) Distro="RHEL-7.9-updates-????????.[0-9]+";;
-			(7.+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
-			(8|9) Distro="rhel-${d%[rn]}.[0-9]+.[0-9]+-????????.[0-9]+";;
-			(1[0-9]) Distro="rhel-${d%[rn]}.[0-9]+-????????.[0-9]+";;
-			(@(8|9).+([0-9])) Distro="RHEL-${d}.[0-9]-updates-????????.[0-9]+";;
-			(@(1[0-9]).+([0-9])) Distro="RHEL-${d}-updates-????????.[0-9]+";;
-			(fedora) Distro="Fedora-[0-9]+";;
-			esac
-			[[ ${d} = *r ]] && case ${d%r} in (8|9|1[0-9]) Distro="rhel-${d%r}.[0-9]+.[0-9]+";; esac
-		fi
-	else
-		case ${d%[rn]} in
-		(6|7) Distro="CentOS-${d%[rn]}";;
-		(8|9|1[0-9]) Distro="CentOS-${d%[rn]}-stream";;
-		(fedora) source $dbfile; Distro="f$lstv";;
-		esac
-	fi
+	case ${d%[rn]} in
+	(6|7) Distro="CentOS-${d%[rn]}";;
+	(8|9|1[0-9]) Distro="CentOS-${d%[rn]}-stream";;
+	(fedora) source $dbfile; Distro="f$lstv";;
+	esac
 }
 [[ -z "$Distro" ]] && Distro=$1
 [[ $Distro =~ ^[0-9]+(\.[0-9]+)?[rn]?$ || $Distro = fedora ]] && { decodeDistro $Distro; }
@@ -3424,18 +3136,14 @@ fi
 
 LANG=C
 declare -A distroInfo
-if [[ $Intranet = yes ]]; then
-	export TIME_SERVER=${TIME_SERVER:-clock.redhat.com}
-else
-	baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
+baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
 
-	#https://gist.github.com/mutin-sa/eea1c396b1e610a2da1e5550d94b0453
-	export TIME_SERVER=${TIME_SERVER:-3.fedora.pool.ntp.org}
-	#export TIME_SERVER=${TIME_SERVER:-time.windows.com}
-	#export TIME_SERVER=${TIME_SERVER:-0.fedora.pool.ntp.org}
-	#export TIME_SERVER=${TIME_SERVER:-1.fedora.pool.ntp.org}
-	#export TIME_SERVER=${TIME_SERVER:-2.fedora.pool.ntp.org}
-fi
+#https://gist.github.com/mutin-sa/eea1c396b1e610a2da1e5550d94b0453
+export TIME_SERVER=${TIME_SERVER:-3.fedora.pool.ntp.org}
+#export TIME_SERVER=${TIME_SERVER:-time.windows.com}
+#export TIME_SERVER=${TIME_SERVER:-0.fedora.pool.ntp.org}
+#export TIME_SERVER=${TIME_SERVER:-1.fedora.pool.ntp.org}
+#export TIME_SERVER=${TIME_SERVER:-2.fedora.pool.ntp.org}
 
 [[ -f $dbfile ]] && {
 	echo "{VM:INFO} load distro-db file $dbfile ..."
@@ -3457,7 +3165,6 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 [[ -z "$Distro" ]] && {
 	if [[ -z "$Location" && -z "$Imageurl" && -z "$Isourl" ]]; then
 		distropatternInter=$RuntimeTmp/distroPatternInternet
-		distropatternIntra=$RuntimeTmp/distroPatternIntranet
 		distrolist=$RuntimeTmp/distroList
 		dialogres=$RuntimeTmp/dialogRes
 		touch $distropatternInter $distropatternIntra
@@ -3466,22 +3173,10 @@ distroSelectNull() { tput cup $(tput lines) 0; echo -e "\n{VM:WARN} ^^^ you didn
 		for dname in "${!distroInfo[@]}"; do echo "$dname"; done | sort -rV >>$distrolist
 
 		dialogTitle="vm-create"
-		[[ "$Intranet" = yes ]] && {
-			echo -e "Fedora\nRHEL-10\nRHEL-9\nRHEL-8\nRHEL-7\nRHEL-6\nRHEL5" >>$distropatternIntra
-			fetch_distro_list >>$distrolist
-			dialogTitle+=" Intranet"
-		}
-
 		familys=$(sed -e 's/.*/"&" "" 1/' $distropatternIntra $distropatternInter)
 		dialog --backtitle "$dialogTitle" --radiolist "please selet distro family/pattern:" 22 40 20 $familys 2>$dialogres || { distroSelectNull; exit 0; }
 		pattern=$(head -n1 $dialogres|sed 's/"//g')
 		dList=$(sed -e '/ /d' -e 's/.*/"&" "" 1/' $distrolist|grep -E "${pattern/fedora/f[0-9]+}")
-		[[ "$Intranet" = yes ]] && grep -F "$pattern" $distropatternIntra && {
-			dialog --title "If include nightly build" \
-				--backtitle "Do you want nightly build distros?" \
-				--yesno "Do you want nightly build distros?" 7 60
-			[[ $? = 1 ]] && dList=$(echo "$dList"|grep -E -v '\.[nd]\.[0-9]+"')
-		}
 		dialog --backtitle "$dialogTitle" --radiolist "please select distro:" 30 60 28 $dList 2>$dialogres || { distroSelectNull; exit 0; }
 		Distro=$(head -n1 $dialogres|sed 's/"//g')
 		[[ -z "$Distro" ]] && { distroSelectNull; exit 0; }
@@ -3697,42 +3392,9 @@ if [[ "$InstallType" = import ]]; then
 				: #do nothing
 			fi
 		fi
-
-		if [[ $Intranet = yes ]]; then
-			if [[ $Distro = RHEL-* || $Distro = Fedora-* ]]; then
-				Location=$(distro2location $Distro 2>/dev/null)
-			fi
-		fi
 	else
-		if [[ $Intranet != yes ]]; then
-			echo "{VM:WARN} can not find imageUrl of '$Distro' in database." >&2
-			cleanup_and_exit 1
-		else
-			echo "{VM:INFO} getting fastest location of $Distro ..." >&2
-			Location=$(distro2location $Distro)
-			[[ -z "$Location" ]] && {
-				echo "{VM:WARN} can not find location info of '$Distro'" >&2
-				cleanup_and_exit 1
-			}
-			echo -e " -> $Location"
-			echo "{VM:INFO} getting image url according location url ^^^ ..." >&2
-			imageLocation=${Location/\/os\//\/images\/}
-			[[ $Distro = Fedora-* ]] &&
-				imageLocation=$(echo "$imageLocation" | sed -r 's;/[Ss]erver|Everything/;/Cloud/;')
-			is_available_url $imageLocation ||
-				imageLocation=${imageLocation/Cloud/CloudImages}
-			read Imageurl _ < <(getimageurls $imageLocation "${_Imagepattern}"|sort -Vr)
-			if [[ $? != 0 ]]; then
-				if [[ "${DOWNLOAD_ONLY}" = yes ]]; then
-					echo "{VM:WARN} can not find imageUrl of '${Distro}:${GuestARCH}' in database." >&2
-					cleanup_and_exit 1 &>/dev/null
-				else
-					echo "{VM:INFO} can not find imageUrl of '${Distro}:${GuestARCH}' in database, switching to Location mode" >&2
-				fi
-				InstallType=location
-				Imageurl=
-			fi
-		fi
+		echo "{VM:WARN} can not find imageUrl of '$Distro' in database." >&2
+		cleanup_and_exit 1
 	fi
 
 	# if not swithed to Location mode
@@ -3759,11 +3421,6 @@ fi
 
 if [[ "$InstallType" = location ]]; then
 	_MSIZE=2048M
-
-	if [[ $Intranet = yes && -z "$Location" ]]; then
-		echo "{VM:INFO} getting fastest location of $Distro ..." >&2
-		Location=$(distro2location $Distro)
-	fi
 
 	if [[ -n "$Location" ]]; then
 		if [[ -n "$OnlyGetUrl" ]]; then
@@ -3849,16 +3506,6 @@ fi
 	echo -e 'y\n' | ssh-keygen -q -t ecdsa -f ~/.ssh/id_ecdsa -N ''
 }
 
-distro2bootcTag() {
-	local _distro=$1
-	local archpat=$(archpat $GuestARCH)
-	skopeo list-tags --retry-times 16 docker://images.paas.redhat.com/bootc/rhel-bootc |
-		jq -r '.Tags[]' | grep -E "${_distro}-${archpat}" | tail -1
-}
-if [[ "$BOOTC" = yes && -z "$bootcTo" ]]; then
-	bootcTo=$(distro2bootcTag $Distro)
-fi
-
 kskey=inst.ks
 case ${Distro,,} in
 rhel-5*|rhel5*|centos5*|centos-5*)
@@ -3903,14 +3550,6 @@ else
 	defaultFirstNetOpt="--network=type=direct,source=$srcif,source_mode=$MacvtapMode"
 	is_bridge $srcif && defaultFirstNetOpt="--network=type=bridge,source=$srcif"
 	is_wireless $srcif && defaultFirstNetOpt="--network=network=kissaltnet"
-	if [[ $Intranet = yes && $defaultFirstNetOpt = *=${srcif}* ]]; then
-		[[ "$lerhel7" = yes ]] && changeOrder=yes
-		ping -c 2 ipa.corp.redhat.com -I $srcif || {
-			changeOrder=yes
-			echo "{debug} changeOrder NIC"
-		}
-	fi
-
 	if [[ "$InstallType" = pxe ]]; then
 		NETWORK_OPTS=("--network=type=direct,source=$srcif,source_mode=$MacvtapMode,model=${DEFAULT_IF_MODEL}")
 		is_bridge $srcif && NETWORK_OPTS=("--network=type=bridge,source=$srcif,model=${DEFAULT_IF_MODEL}")
@@ -4158,31 +3797,6 @@ if [[ "$InstallType" = location ]]; then
 		yum --setopt=strict=0 install -y wget tmux ${PKGS} ipcalc 2>/dev/null
 
 		END
-		if [[ $Intranet = yes ]]; then
-		cat <<-END >>$postscript
-		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] update ca trust ..."
-		(cd /etc/pki/ca-trust/source/anchors && curl -Ls --remote-name-all https://certs.corp.redhat.com/{2022-IT-Root-CA.pem,2015-IT-Root-CA.pem,ipa.crt,mtls-ca-validators.crt,RH-IT-Root-CA.crt} && update-ca-trust)
-
-		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] getting taskfetch tools and brew-install $BPKGS ..."
-		(cd /usr/bin && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/utils/{brewinstall.sh,taskfetch.sh} $baseUrl/utils/srcrpmbuild.sh && chmod +x brewinstall.sh taskfetch.sh srcrpmbuild.sh)
-		brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot
-		[[ "$TASK_FETCH" = yes ]] && taskfetch.sh --install-deps
-
-		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] systemctl start restraintd ..."
-		yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd
-		_rpath=share/restraint/plugins/task_run.d
-		(cd /usr/\$_rpath && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/\$_rpath/{25_environment,27_task_require} && chmod a+x *)
-		(cd /usr/\${_rpath%/*}/completed.d && curl -k -Ls -O $bkrClientImprovedUrl/\${_rpath%/*}/completed.d/85_sync_multihost_tasks && chmod a+x *)
-
-		END
-		elif [[ "$TASK_FETCH" = yes ]]; then
-		cat <<-END >>$postscript
-		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] getting taskfetch tools ..."
-		(cd /usr/bin && curl -k -Ls -O $bkrClientImprovedUrl/utils/taskfetch.sh && chmod +x taskfetch.sh)
-		taskfetch.sh --install-deps
-
-		END
-		fi
 
 		[[ "$fips" = yes ]] && cat <<-END >>$postscript
 		echo "[\$USER@\${HOSTNAME} \${HOME} \$(pwd)] enable fips ..."
@@ -4453,16 +4067,13 @@ elif [[ "$InstallType" = import ]]; then
 
 		[[ "$fips" = yes ]] && FIPS_OPT=--fips
 		[[ "$kdump" = yes ]] && KDUMP_OPT=--kdump
-		[[ $Intranet = yes && -n "$Location" ]] && {
-			REPO_OPTS=$(distro2repos $Distro $Location | sed -e '/cdn_os:/d' -e 's/^/--repo /')
-		}
 		[[ "$DEBUG" = yes ]] && DEBUG_OPT=--debug
 		if [[ "$NO_SSHKEY" = yes ]]; then
-			cloud-init-iso-gen.sh -d $Distro $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" \
+			cloud-init-iso-gen.sh -d $Distro $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN \
 				-p "$PKGS" $DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS" \
 				--default-dns=$defaultDNS
 		else
-			cloud-init-iso-gen.sh -d $Distro $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN -b "$BPKGS" \
+			cloud-init-iso-gen.sh -d $Distro $cloudinitiso -hostname ${vmhostname}.$VM_DOMAIN \
 				-p "$PKGS" $DEBUG_OPT $REPO_OPTS $_REPO_OPTS $FIPS_OPT $KDUMP_OPT --kopts="$KOPTS" \
 				--sshkeyf ${VMUSERHOME}/.ssh/id_rsa.pub --sshkeyf ${VMUSERHOME}/.ssh/id_ecdsa.pub \
 				--default-dns=$defaultDNS
@@ -5189,16 +4800,6 @@ if [[ "$WAIT" = yes ]]; then
 		kill_installer_tmux_session ${vmname}
 		win-env-file-gen.sh $vmname
 	}
-fi
-
-if [[ "$BOOTC" = yes ]]; then
-	vm cpto $vmname /usr/share/kiss-vm/switch2image.sh /usr/bin/kiss-update.sh /bin/
-	vm port-available $vmname 22 -w
-	vm exec -v $vmname -- "
-		export BOOTC_TO=$bootcTo KOPTS='$KOPTS' PKGS='$PKGS' BPKGS='$BPKGS' ScriptUrl='${ScriptUrl}' CMDL=${bootcCmd@Q};
-		switch2image.sh; reboot;"
-	vm port-available $vmname 22 -w
-	vm exec -v $vmname -- ostree admin status -v
 fi
 
 #only for Fedora/RHEL/CentOS/RockyLinux/AlmaLinux

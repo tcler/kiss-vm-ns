@@ -5,33 +5,24 @@
 LANG=C
 HostName=mylinux
 Repos=()
-BPKGS=
 PKGS=
-Intranet=no
-_downhostname="download.devel.fedorahat.com"
-downhostname=${_downhostname/fedora/red}
 baseUrl=https://raw.githubusercontent.com/tcler/kiss-vm-ns/master
-bkrClientImprovedUrl=https://raw.githubusercontent.com/tcler/bkr-client-improved/master
 KernelOpts=
-LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 
 is_available_url() { local _url=$1; curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail $_url &>/dev/null; }
-is_rh_intranet() { host ipa.corp.redhat.com &>/dev/null; }
-is_rh_intranet2() { grep -q redhat.com /etc/resolv.conf || is_rh_intranet; }
 
 Usage() {
 	cat <<-EOF >&2
-	Usage: $0 <iso file path> [--hostname name] [--repo name:url [--repo name:url]] [-b|--brewinstall "pkg list"] [-p|--pkginstall "pkg list"] [--kdump] [--fips] [--kopts=<args>]
+	Usage: $0 <iso file path> [--hostname name] [--repo name:url [--repo name:url]] [-p|--pkginstall "pkg list"] [--kdump] [--fips] [--kopts=<args>]
 	EOF
 }
 
-_at=`getopt -o hp:b:Dd: \
+_at=`getopt -o hp:Dd: \
 	--long help \
 	--long debug \
 	--long hostname: \
 	--long repo: \
 	--long pkginstall: \
-	--long brewinstall: \
 	--long sshkeyf: \
 	--long kdump \
 	--long fips \
@@ -47,7 +38,6 @@ while true; do
 	--hostname) HostName="$2"; shift 2;;
 	--repo) Repos+=($2); shift 2;;
 	-p|--pkginstall) PKGS="$2"; shift 2;;
-	-b|--brewinstall) BPKGS="$2"; shift 2;;
 	--sshkeyf) sshkeyf+=" $2"; shift 2;;
 	--kdump) kdump=yes; shift 1;;
 	--fips) fips=yes; shift 1;;
@@ -66,12 +56,6 @@ else
 	touch $isof
 	isof=$(readlink -f $isof)
 fi
-
-is_rh_intranet2 && {
-	Intranet=yes
-	baseUrl=${LOOKASIDE_BASE_URL}/kiss-vm-ns
-	bkrClientImprovedUrl=${LOOKASIDE_BASE_URL}/bkr-client-improved
-}
 
 sshkeyf=${sshkeyf:-/dev/null}
 tmpdir=/tmp/.cloud-init-iso-gen-$$
@@ -159,7 +143,6 @@ DNS_DOMAIN
 DNS
 )
   - cat /etc/resolv.conf
-  - ping -c 4 ipa.corp.redhat.com
   - command -v yum && yum --setopt=strict=0 update -y
   - command -v yum && yum --setopt=strict=0 install -y bash-completion curl wget vim ipcalc expect $PKGS
   -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget vim ipcalc expect network-manager $PKGS; systemctl restart NetworkManager; }
@@ -168,26 +151,6 @@ DNS
   -   command -v pacman && { pacman -S --needed --noconfirm bash-completion curl wget vim ipcalc expect networkmanager $PKGS; systemctl restart NetworkManager; }
   - echo "export DISTRO=$Distro DISTRO_BUILD=$Distro RSTRNT_OSDISTRO=$Distro" >>/etc/bashrc
   - service sshd start || systemctl start sshd
-$(
-if [[ $Intranet = yes ]]; then
-cat <<IntranetCMD
-  - (cd /etc/pki/ca-trust/source/anchors && curl -Ls --remote-name-all https://certs.corp.redhat.com/{2022-IT-Root-CA.pem,2015-IT-Root-CA.pem,ipa.crt,mtls-ca-validators.crt,RH-IT-Root-CA.crt} && update-ca-trust)
-  - command -v yum && (cd /usr/bin && curl -L -k -m 30 --remote-name-all $bkrClientImprovedUrl/utils/{brewinstall.sh,taskfetch.sh} $baseUrl/utils/srcrpmbuild.sh && chmod +x brewinstall.sh taskfetch.sh srcrpmbuild.sh) &&
-    { brewinstall.sh $(for b in $BPKGS; do echo -n "'$b' "; done) -noreboot; [[ "$TASK_FETCH" = yes ]] && taskfetch.sh --install-deps; }
-
-  - _rpath=share/restraint/plugins/task_run.d
-  - command -v yum && { yum --setopt=strict=0 install -y restraint-rhts  beakerlib && systemctl start restraintd;
-    (cd /usr/\$_rpath && curl -k -Ls --remote-name-all $bkrClientImprovedUrl/\$_rpath/{25_environment,27_task_require} && chmod a+x *);
-    (cd /usr/\${_rpath%/*}/completed.d && curl -k -Ls -O $bkrClientImprovedUrl/\${_rpath%/*}/completed.d/85_sync_multihost_tasks && chmod a+x *); }
-
-IntranetCMD
-elif [[ "$TASK_FETCH" = yes ]]; then
-cat <<TaskFetch
-  - command -v yum && (cd /usr/bin && curl -L -k -m 30 -O "$bkrClientImprovedUrl/utils/taskfetch.sh" && chmod +x taskfetch.sh) &&
-    { taskfetch.sh --install-deps; }
-TaskFetch
-fi
-)
 $(
 [[ "$fips" = yes ]] && cat <<FIPS
   - command -v yum && curl -L -k -m 30 -o /usr/bin/enable-fips.sh "$baseUrl/utils/enable-fips.sh" &&
@@ -206,10 +169,11 @@ $(
 KOPTS
 )
 $(
-[[ "$kdump" = yes || "$fips" = yes || -n "$BPKGS" || -n "$KernelOpts" ]] && cat <<REBOOT
+[[ "$kdump" = yes || "$fips" = yes || -n "$KernelOpts" ]] && cat <<REBOOT
   - reboot
 REBOOT
-[[ -z "$BPKGS" ]] && cat <<\REBOOT
+
+cat <<\REBOOT
   - command -v rpm && { rpm -q kernel-core | tail -1 | grep "$(uname -r)" || reboot; }
 REBOOT
 )

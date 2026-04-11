@@ -6,9 +6,6 @@ PROG=${0}; [[ $0 = /* ]] && PROG=${0##*/}
 SUDOUSER=${SUDO_USER:-$(whoami)}
 eval SUDOUSERHOME=~$SUDOUSER
 
-downhostname=download.devel.redhat.com
-LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
-
 # ==============================================================================
 # Parameter Processing
 # ==============================================================================

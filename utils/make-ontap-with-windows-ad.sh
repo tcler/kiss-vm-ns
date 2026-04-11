@@ -2,12 +2,8 @@
 
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
-downhostname=download.devel.redhat.com
-LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
-
 export LANG=C
-timeServer=clock.corp.redhat.com
-host $timeServer|grep -q not.found: && timeServer=2.fedora.pool.ntp.org
+timeServer=2.fedora.pool.ntp.org
 TIME_SERVER=$timeServer
 
 create-ontap-simulator-net() {
@@ -69,19 +65,8 @@ win_img_name=Win2022-Evaluation.iso
 openssh_file=OpenSSH-Win64.zip
 
 echo -e "{INFO} check if Windows image files exist ..."
-if is_rh_intranet2; then
-	rh_intranet=yes
-	win_img_url="${LOOKASIDE_BASE_URL}/windows-images/$win_img_name"
-	openssh_url="${LOOKASIDE_BASE_URL}/windows-images/$openssh_file"
-	curl-download.sh $win_img_dir/$win_img_name "$win_img_url"
-	curl-download.sh $win_img_dir/OpenSSH-Win64.zip "$openssh_url"
-fi
 if [[ ! -f "$win_img_dir/$win_img_name" || ! -f "$win_img_dir/$openssh_file" ]]; then
-	if [[ -n "$rh_intranet" ]]; then
-		echo "{Error} download '$win_img_name' and/or '$openssh_file' fail" >&2
-	else
-		echo "{Error} Windows image file '$win_img_name' and/or '$openssh_file' not found in '$win_img_dir'" >&2
-	fi
+	echo "{Error} Windows image file '$win_img_name' and/or '$openssh_file' not found in '$win_img_dir'" >&2
 	exit 1
 fi
 
@@ -120,21 +105,10 @@ ramsize=$(LANGUAGE=C free -m|awk '/Mem:/{print $2}')
 }
 
 echo -e "{INFO} check if Netapp ONTAP simulator image exist ..."
-if is_rh_intranet; then
-	rh_intranet=yes
-	ImageUrl=${LOOKASIDE_BASE_URL}/Netapp-Simulator/$ovaImage
-	LicenseFileUrl=${LOOKASIDE_BASE_URL}/Netapp-Simulator/$licenseFile
-	curl-download.sh $ontap_img_dir/$ovaImage "$ImageUrl"
-	curl-download.sh $ontap_img_dir/$licenseFile "$LicenseFileUrl"
-fi
-[[ -f "$ontap_img_dir/$ovaImage" && -f "$ontap_img_dir/$licenseFile" ]] || {
-	if [[ -n "$rh_intranet" ]]; then
-		echo "{Error} download '$ImageUrl' and/or '$LicenseFileUrl' fail" >&2
-	else
-		echo "{Error} ONTAP simulator image '$ovaImage' and/or '$licenseFile' not found in '$ontap_img_dir'" >&2
-	fi
+if [[ ! -f "$ontap_img_dir/$ovaImage" || ! -f "$ontap_img_dir/$licenseFile" ]]; then
+	echo "{Error} ONTAP simulator image '$ovaImage' and/or '$licenseFile' not found in '$ontap_img_dir'" >&2
 	exit 1
-}
+fi
 
 #-------------------------------------------------------------------------------
 #download ontap-simulator-in-kvm project

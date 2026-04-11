@@ -2,11 +2,8 @@
 
 . /usr/lib/bash/libtest || { echo "{ERROR} 'kiss-vm-ns' is required, please install it first" >&2; exit 2; }
 
-timeServer=clock.corp.redhat.com
-host $timeServer|grep -q not.found: && timeServer=2.fedora.pool.ntp.org
+timeServer=2.fedora.pool.ntp.org
 TIME_SERVER=$timeServer
-downhostname=download.devel.redhat.com
-LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 
 create-ontap-simulator-net() {
 	local netcluster=ontap2-ci  #e0a e0b
@@ -63,19 +60,8 @@ ramsize=$(LANGUAGE=C free -m|awk '/Mem:/{print $2}')
 }
 
 echo -e "{INFO} check if Netapp ONTAP simulator image exist ..."
-if is_rh_intranet2; then
-	rh_intranet=yes
-	ImageUrl=${LOOKASIDE_BASE_URL}/Netapp-Simulator/$ovaImage
-	LicenseFileUrl=${LOOKASIDE_BASE_URL}/Netapp-Simulator/$licenseFile
-	curl-download.sh $ontap_img_dir/$ovaImage "$ImageUrl"
-	curl-download.sh $ontap_img_dir/$licenseFile "$LicenseFileUrl"
-fi
-[[ -f "$ontap_img_dir/$ovaImage" && -f "$ontap_img_dir/$licenseFile" ]] || {
-	if [[ -n "$rh_intranet" ]]; then
-		echo "{Error} download '$ImageUrl' and/or '$LicenseFileUrl' fail" >&2
-	else
-		echo "{Error} ONTAP simulator image '$ovaImage' and/or '$licenseFile' not found in '$ontap_img_dir'" >&2
-	fi
+if [[ ! -f "$ontap_img_dir/$ovaImage" || ! -f "$ontap_img_dir/$licenseFile" ]] || {
+	echo "{Error} ONTAP simulator image '$ovaImage' and/or '$licenseFile' not found in '$ontap_img_dir'" >&2
 	exit 1
 }
 

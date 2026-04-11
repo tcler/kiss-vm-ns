@@ -1,8 +1,6 @@
 #!/bin/bash
 
 Arch=$(arch)
-downhostname=download.devel.redhat.com
-LOOKASIDE_BASE_URL=${LOOKASIDE:-http://${downhostname}/qa/rhts/lookaside}
 
 ausyscall() {
 	if [[ $# = 0 ]]; then
