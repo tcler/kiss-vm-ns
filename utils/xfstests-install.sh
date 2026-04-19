@@ -13,8 +13,8 @@ for arg; do [[ "$arg" = *=* ]] && eval "$arg"; done
 # download xfstests in background
 command -v git || _deps=git; command -v tmux || _deps+=" tmux"
 [[ -n "$_deps" ]] && yum install -y $_deps
-tgzUrl=https://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git/snapshot/xfstests-dev-master.tar.gz
-backupUrl=https://github.com/kdave/xfstests/archive/refs/heads/master.tar.gz
+tgzUrl=${tgzUrl:-https://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git/snapshot/xfstests-dev-master.tar.gz}
+backupUrl=${backupUrl:-https://github.com/kdave/xfstests/archive/refs/heads/master.tar.gz}
 downloadSession=download-xfstests-$$
 tmux new -s $downloadSession -d "{ curl -LO $tgzUrl && tar axf ${tgzUrl##*/} || curl -LO $backupUrl && tar axf ${backupUrl##*/}; }"
 
