@@ -1,6 +1,10 @@
 #!/bin/bash
 # Enable commonly used SIG repositories for development/testing environment
-# thanks deepseek
+# REF:
+# - https://sigs.centos.org/guide/delivery/
+# - https://wiki.rockylinux.org/rocky/repo/
+# - https://wiki.almalinux.org/repos/CentOS.html
+# and thanks deepseek
 
 enable_centos_sig_repos_for_dev() {
 	local hyperscale=no ganeshaver=9
