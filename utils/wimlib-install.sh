@@ -36,7 +36,7 @@ command -v wiminfo || {
 	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		yum $yumOpt install -y wimlib-utils || yum-install-from-fedora.sh wimlib-utils
 		;;
-	debian*|ubuntu*)
+	debian*|ubuntu*|elementary*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y wimtools
 		;;
 	opensuse*|sles*)
@@ -56,7 +56,7 @@ command -v wiminfo || {
 		fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 			yum $yumOpt --setopt=strict=0 install -y \
 				autoconf git gcc make libxml2-devel fuse fuse-libs fuse-devel fuse3 fuse3-libs fuse3-devel ntfs-3g-devel;;
-		debian*|ubuntu*)
+		debian*|ubuntu*|elementary*)
 			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y --ignore-missing \
 				git autoconf pkg-config gcc make libxml2-dev libfuse-dev ntfs-3g-dev;;
 		opensuse*|sles*)

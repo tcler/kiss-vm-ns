@@ -36,7 +36,7 @@ esac
 	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
 		;;
-	debian*|ubuntu*)
+	debian*|ubuntu*|elementary*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; command -v gm || apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
 		;;
 	opensuse*|sles*)

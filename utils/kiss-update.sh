@@ -30,7 +30,7 @@ slackware*)
 fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 	yum $yumOpt install -y git make
 	;;
-debian*|ubuntu*)
+debian*|ubuntu*|elementary*)
 	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y git make
 	;;
 opensuse*|sles*)

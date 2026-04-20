@@ -64,7 +64,7 @@ red?hat*|centos*|rocky*|alma*|anolis*)
 		;;
 	esac
 	;;
-debian*|ubuntu*)
+debian*|ubuntu*|elementary*)
 	archlist="x86 arm ppc misc"
 	pkglist=$(printf "qemu-system-%s " $archlist)
 	expkglist="qemu-efi-aarch64"

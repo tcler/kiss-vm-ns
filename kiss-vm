@@ -1728,7 +1728,7 @@ install_requires() {
 			yum install -y ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/assmannst/CentOS_7/x86_64/tmux-2.6-3.1.x86_64.rpm;
 		}
 		;;
-	debian*|ubuntu*)
+	debian*|ubuntu*|elementary*)
 		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst virt-viewer expect nmap ncat tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc-ng socat"
 		recommend_pkglist="swtpm-tools ovmf"
 

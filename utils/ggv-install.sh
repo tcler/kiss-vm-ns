@@ -39,7 +39,7 @@ esac
 	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		yum $yumOpt install -y netpbm-progs
 		;;
-	debian*|ubuntu*)
+	debian*|ubuntu*|elementary*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y netpbm
 		;;
 	opensuse*|sles*)
@@ -62,7 +62,7 @@ esac
 		fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 			yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
 			;;
-		debian*|ubuntu*)
+		debian*|ubuntu*|elementary*)
 			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; command -v gm || apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
 			;;
 		opensuse*|sles*)
@@ -89,7 +89,7 @@ echo
 		;;
 	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 		yum $yumOpt install -y gocr tesseract || yum-install-from-fedora.sh gocr;;
-	debian*|ubuntu*)
+	debian*|ubuntu*|elementary*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr tesseract-ocr;;
 	opensuse*|sles*)
 		zypper in --no-recommends -y gocr tesseract-ocr;;
@@ -104,7 +104,7 @@ echo
 		case ${OS,,} in
 		fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
 			yum $yumOpt install -y git autoconf gcc make netpbm-progs;;
-		debian*|ubuntu*)
+		debian*|ubuntu*|elementary*)
 			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y git autoconf gcc make netpbm;;
 		opensuse*|sles*)
 			zypper in --no-recommends -y git autoconf gcc make netpbm;;
@@ -142,7 +142,7 @@ install_python_pip() {
 		python_pkgs="python3-pip"
 		[[ $(rpm -E %rhel) = 8 ]] && python_pkgs="python39-pip"
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel $python_pkgs;;
-	debian*|ubuntu*)
+	debian*|ubuntu*|elementary*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python3-pip;;
 	opensuse*|sles*)
 		zypper in --no-recommends -y python-pip python3-pip;;
