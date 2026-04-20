@@ -21,7 +21,7 @@ distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/%%GenericCloud-.{
 
 #### Fedora
 fbaseurl=https://download.fedoraproject.org/pub/fedora/linux
-lstv=43
+lstv=44
 for fv in rawhide $((lstv+1)); do distroInfo[f$fv]=$fbaseurl/development/$fv/Cloud/$GuestARCH/images/; done
 eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/releases/$fv/Cloud/$GuestARCH/images/; done'
 distroInfo[frawhide]="https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Cloud/${GuestARCH}/images/%%Generic.*.qcow2"
@@ -62,14 +62,20 @@ distroInfo[archlinux]="https://linuximages.de/openstack/arch/arch-openstack-LATE
 
 case "$Country" in
 CN|HK)
-	#### CentOS stream and CentOS
-	distroInfo[Alma-9]="https://mirrors.aliyun.com/almalinux/9/cloud/${_GuestARCH}/images/AlmaLinux-9-GenericCloud-latest.${_GuestARCH}.qcow2"
-	distroInfo[Alma-8]="https://mirrors.aliyun.com/almalinux/8/cloud/${_GuestARCH}/images/AlmaLinux-8-GenericCloud-latest.${_GuestARCH}.qcow2"
+	#### Alma and Rocky
+	aliBaseUrl=https://mirrors.aliyun.com/almalinux
+	sjtuBaseUrl=https://mirrors.sjtug.sjtu.edu.cn/almalinux
+	baseUrl=$sjtuBaseUrl
+	distroInfo[Alma-10]="$baseUrl/10/cloud/${_GuestARCH}/images/AlmaLinux-10-GenericCloud-latest.${_GuestARCH}.qcow2"
+	distroInfo[Alma-9]="$baseUrl/9/cloud/${_GuestARCH}/images/AlmaLinux-9-GenericCloud-latest.${_GuestARCH}.qcow2"
+	distroInfo[Alma-8]="$baseUrl/8/cloud/${_GuestARCH}/images/AlmaLinux-8-GenericCloud-latest.${_GuestARCH}.qcow2"
+
+	distroInfo[Rocky-10]="https://mirrors.sdu.edu.cn/rocky/10/images/$_GuestARCH/%%GenericCloud.*.qcow2"
 	distroInfo[Rocky-9]="https://mirrors.sdu.edu.cn/rocky/9/images/$_GuestARCH/%%GenericCloud.*.qcow2"
 	distroInfo[Rocky-8]="https://mirrors.sdu.edu.cn/rocky/8/images/$_GuestARCH/%%GenericCloud.*.qcow2"
 
 	#### Fedora
-	lstv=43
+	lstv=44
 	fbaseurl=https://mirrors.ustc.edu.cn/fedora/releases
 	fbaseurl=https://mirrors.aliyun.com/fedora/releases
 	eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/$fv/Cloud/$GuestARCH/images/; done'
