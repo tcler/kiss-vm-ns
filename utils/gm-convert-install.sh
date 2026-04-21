@@ -7,9 +7,9 @@
 }
 
 . /etc/os-release
-OS=$NAME
+OSFamily=${ID_LIKE:-${ID}}
 
-case ${OS,,} in
+case ${OSFamily} in
 slackware*)
 	sbopkg-install.sh
 	sbopkg_install() {
@@ -18,7 +18,7 @@ slackware*)
 		yes $'Q\nY\nP\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
 	}
 	;;
-red?hat|centos*|rocky*|alma*|anolis*)
+fedora*|rhel*|centos*)
 	OSV=$(rpm -E %rhel)
 	if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
@@ -29,20 +29,20 @@ esac
 
 #install netpbm/netpbm-progs or gm(GraphicsMagick/ImageMagick)
 ! command -v gm && ! command -v convert && {
-	case ${OS,,} in
+	case ${OSFamily} in
 	slackware*)
 		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install imagemagick
 		;;
-	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
+	fedora*|rhel*|centos*)
 		yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
 		;;
-	debian*|ubuntu*|elementary*)
+	debian*|ubuntu*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; command -v gm || apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
 		;;
-	opensuse*|sles*)
+	suse*|opensuse*)
 		zypper in --no-recommends -y GraphicsMagick; command -v gm || zypper in --no-recommends -y ImageMagick
 		;;
-	arch?linux)
+	arch*|archlinux*)
 		pacman -Sy --noconfirm graphicsmagick
 		;;
 	*)

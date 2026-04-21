@@ -7,9 +7,9 @@
 }
 
 . /etc/os-release
-OS=$NAME
+OSFamily=${ID_LIKE:-${ID}}
 
-case ${OS,,} in
+case ${OSFamily} in
 slackware*)
 	sbopkg-install.sh
 	sbopkg_install() {
@@ -18,7 +18,7 @@ slackware*)
 		yes $'Q\nY\nP\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
 	}
 	;;
-red?hat|centos*|rocky*|alma*|anolis*)
+rhel*|centos*|fedora*)
 	OSV=$(rpm -E %rhel)
 	if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
@@ -29,20 +29,20 @@ esac
 
 echo -e "\n{wimlib-install} install wimlib from repo ..."
 command -v wiminfo || {
-	case ${OS,,} in
+	case ${OSFamily} in
 	slackware*)
 		sbopkg_install wimlib
 		;;
-	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
+	fedora*|rhel*|centos*)
 		yum $yumOpt install -y wimlib-utils || yum-install-from-fedora.sh wimlib-utils
 		;;
-	debian*|ubuntu*|elementary*)
+	debian*|ubuntu*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y wimtools
 		;;
-	opensuse*|sles*)
+	suse*|opensuse*)
 		zypper in --no-recommends -y wimtools
 		;;
-	arch?linux)
+	arch*|archlinux*)
 		pacman -Sy --noconfirm wimlib
 		;;
 	*)
@@ -53,15 +53,15 @@ command -v wiminfo || {
 	command -v wiminfo || {
 		echo -e "\n{wimlib-install} install wimlib from src ..."
 		case ${OS,,} in
-		fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
+		fedora*|rhel*|centos*)
 			yum $yumOpt --setopt=strict=0 install -y \
 				autoconf git gcc make libxml2-devel fuse fuse-libs fuse-devel fuse3 fuse3-libs fuse3-devel ntfs-3g-devel;;
-		debian*|ubuntu*|elementary*)
+		debian*|ubuntu*)
 			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y --ignore-missing \
 				git autoconf pkg-config gcc make libxml2-dev libfuse-dev ntfs-3g-dev;;
-		opensuse*|sles*)
+		suse*|opensuse*)
 			zypper in --no-recommends -y autoconf git gcc make libxml2-devel fuse-devel libntfs-3g-devel;;
-		arch?linux)
+		arch*|archlinux)
 			pacman -Sy --noconfirm autoconf git gcc make libxml2 fuse ntfs-3g;;
 		*)
 			:;; #fixme add more platform

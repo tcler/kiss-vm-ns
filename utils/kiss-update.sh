@@ -21,27 +21,27 @@ eval VMUSERHOME=~$VMUSER
 is_available_url() { curl --connect-timeout 8 -m 16 --output /dev/null -k --silent --head --fail "$1" &>/dev/null; }
 
 . /etc/os-release
-OS=$NAME
+OSFamily=${ID_LIKE:-${ID}}
 { command -v git && command -v gmake; } >/dev/null ||
-case ${OS,,} in
+case ${OSFamily} in
 slackware*)
 	/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off git make
 	;;
-fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
+fedora*|rhel*|centos*)
 	yum $yumOpt install -y git make
 	;;
-debian*|ubuntu*|elementary*)
+debian*|ubuntu*)
 	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y git make
 	;;
-opensuse*|sles*)
+suse*|opensuse*)
 	zypper in --no-recommends -y git make
 	;;
-arch?linux)
+arch*|archlinux*)
 	pacman -Sy --noconfirm git make
 	;;
 *)
 	exit
-	echo "[Error] not supported platform($OS)"
+	echo "[Error] not supported platform($OSFamily)"
 	;;
 esac
 

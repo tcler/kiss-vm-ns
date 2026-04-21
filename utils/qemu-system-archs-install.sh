@@ -7,9 +7,9 @@ needroot() { [[ $EUID != 0 ]] && { echo -e "\E[1;4m{WARN} $0 need run as root.\E
 switchroot "$@"
 
 . /etc/os-release
-OS=$NAME
+OSFamily=${ID_LIKE:-${ID}}
 
-case ${OS,,} in
+case ${OSFamily} in
 slackware*)
 	sbopkg-install.sh
 	sbopkg_install() {
@@ -33,15 +33,15 @@ for arch; do
 done
 [[ -z "$archlist" ]] && archlist="x86 aarch64 riscv ppc s390x"
 pkglist=$(printf "qemu-system-%s " $archlist)
-case ${OS,,} in
+case ${OSFamily} in
 slackware*)
 	/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install $pkglist
 	;;
-fedora*)
+fedora)
 	yum $yumOpt install -y $pkglist
 	yum $yumOpt install -y qemu-device-display-virtio-gpu-ccw
 	;;
-red?hat*|centos*|rocky*|alma*|anolis*)
+rhel*|centos*)
 	OSV=$(rpm -E %rhel)
 	case "$OSV" in
 	8|9|1[0-9])
@@ -64,18 +64,18 @@ red?hat*|centos*|rocky*|alma*|anolis*)
 		;;
 	esac
 	;;
-debian*|ubuntu*|elementary*)
+debian*|ubuntu*)
 	archlist="x86 arm ppc misc"
 	pkglist=$(printf "qemu-system-%s " $archlist)
 	expkglist="qemu-efi-aarch64"
 	apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y $pkglist $expkglist
 	;;
-opensuse*|sles*)
+suse*|opensuse*)
 	archlist="x86 arm ppc s390x"
 	pkglist=$(printf "qemu-%s " $archlist)
 	zypper in --no-recommends -y $pkglist
 	;;
-arch?linux)
+arch*|archlinux*)
 	archlist="x86 aarch64 ppc s390x"
 	pkglist=$(printf "qemu-system-%s " $archlist)
 	pacman -Sy --noconfirm $pkglist

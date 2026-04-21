@@ -7,10 +7,10 @@
 }
 
 . /etc/os-release
-OS=$NAME
+OSFamily=${ID_LIKE:-${ID}}
 yumOpt=${yumOpt:---setopt=strict=0}
 
-case ${OS,,} in
+case ${OSFamily} in
 slackware*)
 	sbopkg-install.sh
 	sbopkg_install() {
@@ -19,7 +19,7 @@ slackware*)
 		yes $'Q\nY\nP\nC' | sudo /usr/sbin/sbopkg -B -i $pkg
 	}
 	;;
-red?hat|centos*|rocky*|alma*|anolis*)
+rhel*|centos*)
 	OSV=$(rpm -E %rhel)
 	if ! grep -E -q '^!?epel' < <(yum repolist 2>/dev/null); then
 		[[ "$OSV" != "%rhel" ]] &&
@@ -32,20 +32,20 @@ esac
 #! command -v gm && ! command -v convert && {
 ! command -v anytopnm && {
 	echo -e "\n{ggv-install} install netpbm or GraphicsMagick/ImageMagick ..."
-	case ${OS,,} in
+	case ${OSFamily} in
 	slackware*)
 		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install netpbm
 		;;
-	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
+	fedora*|rhel*|centos*)
 		yum $yumOpt install -y netpbm-progs
 		;;
-	debian*|ubuntu*|elementary*)
+	debian*|ubuntu*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y netpbm
 		;;
-	opensuse*|sles*)
+	suse*|opensuse*)
 		zypper in --no-recommends -y netpbm
 		;;
-	arch?linux)
+	arch*|archlinux*)
 		pacman -Sy --noconfirm netpbm
 		;;
 	*)
@@ -55,20 +55,20 @@ esac
 
 	#if install netpbm failed, use GraphicsMagick/ImageMagick instead
 	if ! command -v anytopnm >/dev/null; then
-		case ${OS,,} in
+		case ${OSFamily,,} in
 		slackware*)
 			/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install imagemagick
 			;;
-		fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
+		fedora*|rhel*|centos*)
 			yum $yumOpt install -y GraphicsMagick; command -v gm || yum $yumOpt install -y ImageMagick
 			;;
-		debian*|ubuntu*|elementary*)
+		debian*|ubuntu*)
 			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y graphicsmagick; command -v gm || apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y imagemagick
 			;;
-		opensuse*|sles*)
+		suse*|opensuse*)
 			zypper in --no-recommends -y GraphicsMagick; command -v gm || zypper in --no-recommends -y ImageMagick
 			;;
-		arch?linux)
+		arch*|archlinux*)
 			pacman -Sy --noconfirm graphicsmagick
 			;;
 		*)
@@ -83,17 +83,17 @@ echo
 ! command -v gocr || ! command -v tesseract && {
 	echo -e "\n{ggv-install} install gocr ..."
 
-	case ${OS,,} in
+	case ${OSFamily} in
 	slackware*)
 		sbopkg_install gocr tesseract
 		;;
-	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
+	fedora*|rhel*|centos*)
 		yum $yumOpt install -y gocr tesseract || yum-install-from-fedora.sh gocr;;
-	debian*|ubuntu*|elementary*)
+	debian*|ubuntu*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y gocr tesseract-ocr;;
-	opensuse*|sles*)
+	suse*|opensuse*)
 		zypper in --no-recommends -y gocr tesseract-ocr;;
-	arch?linux)
+	arch*|archlinux*)
 		pacman -Sy --noconfirm gocr tesseract;;
 	*)
 		:;; #fixme add more platform
@@ -101,14 +101,14 @@ echo
 
 	command -v gocr || {
 		echo -e "\n{ggv-install} install gocr from src ..."
-		case ${OS,,} in
-		fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
+		case ${OSFamily} in
+		fedora*|rhel*|centos*)
 			yum $yumOpt install -y git autoconf gcc make netpbm-progs;;
-		debian*|ubuntu*|elementary*)
+		debian*|ubuntu*)
 			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y git autoconf gcc make netpbm;;
-		opensuse*|sles*)
+		suse*|opensuse*)
 			zypper in --no-recommends -y git autoconf gcc make netpbm;;
-		arch?linux)
+		arch*|archlinux*)
 			pacman -Sy --noconfirm git autoconf gcc make netpbm;;
 		*)
 			:;; #fixme add more platform
@@ -135,18 +135,18 @@ install_python_pip() {
 		return 0
 	fi
 
-	case ${OS,,} in
+	case ${OSFamily} in
 	slackware*)
 		/usr/sbin/slackpkg -batch=on -default_answer=y -orig_backups=off install python3;;
-	fedora*|red?hat*|centos*|rocky*|alma*|anolis*)
+	fedora*|rhel*|centos*)
 		python_pkgs="python3-pip"
 		[[ $(rpm -E %rhel) = 8 ]] && python_pkgs="python39-pip"
 		yum $yumOpt --setopt=strict=0 install -y python-devel python-pip platform-python-devel $python_pkgs;;
-	debian*|ubuntu*|elementary*)
+	debian*|ubuntu*)
 		apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y python3-pip;;
-	opensuse*|sles*)
+	suse*|opensuse*)
 		zypper in --no-recommends -y python-pip python3-pip;;
-	arch?linux)
+	arch*|archlinux*)
 		pacman -Sy --noconfirm python-pip;;
 	*)
 		:;; #fixme add more platform
