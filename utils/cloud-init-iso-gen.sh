@@ -76,7 +76,7 @@ users:
 $(for F in $sshkeyf; do echo "      -" $(tail -n1 ${F}); done)
 
   - name: foo
-    group: users, admin
+    groups: users, admin
     sudo: ALL=(ALL) NOPASSWD:ALL
     plain_text_passwd: redhat
     lock_passwd: false
@@ -84,7 +84,7 @@ $(for F in $sshkeyf; do echo "      -" $(tail -n1 ${F}); done)
 $(for F in $sshkeyf; do echo "      -" $(tail -n1 ${F}); done)
 
   - name: bar
-    group: users, admin
+    groups: users, admin
     sudo: ALL=(ALL) NOPASSWD:ALL
     plain_text_passwd: redhat
     lock_passwd: false
@@ -147,8 +147,8 @@ DNS
   - command -v yum && yum --setopt=strict=0 install -y bash-completion curl wget vim ipcalc expect $PKGS
   -   command -v apt && { apt update -y; apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y bash-completion curl wget vim ipcalc expect network-manager $PKGS; systemctl restart NetworkManager; }
   -   command -v zypper && { zypper in --no-recommends -y bash-completion curl wget vim ipcalc expect NetworkManager $PKGS; systemctl restart NetworkManager; }
-  -   command -v pacman && { pacman -Sy --noconfirm archlinux-keyring && pacman -Su --noconfirm; pacman-key --init; pacman-key --populate; }
-  -   command -v pacman && { pacman -S --needed --noconfirm bash-completion curl wget vim ipcalc expect networkmanager $PKGS; systemctl restart NetworkManager; }
+  -   command -v pacman && { W=\$(timeout 2 curl -s ipinfo.io/country); test \$W = CN && sed -i '1i Server = https://mirrors.tuna.tsinghua.edu.cn/archlinux/\$repo/os/\$arch' /etc/pacman.d/mirrorlist 2>/dev/null; pacman -Sy --noconfirm archlinux-keyring; pacman-key --init; pacman-key --populate; }
+  -   command -v pacman && { pacman -S --noconfirm --needed bash-completion curl wget vim ipcalc expect networkmanager $PKGS; systemctl restart NetworkManager; }
   - echo "export DISTRO=$Distro DISTRO_BUILD=$Distro RSTRNT_OSDISTRO=$Distro" >>/etc/bashrc
   - service sshd start || systemctl start sshd
 $(
