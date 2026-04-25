@@ -1729,7 +1729,9 @@ install_requires() {
 		}
 		;;
 	debian*|ubuntu*)
-		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system dnsmasq qemu-kvm virtinst virt-viewer expect nmap ncat tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc-ng socat"
+		qemukvm=qemu-kvm
+		[[ "$ID" = ubuntu ]] && { a=$(uname -m); case $a in (x86_64) a=x86;; esac; qemukvm=qemu-system-$a; }
+		pkglist="bash-completion libnss-libvirt libvirt-clients libvirt-daemon libvirt-daemon-system $qemukvm dnsmasq virtinst virt-viewer util-linux-extra expect nmap ncat tmux libguestfs-tools dialog qemu-utils udisks2 genisoimage nftables acl ipcalc-ng socat"
 		recommend_pkglist="swtpm-tools ovmf"
 
 		read -d . verx 2>/dev/null </etc/debian_version
