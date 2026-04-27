@@ -58,11 +58,19 @@ tmpdir=$(mktemp -d)
 tar -C ${tmpdir} -axf <(sed 1,/^#__end__/d $0)
 if [[ $(arch) = ${arch} ]]; then
 	lps=$(for lp in $libpaths; do echo -n ${tmpdir}/${rootdir}$lp:; done)
+	[[ -n $DEBUG ]] &&
+		echo "{debug}>" ${tmpdir}/${rootdir}/$ldso --library-path ${lps} ${tmpdir}/${rootdir}/bin/${progname} "$@" >&2
 	${tmpdir}/${rootdir}/$ldso --library-path ${lps} ${tmpdir}/${rootdir}/bin/${progname} "$@"; rc=$?
 else
+	[[ -n $DEBUG ]] &&
+		echo "{debug}>" qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/bin/${progname} "$@" >&2
 	qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/bin/${progname} "$@"; rc=$?
 fi
-rm -rf ${tmpdir}
+if [[ -n $DEBUG ]]; then
+	echo "{debug}: in debug mode, please remove ${tmpdir} manually" >&2
+else
+	rm -rf ${tmpdir}
+fi
 exit $rc
 #__end__
 ASH
