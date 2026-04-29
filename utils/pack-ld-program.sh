@@ -35,8 +35,8 @@ for file in $slibfiles; do
 	cp -v "$file" "$rootdir${file}"
 	[[ "${file##*/}" = ld-linux-*.so* ]] && ldso=${file}
 done
-mkdir -p ${rootdir}/bin
-cp -v "${_bin}" ${rootdir}/bin/
+mkdir -p ${rootdir}/-bin
+cp -v "${_bin}" ${rootdir}/-bin/
 [[ -f /etc/os-release ]] && cp /etc/os-release ${rootdir}/
 [[ -n "$2" ]] && ls --color -l $rootdir
 
@@ -59,12 +59,12 @@ tar -C ${tmpdir} -axf <(sed 1,/^#__end__/d $0)
 if [[ $(arch) = ${arch} ]]; then
 	lps=$(for lp in $libpaths; do echo -n ${tmpdir}/${rootdir}$lp:; done)
 	[[ -n $DEBUG ]] &&
-		echo "{debug}>" ${tmpdir}/${rootdir}/$ldso --library-path ${lps} ${tmpdir}/${rootdir}/bin/${progname} "$@" >&2
-	${tmpdir}/${rootdir}/$ldso --library-path ${lps} ${tmpdir}/${rootdir}/bin/${progname} "$@"; rc=$?
+		echo "{debug}>" ${tmpdir}/${rootdir}/$ldso --library-path ${lps} ${tmpdir}/${rootdir}/-bin/${progname} "$@" >&2
+	${tmpdir}/${rootdir}/$ldso --library-path ${lps} ${tmpdir}/${rootdir}/-bin/${progname} "$@"; rc=$?
 else
 	[[ -n $DEBUG ]] &&
-		echo "{debug}>" qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/bin/${progname} "$@" >&2
-	qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/bin/${progname} "$@"; rc=$?
+		echo "{debug}>" qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/-bin/${progname} "$@" >&2
+	qemu-${arch} -L ${tmpdir}/${rootdir} ${tmpdir}/${rootdir}/-bin/${progname} "$@"; rc=$?
 fi
 if [[ -n $DEBUG ]]; then
 	echo "{debug}: in debug mode, please remove ${tmpdir} manually" >&2
