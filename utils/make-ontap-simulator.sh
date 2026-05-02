@@ -60,10 +60,10 @@ ramsize=$(LANGUAGE=C free -m|awk '/Mem:/{print $2}')
 }
 
 echo -e "{INFO} check if Netapp ONTAP simulator image exist ..."
-if [[ ! -f "$ontap_img_dir/$ovaImage" || ! -f "$ontap_img_dir/$licenseFile" ]] || {
+if [[ ! -f "$ontap_img_dir/$ovaImage" || ! -f "$ontap_img_dir/$licenseFile" ]]; then
 	echo "{Error} ONTAP simulator image '$ovaImage' and/or '$licenseFile' not found in '$ontap_img_dir'" >&2
 	exit 1
-}
+fi
 
 #-------------------------------------------------------------------------------
 #download ontap-simulator-in-kvm project
