@@ -77,6 +77,7 @@ CN|HK)
 	lstv=44
 	fbaseurl=https://mirrors.ustc.edu.cn/fedora/releases
 	fbaseurl=https://mirrors.aliyun.com/fedora/releases
+	fbaseurl=https://mirrors.tuna.tsinghua.edu.cn/fedora/releases
 	eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/$fv/Cloud/$GuestARCH/images/; done'
 
 	#### Debian
