@@ -3789,7 +3789,7 @@ if [[ "$InstallType" = location ]]; then
 		ksauto=$VMpath/ks-$VM_OS_VARIANT-$$.cfg
 		postscript=$VMpath/postscript.ks
 		KSPath=$ksauto
-		REPO_OPTS=$(distro2repos $Distro $Location | sed 's/^/--repo /')
+		REPO_OPTS=
 
 		cat <<-END >>$postscript
 		test -f /etc/yum.repo.d/cdn_os.repo && sed -i 's/enabled = 1/enabled = 0/' /etc/yum.repo.d/cdn_os.repo
