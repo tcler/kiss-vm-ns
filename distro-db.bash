@@ -20,11 +20,11 @@ distroInfo[CentOS-8]="https://cloud.centos.org/centos/8/$_GuestARCH/images/ http
 distroInfo[CentOS-7]="https://cloud.centos.org/centos/7/images/%%GenericCloud-.{4}.qcow2c http://vault.centos.org/centos/7/os/$_GuestARCH/"
 
 #### Fedora
-fbaseurl=https://download.fedoraproject.org/pub/fedora/linux
+ofbaseurl=https://download.fedoraproject.org/pub/fedora/linux
 lstv=44
-for fv in rawhide $((lstv+1)); do distroInfo[f$fv]=$fbaseurl/development/$fv/Cloud/$GuestARCH/images/; done
-eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/releases/$fv/Cloud/$GuestARCH/images/; done'
-distroInfo[frawhide]="https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Cloud/${GuestARCH}/images/%%Generic.*.qcow2"
+for fv in rawhide $((lstv+1)); do distroInfo[f$fv]=$ofbaseurl/development/$fv/Cloud/$GuestARCH/images/; done
+eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]="$ofbaseurl/releases/$fv/Cloud/$GuestARCH/images/ $ofbaseurl/releases/$fv/Everything/$GuestARCH/os/"; done'
+distroInfo[frawhide]="https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Cloud/${GuestARCH}/images/%%Generic.*.qcow2 https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Everything/${GuestARCH}/os/"
 
 #### Debian/Ubuntu
 # https://cloud.debian.org/images/openstack/testing/
@@ -78,7 +78,7 @@ CN|HK)
 	fbaseurl=https://mirrors.ustc.edu.cn/fedora/releases
 	fbaseurl=https://mirrors.aliyun.com/fedora/releases
 	fbaseurl=https://mirrors.tuna.tsinghua.edu.cn/fedora/releases
-	eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]=$fbaseurl/$fv/Cloud/$GuestARCH/images/; done'
+	eval "for fv in {$((lstv-4))..$lstv}"'; do distroInfo[f$fv]="$fbaseurl/$fv/Cloud/$GuestARCH/images/ $fbaseurl/$fv/Everything/$GuestARCH/os"; done'
 
 	#### Debian
 	distroInfo[debian-13]="https://mirror.sjtu.edu.cn/debian-cdimage/cloud/trixie/latest/"
