@@ -228,6 +228,10 @@ KSF
 }
 
 cat <<'DNS_DOMAIN'
+grep ^dns=none /etc/NetworkManager/NetworkManager.conf && {
+	sed -i -e '/^dns=none/d' -e '/^rc-manager=unmanaged/d' /etc/NetworkManager/NetworkManager.conf
+	systemctl restart NetworkManager
+}
 hostn=$(hostname); domain=${hostn#*.}; grep -q "search .* ${domain}" /etc/resolv.conf && sed -i -e "/^search/{s/ ${domain}//;s/search/& ${domain}/}" /etc/resolv.conf
 DNS_DOMAIN
 [[ -n "$defaultDNS" ]] && cat <<DNS

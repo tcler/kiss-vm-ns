@@ -3992,8 +3992,8 @@ if [[ "$InstallType" = location ]]; then
 
 					"* login:" { send "root\r" }
 				}
-				expect "Password:" {
-					send "'"$defaultPasswd"'\r"
+				expect "Password:" { send "'"$defaultPasswd"'\r" }
+				expect "~?# " {
 					send {if ! grep -q ^nameserver /etc/resolv.conf; then ip r|awk '"'"'/^default/{print "nameserver", $3}'"'"' >>/etc/resolv.conf; fi;}; send "\r\n"
 					send {for dev in $(nmcli dev|awk '"'"'$3 ~ /discon/{print $1}'"'"'); do nmcli dev con $dev; done;}; send "\r\n"
 					send "\r\r\r\r\r\r"
