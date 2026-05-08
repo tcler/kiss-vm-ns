@@ -4001,6 +4001,7 @@ if [[ "$InstallType" = location ]]; then
 					expect -re {[>$#:] *$} { send "read -N 10000000 -t 0.001  #clear input buffer\r"; after 2 }
 					send "\r\r\r\r\r\r"
 				}
+				expect "*clear input buffer*" {}
 
 				if {$env(INTERACT) == "no"} { exit 0 }
 				interact; exit
@@ -4391,6 +4392,7 @@ echo '"$defaultPasswd"' | pw usermod root -h 0;
 						expect -re {[>$#:] *$} { send "read -N 10000000 -t 0.001  #clear input buffer\r"; after 2 }
 						send "\r\r"
 					}
+					expect "*clear input buffer*" {}
 
 					if {$env(INTERACT) == "no"} { exit 0 }
 					interact; exit
