@@ -94,7 +94,7 @@ rhel-9*|rhel9*|centos9*|centos-9*|rocky9*|rocky-9*|alma9*|alma-9*|anolis9*)
 	Packages="-iwl* @standard @file-server vim-enhanced git iproute tmux wget bash-completion expect"
 	AuthConfigure=
 	;;
-fedora*|rhel-1[0-9]*|rhel1[0-9]*|centos1[0-9]*|centos-1[0-9]*|rocky-1[0-9]*|rocky1[0-9]*|alma1[0-9]*|alma-1[0-9]*|anolis1[0-9]*)
+fedora*|f[0-9r]*|rhel-1[0-9]*|rhel1[0-9]*|centos1[0-9]*|centos-1[0-9]*|rocky-1[0-9]*|rocky1[0-9]*|alma1[0-9]*|alma-1[0-9]*|anolis1[0-9]*)
 	Packages="-iwl* @standard @file-server vim-enhanced git iproute tmux wget bash-completion expect"
 	AuthConfigure=
 	;;
