@@ -1497,7 +1497,7 @@ vmlist() {
 	virsh list "${@/\//--}"
 }
 
-netls() { virsh net-list; }
+netls() { virsh net-list "${@/\//--}"; }
 netcreate() {
 	local netname=
 	local brname=
@@ -1818,8 +1818,10 @@ prepare_kiss_net() {
 		virsh net-autostart default
 	}
 
+	vm -r netls | grep -qw default ||
+		vm -r netcreate netname=default brname=virbr0 subnet=192.168.122.0 domain=$DEFAULT_VM_DOMAIN
 	vm -r netls | grep -qw kissaltnet ||
-		vm -r netcreate netname=kissaltnet brname=virbr-kissalt subnet=172.22.22.0 domain=alt.kissvm.net
+		vm -r netcreate netname=kissaltnet brname=virbr-kissalt subnet=172.22.22.0 domain=$KISSALT_VM_DOMAIN
 }
 
 prepare_kiss_vm() {
