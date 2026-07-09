@@ -1931,6 +1931,11 @@ prepare_kiss_vm() {
 COMM
 
 	run -as=$VMUSER mkdir -p "$VMSHOME"
+	if command -v semanage &>/dev/null; then
+		#avoid some selinux warning while access iso,image files
+		semanage fcontext -a -f f -t virt_image_t "${VMSHOME}/[^/]+/[^/]+/[^/]+"
+		restorecon -R /home/jiyin/VMs/
+	fi
 
 	echo -e "{VM:INFO} setfacl -mu:${QEMU_USER}:rx $vmuserhome $VMSHOME ..."
 	setfacl -mu:${QEMU_USER}:rx $vmuserhome $VMSHOME
