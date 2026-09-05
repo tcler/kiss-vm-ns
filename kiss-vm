@@ -2861,7 +2861,7 @@ else
 fi
 
 if [[ -n "$QEMU_CPU_OPT" ]]; then
-	_cpuHvFlags=$(qmp-query-cpu-model-expansion.sh hvflags machineOpt=${MACHINE_OPT#*=})
+	_cpuHvFlags=$(qmp-query-cpu-model-expansion.sh hvflags ${MACHINE_OPT#*=})
 	QEMU_CPU_OPT=$(echo "${QEMU_CPU_OPT}"|sed -r "s/-cpu +[^ ]+/&,$_cpuHvFlags/")
 	QEMU_OPTS+=("$QEMU_CPU_OPT")
 fi
