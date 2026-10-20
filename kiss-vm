@@ -199,6 +199,13 @@ try_disable_ipv6() {
 	who am i|grep -v '([0-9a-f:]\+)$' && /sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1
 }
 
+disable_qemu_security() {
+	#for enable some ops like qmp unix.socket create/unlink ...
+	#or use audit2allow to solve the issue, that's is too troublesome
+	grep -i '^security_driver = "none"$' /etc/libvirt/qemu.conf ||
+		echo 'security_driver = "none"' >>/etc/libvirt/qemu.conf
+}
+
 create_vmhome() {
 	local vmhome=${1%/}
 	local vmn=${vmhome##*/}
@@ -1851,6 +1858,7 @@ prepare_kiss_vm() {
 
 	#try disable ipv6
 	try_disable_ipv6
+	disable_qemu_security
 
 	if test -f /run/ostree-booted; then
 		echo "{warn} you are in redhat bootc mode! please do install-pkgs in Containerfile" >&2
