@@ -192,6 +192,9 @@ pipDefaultUrl=https://files.pythonhosted.org
 pipMirrorList="$pipDefaultUrl
 https://pypi.tuna.tsinghua.edu.cn/simple
 https://mirrors.aliyun.com/pypi/simple"
+if [[ $(uname -m) = loongarch64 ]]; then
+	pipMirrorList="https://lpypi.loongnix.cn/loongson/pypi/+simple"
+fi
 fastUrl=$(fastesturl $pipMirrorList)
 [[ -n "$fastUrl" && "$fastUrl" != "$pipDefaultUrl" ]] && pipInstallOpts="-i $fastUrl"
 echo -e "\n{ggv-install} install python pip ..."
@@ -203,6 +206,14 @@ fi
 
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
 if ! command -v vncdo; then
+	if [[ $(uname -m) = loongarch64 ]]; then
+		case ${OSFamily} in
+		debian*|ubuntu*)
+			apt install -o APT::Install-Suggests=0 -o APT::Install-Recommends=0 -y \
+				python3-dev libffi-dev libssl-dev pkg-config libjpeg-dev zlib1g-dev
+			;;
+		esac
+	fi
 	echo -e "{ggv-install} pip Opts: $pipOpts $pipInstallOpts ..."
 	echo -e "\n{ggv-install} install vncdotool ..."
 	$PIP $pipOpts install $pipInstallOpts --upgrade pip
